@@ -1,0 +1,10 @@
+--url
+https://example.invalid/kaputt.html
+--name
+fall_ungueltiges_utf8
+--norm
+N
+--start
+START
+--abrufdatum
+2026-01-01

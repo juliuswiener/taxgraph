@@ -1,0 +1,16 @@
+--url
+https://example.invalid/x.html
+--name
+fall_fehler_erwarte
+--norm
+N
+--start
+(1) 1 Erfundene Werbungskosten sind
+--erwarte
+Tom & Jerry
+--erwarte
+Das steht nirgends
+--erwarte
+Auch nicht "dies" und 'das'
+--abrufdatum
+2026-01-01

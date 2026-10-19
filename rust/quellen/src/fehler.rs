@@ -7,13 +7,13 @@ use crate::unterprozess::UnterprozessFehler;
 #[derive(Debug, thiserror::Error)]
 pub enum Fehler {
     /// Die Start-Passage steht nicht im entstrippten Text (Python: `Start-Passage nicht gefunden`).
-    #[error("Start-Passage nicht gefunden: {start:?}")]
+    #[error("Start-Passage nicht gefunden: {}", crate::py::repr_str(.start))]
     StartFehlt { start: String },
     /// Der Text ist kürzer als `--min-laenge`: meist hat das Start-Muster falsch getroffen.
     #[error("Text zu kurz ({laenge} < {minimum} Zeichen). Nichts geschrieben - vermutlich hat das Start-Muster nicht getroffen.")]
     ZuKurz { laenge: usize, minimum: i64 },
     /// Eine mit `--erwarte` genannte Passage steht nicht wörtlich im Text.
-    #[error("Erwartete Passage(n) fehlen, nichts geschrieben:\n  {}", .fehlend.iter().map(|f| format!("{f:?}")).collect::<Vec<_>>().join("\n  "))]
+    #[error("Erwartete Passage(n) fehlen, nichts geschrieben:\n  {}", .fehlend.iter().map(|f| crate::py::repr_str(f)).collect::<Vec<_>>().join("\n  "))]
     ErwarteFehlt { fehlend: Vec<String> },
     /// Eine benannte Entity (`&name;`) steht nicht in der Tabelle. Nie ein stilles Weglassen.
     #[error("Unbekannte HTML-Entity &{name};: nicht in der Tabelle von quellen::entity (nichts geschrieben)")]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "bmf/2026/erfunden"
+  norm: "BMF Erfunden (Beispiel)"
+  fassung: "Stand 2026-02-02"
+  quelle_url: "https://example.invalid/bmf.html"
+  abrufdatum: "2026-02-03"
+  datei: "bmf_2026-01-01_erfunden.txt"
+  sha256: "80d00d032d1b8a812e30f2d0e0e55cc70ee37c9bea4e5a3cb461e7620be38e69"
+  authority: verwaltung
+  redistributable: true
+  einfrier_ebene: schreiben
+  verwendet_in: []

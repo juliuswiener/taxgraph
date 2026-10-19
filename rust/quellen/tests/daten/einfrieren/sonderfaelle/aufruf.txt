@@ -1,0 +1,10 @@
+--url
+https://example.invalid/sonder.html
+--name
+fall_sonderfaelle
+--norm
+N
+--start
+START
+--abrufdatum
+2026-01-01

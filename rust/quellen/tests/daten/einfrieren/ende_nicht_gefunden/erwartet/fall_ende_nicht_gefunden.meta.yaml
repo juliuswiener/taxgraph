@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "fall/ende/nicht/gefunden"
+  norm: "N"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://example.invalid/kein-ende.html"
+  abrufdatum: "2026-01-01"
+  datei: "fall_ende_nicht_gefunden.txt"
+  sha256: "9fa2f194607828e912e545fc695de1c013e5658b690a9db0d998695469ad09b1"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

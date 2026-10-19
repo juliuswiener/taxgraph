@@ -9,6 +9,9 @@
 //! Ziel ist dieselbe Ausgabe Byte für Byte; der Vergleich mit den Python-Skripten steht im Bericht des Auftrags.
 
 pub mod cli;
+pub mod einfrieren;
+pub mod entity;
+pub mod entity_tabelle;
 pub mod fehler;
 pub mod pruefen;
 pub mod py;

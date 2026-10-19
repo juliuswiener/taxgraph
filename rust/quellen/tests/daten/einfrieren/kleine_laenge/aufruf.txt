@@ -1,0 +1,14 @@
+--url
+https://example.invalid/kurz.html
+--name
+fall_kleine_laenge
+--norm
+N
+--start
+START
+--min-laenge
+20
+--erwarte
+sehr kurzer
+--abrufdatum
+2026-01-01
