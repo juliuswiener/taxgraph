@@ -5,6 +5,7 @@ use domain::{PyWert, Sperrgrund};
 use rust_decimal::Decimal;
 
 use super::{bestaetigt, ganzzahl, positiv, zahl_wert, Grund, K};
+use crate::arbeitsmittel_grenze::{satz_prozent, sofortabzug, Sofortabzug};
 use crate::deklaration::konstanten::{
     ARBEITSMITTEL_KOSTEN, DHF_BEDINGUNGEN, DHF_KOSTEN, UEBERNACHTUNG_BEDINGUNGEN,
     UEBERNACHTUNG_KOSTEN, VERPFLEGUNG_TAGE, VERPFLEGUNG_TAGE_NACH_FRIST,
@@ -177,14 +178,26 @@ fn uebernachtung(f: &Felder) -> Option<Sperrgrund> {
     }
 }
 
-/// § 9 Abs. 1 Nr. 6/7 (GWG-Sofortabzug ≤ 800 EUR, sonst § 7-AfA). Schwelle in CENT (80.000).
+/// § 9 Abs. 1 Nr. 6/7 (GWG-Sofortabzug bis 800 EUR, sonst § 7-AfA). Schwelle in CENT (80.000).
+///
+/// Abweichung Nr. 88: die Grenze gilt NETTO (R 9.12 LStR), siehe [`crate::arbeitsmittel_grenze`]. Im Band ueber 800,00 bis
+/// 952,00 EUR brutto entscheidet der Umsatzsteuersatz der Rechnung; ohne BESTAETIGTE Antwort sperrt der Guard, nie gilt still ein
+/// Satz. Darunter und darueber braucht es keine Antwort.
 fn arbeitsmittel(f: &Felder) -> Option<Sperrgrund> {
     let am = zahl_wert(wert(f, ARBEITSMITTEL_KOSTEN)).filter(|a| *a > Decimal::ZERO)?;
-    if am <= Decimal::from(80_000) {
-        // "is not True" auf dem Rohwert liess ein vorlaeufiges True durch (Naht-Fix).
-        let gewaehlt = ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt"))
-            && bestaetigt(f, "am_gwg_sofortabzug_gewaehlt");
-        return (!gewaehlt).then_some(Sperrgrund::ArbeitsmittelAfaUeberGwgOffen);
+    // Der Satz zaehlt erst bestaetigt, wie die Wahl des Sofortabzugs: ein vorlaeufiger Satz oeffnet nichts.
+    let satz = bestaetigt(f, "am_umsatzsteuersatz")
+        .then(|| satz_prozent(wert(f, "am_umsatzsteuersatz")))
+        .flatten();
+    match sofortabzug(am, satz) {
+        Sofortabzug::SatzOffen => return Some(Sperrgrund::ArbeitsmittelAfaUeberGwgOffen),
+        Sofortabzug::Moeglich => {
+            // "is not True" auf dem Rohwert liess ein vorlaeufiges True durch (Naht-Fix).
+            let gewaehlt = ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt"))
+                && bestaetigt(f, "am_gwg_sofortabzug_gewaehlt");
+            return (!gewaehlt).then_some(Sperrgrund::ArbeitsmittelAfaUeberGwgOffen);
+        }
+        Sofortabzug::Nein => {}
     }
     // > 800 EUR: § 7 Abs. 1 lineare AfA — die Nutzungsdauer MUSS beantwortet sein.
     if ganzzahl(wert(f, "arbeitsmittel_nutzungsdauer")).is_none_or(|n| n <= 0) {

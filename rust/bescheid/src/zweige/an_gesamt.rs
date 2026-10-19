@@ -17,7 +17,7 @@ use intervall::Slots;
 
 use super::rechnen::{add, R};
 use super::tarif::kist_eingabe;
-use super::wk::{am_an_gesamt, ep_eingabe, mit_unfallkosten, wk_teile};
+use super::wk::{am_an_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
 use super::{kist_konfession, slot, Marke, Ring};
 use crate::abzuege::kind_kv_pv_summe;
 use crate::{
@@ -83,6 +83,8 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
     )?;
     // Unfallkosten auf dem Weg zur Arbeit: neben der Pauschale, ausserhalb ihres Hoechstbetrags (Abweichung Nr. 28).
     let wk = mit_unfallkosten(f, wk)?;
+    // Arbeitsmittel mit Bruttopreis ueber 800 EUR, netto aber unter der Grenze (Abweichung Nr. 88): der Catala-Scope hat sie nicht gesehen.
+    let wk = mit_sofortabzug_im_band(f, wk)?;
     // Kind-Beitraege in DENSELBEN Abs.-4-Deckel (CENT, direkt addiert).
     let kv_pv_a = kv_pv(f, "", kind_kv_pv_summe(&r.q())?.get())?;
     let zusammen = ist_zusammen(f);

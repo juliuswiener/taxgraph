@@ -140,15 +140,17 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// beide +2 mit `versorgung_altersgrenze` und `versorgung_altersgrenze_partner`: 394 und 308, Abweichung Nr. 65 am 2026-10-12.
 /// beide +8 mit den vier Rueckfragen zum Versorgungsbezug je Person: 402 und 316, Abweichung Nr. 66 am 2026-10-12.
 /// nur `gesamt` +1 mit `versorgung_grad_der_behinderung`: 403 und 316, Abweichung Nr. 80 am 2026-10-16.
+/// `an_gesamt` und `gesamt` +1 mit `am_umsatzsteuersatz`, dazu `n_vor_gwg` 73 -> 74: 86 und 404, Abweichung Nr. 88 am 2026-10-19;
+/// `rentner_gesamt` bleibt 316, sie fragt keine Arbeitsmittel.
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
     let d = dienst();
     for (scheibe, n) in [
         ("ep", 6),
-        ("n_vor_gwg", 73),
-        ("an_gesamt", 85),
-        ("gesamt", 403),
+        ("n_vor_gwg", 74),
+        ("an_gesamt", 86),
+        ("gesamt", 404),
         ("rentner_gesamt", 316),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();

@@ -1026,7 +1026,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Was hat das Arbeitsmittel gekostet (zum Beispiel Laptop, Werkzeug, Fachbücher)?"
-    hilfe_kurz: "Der Kaufpreis. Bis 800 Euro kannst du alles sofort absetzen, darüber verteilt über die Jahre."
+    hilfe_kurz: "Der Preis auf der Rechnung, mit Umsatzsteuer. Das ist der Betrag, den du absetzt. Ob du ihn sofort absetzen kannst, entscheidet der Preis ohne Umsatzsteuer: Er darf höchstens 800 Euro betragen (bei 19 % Umsatzsteuer sind das 952 Euro, bei 7 % 856 Euro). Darüber verteilt sich der Abzug über die Jahre."
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: null
@@ -1036,13 +1036,42 @@ bindungen:
       quelle: "§ 6 Abs. 2 S. 1 EStG"
       zitatanker: "800 Euro nicht übersteigen"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  # Umsatzsteuersatz der Rechnung (gebaut 2026-10-19, Abweichung Nr. 88 in rust/fixtures/README.md; Vault:
+  # decisions/julius-entscheidet-gwg-grenze-netto-toolchain-festlegen-abruf-bauen-handrechnung-und-stufe-b-loeschen-2026-10-19).
+  # Beim Arbeitnehmer gilt die 800-Euro-Grenze fuer den Preis OHNE Umsatzsteuer (R 9.12 LStR, Aussage von Julius; Anleitung N 2025),
+  # abgezogen wird der volle Bruttopreis. Der Satz entscheidet nur im Band ueber 800,00 bis 952,00 EUR brutto (Regelsatz 19 %):
+  # dort sperrt eine fehlende Antwort (`arbeitsmittel_afa_ueber_gwg_offen`), nie gilt still ein Satz. Darunter und darueber
+  # braucht die Rechnung keine Antwort.
+  # Haengt an `feld_bedingung` (`groesser_als`, positiver Beweis: die Frage steht, sobald ein bestaetigter Preis ueber 800,00 EUR
+  # vorliegt) und `signatur_slot`, nie an `geltungsbedingung` (kein Gate, Entscheidung ein-neues-betragsfeld-haengt-an-feld-
+  # bedingung-nie-an-geltungsbedingung). KEIN `vorjahr`-Flag: der Satz gehoert zu dieser Rechnung in diesem Jahr.
+  # ponytail: die Frage steht auch ueber 952,00 EUR brutto, wo sie nichts aendert (`feld_bedingung` kennt keine Obergrenze); eine
+  # Obergrenze braeuchte eine fuenfte Art in `feld_bedingung` (Schema, Lader, `interview::fragen`).
+  - feld_id: am_umsatzsteuersatz
+    quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, signatur_slot: umsatzsteuersatz}
+    typ: enum
+    einheit: null
+    enum_werte: ["satz_19", "satz_7", "keine_ust"]
+    askable: true
+    feld_bedingung: {feld: am_anschaffungskosten, groesser_als: 80000, grund: "Der Umsatzsteuersatz entscheidet nur, wenn der Preis über 800 Euro liegt (die Grenze gilt netto, R 9.12 LStR): bis 800 Euro brutto ist der Sofortabzug bei jedem Satz möglich. Die Frage steht erst, wenn ein bestätigter Preis über 800 Euro vorliegt."}
+    fragetext_laie: "Welchen Umsatzsteuersatz nennt die Rechnung für dieses Arbeitsmittel?"
+    hilfe_kurz: "Die Umsatzsteuer steht auf der Rechnung, meist 19 %, bei Fachbüchern 7 %. Die Grenze von 800 Euro für den Sofortabzug gilt für den Preis ohne Umsatzsteuer: bei 19 % bis 952 Euro, bei 7 % bis 856 Euro. Steht keine Umsatzsteuer auf der Rechnung (zum Beispiel beim Kauf von privat), wähle „Keine Umsatzsteuer“. Wichtig ist die Antwort nur, wenn der Preis zwischen 800 und 952 Euro liegt; bei einem höheren Preis wählst du einfach den Satz der Rechnung."
+    beispielwert: "satz_19"
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Steuert nur, ob der Sofortabzug greift (R 9.12 LStR, 800-Euro-Grenze netto); kein Deklarationsfeld, der Betrag steht in am_anschaffungskosten."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anleitung zur Anlage N 2025, Arbeitsmittel"
+      zitatanker: "Arbeitsmittel, die höchstens 800 €"
+      datei: "sources/bfinv/anleitungen/anl_n_2025.txt"
   - feld_id: am_gwg_sofortabzug_gewaehlt
     quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, geltungsbedingung: gwg_sofortabzug_gewaehlt}
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro) sofort komplett absetzen?"
+    fragetext_laie: "Möchtest du günstige Arbeitsmittel (bis 800 Euro ohne Umsatzsteuer) sofort komplett absetzen?"
     hilfe_kurz: "Sofort-Abzug ist ein Wahlrecht. Alternative: über die Nutzungsjahre verteilen."
     beispielwert: true
     herkunft_slots: null

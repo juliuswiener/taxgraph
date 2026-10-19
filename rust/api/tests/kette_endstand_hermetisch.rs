@@ -1263,11 +1263,14 @@ fn g22_p34_antrag_a_ohne_vg_partner_mit_vg_aenderungen() -> Paare {
 
 /// § 9 Abs. 1 Nr. 6 / § 7: Arbeitsmittel zu 800,01 EUR (80.001 ct), Nutzungsdauer 3 Jahre, KEIN Sofortabzug gewaehlt: die
 /// Grenze von 800,00 EUR ist ueberschritten, es gilt die lineare `AfA`. Dazu 30 km Pendelstrecke an 220 Tagen (wie `g14`).
+/// Abweichung Nr. 88: die Grenze gilt netto; der Kauf OHNE Umsatzsteuer (`keine_ust`) haelt sie bei 800,00 EUR, 800,01 EUR sind darueber.
+/// (Ohne Antwort zum Satz sperrt der Fall im Band bis 952,00 EUR; das haelt `sperre_scheiben_hermetisch.rs`.)
 fn g23_arbeitsmittel_800_01_eur_afa_aenderungen() -> Paare {
     vec![
         ("ep_arbeitstage", json!(220)),
         ("ep_entfernung_km", json!(30)),
         ("am_anschaffungskosten", json!(80_001)),
+        ("am_umsatzsteuersatz", json!("keine_ust")),
         ("arbeitsmittel_nutzungsdauer", json!(3)),
         ("am_afa_ist_anschaffungsjahr", json!(false)),
         ("am_gwg_sofortabzug_gewaehlt", json!(false)),
@@ -1404,6 +1407,55 @@ async fn g23_arbeitsmittel_zu_800_01_eur_sind_afa_pflichtig() {
     )
     .await;
     erwarte_kette("g23", &a, 1_346_700, [57_578, 57_542, 13_467, 13_467]);
+}
+
+/// Abweichung Nr. 88 (Regel von Julius, R 9.12 LStR): ein Arbeitsmittel mit `preis` Cent BRUTTO und dem Umsatzsteuersatz der
+/// Rechnung, Sofortabzug gewaehlt, Nutzungsdauer 3 (gilt nur ueber der Netto-Grenze). Sonst wie `g14`.
+fn arbeitsmittel_brutto_aenderungen(preis: i64, satz: &'static str) -> Paare {
+    vec![
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("am_anschaffungskosten", json!(preis)),
+        ("am_umsatzsteuersatz", json!(satz)),
+        ("arbeitsmittel_nutzungsdauer", json!(3)),
+        ("am_afa_ist_anschaffungsjahr", json!(false)),
+        ("am_gwg_sofortabzug_gewaehlt", json!(true)),
+    ]
+}
+
+/// Abweichung Nr. 88: 900,00 EUR brutto bei 19 % (netto 756,30) liegen unter der Netto-Grenze, der volle Bruttopreis ist
+/// Sofortabzug (`GdE` 56.944 EUR = 57.844 ohne Arbeitsmittel - 900). Vor Nr. 88 galt 900 EUR als `AfA`-pflichtig. Die Steuer
+/// ist von Hand gerechnet (Skript `handrechnung.py`, Eichung an g14 und g23), nicht aus dem Rust-Code gelesen.
+#[tokio::test]
+async fn g29_arbeitsmittel_900_eur_brutto_bei_19_prozent_sind_sofortabzug() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), arbeitsmittel_brutto_aenderungen(90_000, "satz_19")),
+    )
+    .await;
+    erwarte_kette("g29", &a, 1_322_600, [56_944, 56_908, 13_226, 13_226]);
+}
+
+/// Abweichung Nr. 88: 952,00 EUR brutto bei 19 % sind netto genau 800,00 EUR, noch Sofortabzug (`GdE` 56.892 EUR = 57.844 - 952).
+#[tokio::test]
+async fn g30_arbeitsmittel_952_eur_brutto_bei_19_prozent_sind_noch_sofortabzug() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), arbeitsmittel_brutto_aenderungen(95_200, "satz_19")),
+    )
+    .await;
+    erwarte_kette("g30", &a, 1_320_600, [56_892, 56_856, 13_206, 13_206]);
+}
+
+/// Abweichung Nr. 88: 856,00 EUR brutto bei 7 % sind netto genau 800,00 EUR (`GdE` 56.988 EUR = 57.844 - 856).
+#[tokio::test]
+async fn g31_arbeitsmittel_856_eur_brutto_bei_7_prozent_sind_noch_sofortabzug() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), arbeitsmittel_brutto_aenderungen(85_600, "satz_7")),
+    )
+    .await;
+    erwarte_kette("g31", &a, 1_324_200, [56_988, 56_952, 13_242, 13_242]);
 }
 
 /// Wie `g18` mit 30.000 EUR Progressionseinkuenfte: die Anrechnung rechnet `p32b_wrapper` nach. 4 x Messbetrag (20.000 EUR)

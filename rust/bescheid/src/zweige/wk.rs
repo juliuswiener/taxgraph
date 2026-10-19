@@ -12,6 +12,7 @@ use rust_decimal::Decimal;
 use super::rechnen::{add, R};
 use super::slot;
 use crate::abzuege::oepnv_eur;
+use crate::arbeitsmittel_grenze::{satz_prozent, sofortabzug, Sofortabzug, GWG_GRENZE_CENT};
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_true, py_int, summe, wert,
     BescheidFehler, Felder,
@@ -37,8 +38,8 @@ const VERPFLEGUNG_TAGE_NACH_FRIST: [&str; 3] = [
     "vpf_tage_ueber_8h_nach_drei_monaten",
 ];
 pub(super) const ARBEITSMITTEL_KOSTEN: &str = "am_anschaffungskosten";
-/// GWG-Grenze 800 EUR in CENT (`bescheid_zweige.py:293`).
-const GWG_GRENZE_CENT: i64 = 80_000;
+/// Der Umsatzsteuersatz der Rechnung (Abweichung Nr. 88, [`crate::arbeitsmittel_grenze`]).
+const ARBEITSMITTEL_SATZ: &str = "am_umsatzsteuersatz";
 
 /// Teile des `wk_input`, die in beiden Zweigen gleich gebaut werden.
 pub(super) struct WkTeile {
@@ -212,11 +213,34 @@ fn am_gwg(f: &Felder) -> R<Option<Euro>> {
     )
 }
 
-/// § 7 Abs. 1 lineare AfA fuer AK > 800 EUR. `ak_als_cent` waehlt die Schluessel-Variante: an_gesamt
-/// uebergibt `anschaffungskosten_cent`, gesamt `anschaffungskosten` (EURO). `None` = kein Abzug.
+/// Abweichung Nr. 88: Sofortabzug eines Arbeitsmittels, dessen BRUTTOPREIS ueber 800 EUR liegt, dessen Preis ohne Umsatzsteuer
+/// die Grenze aber einhaelt (Satz beantwortet, Wahlrecht ausgeuebt): der volle Bruttopreis in EURO. Ohne beantworteten Satz
+/// zaehlt nichts (nie ein stiller Satz; die Sperre `arbeitsmittel_afa_ueber_gwg_offen` zeigt es).
+///
+/// Er kommt NACH `werbungskosten_n` zu den Werbungskosten dazu, wie die Unfallkosten ([`mit_unfallkosten`]): der Catala-Scope
+/// `p6_2_gwg` zaehlt den uebergebenen Preis gegen 800 EUR und lieferte fuer 900 EUR 0.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`].
+pub(super) fn mit_sofortabzug_im_band(f: &Felder, wk: Euro) -> R<Euro> {
+    let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
+    let satz = satz_prozent(wert(f, ARBEITSMITTEL_SATZ));
+    if k > GWG_GRENZE_CENT
+        && sofortabzug(Decimal::from(k), satz) == Sofortabzug::Moeglich
+        && ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt"))
+    {
+        return add(wk, cent_zu_euro(k));
+    }
+    Ok(wk)
+}
+
+/// § 7 Abs. 1 lineare AfA fuer AK ueber der Grenze (Abweichung Nr. 88: 800 EUR netto, bei 19 % bis 952,00 EUR brutto, bei 7 % bis
+/// 856,00 EUR; ohne beantworteten Satz im Band zaehlt die AfA wie bisher, die Sperre haelt das Ergebnis offen).
+/// `ak_als_cent` waehlt die Schluessel-Variante: an_gesamt uebergibt `anschaffungskosten_cent`, gesamt
+/// `anschaffungskosten` (EURO). `None` = kein Abzug.
 fn am_afa(f: &Felder, ak_als_cent: bool) -> R<Option<Euro>> {
     let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
-    if k <= GWG_GRENZE_CENT {
+    if sofortabzug(Decimal::from(k), satz_prozent(wert(f, ARBEITSMITTEL_SATZ))) == Sofortabzug::Moeglich {
         return Ok(None);
     }
     let nd = feld_int_oder_null(f, "arbeitsmittel_nutzungsdauer")?;
@@ -269,6 +293,77 @@ pub(super) fn am_an_gesamt(f: &Felder) -> R<Option<Euro>> {
 pub(super) fn am_gesamt(f: &Felder) -> R<(Option<Euro>, Euro)> {
     let afa = am_afa(f, false)?.unwrap_or(Euro::new(0));
     Ok((am_gwg(f)?, afa))
+}
+
+/// Abweichung Nr. 88 an den Aufrufstellen der Rechnung: wer den Sofortabzug im Band zaehlt und wer die `AfA`. Die Sperre und die
+/// Ende-zu-Ende-Faelle stehen in `tests/sperre_scheiben_hermetisch.rs` und `tests/gesamt_mischfaelle_hermetisch.rs`; hier steht, was
+/// sie nicht trennen: die Wahl des Sofortabzugs zaehlt in der Rechnung, auch wenn die Sperre sie fordert.
+#[cfg(test)]
+mod netto_grenze {
+    use domain::Euro;
+    use serde_json::{json, Value};
+
+    use super::{am_gesamt, am_an_gesamt, mit_sofortabzug_im_band};
+    use crate::testhilfe::{felder, store};
+
+    /// Felder eines Arbeitsmittels: Preis in Cent, Satz (oder keiner), Wahl des Sofortabzugs, Nutzungsdauer (oder keine).
+    fn am(preis: i64, satz: Option<&str>, sofort: bool, nd: Option<i64>) -> crate::Felder {
+        let mut e: Vec<(&str, Value, bool)> = vec![
+            ("am_anschaffungskosten", json!(preis), true),
+            ("am_gwg_sofortabzug_gewaehlt", json!(sofort), true),
+            ("am_afa_ist_anschaffungsjahr", json!(false), true),
+        ];
+        if let Some(s) = satz {
+            e.push(("am_umsatzsteuersatz", json!(s), true));
+        }
+        if let Some(n) = nd {
+            e.push(("arbeitsmittel_nutzungsdauer", json!(n), true));
+        }
+        felder(&store(&e))
+    }
+
+    /// Der Sofortabzug im Band kommt NACH dem Catala-Scope dazu: nur mit beantwortetem Satz, nur mit Wahl, nur bis zur
+    /// Bruttogrenze des Satzes und nur ueber 800,00 EUR (darunter rechnet der Scope selbst).
+    #[test]
+    fn der_sofortabzug_im_band_zaehlt_nur_mit_satz_wahl_und_unter_der_bruttogrenze() {
+        // (Name, Felder, Aufschlag in EURO auf 1.000)
+        let faelle = [
+            ("900 brutto, 19 %, Wahl", am(90_000, Some("satz_19"), true, None), 900),
+            ("952,00 brutto, 19 %, Wahl", am(95_200, Some("satz_19"), true, None), 952),
+            ("952,01 brutto, 19 %, Wahl: darueber", am(95_201, Some("satz_19"), true, Some(4)), 0),
+            ("856,00 brutto, 7 %, Wahl", am(85_600, Some("satz_7"), true, None), 856),
+            ("900 brutto, 7 %, Wahl: darueber", am(90_000, Some("satz_7"), true, Some(4)), 0),
+            ("900 brutto, keine Umsatzsteuer: darueber", am(90_000, Some("keine_ust"), true, Some(4)), 0),
+            ("900 brutto, 19 %, ohne Wahl", am(90_000, Some("satz_19"), false, None), 0),
+            ("900 brutto, Satz offen: nie ein stiller Satz", am(90_000, None, true, None), 0),
+            ("800,00 brutto, 19 %: darunter rechnet der Scope", am(80_000, Some("satz_19"), true, None), 0),
+            ("900,50 brutto, 19 %, Wahl: volle Euro", am(90_050, Some("satz_19"), true, None), 900),
+        ];
+        for (name, f, soll) in faelle {
+            let ist = mit_sofortabzug_im_band(&f, Euro::new(1_000)).unwrap().get() - 1_000;
+            assert_eq!(ist, soll, "{name}");
+        }
+    }
+
+    /// Die `AfA` gilt nur ueber der Netto-Grenze, der Sofortabzug im Band zaehlt sie nicht doppelt, und der Scope bekommt im Band
+    /// keinen Preis ueber 800,00 EUR (`p6_2_gwg` lieferte dafuer 0): `(an_gesamt, gesamt)`.
+    #[test]
+    fn die_afa_gilt_nur_ueber_der_netto_grenze() {
+        // (Name, Felder, AfA an_gesamt, GWG an gesamt, AfA gesamt)
+        let faelle = [
+            ("900 brutto, 19 %, Wahl, Nutzungsdauer 4: Sofortabzug, keine AfA", am(90_000, Some("satz_19"), true, Some(4)), None, None, 0),
+            ("952,01 brutto, 19 %, Nutzungsdauer 4: AfA 238", am(95_201, Some("satz_19"), true, Some(4)), Some(238), None, 238),
+            ("856,01 brutto, 7 %, Nutzungsdauer 4: AfA 214", am(85_601, Some("satz_7"), true, Some(4)), Some(214), None, 214),
+            ("800,01 brutto, keine Umsatzsteuer, Nutzungsdauer 4: AfA 200", am(80_001, Some("keine_ust"), true, Some(4)), Some(200), None, 200),
+            ("800,00 brutto, Wahl: der Scope rechnet", am(80_000, None, true, Some(4)), Some(800), Some(800), 0),
+            ("900 brutto, Satz offen, Nutzungsdauer 4: die Schaetzung rechnet die AfA, die Sperre haelt sie zurueck", am(90_000, None, true, Some(4)), Some(225), None, 225),
+        ];
+        for (name, f, an, gwg, afa) in faelle {
+            assert_eq!(am_an_gesamt(&f).unwrap().map(Euro::get), an, "{name}: an_gesamt");
+            let (g, a) = am_gesamt(&f).unwrap();
+            assert_eq!((g.map(Euro::get), a.get()), (gwg, afa), "{name}: gesamt");
+        }
+    }
 }
 
 /// Aequivalenz von `ist_int_ueber_3` mit `PyWert::int_ohne_bool` (D15), je D-Nummer ein Test.

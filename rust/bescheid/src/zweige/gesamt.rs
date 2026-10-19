@@ -27,7 +27,7 @@ use intervall::Slots;
 
 use super::rechnen::{add, max0, sub, summe_euro, R};
 use super::tarif::{leerer_gesamtfall, rahmen, Lage, Modus, P35};
-use super::wk::{am_gesamt, ep_eingabe, mit_unfallkosten, wk_teile};
+use super::wk::{am_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
 use super::{gesamt_tarif, slot, Marke, Ring, VeranlagungWert};
 use crate::abzuege::{p33b_kind_pauschbetraege, shared_steuer_sonder_agb};
 use crate::einkuenfte::{
@@ -496,10 +496,9 @@ fn ns_werbungskosten<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<Euro> {
     )?;
     // § 34c Abs. 2 (Abweichung Nr. 41): der gewaehlte Abzug der Auslandssteuer zaehlt wie Werbungskosten mit, VOR dem
     // Vergleich mit dem Arbeitnehmer-Pauschbetrag in `einkuenfte_nichtselbststaendig`.
-    add(
-        add(mit_unfallkosten(f, wk)?, afa)?,
-        dba_abzug_werbungskosten(f)?,
-    )
+    // Arbeitsmittel mit Bruttopreis ueber 800 EUR, netto aber unter der Grenze (Abweichung Nr. 88): der Catala-Scope hat sie nicht gesehen.
+    let wk = mit_sofortabzug_im_band(f, mit_unfallkosten(f, wk)?)?;
+    add(add(wk, afa)?, dba_abzug_werbungskosten(f)?)
 }
 
 /// Einkommensteuer-Slots fuer die Altersvorsorge § 10 Abs. 1 Nr. 2 (VOR): `(gesamtbeitraege, ag)`.
