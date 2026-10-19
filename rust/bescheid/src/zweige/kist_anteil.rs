@@ -155,6 +155,9 @@ mod tests {
         let f = fall("nordrhein_westfalen", Some("keine"));
         let verlust_b = EinkuenfteJePerson { a: Euro::new(58_770), b: Euro::new(-5_000) };
         assert_eq!(cent(&f, "evangelisch", true, verlust_b), 124_542, "T(B) = 0: A traegt alles");
+        // Ein Verlust, dessen Cent-Betrag nicht mehr in i64 passt, rechnet der Tarif nicht (Ueberlauf): der Boden 0 faengt ihn vorher ab.
+        let riesig = EinkuenfteJePerson { a: Euro::new(58_770), b: Euro::new(-92_233_720_368_547_759) };
+        assert_eq!(cent(&f, "evangelisch", true, riesig), 124_542, "Verlust ausserhalb i64 in Cent: wie 0");
         let verlust_a = EinkuenfteJePerson { a: Euro::new(-5_000), b: Euro::new(58_770) };
         assert_eq!(cent(&f, "evangelisch", true, verlust_a), 0, "T(A) = 0: nichts entfaellt auf A");
         let unter_freibetrag = EinkuenfteJePerson { a: Euro::new(10_000), b: Euro::new(12_096) };
