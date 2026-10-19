@@ -3,7 +3,7 @@
 //! `PARITY=1`, ohne Python.
 //!
 //! **Worum es geht.** Wer von seinem Arbeitgeber einen steuerfreien Zuschuss zur Kranken- oder Pflegeversicherung bekommt, darf nur den
-//! selbst getragenen Teil der Beitraege als Sonderausgabe abziehen (§ 10 Abs. 2 Satz 1 Nr. 1 EStG). Die App fragte den vollen Beitrag
+//! selbst getragenen Teil der Beitraege als Sonderausgabe abziehen (§ 10 Abs. 2 Satz 1 Nr. 1 `EStG`). Die App fragte den vollen Beitrag
 //! und kannte keinen Zuschuss: wer den vollen Beitrag eintrug (freiwillig gesetzlich Versicherte, Privatversicherte, Selbstzahler mit
 //! Beitragsbescheinigung), zog zu viel ab, die Steuer fiel zu niedrig aus.
 //!
@@ -40,7 +40,7 @@ use tower::ServiceExt;
 
 type Paare = Vec<(&'static str, Value)>;
 
-/// Die drei Zuschussfelder von Person A (LStB Nr. 24 a, 24 b, 24 c) und des Ehegatten.
+/// Die drei Zuschussfelder von Person A (`LStB` Nr. 24 a, 24 b, 24 c) und des Ehegatten.
 const ZUSCHUSS_A: [&str; 3] = ["zuschuss_ag_kv_gesetzlich", "zuschuss_ag_kv_privat", "zuschuss_ag_pv"];
 const ZUSCHUSS_B: [&str; 3] =
     ["zuschuss_ag_kv_gesetzlich_partner", "zuschuss_ag_kv_privat_partner", "zuschuss_ag_pv_partner"];
@@ -296,7 +296,7 @@ fn gesamt_paar(a: Paare, b: Paare) -> Paare {
     plus(plus(plus(basis, partner(40_001, 3_000, 600, true)), a), b)
 }
 
-/// AK5b (a): die Zuschussfelder sind auf jeder Scheibe beantwortbar, die einen Basisbeitrag fuehrt, `POST /event` antwortet 201.
+/// `AK5b` (a): die Zuschussfelder sind auf jeder Scheibe beantwortbar, die einen Basisbeitrag fuehrt, `POST /event` antwortet 201.
 /// Vorher: 400 „nicht in dieser Scheibe". Der Ehegatte nur auf den Scheiben mit Zusammenveranlagung.
 #[tokio::test]
 async fn die_zuschussfelder_sind_auf_jeder_scheibe_mit_basisbeitrag_beantwortbar() {
@@ -316,7 +316,7 @@ async fn die_zuschussfelder_sind_auf_jeder_scheibe_mit_basisbeitrag_beantwortbar
     }
 }
 
-/// AK5b (b): die drei Faelle des Audits, `an_gesamt`, alleinstehend, nur Lohn (Handrechnung `handrechnung.py`):
+/// `AK5b` (b): die drei Faelle des Audits, `an_gesamt`, alleinstehend, nur Lohn (Handrechnung `handrechnung.py`):
 /// F1 freiwillig gesetzlich: Lohn 60.000, KV 5.500 + PV 1.000, Zuschuss Nr. 24 a 2.650 + Nr. 24 c 400 = 3.050: Abzug 3.450,
 /// zvE 55.284, Steuer 12.614 Euro (ohne Zuschuss 11.492). F2 gesetzlich: Lohn 45.000, KV 3.000 + PV 600, Zuschuss 1.500 + 200 = 1.700:
 /// Abzug 1.900, zvE 41.834, Steuer 7.912 (ohne 7.363). F3 privat: Lohn 100.000, KV 7.000 + PV 1.200, Zuschuss Nr. 24 b 3.100 + 400 = 3.500:
@@ -331,7 +331,7 @@ async fn der_zuschuss_mindert_den_abzug_die_drei_faelle_des_audits_an_gesamt() {
     assert_eq!(zahl(&f3), 28_582 * 100, "F3: {f3}");
 }
 
-/// AK5b (f): ohne Zuschuss bleibt jede Zahl wie heute. Dieselben drei Faelle ohne die Zuschussfelder: 11.492, 7.363 und 27.112 Euro
+/// `AK5b` (f): ohne Zuschuss bleibt jede Zahl wie heute. Dieselben drei Faelle ohne die Zuschussfelder: 11.492, 7.363 und 27.112 Euro
 /// (Handrechnung `handrechnung.py`, „App-Lesart"). Gegenprobe zu den Zuschuss-Tests: wer nichts eintraegt, rechnet wie vorher.
 #[tokio::test]
 async fn ohne_zuschuss_bleibt_jede_zahl_wie_heute() {
@@ -348,7 +348,7 @@ async fn ohne_zuschuss_bleibt_jede_zahl_wie_heute() {
     assert_eq!(zahl(&null), 7_363 * 100, "Zuschuss 0: {null}");
 }
 
-/// AK5b (d): ein Zuschuss groesser als der Beitrag zieht nicht ueber 0 ab. Beitrag 3.600, Zuschuss 4.000: Abzug 0, nicht −400; das ist
+/// `AK5b` (d): ein Zuschuss groesser als der Beitrag zieht nicht ueber 0 ab. Beitrag 3.600, Zuschuss 4.000: Abzug 0, nicht −400; das ist
 /// die Steuer ohne jeden Beitrag (zvE 43.734, Steuer 8.538 Euro, Handrechnung).
 #[tokio::test]
 async fn ein_zuschuss_ueber_dem_beitrag_zieht_nicht_ueber_null_ab() {
@@ -358,7 +358,7 @@ async fn ein_zuschuss_ueber_dem_beitrag_zieht_nicht_ueber_null_ab() {
     assert_eq!(zahl(&ohne_beitrag), 8_538 * 100, "Gegenprobe ohne Beitrag: {ohne_beitrag}");
 }
 
-/// AK5b (e), `an_gesamt` und `gesamt` bei Zusammenveranlagung: Person B hat einen eigenen Zuschuss, Person A keinen, und umgekehrt: je
+/// `AK5b` (e), `an_gesamt` und `gesamt` bei Zusammenveranlagung: Person B hat einen eigenen Zuschuss, Person A keinen, und umgekehrt: je
 /// dieselbe Steuer (Lohn je 40.001, Beitrag je 3.600, ein Zuschuss von 1.700 bei einer Person: Abzug 5.500, zvE 71.970, Steuer 12.132 Euro).
 /// Ohne Zuschuss 11.616 (Abzug 7.200), mit je 1.700 bei beiden 12.654 (Abzug 3.800). Ein vertauschtes oder fehlendes Feld faellt hier auf.
 #[tokio::test]
@@ -375,7 +375,7 @@ async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
     }
 }
 
-/// AK5b (d) bei Zusammenveranlagung, `an_gesamt` und `gesamt`: ein Zuschuss ueber dem Beitrag der EINEN Person zieht bei ihr nur bis 0 ab und
+/// `AK5b` (d) bei Zusammenveranlagung, `an_gesamt` und `gesamt`: ein Zuschuss ueber dem Beitrag der EINEN Person zieht bei ihr nur bis 0 ab und
 /// mindert den Abzug der anderen Person nicht. Lohn je 40.001, Beitrag je 3.600; Person A mit Zuschuss 4.000 (Abzug 0), der Ehegatte ohne
 /// (Abzug 3.600): zvE 73.870, Steuer 12.716 Euro (Handrechnung `handrechnung.py`, Abschnitt g), vertauscht dieselbe Steuer und dieselbe wie bei
 /// einer Person ganz ohne Beitrag. Ein Abzug von −400 bei Person A (ungeklemmt) liesse den Abzug auf 3.200 sinken und die Steuer auf 12.840 steigen.
@@ -389,7 +389,7 @@ async fn ein_zuschuss_ueber_dem_beitrag_mindert_den_abzug_der_anderen_person_nic
     }
 }
 
-/// AK5b, `gesamt` (der Ring rechnet ueber `abzuege.rs`, nicht ueber `an_gesamt.rs`): F1 wie oben, 12.614 Euro, ohne Zuschuss 11.492.
+/// `AK5b`, `gesamt` (der Ring rechnet ueber `abzuege.rs`, nicht ueber `an_gesamt.rs`): F1 wie oben, 12.614 Euro, ohne Zuschuss 11.492.
 #[tokio::test]
 async fn der_zuschuss_gilt_auch_im_gesamtlauf() {
     let mit_zuschuss = ergebnis("gesamt", &plus(gesamt("gesetzlich_freiwillig", 60_000, 5_500, 1_000), zuschuss(ZUSCHUSS_A, 2_650, 0, 400))).await;
@@ -398,7 +398,7 @@ async fn der_zuschuss_gilt_auch_im_gesamtlauf() {
     assert_eq!(zahl(&ohne), 11_492 * 100, "gesamt, F1 ohne Zuschuss: {ohne}");
 }
 
-/// AK5b, `rentner_gesamt`: der Zuschuss rechnet wie ein um denselben Betrag kleinerer Beitrag (Gleichwertigkeit, keine Handrechnung der
+/// `AK5b`, `rentner_gesamt`: der Zuschuss rechnet wie ein um denselben Betrag kleinerer Beitrag (Gleichwertigkeit, keine Handrechnung der
 /// Rentensteuer): KV 4.000 + PV 800 mit Zuschuss 1.500 + 300 gibt dieselbe Steuer wie KV 2.500 + PV 500 ohne, und eine andere als der
 /// volle Beitrag ohne Zuschuss.
 #[tokio::test]
@@ -442,7 +442,7 @@ async fn die_zuschussfragen_stehen_nur_ohne_verneinten_anspruch() {
     }
 }
 
-/// AK5b (Erklaerung): die Anlage Vorsorgeaufwand traegt den Zuschuss je Person (`Stfr_AG_Zusch`: E2003705 gesetzliche KV, E2003807 private
+/// `AK5b` (Erklaerung): die Anlage Vorsorgeaufwand traegt den Zuschuss je Person (`Stfr_AG_Zusch`: E2003705 gesetzliche KV, E2003807 private
 /// KV, E2003907 gesetzliche Pflege, laut Nr. 24 a, b, c der Lohnsteuerbescheinigung; `E10-2025.xsd`). Person A in `deklaration`, der
 /// Ehegatte in `person_b`. Ohne Zuschussangabe steht keines der drei Kz in der Erklaerung.
 #[tokio::test]
