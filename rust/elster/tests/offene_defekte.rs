@@ -238,6 +238,12 @@ fn elf_lauf(mit_elf: bool) -> Deklaration {
         ("gewinn_betriebsart", json!("gewerbe")),
         ("gewinn_bezeichnung", json!("Testfall")),
         ("einkuenfte_gewinn", json!(0)),
+        // Beide Personen haben einen Lohn ueber 0: seit Abweichung Nr. 85 sind die zwei Rueckfragen zum Lohn je Person Pflicht; der
+        // Test misst die elf Gewinnfelder, nicht diese Sperre.
+        ("lohn_mehrere_jahre", json!(false)),
+        ("lohn_auslandstaetigkeit", json!(false)),
+        ("lohn_mehrere_jahre_partner", json!(false)),
+        ("lohn_auslandstaetigkeit_partner", json!(false)),
     ];
     if mit_elf {
         paare.extend(elf().into_iter().map(|(f, c)| (f, json!(c))));

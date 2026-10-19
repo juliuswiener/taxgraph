@@ -162,8 +162,9 @@ fn berufsstaendische_beitraege_werden_zu_den_rentenversicherungsbeitraegen_addie
 /// Stand 2026-10-16); die Bezeichner darin (`catala_solz`, `basis_kv_pv`, `DBA_METHOD_MAP_ART`) sind Python-Wortlaut und hier einzeln
 /// nicht nachgeprueft. Eine Ausnahme: der Grund der Versorgungsbezuege ist ueberholt und steht neu (siehe [`VBEZ_GRUND`]). Die Gruende ab
 /// `ArbGName` sind neu (Ticket 40, AK7 und D4, 2026-10-18): Felder ohne Geldwert, die nach der Zuordnung der Finanzverwaltung kein
-/// Erklaerungsfeld fuellen, und die zwei Felder, die die Rueckfrage `versorgung_mehrere_jahre` abdeckt.
-const NICHT_GEMAPPT: [(&str, &str); 26] = [
+/// Erklaerungsfeld fuellen, und die zwei Felder, die die Rueckfrage `versorgung_mehrere_jahre` abdeckt. Seit 2026-10-19 (Ticket 40, AK3,
+/// Abweichung Nr. 85) stehen auch `ErmStBetrMKalJahr` und `StFreiArbLohnATE` hier: die Pflichtrueckfragen zum Lohn decken sie ab.
+const NICHT_GEMAPPT: [(&str, &str); 28] = [
     (
         "Besteuerungsgrund/Soli",
         "Solidaritätszuschlag wird vom Ring aus der festgesetzten ESt berechnet (catala_solz), nicht aus der Bescheinigung übernommen.",
@@ -220,6 +221,8 @@ const NICHT_GEMAPPT: [(&str, &str); 26] = [
     ),
     ("Besteuerungsgrund/ErmStVBezMKalJahr/Wert", D4_GRUND),
     ("Besteuerungsgrund/ErmStVBezMKalJahr/Jahr", D4_GRUND),
+    ("Besteuerungsgrund/ErmStBetrMKalJahr", D1_MEHRERE_JAHRE_GRUND),
+    ("Besteuerungsgrund/StFreiArbLohnATE", D1_AUSLAND_GRUND),
 ];
 
 /// Grund der fuenf Namensbestandteile der Person auf dem Beleg (Ticket 40, AK7).
@@ -233,6 +236,11 @@ const ZEITRAUM_GRUND: &str = "Die Zeitraum-Angabe der Bescheinigung ordnet nur d
 /// setzt sie nicht vor.
 const D4_GRUND: &str = "durch die Pflichtrückfrage `versorgung_mehrere_jahre` abgedeckt (Nr. 79, Ja sperrt die Abgabe)";
 
+/// Grund der zwei Felder zu Arbeitslohn fuer mehrere Jahre und zu steuerfreiem Auslandslohn (Ticket 40, AK3, d-29 A, Abweichung Nr. 85): die
+/// Pflichtrueckfragen fangen die Faelle ab, der Beleg setzt sie nicht vor.
+const D1_MEHRERE_JAHRE_GRUND: &str = "durch die Pflichtrückfrage `lohn_mehrere_jahre` abgedeckt (Nr. 85, Ja sperrt die Abgabe, die Person trägt Zeile 17 selbst ein)";
+const D1_AUSLAND_GRUND: &str = "durch die Pflichtrückfrage `lohn_auslandstaetigkeit` abgedeckt (Nr. 85, Ja sperrt die Abgabe, die Person trägt Zeile 22 und die Anlage N-AUS selbst ein)";
+
 /// Der Python-Grund der Versorgungsbezuege war „§ 19 Abs. 2 Versorgungsfreibetrag ist im Ring nicht modelliert". Das stimmt in Rust nicht
 /// mehr: der Bescheid rechnet den Versorgungsfreibetrag (Abweichungen Nr. 50, 65, 66, `rust/fixtures/README.md`).
 const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2 EStG), `aus_lstb` liest sie nicht. Der Python-Grund \
@@ -242,7 +250,7 @@ const VBEZ_GRUND: &str = "Der Beleg liefert die Versorgungsbezüge (§ 19 Abs. 2
 /// Beleg-Elemente ohne Eintrag in `LSTB` und OHNE Grund: bis 2026-10-16 nie angesehen. Der Text ist die Doku des Schemas, KEINE
 /// Begruendung. Jede Zeile hier ist eine offene Frage „soll das gemappt werden?"; wer sie beantwortet, nimmt das Element in `LSTB` auf oder
 /// verschiebt es mit Grund nach [`NICHT_GEMAPPT`]. Die Liste darf nur schrumpfen.
-const NICHT_UNTERSUCHT: [(&str, &str); 23] = [
+const NICHT_UNTERSUCHT: [(&str, &str); 21] = [
     ("Besteuerungsmerkmal/ELStAM/Steuerfreibetrag", "eingetragener Steuerfreibetrag"),
     ("Besteuerungsmerkmal/ELStAM/Hinzurechnungsbetrag", "eingetragener Hinzurechnungsbetrag"),
     ("Besteuerungsmerkmal/ELStAM/Steuerklasse/Faktor", "Faktor"),
@@ -250,9 +258,7 @@ const NICHT_UNTERSUCHT: [(&str, &str); 23] = [
     ("Besteuerungsmerkmal/ELStAM/Kirchensteuerabzug/Ehegkonfession", "Kirchensteuermerkmal (Konfession) des Ehegatten"),
     ("Besteuerungsgrund/AnzahlU", "Zeiträume ohne Anspruch auf Arbeitslohn (Anzahl U)"),
     ("Besteuerungsgrund/Grossbuchstaben", "bescheinigter Großbuchstabe"),
-    ("Besteuerungsgrund/ErmStBetrMKalJahr", "Arbeitslohn für mehrere Kalenderjahre und Entschädigungen, z. B. Abfindungen (im Bruttoarbeitslohn enthalten)"),
     ("Besteuerungsgrund/KurzArbGeld", "davon: (Saison-)Kurzarbeitergeld"),
-    ("Besteuerungsgrund/StFreiArbLohnATE", "steuerfreier Arbeitslohn nach Auslandstätigkeitserlass"),
     ("Besteuerungsgrund/StFreiPrKrankVers", "steuerfreie Arbeitgeberzuschüsse zur privaten Krankenversicherung"),
     ("Besteuerungsgrund/StFreiGePflegVers", "steuerfreie Arbeitgeberzuschüsse zur gesetzlichen Pflegeversicherung"),
     ("Besteuerungsgrund/ArbnAnteilWBUmlage", "Arbeitnehmerbeitrag zur Winterbeschäftigungs-Umlage"),
@@ -367,8 +373,6 @@ fn ungeprueft_trotz_zuordnung<'a>(wirkt: &[&'a str], offen: &[(&str, &str)]) -> 
 /// Feld abbildet oder mit Grund nach [`NICHT_GEMAPPT`] verschiebt, streicht es hier UND in [`NICHT_UNTERSUCHT`] und senkt
 /// [`ERWARTET_NOCH_OFFEN`]. Leer ist der Endzustand von Ticket 40.
 const NOCH_OFFEN: &[&str] = &[
-    "Besteuerungsgrund/ErmStBetrMKalJahr",
-    "Besteuerungsgrund/StFreiArbLohnATE",
     "Besteuerungsgrund/StFreiPrKrankVers",
     "Besteuerungsgrund/StFreiGePflegVers",
     "Besteuerungsgrund/StFreiArbgLeistg",
@@ -376,7 +380,7 @@ const NOCH_OFFEN: &[&str] = &[
     "Besteuerungsgrund/StFreiFahrtKAusw",
     "Besteuerungsgrund/StFreiDopHaushalt",
 ];
-const ERWARTET_NOCH_OFFEN: usize = 8;
+const ERWARTET_NOCH_OFFEN: usize = 6;
 
 /// Kein neues Beleg-Feld mit Zuordnung kommt ungeprueft in die Liste: alles, was [`NICHT_UNTERSUCHT`] noch von [`WIRKT_LAUT_VAST`] haelt,
 /// steht in der Ratsche [`NOCH_OFFEN`].

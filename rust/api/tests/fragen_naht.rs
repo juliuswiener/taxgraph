@@ -111,6 +111,9 @@ fn kegel() -> Vec<(&'static str, Value)> {
     ]
 }
 
+/// Die Fragen, die es nur in Rust gibt: `ep_unfallkosten` (Abweichung Nr. 28) und die zwei Rueckfragen zum Lohn (Abweichung Nr. 85).
+const NUR_RUST: [&str; 3] = ["ep_unfallkosten", "lohn_mehrere_jahre", "lohn_auslandstaetigkeit"];
+
 #[tokio::test]
 async fn die_queue_ist_nach_den_gewichten_des_rings_geordnet() {
     let d = dienst();
@@ -134,12 +137,15 @@ async fn die_queue_ist_nach_den_gewichten_des_rings_geordnet() {
         .map(|f| f["feld_id"].as_str().unwrap())
         .collect();
     // 31 Fragen wie in Python, dazu die eine nur-Rust-Frage `ep_unfallkosten` (Abweichung Nr. 28): die Entfernung dieses Falls
-    // ist unbeantwortet, und Schweigen schliesst die Frage nicht aus (`wert_nicht: 0`, fail-closed).
-    assert_eq!(ids.iter().filter(|f| **f != "ep_unfallkosten").count(), 31);
-    assert!(ids.contains(&"ep_unfallkosten"), "{ids:?}");
-    assert_eq!(ids.len(), 32);
-    // Die Python-Reihenfolge gilt fuer die uebrigen 31; die Frage steht, ohne Beitrag, alphabetisch unter den Slots.
-    let ids: Vec<&str> = ids.into_iter().filter(|f| *f != "ep_unfallkosten").collect();
+    // ist unbeantwortet, und Schweigen schliesst die Frage nicht aus (`wert_nicht: 0`, fail-closed). Dazu seit Abweichung Nr. 85 die
+    // zwei Rueckfragen zum Lohn: der Fall hat einen Bruttoarbeitslohn ueber 0, und beide sind unbeantwortet.
+    assert_eq!(ids.iter().filter(|f| !NUR_RUST.contains(f)).count(), 31);
+    for frage in NUR_RUST {
+        assert!(ids.contains(&frage), "{frage}: {ids:?}");
+    }
+    assert_eq!(ids.len(), 34);
+    // Die Python-Reihenfolge gilt fuer die uebrigen 31; die nur-Rust-Fragen stehen, ohne Beitrag, alphabetisch unter den Slots.
+    let ids: Vec<&str> = ids.into_iter().filter(|f| !NUR_RUST.contains(f)).collect();
     // Gemessen mit Python (`g_an2` im Harness ist derselbe Fall): mit Gewichten steht die Adresse vor
     // dem Ziel des Weges, ohne Beitrag (`None`) kehrt sich das um.
     assert_eq!(

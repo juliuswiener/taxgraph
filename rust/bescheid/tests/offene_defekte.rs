@@ -381,6 +381,10 @@ fn leck_basis() -> Vec<(&'static str, Value)> {
         ("stammdaten_steuernummer", json!("9181081508155")),
         ("steuerklasse", json!("1")),
         ("p36_lohnsteuer", json!(1_200_000)),
+        // Bruttoarbeitslohn ueber 0: seit Abweichung Nr. 85 sind die zwei Rueckfragen zum Lohn Pflicht; die Tests messen KAP und
+        // Verpflegung, nicht diese Sperre.
+        ("lohn_mehrere_jahre", json!(false)),
+        ("lohn_auslandstaetigkeit", json!(false)),
     ]
 }
 

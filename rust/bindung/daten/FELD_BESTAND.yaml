@@ -212,6 +212,10 @@ felder:
   - kist_gezahlt
   - kist_konfession
   - kist_konfession_partner
+  - lohn_auslandstaetigkeit
+  - lohn_auslandstaetigkeit_partner
+  - lohn_mehrere_jahre
+  - lohn_mehrere_jahre_partner
   - mit_anspruch_auf_zuschuss
   - mit_anspruch_auf_zuschuss_partner
   - p22_nr3_einkuenfte

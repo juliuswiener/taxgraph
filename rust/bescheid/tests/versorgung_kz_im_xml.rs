@@ -107,12 +107,16 @@ const FRAGEN_B: [&str; 4] = [
     "versorgung_nicht_ganzjaehrig_partner",
 ];
 
-/// Der Lohnteil einer Person: Zeile 5 (Nr. 3 der Bescheinigung, enthaelt den Bezug), Steuerklasse und Lohnsteuer.
+/// Der Lohnteil einer Person: Zeile 5 (Nr. 3 der Bescheinigung, enthaelt den Bezug), Steuerklasse und Lohnsteuer, dazu die zwei
+/// Rueckfragen zum Lohn mit Nein (seit Abweichung Nr. 85 sperrt eine fehlende Antwort bei einem Lohn ueber 0; diese Datei misst die
+/// Zeilen im XML, nicht diese Sperre).
 fn lohn(euro: i64) -> Paare {
     vec![
         ("bruttoarbeitslohn", json!(euro * 100)),
         ("steuerklasse", json!(1)),
         ("p36_lohnsteuer", json!(300_000)),
+        ("lohn_mehrere_jahre", json!(false)),
+        ("lohn_auslandstaetigkeit", json!(false)),
     ]
 }
 
@@ -146,6 +150,8 @@ fn ehegatte(lohn_euro: i64, bezug_partner: Option<[i64; 3]>) -> Paare {
         ("bruttoarbeitslohn_partner", json!(lohn_euro * 100)),
         ("steuerklasse_partner", json!(1)),
         ("p36_lohnsteuer_partner", json!(300_000)),
+        ("lohn_mehrere_jahre_partner", json!(false)),
+        ("lohn_auslandstaetigkeit_partner", json!(false)),
     ];
     if let Some([rente, bmg, beginn]) = bezug_partner {
         p.extend([

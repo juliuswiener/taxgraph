@@ -261,6 +261,49 @@ bindungen:
       zitatanker: "Für jeden vollen Kalendermonat, für den keine Versorgungsbezüge gezahlt werden"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
 
+  # Rueckfragen zum Lohn (Abweichung Nr. 85, Julius 2026-10-19, d-29): Arbeitslohn fuer mehrere Jahre und Entschaedigungen (Zeile 17
+  # der Anlage N) und steuerfreier Arbeitslohn nach dem Auslandstaetigkeitserlass (Zeile 22, Anlage N-AUS). Die Erklaerung traegt beides
+  # nicht: "Ja" sperrt die Abgabe mit einem Text je Fall (`Bau::lohn_rueckfragen` in `rust/elster/src/deklaration.rs`), "Nein" sperrt
+  # nichts, und eine unbeantwortete Frage sperrt mit eigenem Text unter ihrem Feld (Pflicht, wie Nr. 79). Wie die Rueckfragen zum
+  # Versorgungsbezug: `feld_bedingung` fuer die Sichtbarkeit und `signatur_slot` als Etikett, nie `geltungsbedingung` (das machte die Frage
+  # zum Gate und verschobe die Reihenfolge aller Fragen). Die Frage haengt am BETRAG (`bruttoarbeitslohn` groesser als 0, positiver Beweis).
+  # Quelle: Vordruck Anlage N 2025 und Anleitung (`sources/bfinv`); Zeilen und Nummern gelten fuer 2025.
+  - feld_id: lohn_mehrere_jahre
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: lohn_mehrere_jahre}
+    feld_bedingung: {feld: bruttoarbeitslohn, groesser_als: 0, grund: "Arbeitslohn fuer mehrere Jahre und Entschaedigungen stehen nach dem Vordruck IM Bruttoarbeitslohn (Zeile 17 'im Bruttoarbeitslohn laut Zeile 5 enthalten'): ohne bestaetigten Lohn ueber 0 Euro gibt es nichts, was mehrere Jahre abdecken koennte."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Enthält dein Arbeitslohn Zahlungen für mehrere Jahre oder eine Entschädigung, zum Beispiel eine Abfindung?"
+    hilfe_kurz: "Das steht unter Nummer 10 der Lohnsteuerbescheinigung. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 17 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt dir die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst den Arbeitslohn im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::lohn_rueckfragen` die Abgabe (Zeile 17 traegt die Erklaerung nicht, die Fuenftelregelung faellt aus), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 85)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage N, Zeile 17"
+      zitatanker: "Arbeitslohn für mehrere Jahre, Entschädigungen (z. B. Abfindungen) laut Nr. 10 der Lohn"
+      datei: "sources/bfinv/anlage_n_2025.txt"
+
+  - feld_id: lohn_auslandstaetigkeit
+    quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: lohn_auslandstaetigkeit}
+    feld_bedingung: {feld: bruttoarbeitslohn, groesser_als: 0, grund: "Steuerfreier Arbeitslohn nach dem Auslandstaetigkeitserlass setzt Arbeitslohn voraus: ohne bestaetigten Lohn ueber 0 Euro gibt es keine Lohnsteuerbescheinigung, auf der er stuende."}
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hast du steuerfreien Arbeitslohn nach dem Auslandstätigkeitserlass bekommen?"
+    hilfe_kurz: "Das steht in deiner Lohnsteuerbescheinigung als steuerfreier Arbeitslohn nach Auslandstätigkeitserlass. Der Vordruck verlangt dafür Zeile 22 und je Staat und Person eine Anlage N-AUS; der steuerfreie Lohn wirkt sich auf deinen persönlichen Steuersatz aus (Progressionsvorbehalt). Die Erklärung trägt beides nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst den Arbeitslohn im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Rueckfrage, kein Deklarationsfeld: bei Ja sperrt `Bau::lohn_rueckfragen` die Abgabe (Zeile 22 und die Anlage N-AUS traegt die Erklaerung nicht), bei Nein sperrt nichts, ohne Antwort sperrt die Abgabe mit eigenem Text (Abweichung Nr. 85)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage N, Zeile 22"
+      zitatanker: "Steuerfreier Arbeitslohn nach Auslandstätigkeitserlass"
+      datei: "sources/bfinv/anlage_n_2025.txt"
+
   # Ring-Wert (Abweichung Nr. 50): wahr, wenn die Erklaerung den Bezug in den Zeilen 11 bis 13 der Anlage N traegt (Betrag
   # E0200801, Bemessungsgrundlage E0200902, Beginnjahr E0201307). `mit_ring_werten` setzt ihn nur aus bestaetigten Feldern, wenn
   # der Bescheid den Bezug als steuerbeguenstigten Versorgungsbezug rechnet (Alters-Gate erfuellt). `deklariere` schreibt daraus
@@ -1847,6 +1890,57 @@ bindungen:
       quelle: "§ 19 Abs. 2 S. 12 EStG"
       zitatanker: "Für jeden vollen Kalendermonat, für den keine Versorgungsbezüge gezahlt werden"
       datei: "sources/gesetze-im-internet/estg_p19_2026-07-17.txt"
+
+  # Rueckfragen des Ehegatten zum Lohn (Abweichung Nr. 85), wie `lohn_mehrere_jahre` und `lohn_auslandstaetigkeit` von Person A.
+  - feld_id: lohn_mehrere_jahre_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: lohn_mehrere_jahre_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung ist der Lohn des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: bruttoarbeitslohn_partner
+        groesser_als: 0
+        grund: "Arbeitslohn fuer mehrere Jahre und Entschaedigungen stehen nach dem Vordruck IM Bruttoarbeitslohn des Partners (Zeile 17 'im Bruttoarbeitslohn laut Zeile 5 enthalten'): ohne bestaetigten Lohn ueber 0 Euro gibt es nichts, was mehrere Jahre abdecken koennte."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Enthält der Arbeitslohn deines Ehe-/Lebenspartners Zahlungen für mehrere Jahre oder eine Entschädigung, zum Beispiel eine Abfindung?"
+    hilfe_kurz: "Das steht unter Nummer 10 der Lohnsteuerbescheinigung deines Partners. Für solche Beträge kommt die ermäßigte Besteuerung (Fünftelregelung) in Betracht; das Finanzamt wendet sie anhand von Zeile 17 der Anlage N an. Die Erklärung trägt diese Zeile nicht, ohne sie fehlt die Ermäßigung. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst den Arbeitslohn im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `lohn_mehrere_jahre` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::lohn_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 85)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage N, Zeile 17"
+      zitatanker: "Arbeitslohn für mehrere Jahre, Entschädigungen (z. B. Abfindungen) laut Nr. 10 der Lohn"
+      datei: "sources/bfinv/anlage_n_2025.txt"
+
+  - feld_id: lohn_auslandstaetigkeit_partner
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: lohn_auslandstaetigkeit_partner}
+    feld_bedingung:
+      feld: veranlagung
+      wert: zusammen
+      grund: "§ 26b EStG: nur bei Zusammenveranlagung ist der Lohn des Partners ueberhaupt zu erklaeren. Wer allein veranlagt wird, hat keinen Partner-Zweig und darf diese Frage nicht sehen."
+      und:
+        feld: bruttoarbeitslohn_partner
+        groesser_als: 0
+        grund: "Steuerfreier Arbeitslohn nach dem Auslandstaetigkeitserlass setzt Arbeitslohn des Partners voraus: ohne bestaetigten Lohn ueber 0 Euro gibt es keine Lohnsteuerbescheinigung, auf der er stuende."
+    typ: bool
+    einheit: null
+    askable: true
+    fragetext_laie: "Hat dein Ehe-/Lebenspartner steuerfreien Arbeitslohn nach dem Auslandstätigkeitserlass bekommen?"
+    hilfe_kurz: "Das steht in der Lohnsteuerbescheinigung deines Partners als steuerfreier Arbeitslohn nach Auslandstätigkeitserlass. Der Vordruck verlangt dafür Zeile 22 und je Staat und Person eine Anlage N-AUS; der steuerfreie Lohn wirkt sich auf den persönlichen Steuersatz aus (Progressionsvorbehalt). Die Erklärung trägt beides nicht. Antwortest du Ja, ist die Abgabe gesperrt, und du trägst den Arbeitslohn im amtlichen Formular selbst ein. Der Normalfall ist Nein. Beantworte die Frage trotzdem, denn ohne Antwort ist die Abgabe gesperrt."
+    beispielwert: false
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Wie `lohn_auslandstaetigkeit` von Person A: Rueckfrage, kein Deklarationsfeld. Bei Ja (und bestaetigter Zusammenveranlagung) sperrt `Bau::lohn_rueckfragen` die Abgabe, ohne Antwort ebenso mit eigenem Text (Abweichung Nr. 85)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "Anlage N, Zeile 22"
+      zitatanker: "Steuerfreier Arbeitslohn nach Auslandstätigkeitserlass"
+      datei: "sources/bfinv/anlage_n_2025.txt"
 
   # Ring-Wert des Ehegatten (Abweichung Nr. 50), wie `versorgung_zeile` von Person A: die drei Zeilen stehen in der zweiten Anlage N.
   # Der Ring setzt ihn nur bei bestaetigter Zusammenveranlagung.
