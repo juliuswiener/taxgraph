@@ -157,6 +157,38 @@ fn berufsstaendische_beitraege_werden_zu_den_rentenversicherungsbeitraegen_addie
     }
 }
 
+/// Die drei steuerfreien Zuschuesse zur KV und PV (Abweichung Nr. 92): jedes Beleg-Element geht auf SEIN Feld (Nr. 24 a auf
+/// `zuschuss_ag_kv_gesetzlich`, Nr. 24 b auf `zuschuss_ag_kv_privat`, Nr. 24 c auf `zuschuss_ag_pv`; die Kz `E2003705`, `E2003807`, `E2003907`
+/// stehen in `kz_zuordnung.tsv`). Je Element ein anderer Betrag: `ziele()` liest das Mapping selbst, ein Tausch bliebe in den Pruefungen oben
+/// still. Jedes Element allein liefert genau einen Satz.
+#[test]
+fn die_drei_zuschuesse_gehen_je_auf_ihr_erklaerungsfeld() {
+    let saetze = |paare: &[(&str, &str)]| -> Vec<eingang::vast::EdatenSatz> {
+        let werte: BTreeMap<String, String> = paare.iter().map(|(k, v)| ((*k).to_owned(), (*v).to_owned())).collect();
+        aus_lstb(&werte).unwrap()
+    };
+    let je_feld = |s: &[eingang::vast::EdatenSatz]| -> BTreeMap<String, i64> { s.iter().map(|x| (x.feld_id.clone(), x.wert)).collect() };
+    let alle = saetze(&[("StFreiGeKrankVers", "1200.10"), ("StFreiPrKrankVers", "2300.20"), ("StFreiGePflegVers", "340.30")]);
+    assert_eq!(alle.len(), 3, "ein Satz je Element: {alle:?}");
+    assert_eq!(
+        je_feld(&alle),
+        BTreeMap::from([
+            ("zuschuss_ag_kv_gesetzlich".to_owned(), 120_010),
+            ("zuschuss_ag_kv_privat".to_owned(), 230_020),
+            ("zuschuss_ag_pv".to_owned(), 34_030),
+        ])
+    );
+    for (element, feld, cent) in [
+        ("StFreiGeKrankVers", "zuschuss_ag_kv_gesetzlich", 120_010),
+        ("StFreiPrKrankVers", "zuschuss_ag_kv_privat", 230_020),
+        ("StFreiGePflegVers", "zuschuss_ag_pv", 34_030),
+    ] {
+        let eins = saetze(&[(element, &format!("{}.{:02}", cent / 100, cent % 100))]);
+        assert_eq!(je_feld(&eins), BTreeMap::from([(feld.to_owned(), cent)]), "{element} allein");
+        assert!(eins[0].kategorie.contains(element), "{element}: die Herkunft nennt das Element: {}", eins[0].kategorie);
+    }
+}
+
 /// Beleg-Elemente der Lohnsteuerbescheinigung, die der Import absichtlich NICHT uebernimmt, je mit Grund (Python: `NICHT_GEMAPPT`).
 /// Schluessel ist der Pfad im Schema ab der Wurzel `VaSt_LStB`. Die Gruende stammen woertlich aus Python (`produkt/eingang/vast_mapping.py`,
 /// Stand 2026-10-16); die Bezeichner darin (`catala_solz`, `basis_kv_pv`, `DBA_METHOD_MAP_ART`) sind Python-Wortlaut und hier einzeln
