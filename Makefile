@@ -2,16 +2,16 @@
 #
 # Toolchain (see docs/setup.md):
 #   - Catala/Clerk via opam switch "taxgraph"
-#   - GETTSIM + Catala python runtime in oracle/.venv312 (Python 3.12)
+#   - GETTSIM in oracle/.venv312 (Python 3.12), fuer params-check, params-import, docstore-*, elster-check
 #
 # The opam environment is loaded per target so no shell pre-setup is needed.
 
 OPAM_ENV := eval $$(opam env --switch=taxgraph --set-switch)
 VENV312  := oracle/.venv312/bin/activate
 
-.PHONY: all s01 s03 tests build-python s02 clean backup restore serve golden
+.PHONY: all s01 s03 tests clean backup restore serve golden
 
-all: unit-stufe-b tests s02
+all: unit-stufe-b tests
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
@@ -146,26 +146,6 @@ s01:
 ## S0.3: Arbeitszimmer/Homeoffice tests only.
 s03:
 	$(OPAM_ENV); clerk test -W rules/estg/p04_arbeitszimmer_homeoffice/
-
-## Compile the §32a Catala module to a self-contained Python package.
-build-python:
-	$(OPAM_ENV); clerk build p32a-python
-	bash oracle/gettsim/assemble_catala.sh
-
-## S0.2: differential test Catala vs GETTSIM. Regenerates reports/s02-divergenzen.md.
-s02: build-python
-	. $(VENV312); python oracle/gettsim/harness.py
-
-## Golden-Korpus x GETTSIM Cross-Check (Paket 9). Regenerates
-## reports/review/2026-07-16-gettsim-crosscheck.md + runs the gate.
-gettsim-crosscheck: build-python
-	. $(VENV312); python oracle/gettsim/golden_crosscheck.py
-	. $(VENV312); python -m pytest pipeline/tests/test_gettsim_crosscheck.py -q
-
-## Phase-1 deliverable: Arbeitnehmerfall end-to-end (Bruttolohn -> festzusetzende ESt)
-## differential vs GETTSIM. Regenerates reports/p1-arbeitnehmerfall.md.
-p1: build-python
-	. $(VENV312); python oracle/gettsim/harness_e2e.py
 
 ## Derive/validate the tariff coefficients from the GETTSIM zone parameters.
 params-check:
@@ -318,4 +298,4 @@ unit-stufe-b:
 
 clean:
 	$(OPAM_ENV); clerk clean || true
-	rm -rf _build _target oracle/gettsim/_catala
+	rm -rf _build _target
