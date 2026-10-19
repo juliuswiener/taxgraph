@@ -283,6 +283,19 @@ fn zuschuss(namen: [&'static str; 3], gkv: i64, pkv: i64, pv: i64) -> Paare {
     vec![(namen[0], json!(gkv * 100)), (namen[1], json!(pkv * 100)), (namen[2], json!(pv * 100))]
 }
 
+/// Zusammenveranlagung in `an_gesamt`: Person A und der Ehegatte mit je Lohn 40.001 und Beitrag 3.600 Euro (KV 3.000 + PV 600), dazu die
+/// Zuschussfelder `a` (Person A) und `b` (Ehegatte).
+fn an_paar(a: Paare, b: Paare) -> Paare {
+    let basis = mit(an("gesetzlich_an", 40_001, 3_000, 600), "veranlagung", json!("zusammen"));
+    plus(plus(plus(basis, partner(40_001, 3_000, 600, false)), a), b)
+}
+
+/// Dasselbe in `gesamt` (dort mit den fuenf Kapital-Feldern des Ehegatten).
+fn gesamt_paar(a: Paare, b: Paare) -> Paare {
+    let basis = mit(gesamt("gesetzlich_an", 40_001, 3_000, 600), "veranlagung", json!("zusammen"));
+    plus(plus(plus(basis, partner(40_001, 3_000, 600, true)), a), b)
+}
+
 /// AK5b (a): die Zuschussfelder sind auf jeder Scheibe beantwortbar, die einen Basisbeitrag fuehrt, `POST /event` antwortet 201.
 /// Vorher: 400 „nicht in dieser Scheibe". Der Ehegatte nur auf den Scheiben mit Zusammenveranlagung.
 #[tokio::test]
@@ -350,16 +363,7 @@ async fn ein_zuschuss_ueber_dem_beitrag_zieht_nicht_ueber_null_ab() {
 /// Ohne Zuschuss 11.616 (Abzug 7.200), mit je 1.700 bei beiden 12.654 (Abzug 3.800). Ein vertauschtes oder fehlendes Feld faellt hier auf.
 #[tokio::test]
 async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
-    let an_paar = |a: Paare, b: Paare| {
-        plus(plus(plus(mit(an("gesetzlich_an", 40_001, 3_000, 600), "veranlagung", json!("zusammen")), partner(40_001, 3_000, 600, false)), a), b)
-    };
-    let gesamt_paar = |a: Paare, b: Paare| {
-        plus(
-            plus(plus(mit(gesamt("gesetzlich_an", 40_001, 3_000, 600), "veranlagung", json!("zusammen")), partner(40_001, 3_000, 600, true)), a),
-            b,
-        )
-    };
-    for (scheibe, bauen) in [("an_gesamt", &an_paar as &dyn Fn(Paare, Paare) -> Paare), ("gesamt", &gesamt_paar)] {
+    for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
         let nur_b = ergebnis(scheibe, &bauen(vec![], zuschuss(ZUSCHUSS_B, 1_500, 0, 200))).await;
         let nur_a = ergebnis(scheibe, &bauen(zuschuss(ZUSCHUSS_A, 1_500, 0, 200), vec![])).await;
         let keiner = ergebnis(scheibe, &bauen(vec![], vec![])).await;
@@ -368,6 +372,20 @@ async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
         assert_eq!(zahl(&nur_a), 12_132 * 100, "{scheibe}, nur Person A: {nur_a}");
         assert_eq!(zahl(&keiner), 11_616 * 100, "{scheibe}, keiner: {keiner}");
         assert_eq!(zahl(&beide), 12_654 * 100, "{scheibe}, beide: {beide}");
+    }
+}
+
+/// AK5b (d) bei Zusammenveranlagung, `an_gesamt` und `gesamt`: ein Zuschuss ueber dem Beitrag der EINEN Person zieht bei ihr nur bis 0 ab und
+/// mindert den Abzug der anderen Person nicht. Lohn je 40.001, Beitrag je 3.600; Person A mit Zuschuss 4.000 (Abzug 0), der Ehegatte ohne
+/// (Abzug 3.600): zvE 73.870, Steuer 12.716 Euro (Handrechnung `handrechnung.py`, Abschnitt g), vertauscht dieselbe Steuer und dieselbe wie bei
+/// einer Person ganz ohne Beitrag. Ein Abzug von −400 bei Person A (ungeklemmt) liesse den Abzug auf 3.200 sinken und die Steuer auf 12.840 steigen.
+#[tokio::test]
+async fn ein_zuschuss_ueber_dem_beitrag_mindert_den_abzug_der_anderen_person_nicht() {
+    for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
+        let a_ueber = ergebnis(scheibe, &bauen(zuschuss(ZUSCHUSS_A, 4_000, 0, 0), vec![])).await;
+        let b_ueber = ergebnis(scheibe, &bauen(vec![], zuschuss(ZUSCHUSS_B, 4_000, 0, 0))).await;
+        assert_eq!(zahl(&a_ueber), 12_716 * 100, "{scheibe}, Zuschuss von Person A ueber ihrem Beitrag: {a_ueber}");
+        assert_eq!(zahl(&b_ueber), 12_716 * 100, "{scheibe}, Zuschuss des Ehegatten ueber seinem Beitrag: {b_ueber}");
     }
 }
 

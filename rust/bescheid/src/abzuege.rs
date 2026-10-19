@@ -804,6 +804,48 @@ mod tests {
         assert!(!abs3_eligible(&f, Vz::Vz2025).unwrap());
     }
 
+    /// Der Basisbeitrag nach Abzug der steuerfreien Zuschuesse zur KV und PV (Abweichung Nr. 92), in Cent, je Person. Beitrag KV 3.000 +
+    /// PV 600 Euro, Handrechnung je Zeile. Der Zuschuss zieht nie ueber 0 ab (Zeile 4); die Kind-Beitraege kommen ungekuerzt dazu, auch
+    /// wenn der Zuschuss den eigenen Beitrag uebersteigt (Zeile 5); ein Zuschuss von 0 oder darunter laesst den Beitrag stehen (Zeile 8).
+    /// Die Zuschuesse der anderen Person liest die Funktion nie mit: sie stehen hier hoch, und das Ergebnis haengt nicht von ihnen ab.
+    #[test]
+    fn basisbeitrag_nach_zuschuss_je_person_nie_unter_0_und_ohne_kuerzung_der_kinder() {
+        // (Zuschuss gesetzliche KV, private KV, PV, Kind-Beitraege, Soll), alles Cent
+        let tabelle: [(i64, i64, i64, i64, i64); 8] = [
+            (0, 0, 0, 0, 360_000),
+            (150_000, 0, 20_000, 0, 190_000),
+            (0, 310_000, 40_000, 0, 10_000),
+            (400_000, 0, 0, 0, 0),
+            (400_000, 0, 0, 30_000, 30_000),
+            (100_000, 0, 0, 30_000, 290_000),
+            (0, 0, 0, 30_000, 390_000),
+            (-50_000, 0, 0, 0, 360_000),
+        ];
+        for suffix in ["", "_partner"] {
+            let fremd = if suffix.is_empty() { "_partner" } else { "" };
+            for (gkv, pkv, pv, kind, soll) in tabelle {
+                let werte = [
+                    (format!("basis_kv{suffix}"), 300_000),
+                    (format!("basis_pv{suffix}"), 60_000),
+                    (format!("zuschuss_ag_kv_gesetzlich{suffix}"), gkv),
+                    (format!("zuschuss_ag_kv_privat{suffix}"), pkv),
+                    (format!("zuschuss_ag_pv{suffix}"), pv),
+                    (format!("zuschuss_ag_kv_gesetzlich{fremd}"), 9_000_000),
+                    (format!("zuschuss_ag_kv_privat{fremd}"), 9_000_000),
+                    (format!("zuschuss_ag_pv{fremd}"), 9_000_000),
+                ];
+                let ev: Vec<(&str, serde_json::Value, bool)> =
+                    werte.iter().map(|(n, w)| (n.as_str(), json!(*w), true)).collect();
+                let f = felder(&store(&ev));
+                assert_eq!(
+                    basisbeitrag_nach_zuschuss(&f, suffix, kind).unwrap(),
+                    soll,
+                    "{suffix:?}: Zuschuss {gkv} / {pkv} / {pv}, Kind {kind}"
+                );
+            }
+        }
+    }
+
     /// Das 55. Lebensjahr im Jahr der Vollendung (Abweichung Nr. 32): VZ 2025 minus Geburtsjahr 1970 ergibt genau 55. Nur
     /// dort entscheidet die Antwort auf `alter_55_vor_verkauf` (`_partner`): "nein" nimmt die Berechtigung ueber das Alter,
     /// "ja" und keine Antwort lassen sie. In jedem anderen Jahr bleibt die Antwort ohne Wirkung ("nein" bei 56 und 65 Jahren
