@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/ni/p7_ekbs"
+  norm: "§ 7 KiStRG Niedersachsen (Bemessungsgrundlagen der Kirchensteuer), Sammlung der Landeskirche Braunschweig"
+  fassung: "Sammlung Stand 07.02.2022; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-braunschweig.de/pdf/33113.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_ni_p7_ekbs_2026-10-19.txt"
+  sha256: "26eb7410d072736b6544b2073326fca46070a6a51ab9b15683097a33a3c4f040"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

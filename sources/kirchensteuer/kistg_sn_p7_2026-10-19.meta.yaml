@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sn/p7"
+  norm: "§ 7 SächsKiStG (Konfessionsverschiedene Ehe)"
+  fassung: "Stand laut Seite 12.06.2025; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/SN/S%C3%A4chsKiStG/7/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_sn_p7_2026-10-19.txt"
+  sha256: "02427dc5052853e6581df1337bf927938b48764e42277f3498ec9d2ed0f7fd92"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

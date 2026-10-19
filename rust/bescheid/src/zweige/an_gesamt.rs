@@ -1,7 +1,9 @@
 //! `_zweig_festzusetzende_est` (`bescheid_zweige.py:208-411`): § 2 Gesamtsteuer, reiner AN-Fall
 //! (Scheibe `an_gesamt`) — Werbungskosten, KV/PV, Vorsorge, SolZ, KiSt und § 101-Praemie.
 use domain::{Cent, Euro};
-use engine::zugriff::teil1::ermaessigungen::kist;
+use engine::zugriff::teil1::einkuenfte::{
+    einkuenfte_nichtselbststaendig, EinkuenfteNichtselbststaendigEingabe,
+};
 use engine::zugriff::teil1::mobilitaetspraemie::{p101_mobilitaetspraemie_cent, P101Eingabe};
 use engine::zugriff::teil1::pauschbetraege::{arbeitnehmer_pauschbetrag, grundfreibetrag};
 use engine::zugriff::teil1::sonderausgaben::{p10_kv_pv, P10KvPvEingabe};
@@ -15,8 +17,8 @@ use engine::zugriff::teil2::gesamt::sonderausgaben_abzug;
 use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 use intervall::Slots;
 
+use super::kist_anteil::{kist_cent, EinkuenfteJePerson};
 use super::rechnen::{add, R};
-use super::tarif::kist_eingabe;
 use super::wk::{am_an_gesamt, ep_eingabe, mit_sofortabzug_im_band, mit_unfallkosten, wk_teile};
 use super::{kist_konfession, slot, Marke, Ring};
 use crate::abzuege::kind_kv_pv_summe;
@@ -60,6 +62,31 @@ pub(super) fn vorsorge_abzug(
     Ok(Euro::new(
         crate::minus(beitraege.get().min(hb.get()), ag_steuerfrei.get())?.max(0),
     ))
+}
+
+/// Die Summe der Einkuenfte je Person fuer die Kirchensteuer bei Zusammenveranlagung (Abweichung Nr. 94): Lohn minus Werbungskosten,
+/// mindestens der Pauschbetrag; Person B ohne eigene Werbungskosten, wie in `est_zusammen`. Ohne Zusammenveranlagung zaehlt sie nicht.
+fn kist_einkuenfte(
+    f: &Felder,
+    vz: domain::Vz,
+    brutto_a: Euro,
+    wk_a: Euro,
+    zusammen: bool,
+) -> R<EinkuenfteJePerson> {
+    if !zusammen {
+        return Ok(EinkuenfteJePerson { a: Euro::new(0), b: Euro::new(0) });
+    }
+    let je = |lohn, werbungskosten| {
+        einkuenfte_nichtselbststaendig(&EinkuenfteNichtselbststaendigEingabe {
+            veranlagungszeitraum: vz,
+            bruttoarbeitslohn: lohn,
+            werbungskosten,
+        })
+    };
+    Ok(EinkuenfteJePerson {
+        a: je(brutto_a, wk_a)?,
+        b: je(feld_euro_oder_null(f, "bruttoarbeitslohn_partner")?, Euro::new(0))?,
+    })
 }
 
 /// Der Zweig `festzusetzende_est`, EURO. Schreibt SolZ, KiSt und die § 101-Praemie in die Ausgaben.
@@ -144,9 +171,12 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
             splitting: zusammen,
         })?));
     }
-    // KiSt § 51a: Massstabsteuer = festgesetzte ESt; ohne Konfession bleibt der Schluessel absent.
+    // KiSt § 51a: Massstabsteuer = festgesetzte ESt; ohne Konfession bleibt der Schluessel absent. Bei Zusammenveranlagung und
+    // beantworteter Konfession des Ehegatten nach Landesrecht (Abweichung Nr. 94): die Summe der Einkuenfte je Person ist hier Lohn
+    // minus Werbungskosten, mindestens der Pauschbetrag (Person B ohne eigene Werbungskosten, wie in `est_zusammen`).
     if let (Some(extras), Some(konf)) = (r.a.extras, kist_konfession(f)) {
-        let k = kist(&kist_eingabe(f, konf, est))?;
+        let einkuenfte = kist_einkuenfte(f, vz, brutto_a, wk, zusammen)?;
+        let k = kist_cent(f, vz, konf, est, zusammen, einkuenfte)?;
         extras.borrow_mut().kist_cent = Some(k);
     }
     // § 101 Mobilitaetspraemie: reiner AN, einzel, mit Pendlerstrecke (Stufe 1).

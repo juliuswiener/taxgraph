@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sl/p7_p8"
+  norm: "§§ 7, 8 KiStG Saarland (konfessionsverschiedene und glaubensverschiedene Ehe)"
+  fassung: "Fassung 05.05.2015 laut Quelle, Sammlung Stand 11.10.2023; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-ekir.de/pdf/2800.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_sl_p7_p8_2026-10-19.txt"
+  sha256: "75ca270b733a503c7fa4e6188b9a1527c8940010dd26d1f6e7b8043ab5b6df84"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

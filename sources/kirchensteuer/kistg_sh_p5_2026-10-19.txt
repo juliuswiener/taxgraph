@@ -1,0 +1,16 @@
+Quelle: https://www.landesrecht.online/SH/KiStG/5/llms.txt
+Abgerufen: 2026-10-19
+Norm: § 5 KiStG Schleswig-Holstein (Ehegatten)
+Fassung: Stand laut Seite 01.07.2014; der Fall konfessionsverschiedene Ehe steht nicht in diesem Gesetz (not_mentioned); Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+# § 5
+(1) Die Kirchensteuer vom Einkommen bemisst sich, wenn nur ein Ehegatte der evangelisch-lutherischen oder der Katholischen Kirche angehört (glaubensverschiedene Ehe),
+1. bei Einzelveranlagung zur Einkommensteuer nach der festgesetzten oder nach § 3 Abs. 2 ermittelten Einkommensteuer des kirchenangehörigen Ehegatten;
+2. bei Zusammenveranlagung zur Einkommensteuer nach dem Teil der festgesetzten oder nach § 3 Abs. 2 ermittelten Einkommensteuer, der auf den kirchenangehörigen Ehegatten entfällt. Hierbei ist die gemeinsame Einkommensteuer im Verhältnis der Beträge, die sich bei Anwendung des § 32 a Abs. 1 des Einkommensteuergesetzes (Einkommensteuer-Grundtarif) auf die Summe der Einkünfte eines jeden Ehegatten ergäben, aufzuteilen. Bei der Ermittlung der Summe der Einkünfte eines jeden Ehegatten ist § 51 a des Einkommensteuergesetzes entsprechend anzuwenden. Ist in der gemeinsamen Einkommensteuer im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des § 32 d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten, sind die gesondert besteuerten Kapitalerträge und die gesondert ermittelte Einkommensteuer aus der Berechnung nach Satz 2 auszuscheiden; dem kirchenangehörigen Ehegatten ist die auf ihn entfallende gesondert ermittelte Einkommensteuer zuzurechnen;
+3. beim Steuerabzug vom Kapitalertrag nach der für den kirchenangehörigen Ehegatten einbehaltenen Kapitalertragsteuer;
+4. beim Steuerabzug vom Arbeitslohn nach der für den kirchenangehörigen Ehegatten einbehaltenen oder nach § 3 Abs. 2 ermittelten Lohnsteuer.
+(2) Bei der Zusammenveranlagung zur Vermögensteuer wird die Kirchensteuer von dem kirchenangehörigen Ehegatten, Elternteil oder Kind nur in Höhe des auf ihn entfallenden Teils an der gemeinsamen Vermögensteuer erhoben.

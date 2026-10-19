@@ -1,0 +1,45 @@
+Quelle: https://www.kirchenrecht-ekm.de/pdf/12696.pdf
+Abgerufen: 2026-10-19
+Norm: §§ 4, 5 ThürKiStG (konfessionsverschiedene und glaubensverschiedene Ehe), Sammlung der Evangelischen Kirche in Mitteldeutschland
+Fassung: Sammlung Stand 01.07.2022; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§4
+Konfessionsverschiedene Ehe oder Lebenspartnerschaft
+(1) 1Gehören Ehegatten oder Lebenspartner verschiedenen steuererhebenden Kirchen an
+(konfessionsverschiedene Ehe oder Lebenspartnerschaft) und liegen die Voraussetzungen
+für eine Zusammenveranlagung bei der Einkommensteuer vor, so wird die Kirchensteuer
+vom Einkommen von beiden Ehegatten oder Lebenspartnern in folgender Weise erhoben:
+1. wenn die Ehegatten oder Lebenspartner zusammen zur Einkommensteuer veranlagt
+werden, von der Hälfte der Einkommensteuer,
+2. wenn ein Ehegatte oder Lebenspartner oder beide Ehegatten oder Lebenspartner lohnsteuerpflichtig sind, von der Hälfte der Lohnsteuer.
+2Die Ehegatten oder Lebenspartner haften als Gesamtschuldner. 3Im Lohnsteuerabzugsverfahren ist die Kirchensteuer bei jedem Ehegatten oder Lebenspartner auch für den anderen einzubehalten. 4Wird für einen oder beide Ehegatten oder Lebenspartner die Einkommensteuer durch Abzug vom Kapitalertrag erhoben, so wird die Kirchensteuer als
+Zuschlag zur Kapitalertragsteuer jedes Ehegatten oder Lebenspartners nach seiner Kirchenmitgliedschaft und nach der jeweils in seiner Person gegebenen Steuerbemessungsgrundlage erhoben.
+(2) Liegen die Voraussetzungen für eine Zusammenveranlagung zur Einkommensteuer
+nicht vor oder werden die Ehegatten oder Lebenspartner einzeln veranlagt, so wird die
+Kirchensteuer vom Einkommen jedes Ehegatten oder Lebenspartners nach seiner Kirchenmitgliedschaft und nach der jeweils in seiner Person gegebenen Steuerbemessungsgrundlage erhoben.
+(3) Für die Erhebung der in § 3 Abs. 1 Satz 1 Nr. 2 und 4 genannten Kirchensteuerarten
+gilt Absatz 2 entsprechend.
+§5
+Glaubensverschiedene Ehe oder Lebenspartnerschaft
+(1) Gehört nur ein Ehegatte oder Lebenspartner einer steuererhebenden Kirche an (glaubensverschiedene Ehe oder Lebenspartnerschaft), so erhebt die steuererhebende Kirche
+die Kirchensteuer von ihm nach der in seiner Person gegebenen Steuerbemessungsgrundlage.
+(2) 1Werden die Ehegatten oder Lebenspartner zur Einkommensteuer zusammen veranlagt, so ist die nach § 3 Abs. 1 Satz 2 ermittelte gemeinsame Einkommensteuer im Verhältnis der Steuerbeträge aufzuteilen, die sich bei Anwendung des § 32a Abs. 1 EStG
+(Einkommensteuertarif) auf die Summe der Einkünfte eines jeden Ehegatten oder Lebenspartners ergeben. 2§ 51a Abs. 2 EStG ist bei der Ermittlung der Einkünfte eines jeden
+Ehegatten oder Lebenspartners entsprechend anzuwenden. 3Ist in der gemeinsamen Einkommensteuerschuld im Sinne des Satzes 1 eine nach dem gesonderten Steuertarif § 32d
+4
+01.07.2022 EKM
+Thüringer Kirchensteuergesetz
+ThürKiStG 815
+Abs. 1 EStG ermittelte Einkommensteuer enthalten, ist diese mit gesondertem Steuertarif
+ermittelte Einkommensteuer aus der Berechnung des Satzes 1 auszuscheiden. 4Dem der
+steuererhebenden Kirche angehörenden Ehegatten oder Lebenspartner ist die nach § 32d
+Abs. 1 EStG ermittelte Einkommensteuer zuzurechnen, die unter Berücksichtigung der
+Kirchensteuer nach § 32d Abs. 1 Satz 3 EStG berechnet wurde. 5Die Kirchensteuer des der
+steuererhebenden Kirche angehörenden Ehegatten oder Lebenspartners ist nach dem auf
+ihn entfallenden Teil der Maßstabsteuer zu bemessen.
+(3) Unberührt bleiben die Bestimmungen über das Kirchgeld in glaubensverschiedener
+Ehe oder Lebenspartnerschaft.

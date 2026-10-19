@@ -94,6 +94,15 @@ pub fn kist_konfession(felder: &Felder) -> Option<&str> {
     }
 }
 
+/// Die Konfession von Person B (`kist_konfession_partner`) — oder `None`, wenn niemand sie angegeben hat. Gleiche Lesart wie
+/// [`kist_konfession`]; nur Rust (Abweichung Nr. 94).
+pub(super) fn kist_konfession_partner(felder: &Felder) -> Option<&str> {
+    match wert(felder, "kist_konfession_partner") {
+        Some(PyWert::Text(s)) if !s.is_empty() => Some(s.as_str()),
+        _ => None,
+    }
+}
+
 /// Bestaetigter numerischer Wert (`isinstance(w, (int, float)) and not bool`), sonst `None`.
 fn best_zahl<'a>(felder: &'a Felder, fid: &str) -> Option<&'a PyWert> {
     let e = felder.get(fid)?;

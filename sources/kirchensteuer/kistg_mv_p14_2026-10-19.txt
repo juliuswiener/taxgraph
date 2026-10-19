@@ -1,0 +1,14 @@
+Quelle: https://www.landesrecht.online/MV/KiStG/14/llms.txt
+Abgerufen: 2026-10-19
+Norm: § 14 KiStG M-V (Konfessionsverschiedene Ehe)
+Fassung: Stand laut Seite; Wortlaut gegengelesen mit Gesetzentwurf Landtag M-V Drucksache 6/2999; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+# § 14 Kirchensteuer als Zuschlag zur Einkommensteuer bei in konfessionsverschiedener Ehe lebenden Ehegatten oder bei in konfessionsverschiedener Lebenspartnerschaft lebenden Lebenspartnern
+Gehören Ehegatten oder Lebenspartner, die beide unbeschränkt einkommensteuerpflichtig sind und nicht dauernd getrennt leben, verschiedenen kirchensteuererhebenden Kirchen oder Religionsgesellschaften an (konfessionsverschiedene Ehe oder konfessionsverschiedene Lebenspartnerschaft), bemisst sich die Kirchensteuer in der Form des Zuschlages zur Einkommensteuer bei der
+1. Einzelveranlagung (§ 26a des Einkommensteuergesetzes) nach der nach § 12 Absatz 1 ermittelten Steuer jedes Ehegatten, jeder Lebenspartnerin oder jedes Lebenspartners,
+2. Zusammenveranlagung (§ 26b des Einkommensteuergesetzes) und beim Steuerabzug vom Arbeitslohn für jeden Ehegatten, für jede Lebenspartnerin oder für jeden Lebenspartner nach der Hälfte der ermittelten Steuer beider Ehegatten oder beider Lebenspartner.
+In den Fällen der Nummer 2 haften die Ehegatten oder die Lebenspartner als Gesamtschuldner im Sinne der Abgabenordnung. Im Lohnsteuerabzugsverfahren ist die Kirchensteuer bei jedem der Ehegatten oder bei jedem der Lebenspartner auch für den anderen einzubehalten (Halbteilungsgrundsatz).

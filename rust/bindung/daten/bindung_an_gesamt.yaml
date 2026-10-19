@@ -1668,7 +1668,7 @@ bindungen:
     einheit: null
     askable: true
     fragetext_laie: "Gehört dein Ehe-/Lebenspartner einer Kirche an, die Kirchensteuer erhebt (evangelisch oder römisch-katholisch)?"
-    hilfe_kurz: "Wie bei deiner eigenen Konfession, aber für den Ehe-/Lebenspartner. Nur evangelisch/römisch-katholisch werden hier deklariert."
+    hilfe_kurz: "Wie bei deiner eigenen Konfession, aber für den Ehe-/Lebenspartner. Die Antwort ändert die Kirchensteuer: Gehört nur einer von euch einer Kirche an, zahlt er bei Zusammenveranlagung nur den Teil der gemeinsamen Einkommensteuer, der auf seine Einkünfte entfällt. Ohne Antwort rechnet die App mit deiner Konfession auf die ganze gemeinsame Steuer."
     beispielwert: roemisch-katholisch
     herkunft_slots: null
     elster_kz: E0101002
@@ -1679,14 +1679,16 @@ bindungen:
       datei: "sources/gesetze-im-internet/ao_p150_2026-07-30.txt"
     # Wert "andere" ohne verifizierten Code -> fail-closed in nicht_deklariert (est_mapping.WERTEKODIERUNG),
     # wie kist_konfession (bindung_p51a_kirchensteuer.yaml). Bewusst NICHT in Kirchensteuer-Regel
-    # (p51a_kirchensteuer) verankert — der Ring rechnet Person-B-Konfession nicht mit; reines
-    # Deklarations-Stammdatum, kein Steuerungs-Slot.
+    # (p51a_kirchensteuer) verankert — der Catala-Ring rechnet Person-B-Konfession nicht mit, es gibt keinen Slot. Seit Abweichung Nr. 94
+    # (Rust-eigen) liest die Rust-Rechnung die Antwort in bescheid/src/zweige/kist_anteil.rs: bei Zusammenveranlagung und genau einem
+    # Mitglied der beiden Ehegatten faellt die Kirchensteuer nur auf den Teil der gemeinsamen ESt, der auf das Mitglied entfaellt (Landes-
+    # Kirchensteuergesetze, sources/kirchensteuer/). Ohne Antwort bleibt es bei Satz mal volle ESt nach der Konfession von Person A.
     # GELOEST 2026-08-10 (Julius-Entscheidung, war offene Kopplung): jeder Code außer "11" verlangt
     # zusätzlich Lohnsteuer (E0200301) UND Kirchensteuer (E0200501) auf Anlage N Person B —
     # p36_lohnsteuer_partner + kirchensteuer_arbeitgeber_partner unten decken das ab.
 
   # ========================= Steuerklasse/Lohnsteuer/Kirchensteuer Person B (Anlage N) =========
-  # Wie kist_konfession_partner: reine Deklarations-Stammdaten, kein Ring-Input (kein Catala-Slot).
+  # Reine Deklarations-Stammdaten, kein Ring-Input (kein Catala-Slot); anders als kist_konfession_partner, das die Rust-Rechnung liest (Nr. 94).
   # PARTNER_INSTANZ in est_mapping.py routet auf DIESELBEN Person-A-Kz (kein eigenes Ehegatte-Kz).
   - feld_id: steuerklasse_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}

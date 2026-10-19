@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/ni/p7_aggregator"
+  norm: "§ 7 KiStRG Niedersachsen (Bemessungsgrundlagen der Kirchensteuer)"
+  fassung: "Stand laut Seite 23.03.2022; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/NI/KiStRG/7/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_ni_p7_aggregator_2026-10-19.txt"
+  sha256: "7c5653b078adddc2a249ad5fd871870e13c689cccc0790cf834723602159e37e"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

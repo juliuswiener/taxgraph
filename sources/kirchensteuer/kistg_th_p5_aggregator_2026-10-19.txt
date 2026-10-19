@@ -1,0 +1,13 @@
+Quelle: https://www.landesrecht.online/TH/Th%C3%BCrKiStG/5/llms.txt
+Abgerufen: 2026-10-19
+Norm: § 5 ThürKiStG (Glaubensverschiedene Ehe)
+Fassung: Stand laut Seite 05.12.2018; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+# § 5 Glaubensverschiedene Ehe oder Lebenspartnerschaft
+(1) Gehört nur ein Ehegatte oder Lebenspartner einer steuererhebenden Kirche an (glaubensverschiedene Ehe oder Lebenspartnerschaft), so erhebt die steuererhebende Kirche die Kirchensteuer von ihm nach der in seiner Person gegebenen Steuerbemessungsgrundlage.
+(2) Werden die Ehegatten oder Lebenspartner zur Einkommensteuer zusammen veranlagt, so ist die nach § 3 Abs. 1 Satz 2 ermittelte gemeinsame Einkommensteuer im Verhältnis der Steuerbeträge aufzuteilen, die sich bei Anwendung des § 32a Abs. 1 EStG (Einkommensteuertarif) auf die Summe der Einkünfte eines jeden Ehegatten oder Lebenspartners ergeben. § 51a Abs. 2 Satz 2 EStG ist bei der Ermittlung der Einkünfte eines jeden Ehegatten oder Lebenspartners entsprechend anzuwenden. Ist in der gemeinsamen Einkommensteuerschuld im Sinne des Satzes 1 eine nach dem gesonderten Steuertarif des § 32d Abs. 1 EStG ermittelte Einkommensteuer enthalten, ist diese mit gesondertem Steuertarif ermittelte Einkommensteuer aus der Berechnung des Satzes 1 auszuscheiden. Dem der steuererhebenden Kirche angehörenden Ehegatten oder Lebenspartner ist die nach § 32d Abs. 1 EStG ermittelte Einkommensteuer zuzurechnen, die unter Berücksichtigung der Kirchensteuer nach § 32d Abs. 1 Satz 3 EStG berechnet wurde. Die Kirchensteuer des der steuererhebenden Kirche angehörenden Ehegatten oder Lebenspartners ist nach dem auf ihn entfallenden Teil der Maßstabsteuer zu bemessen.
+(3) Unberührt bleiben die Bestimmungen über das Kirchgeld in glaubensverschiedener Ehe oder Lebenspartnerschaft.

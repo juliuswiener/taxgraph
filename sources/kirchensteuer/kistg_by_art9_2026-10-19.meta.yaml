@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/by/art9"
+  norm: "Art. 9 BayKirchStG (Bemessungsgrundlage bei konfessionsverschiedener und glaubensverschiedener Ehe)"
+  fassung: "Text gilt ab 01.05.2019 laut Quelle; Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal"
+  quelle_url: "https://www.gesetze-bayern.de/Content/Document/BayKirchStG/true"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_by_art9_2026-10-19.txt"
+  sha256: "7e380cb37788160eb8adbd34d5d81ad91615ef08d4348de10865766df17e1c11"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

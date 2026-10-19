@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/be/p4"
+  norm: "§ 4 KiStG Berlin (Besteuerung von Ehegatten und Lebenspartnern)"
+  fassung: "Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 01.04.2019 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://kirchenrecht-berlin.de/pdf/19635.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_be_p4_2026-10-19.txt"
+  sha256: "3352264deee3489c0f8ea400f652edbc640122265897ee38f12d35cca80f224e"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

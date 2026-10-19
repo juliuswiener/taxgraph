@@ -7,7 +7,7 @@ use std::cell::{Cell, RefCell};
 use bindung::Params;
 use domain::{Cent, Euro, Konfession, PyWert, Vz};
 use engine::zugriff::teil1::ermaessigungen::{
-    kist, p31_familienleistung, KistEingabe, P31FamilienleistungEingabe,
+    p31_familienleistung, KistEingabe, P31FamilienleistungEingabe,
 };
 use engine::zugriff::teil2::est::{fuenftel, tarif_est, FuenftelEingabe, TarifEingabe};
 use engine::zugriff::teil2::gesamt::{
@@ -19,6 +19,7 @@ use engine::zugriff::teil2::solz::{solz, SolzEingabe};
 
 use super::ausgaben::{kette_endstand, kette_p31, kist_konfession, setze_kette, Extras};
 use super::kinderfreibetrag::{auswerten, Befund};
+use super::kist_anteil::{self, EinkuenfteJePerson};
 use super::rechnen::{add, mal, mal_div, max0, sub, R};
 use super::VeranlagungWert;
 use crate::abzuege::{abs3_eligible, abs3_eligible_partner};
@@ -73,6 +74,8 @@ pub(super) struct Lage<'a> {
     pub p35: P35,
     pub pe_raw: Euro,
     pub kapitaleinkuenfte: Euro,
+    /// Die Summe der Einkuenfte je Person fuer die Kirchensteuer bei Zusammenveranlagung (Abweichung Nr. 94).
+    pub kist_einkuenfte: EinkuenfteJePerson,
     pub kinder: i64,
     /// Die Instanz-Quelle der Kind-Angaben (`kind`-Gruppe), in der Sicht des Aufrufs (streng oder nicht).
     pub q: Instanzquelle<'a>,
@@ -399,7 +402,7 @@ where
             (None, Modus::Rentner) => None,
         };
         if let Some(basis) = basis {
-            let kist_cent = kist(&kist_eingabe(l.f, konf, basis))?;
+            let kist_cent = kist_anteil::kist_cent(l.f, l.vz, konf, basis, zusammen, l.kist_einkuenfte)?;
             let kap = extras.borrow().kist_kap_cent.unwrap_or(Cent::new(0));
             extras.borrow_mut().kist_cent = Some(super::rechnen::add_cent(kist_cent, kap)?);
         }

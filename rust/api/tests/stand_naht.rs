@@ -146,7 +146,8 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// `an_gesamt` und `gesamt` +1 mit `am_umsatzsteuersatz`, dazu `n_vor_gwg` 73 -> 74: 92 und 410, Abweichung Nr. 88 am 2026-10-19;
 /// `rentner_gesamt` bleibt 322, sie fragt keine Arbeitsmittel.
 /// nur `gesamt` +5 mit den fuenf `versorgung_*_partner`-Feldern: 415, Abweichung Nr. 87 am 2026-10-19; `an_gesamt` bleibt 92,
-/// `rentner_gesamt` 322 (dort stehen die fuenf Felder seit Nr. 33).
+/// `rentner_gesamt` 322 (dort stehen die fuenf Felder seit Nr. 33),
+/// danach nur `an_gesamt` +1 mit `kist_konfession_partner`: 93, Abweichung Nr. 94 am 2026-10-19; `gesamt` und `rentner_gesamt` fragen sie schon.
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
@@ -154,7 +155,7 @@ fn scheibe_bindung_wie_python() {
     for (scheibe, n) in [
         ("ep", 6),
         ("n_vor_gwg", 74),
-        ("an_gesamt", 92),
+        ("an_gesamt", 93),
         ("gesamt", 415),
         ("rentner_gesamt", 322),
     ] {

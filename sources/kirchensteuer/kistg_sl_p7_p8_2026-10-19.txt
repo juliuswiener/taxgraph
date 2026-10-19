@@ -1,0 +1,43 @@
+Quelle: https://www.kirchenrecht-ekir.de/pdf/2800.pdf
+Abgerufen: 2026-10-19
+Norm: §§ 7, 8 KiStG Saarland (konfessionsverschiedene und glaubensverschiedene Ehe)
+Fassung: Fassung 05.05.2015 laut Quelle, Sammlung Stand 11.10.2023; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§7
+(1) Gehören Ehegatten, die beide unbeschränkt einkommensteuerpflichtig sind und nicht
+dauernd getrennt leben, verschiedenen steuerberechtigten Kirchen an (konfessionsverschiedene Ehe), bemisst sich die Kirchensteuer in der Form des Zuschlags zur Einkommensteuer, Lohnsteuer und Kapitalertragsteuer
+1. bei der Einzelveranlagung (§ 26a des Einkommensteuergesetzes) nach der nach § 6
+Absatz 2 ermittelten Steuer jedes Ehegatten,
+2. beim Steuerabzug vom Kapitalertrag nach der nach § 6 Absatz 3 ermittelten Steuer
+jedes Ehegatten,
+3. bei der Zusammenveranlagung und beim Steuerabzug vom Arbeitslohn für jeden Ehegatten nach der Hälfte der nach § 6 Absatz 2 ermittelten Steuer beider Ehegatten.
+(2) In den Fällen des Absatzes 1 Nr. 2 haften die Ehegatten als Gesamtschuldner. Im
+Lohnabzugsverfahren ist die Kirchensteuer bei jedem Ehegatten auch für den anderen einzubehalten.
+(3) Für die Kirchensteuer vom Einkommen nach § 4 Absatz 1 Nr. 1 Buchstabe b gelten
+die Absätze 1 und 2 sinngemäß.
+§8
+(1) Leben Ehegatten nicht dauernd getrennt und gehört nur ein Ehegatte einer steuerberechtigten Kirche an (glaubensverschiedene Ehe), bemisst sich die Kirchensteuer in der
+Form des Zuschlags zur Einkommensteuer, Lohnsteuer und Kapitalertragsteuer
+1. bei der Einzelveranlagung (§ 26a des Einkommensteuergesetzes) und beim Steuerabzug vom Arbeitslohn nach der nach § 6 Absatz 2 ermittelten Steuer des kirchensteuerpflichtigen Ehegatten,
+11.10.2023 EKiR
+2. beim Steuerabzug vom Kapitalertrag nach der nach § 6 Absatz 3 ermittelten Steuer des
+kirchensteuerpflichtigen Ehegatten,
+3. bei der Zusammenveranlagung für den kirchensteuerpflichtigen Ehegatten nach dem
+Teil der nach § 6 Absatz 2 ermittelten gemeinsamen Steuer, der auf diesen Ehegatten
+entfällt, wenn die gemeinsame Steuer im Verhältnis der Steuerbeträge, die sich bei
+Anwendung des § 32 a Absatz 1 des Einkommensteuergesetzes (Einkommensteuertarif) auf die Summe der Einkünfte jedes Ehegatten ergeben, aufgeteilt wird. Ist in der
+nach § 6 Absatz 2 ermittelten gemeinsamen Steuer eine nach dem gesonderten Steuertarif des § 32 d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer aus der vorgenannten Berechnung auszuscheiden und die gesondert
+ermittelte Einkommensteuer dem kirchensteuerpflichtigen Beteiligten mit dem auf ihn
+entfallenden Anteil an den Kapitalerträgen zuzurechnen.
+5
+520 KiStG-Saar
+Saarländisches Kirchensteuergesetz
+(2) Für die Kirchensteuer vom Einkommen nach § 4 Absatz 1 Nr. 1 Buchstabe b gilt
+Absatz 1 sinngemäß.
+§ 8a
+Die Regelungen dieses Gesetzes zu Ehegatten und Ehen sind auch auf Lebenspartner und
+Lebenspartnerschaften anzuwenden.

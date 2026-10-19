@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/bw/p6"
+  norm: "§ 6 KiStG Baden-Württemberg (Bemessungsgrundlagen), Sammlung der Evangelischen Landeskirche in Württemberg"
+  fassung: "Stand 23.06.2025, Gesetz geändert 27.05.2025 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-wuerttemberg.de/pdf/17396.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_bw_p6_2026-10-19.txt"
+  sha256: "b73b5229f2bc230e5606067d96e18e500212f9fd4cfedcc42a9acb84e0b00ef2"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

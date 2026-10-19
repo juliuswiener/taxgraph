@@ -1,0 +1,90 @@
+Quelle: https://www.kirchenrecht-braunschweig.de/pdf/33113.pdf
+Abgerufen: 2026-10-19
+Norm: § 7 KiStRG Niedersachsen (Bemessungsgrundlagen der Kirchensteuer), Sammlung der Landeskirche Braunschweig
+Fassung: Sammlung Stand 07.02.2022; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§7
+Bemessungsgrundlagen der Kirchensteuer
+(1) Die Bemessungsgrundlagen der Kirchensteuer sind in den Steuerordnungen zu bestimmen, sofern sie sich nicht aus den Absätzen 2 bis 9 ergeben.
+(2) 1Die in einem Vomhundertsatz der Einkommensteuer zu erhebende Kirchensteuer
+(§ 2 Abs. 1 Satz 2 Nr. 1 Buchst. a) ist nach der Einkommensteuer des Kirchenangehörigen
+zu bemessen. 2Für die Berechnung der Kirchensteuer nach § 2 Abs. 1 Satz 2 Nr. 1
+Buchst. a gilt § 51 a Abs. 1 bis 2 d EStG. 3Für Ehegatten gelten zudem die Absätze 3
+bis 5.
+07.02.2022 EKBS
+5
+701 KiStRG
+Nds. Kirchensteuerrahmengesetz
+(3) Gehören Ehegatten derselben Landeskirche, Diözese oder anderen Religionsgemeinschaft an (konfessionsgleiche Ehe) und leben die Ehegatten nicht dauernd getrennt, so
+bemisst sich die als Landes-(Diözesan-)Kirchensteuer zu erhebende Kirchensteuer
+1. bei Einzelveranlagung der Ehegatten zur Einkommensteuer nach der Einkommensteuer jedes Ehegatten,
+2. bei Zusammenveranlagung zur Einkommensteuer nach der Einkommensteuer beider
+Ehegatten.
+(4) 1Gehören Ehegatten verschiedenen Landeskirchen, Diözesen oder anderen Religionsgemeinschaften an (konfessionsverschiedene Ehe) und leben die Ehegatten nicht dauernd
+getrennt, so bemisst sich die als Landes-(Diözesan-) Kirchensteuer zu erhebende Kirchensteuer
+1. bei Einzelveranlagung der Ehegatten zur Einkommensteuer nach der Einkommensteuer jedes Ehegatten,
+2. bei Zusammenveranlagung zur Einkommensteuer für jeden Ehegatten nach der Hälfte
+der Einkommensteuer beider Ehegatten.
+Gehört ein Ehegatte einer Landeskirche, Diözese oder anderen Religionsgemeinschaft an,
+die Kirchensteuer in einem Vomhundertsatz der Einkommensteuer nicht erhebt, und leben
+die Ehegatten nicht dauernd getrennt, so gilt für die Bemessung der Kirchensteuer des
+anderen Ehegatten, dessen Landeskirche, Diözese oder andere Religionsgemeinschaft
+Kirchensteuer in einem Vomhundertsatz der Einkommensteuer erhebt, Absatz 5 entsprechend.
+2
+(5) 1Gehört nur ein Ehegatte einer steuererhebenden Landeskirche, Diözese oder anderen
+Religionsgemeinschaft an (glaubensverschiedene Ehe) und leben die Ehegatten nicht dauernd getrennt, so bemisst sich die als Landes-(Diözesan-)Kirchensteuer zu erhebende Kirchensteuer
+1. bei Einzelveranlagung der Ehegatten zur Einkommensteuer nach der Einkommensteuer des kirchenangehörigen Ehegatten,
+2. bei Zusammenveranlagung zur Einkommensteuer nach dem Teil der Einkommensteuer beider Ehegatten, der auf den kirchenangehörigen Ehegatten entfällt, wobei zur
+Feststellung dieses Anteils die Einkommensteuer beider Ehegatten im Verhältnis der
+Einkommensteuerbeträge aufzuteilen ist, die sich bei Anwendung des § 32 a Abs. 1
+EStG auf die Summe der Einkünfte eines jeden Ehegatten ergeben würden.
+In den Fällen des Satzes 1 Nr. 2 gilt § 51 a Abs. 1 bis 2 a EStG für die Ermittlung der
+Summe der Einkünfte entsprechend. 3Ist im Fall des Satzes 1 Nr. 2 in der gemeinsamen
+Einkommensteuerschuld eine nach dem gesonderten Steuertarif des § 32 d Abs. 1 EStG
+ermittelte Einkommensteuer enthalten, so sind die gesondert besteuerten Kapitaleinkünfte
+und die gesondert ermittelte Einkommensteuer aus der Berechnung des Satzes 1 auszu2
+6
+07.02.2022 EKBS
+Nds. Kirchensteuerrahmengesetz
+KiStRG 701
+scheiden. 4Die gesondert ermittelte Einkommensteuer ist dem kirchensteuerpflichtigen
+Beteiligten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen.
+(6) 1Die in einem Vomhundertsatz der Vermögensteuer zu erhebende Kirchensteuer (§ 2
+Abs. 1 Satz 2 Nr. 2 Buchst. a) ist nach der Vermögensteuer des Kirchenangehörigen zu
+bemessen. 2Werden Ehegatten oder Eltern und Kinder zusammen zur Vermögensteuer
+veranlagt und gehören sie derselben Landeskirche, Diözese, anderen Religionsgemeinschaft, Kirchengemeinde oder demselben Kirchengemeindeverband an, so ist die in
+Satz 1 genannte Kirchensteuer nach der gemeinsam geschuldeten Vermögensteuer zu bemessen. 3Liegen diese Voraussetzungen nicht vor, so ist bei Zusammenveranlagung von
+Ehegatten oder von Eltern und Kindern zur Vermögensteuer die gemeinsame Vermögensteuer im Verhältnis der Vermögensteuerbeträge aufzuteilen, die sich bei der Veranlagung
+jedes einzelnen von ihnen zur Vermögensteuer ergeben würden. 4§ 2 Abs. 4 bleibt unberührt.
+(7) 1Die in einem Vomhundertsatz der Messbeträge der Grundsteuer zu erhebende Kirchensteuer (§ 2 Abs. 1 Satz 2 Nr. 3 Buchst. a) ist nach den Grundsteuermessbeträgen zu
+bemessen, die für den Grundbesitz des Kirchenangehörigen festgesetzt worden sind. 2Bei
+der Zusammenfassung von Wirtschaftsgütern zu einer wirtschaftlichen Einheit gilt
+Absatz 6 Sätze 2 und 3 entsprechend. 3§ 2 Abs. 4 bleibt unberührt.
+(8) Für die nach Maßgabe des Einkommens (Arbeitslohns) zu erhebende Kirchensteuer
+(§ 2 Abs. 1 Satz 2 Nr. 1 Buchst. b) gelten die Absätze 2 bis 5 und für die nach Maßgabe
+des Vermögens und des Einheitswerts des Grundbesitzes (§ 2 Abs. 1 Satz 2 Nr. 2
+Buchst. b und Nr. 3 Buchst. b) zu erhebende Kirchensteuer gelten die Absätze 6 und 7
+entsprechend.
+(9) Wird für das besondere Kirchgeld als Bemessungsgrundlage das zu versteuernde Einkommen im Sinne des Einkommensteuergesetzes bestimmt, so gilt für die Ermittlung des
+zu versteuernden Einkommens § 51 a Abs. 1 bis 2 d EStG entsprechend.
+§7a
+Bemessung der Kirchensteuer bei nicht ganzjähriger Kirchensteuerpflicht
+(1) Beginnt die Kirchensteuerpflicht bei bestehender Einkommensteuerpflicht oder endet
+sie bei fortbestehender Einkommensteuerpflicht im Laufe des Veranlagungszeitraums, so
+ist die Kirchensteuer vom Einkommen nach der vollen für diesen Veranlagungszeitraum
+maßgebenden Bemessungsgrundlage zu berechnen, jedoch nur anteilig mit einem Zwölftel
+für jeden Kalendermonat des Bestehens der Kirchensteuerpflicht festzusetzen.
+(2) Liegt eine konfessionsgleiche, konfessionsverschiedene oder glaubensverschiedene
+Ehe im Sinne des § 7 Abs. 3, 4 oder 5, in der die Ehegatten nicht dauernd getrennt leben,
+nicht während des gesamten Veranlagungszeitraums vor, so sind die nach § 7 Abs. 3
+Nr. 2, Abs. 4 Satz 1 Nr. 2 oder Abs. 5 Satz 1 Nr. 2 maßgebenden Bemessungsgrundlagen
+07.02.2022 EKBS
+7
+701 KiStRG
+Nds. Kirchensteuerrahmengesetz
+der Festsetzung der Kirchensteuer anteilig mit einem Zwölftel für jeden Kalendermonat
+zugrunde zu legen, in dem die konfessionsgleiche, konfessionsverschiedene oder glaubensverschiedene Ehe bestanden hat und die Ehegatten nicht dauernd getrennt gelebt haben.

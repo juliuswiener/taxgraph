@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sh/p5"
+  norm: "§ 5 KiStG Schleswig-Holstein (Ehegatten)"
+  fassung: "Stand laut Seite 01.07.2014; der Fall konfessionsverschiedene Ehe steht nicht in diesem Gesetz (not_mentioned); Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/SH/KiStG/5/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_sh_p5_2026-10-19.txt"
+  sha256: "39a734df25518ee11395422fadeb6df6705fe93a333f8d258434eb4eb628967b"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

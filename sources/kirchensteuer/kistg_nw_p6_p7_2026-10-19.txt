@@ -1,0 +1,36 @@
+Quelle: https://recht.nrw.de/lrgv/gesetz/29112019-gesetz-ueber-die-erhebung-von-kirchensteuern-im-land-nordrhein-westfalen/
+Abgerufen: 2026-10-19
+Norm: §§ 6, 7 KiStG NRW (konfessionsverschiedene und glaubensverschiedene Ehe)
+Fassung: aktuelle Fassung laut Quelle gültig ab 29.11.2019; §§ 4 bis 7 zuletzt geändert 01.04.2014; Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§ 6
+Mehr
+Paragraph ausdrucken
+Paragraph Link kopieren
+Fußnoten
+§§ 4, 5, 6 und 7 zuletzt geändert durch Artikel 1 des Gesetzes vom 1. April 2014 ( GV. NRW. S. 251 ), in Kraft getreten am 10. April 2014.
+(1) Gehören Personen, bei denen die Voraussetzungen für eine Zusammenveranlagung nach §§ 26, 26b des Einkommensteuergesetzes vorliegen, verschiedenen Steuern gemäß § 4 Absatz 1 Nummer 1 erhebenden Kirchen an (konfessionsverschiedene Ehe beziehungsweise Lebenspartnerschaft), so erheben beide Kirchen die Kirchensteuer in der Form des Zuschlags zur Einkommensteuer (§§ 26, 26b des Einkommensteuergesetzes) und Lohnsteuer (§ 4 Absatz 1 Nummer 1 Buchstabe a) von beiden Personen in folgender Weise:
+1. wenn die Personen zusammen zur Einkommensteuer veranlagt werden, von der Hälfte der Einkommensteuer;
+2. wenn eine Person oder beide Personen lohnsteuerpflichtig sind, von der Hälfte der Lohnsteuer.
+Die beiden Personen haften als Gesamtschuldner. Im Lohnabzugsverfahren ist die Kirchensteuer bei jeder Person auch für die andere einzubehalten.
+(2) Liegen die Voraussetzungen für eine Zusammenveranlagung zur Einkommensteuer nicht vor oder werden die Personen einzeln (§§ 26, 26a des Einkommensteuergesetzes) veranlagt, so wird die Kirchensteuer vom Einkommen von jeder Person nach ihrer Kirchenangehörigkeit und nach der jeweils in ihrer Person gegebenen Steuerbemessungsgrundlage erhoben.
+(3) § 51a Abs. 2c des Einkommensteuergesetzes gilt entsprechend.
+(4) Für die Erhebung der anderen in § 4 Abs. 1 genannten Kirchensteuerarten - mit Ausnahme des besonderen Kirchgelds nach § 4 Abs. 1 Nr. 5 - gilt Absatz 2 entsprechend.
+Link kopiert
+Der Link zum Pragraph wurde kopiert
+§ 7
+Mehr
+Paragraph ausdrucken
+Paragraph Link kopieren
+Fußnoten
+§§ 4, 5, 6 und 7 zuletzt geändert durch Artikel 1 des Gesetzes vom 1. April 2014 ( GV. NRW. S. 251 ), in Kraft getreten am 10. April 2014.
+(1) Gehört nur eine der Personen, bei denen die Voraussetzungen für eine Zusammenveranlagung nach §§ 26, 26b des Einkommensteuergesetzes vorliegen, einer Steuern gemäß § 4 Absatz 1 Nummer 1 erhebenden Kirche an (glaubensverschiedene Ehe beziehungsweise Lebenspartnerschaft), so erhebt die steuerberechtigte Kirche die Kirchensteuer von ihr nach der in ihrer Person gegebenen Steuerbemessungsgrundlage.
+(2) Werden die beiden Personen zusammen zur Einkommensteuer veranlagt (§§ 26, 26b des Einkommensteuergesetzes), so ist bei der steuerpflichtigen Person die Kirchensteuer in der Form des Zuschlags zur Einkommensteuer anteilig zu berechnen. Die Kirchensteuer ist nach dem Teil der - nach Maßgabe des § 4 Absatz 2 Satz 1 ermittelten - gemeinsamen Einkommensteuer zu berechnen, der auf die steuerpflichtige Person entfällt, wenn die gemeinsame Steuer im Verhältnis der Einkommensteuerbeträge, die sich bei Anwendung des § 32a Absatz 1 des Einkommensteuergesetzes (Einkommensteuertarif) auf die Summe der Einkünfte einer jeden Person ergeben würden, auf die Personen verteilt wird. Ist in der gemeinsamen Einkommensteuer im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des § 32d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten, werden die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer bei der Verhältnisrechnung nach Satz 2 nicht berücksichtigt. Die nach dem gesonderten Steuertarif des § 32d des Einkommensteuergesetzes ermittelte Einkommenssteuer wird der kirchensteuerpflichtigen Person mit dem auf sie entfallenden Anteil unmittelbar zugerechnet.
+(3) § 51a Abs. 2c des Einkommensteuergesetzes gilt entsprechend.
+IV. Besteuerungsverfahren
+Link kopiert
+Der Link zum Pragraph wurde kopiert

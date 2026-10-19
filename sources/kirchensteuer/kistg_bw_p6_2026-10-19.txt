@@ -1,0 +1,29 @@
+Quelle: https://www.kirchenrecht-wuerttemberg.de/pdf/17396.pdf
+Abgerufen: 2026-10-19
+Norm: § 6 KiStG Baden-Württemberg (Bemessungsgrundlagen), Sammlung der Evangelischen Landeskirche in Württemberg
+Fassung: Stand 23.06.2025, Gesetz geändert 27.05.2025 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§6
+Bemessungsgrundlagen
+(1) Die Steuern sind von den in der Person des Steuerpflichtigen gegebenen Bemessungsgrundlagen zu erheben.
+(2) Wird die Bemessungsgrundlage für eine Personengemeinschaft, eine Personengesellschaft oder sonst für mehrere Personen festgesetzt, so ist die Kirchensteuer für den einzelnen Steuerpflichtigen aus seinem Anteil an der Bemessungsgrundlage zu berechnen.
+Wenn ein Anteil im staatlichen Besteuerungsverfahren nicht festgestellt wird, ist die Bemessungsgrundlage aufzuteilen
+1. im Fall des § 5 Abs. 1 Nr. 1 Buchst. a nach dem Verhältnis der Beträge, die sich ergeben,
+wenn die Beteiligten einzeln als Ehegatten oder Lebenspartner veranlagt würden,
+23.06.2025 EKWue
+3
+879
+Kirchensteuergesetz – KiStG
+2. im Fall des § 5 Abs. 1 Nr. 2 und 3 nach den Anteilen am Einheitswert des land- oder
+forstwirtschaftlichen Betriebs, des Grundstücks oder, soweit kein Anteil daran festgestellt wird, des gemeinschaftlichen Vermögens, zu dem der Betrieb oder das Grundstück gehört.
+Wenn nichts anderes nachgewiesen oder bekannt ist, sind gleiche Anteile anzunehmen.
+(3) Werden Ehegatten oder Lebenspartner, die derselben Religionsgemeinschaft angehören, zur Maßstabsteuer gemeinsam herangezogen, so wird bei der kirchlichen Besteuerung
+entsprechend verfahren. Die Ehegatten oder Lebenspartner sind Gesamtschuldner. Satz 1
+gilt nicht für das Kirchgeld.
+(4) Gehören die Ehegatten oder die Lebenspartner verschiedenen steuererhebenden Religionsgemeinschaften an und werden sie zur Einkommensteuer zusammen veranlagt, so
+wird die Kirchensteuer nach § 5 Abs. 1 Nr. 1 Buchst. a für jeden Ehegatten oder Lebenspartner von der Hälfte der Bemessungsgrundlage erhoben, wenn bei den beteiligten Religionsgemeinschaften darüber Einvernehmen besteht. Jeder Ehegatte oder Lebenspartner
+haftet als Gesamtschuldner für die Steuerschuld des anderen Ehegatten oder Lebenspartners.
