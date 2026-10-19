@@ -21,27 +21,6 @@ permissions:
   contents: read
 
 jobs:
-  # Stufe-B-Tests (pipeline/tests/, Makefile-Ziel `unit-stufe-b`): ohne produkt/, ohne tests/conftest.py,
-  # ohne Catala-Toolchain. Eigener Job, weil diese 247 Tests ihren Lauf behalten mussten, als `tests/` mit
-  # dem Loeschplan (L2) entfiel. Sekunden, nur das Manifest. Die sechs fastapi-Tests aus
-  # test_ui_backend.py und test_gettsim_crosscheck.py skippen sich hier selbst (kein fastapi, kein
-  # gettsim im Manifest); den Crosscheck faehrt der Job gettsim-crosscheck unten echt.
-  stufe-b:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Python-Abhaengigkeiten
-        run: pip install -r requirements-ci.txt
-
-      - name: pytest pipeline/tests (ohne Catala-Toolchain)
-        run: python3 -m pytest pipeline/tests -q
-
   # Frischetor des Catala-Orakels als eigener Job (Vorarbeit zur Loeschstufe L2, Vault-Backlog
   # catala-orakel-frischetor-in-eigenen-ci-job). Derselbe Schritt stand im Job catala-toolchain, der
   # mit der pytest-Suite fiel (L2); hier hing er nicht in der Luft. Er braucht nur den

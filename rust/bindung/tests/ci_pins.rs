@@ -14,7 +14,7 @@
 //! - GETTSIM: `gettsim` und `ttsim-backend` stehen in `requirements-oracle.txt` je genau einmal und mit `==`. Eine offene Grenze
 //!   (`>=`) verschiebt die Vergleichsbasis still; `ttsim-backend 1.3.0` machte so am 2026-08-20 den Crosscheck ohne Aenderung
 //!   bei uns rot.
-//! - Kein anderer Installationsweg (`ci.yml`, `requirements-ci.txt`, `Makefile`, `docs/setup.md`, `scripts/*.sh`) nennt eine
+//! - Kein anderer Installationsweg (`ci.yml`, `Makefile`, `docs/setup.md`, `scripts/*.sh`) nennt eine
 //!   eigene Version fuer `gettsim` oder `ttsim-backend`: zwei Pins an zwei Orten laufen auseinander.
 //! - Der Test `die_gepinnte_version_ist_die_installierbare` ist `#[ignore]`: er liest die Metadaten aus `oracle/.venv312` und
 //!   braucht das venv (lokal, nach `docs/setup.md`). Das Python-Gegenstueck uebersprang sich ohne venv; hier ist ein fehlendes
@@ -22,7 +22,7 @@
 //!
 //! Grenzen: Die Waechter lesen nur Dateien. Ob `opam` die Version wirklich installiert, ob der Cache trifft, ob `uv` den Pin
 //! findet, zeigen erst die CI-Jobs selbst. Eine Version aus einer Variable (`gettsim==$V`) sieht das Muster fuer fremde Pins
-//! nicht. `docs/setup.md` und `scripts/*.sh` sind optional (L5 kann sie loeschen); `ci.yml`, `requirements-ci.txt` und
+//! nicht. `docs/setup.md` und `scripts/*.sh` sind optional (L5 kann sie loeschen); `ci.yml` und
 //! `Makefile` muessen da sein.
 #![allow(
     clippy::unwrap_used,
@@ -177,10 +177,10 @@ fn neben_pins(name: &str, text: &str) -> Vec<String> {
         .collect()
 }
 
-/// Die Installationswege: `ci.yml`, `requirements-ci.txt` und `Makefile` muessen da sein; `docs/setup.md` und `scripts/*.sh`
+/// Die Installationswege: `ci.yml` und `Makefile` muessen da sein; `docs/setup.md` und `scripts/*.sh`
 /// nur, wenn es sie gibt.
 fn installationswege() -> Vec<(String, String)> {
-    let mut wege: Vec<(String, String)> = [".github/workflows/ci.yml", "requirements-ci.txt", "Makefile"]
+    let mut wege: Vec<(String, String)> = [".github/workflows/ci.yml", "Makefile"]
         .iter()
         .map(|rel| ((*rel).to_string(), lesen(rel)))
         .collect();
@@ -225,7 +225,7 @@ fn die_waechter_sehen_ueberhaupt_etwas() {
     // Das Muster fuer fremde Pins trifft den echten Pin selbst (und Kommentare, die einen nennen): mindestens die beiden Zeilen.
     assert!(neben_pins("requirements-oracle.txt", &oracle).len() >= 2, "das Muster sieht die echten Pins nicht");
     let wege = installationswege();
-    for rel in [".github/workflows/ci.yml", "requirements-ci.txt", "Makefile"] {
+    for rel in [".github/workflows/ci.yml", "Makefile"] {
         assert!(wege.iter().any(|(n, t)| n == rel && !t.trim().is_empty()), "{rel} nicht gelesen oder leer");
     }
     // Die optionalen Wege sind nur dann optional, wenn es sie nicht gibt: was auf der Platte liegt, wird gelesen.

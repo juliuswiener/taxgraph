@@ -11,7 +11,7 @@ VENV312  := oracle/.venv312/bin/activate
 
 .PHONY: all s01 s03 tests clean backup restore serve golden
 
-all: unit-stufe-b tests
+all: tests
 
 ## Run all Catala/Clerk scope tests (S0.1 tariff, S0.3 Arbeitszimmer/Homeoffice).
 tests:
@@ -155,15 +155,6 @@ params-check:
 sources-check:
 	python3 scripts/verify_sources.py
 
-## Snapshot the deterministic verdict of every verified rule (runs/-Blocker-Fix).
-## Commit pipeline/snapshots/ so a fresh clone can --regate without model costs.
-snapshot:
-	python3 pipeline/snapshot.py write --all
-
-## Verify sha256(catala_a) of every committed snapshot (fast, no clerk). Nonzero on tamper.
-snapshot-verify:
-	python3 pipeline/snapshot.py verify --all
-
 ## Die 135 Golden-Faelle gegen die Catala-Formalisierung (Wert und Zitatanker), in Rust seit L3 (Vault
 ## golden-ohne-python-anker-pruefung-nach-rust-2026-10-12): golden_werte rechnet jeden Fall durch die Rust-Engine,
 ## golden_kopf haelt Zahl, Erwartung und Kennungen, anker prueft jedes Zitat gegen den Quelltext in sources/.
@@ -287,15 +278,9 @@ rust-build:
 rust-test:
 	cd rust && cargo build && cargo clippy --all-targets -- -D warnings && cargo nextest run --no-fail-fast && cargo test --doc --no-fail-fast
 
-## Stufe-B-Tests (pipeline/, ebilanz/, GETTSIM-Gegenprobe) unter pipeline/tests/. Sie brauchen weder
-## produkt/ noch tests/conftest.py noch Catala (gemessen 2026-10-06: gruen in einem Baum ohne produkt/,
-## tests/ und rust/) und laufen deshalb seit L2/L3 ohne diese Verzeichnisse. Ohne venv312
-## ueberspringt sich test_gettsim_crosscheck (1 skipped); `make gettsim-crosscheck` faehrt ihn echt.
-## Nur 14 s, daher ohne -n. REWRITE_PLAN.md und tools/docs_zahlen_pruefen.py
-## verankern Makefile-Zeilen; Zeilen davor verschieben sie.
-unit-stufe-b:
-	python3 -m pytest pipeline/tests -q
-
+## REWRITE_PLAN.md und tools/docs_zahlen_pruefen.py verankern Makefile-Zeilen; Zeilen davor verschieben sie.
+## Die Python-Stufe B (pipeline/, ebilanz/-Tests, Ziele unit-stufe-b, snapshot*, gettsim-crosscheck) fiel mit L4;
+## Verlauf: `git show 41d2b254:Makefile`.
 clean:
 	$(OPAM_ENV); clerk clean || true
 	rm -rf _build _target
