@@ -524,6 +524,47 @@ mod computer_liste {
     }
 }
 
+/// Abweichung Nr. 93 an der Rechenstelle: `berufsverband` liest je Person nur ihr eigenes Feld, rundet auf volle Euro AUF und zaehlt leer,
+/// 0 und einen negativen Wert (am Schreibweg vorbei im Store, das Laden prueft nie) als 0. Die Ende-zu-Ende-Faelle stehen in
+/// `api/tests/berufsverband_hermetisch.rs` und `api/tests/kette_endstand_hermetisch.rs`.
+#[cfg(test)]
+mod berufsverband_beitraege {
+    use domain::Euro;
+    use serde_json::json;
+
+    use super::{berufsverband, mit_berufsverband, BERUFSVERBAND, BERUFSVERBAND_PARTNER};
+    use crate::testhilfe::{felder, store};
+
+    #[test]
+    fn der_betrag_ist_je_person_aufgerundet_und_nie_negativ() {
+        // (Name, Cent von Person A, Cent von Person B, Euro von Person A, Euro von Person B)
+        let faelle = [
+            ("leer", None, None, 0, 0),
+            ("0", Some(0), Some(0), 0, 0),
+            ("1 Cent steigt auf 1 Euro", Some(1), Some(1), 1, 1),
+            ("1.500,00", Some(150_000), Some(150_000), 1_500, 1_500),
+            ("1.500,01 steigt auf 1.501", Some(150_001), Some(150_001), 1_501, 1_501),
+            ("negativ im Store zaehlt 0", Some(-500), Some(-500), 0, 0),
+            ("nur Person A", Some(17_800), None, 178, 0),
+            ("nur Person B", None, Some(17_800), 0, 178),
+        ];
+        for (name, a, b, euro_a, euro_b) in faelle {
+            let mut e = Vec::new();
+            if let Some(c) = a {
+                e.push((BERUFSVERBAND, json!(c), true));
+            }
+            if let Some(c) = b {
+                e.push((BERUFSVERBAND_PARTNER, json!(c), true));
+            }
+            let f = felder(&store(&e));
+            assert_eq!(berufsverband(&f, false).unwrap().get(), euro_a, "{name}: Person A");
+            assert_eq!(berufsverband(&f, true).unwrap().get(), euro_b, "{name}: Person B");
+            // Zu den Werbungskosten DER PERSON A zaehlt nur ihr Betrag, nie der des Ehegatten.
+            assert_eq!(mit_berufsverband(&f, Euro::new(1_000)).unwrap().get(), 1_000 + euro_a, "{name}: mit_berufsverband");
+        }
+    }
+}
+
 /// Aequivalenz von `ist_int_ueber_3` mit `PyWert::int_ohne_bool` (D15), je D-Nummer ein Test.
 #[cfg(test)]
 mod aequivalenz {

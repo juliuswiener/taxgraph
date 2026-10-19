@@ -440,3 +440,22 @@ fn die_texte_nennen_was_zaehlt_und_was_nicht() {
         }
     }
 }
+
+/// `AK3`: keines der zwei Felder bietet einen Vorschlag aus dem Beleg an. Die Lohnsteuerbescheinigung und der Abruf der Finanzverwaltung
+/// kennen keinen Beitrag zu einem Berufsverband (`Kammerbeitrag/Wert` bleibt in `NICHT_UNTERSUCHT`, `api/tests/vast_naht_bindung.rs`):
+/// ein `vorschlagbar_von` liesse die Oberflaeche einen Wert anbieten, den keine Quelle liefert.
+#[test]
+fn die_felder_bieten_keinen_beleg_vorschlag_an() {
+    let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let reg = bindung::lade_registry_der_wurzel(&wurzel).unwrap();
+    let alle: Vec<&bindung::Bindung> = reg.dateien.iter().flat_map(|(_, d)| d.bindungen.iter()).collect();
+    assert!(alle.len() > 300, "KONTROLLE: nur {} Felder gelesen", alle.len());
+    assert!(
+        alle.iter().any(|b| !b.vorschlagbar_von.is_empty()),
+        "KONTROLLE: kein Feld der Registry bietet einen Vorschlag an, die Pruefung unten sah nichts"
+    );
+    for fid in [A, B] {
+        let b = alle.iter().find(|b| b.feld_id == fid).unwrap_or_else(|| panic!("Feld {fid} fehlt in der Registry"));
+        assert_eq!(b.vorschlagbar_von.len(), 0, "{fid}: bietet einen Vorschlag aus dem Beleg an: {:?}", b.vorschlagbar_von);
+    }
+}
