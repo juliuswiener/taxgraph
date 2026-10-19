@@ -57,7 +57,7 @@ pub(super) const SCHEIBEN_N_VOR_GWG_TEIL_RINGE: [(&str, &str, &[&str]); 1] = [
 
 /// `SCHEIBEN['an_gesamt']["felder"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P35A_MITVER_ANZEIGE + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 92] = [
+pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 93] = [
     "bruttoarbeitslohn", "veranlagung", "ep_arbeitstage", "ep_entfernung_km",
     "ep_oepnv_kosten", "ep_eigenes_kfz", "ep_ziel_des_weges", "ep_ziel_adresse", "ep_unfallkosten",
     "vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb", "versicherungsart",
@@ -87,6 +87,9 @@ pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 92] = [
     // Nur in Rust (2026-10-19, Abweichung Nr. 88): der Umsatzsteuersatz der Rechnung des Arbeitsmittels (kein Kegel-Feld: die Frage
     // steht erst bei einem bestaetigten Preis ueber 800 EUR, `feld_bedingung.groesser_als`; im Band bis 952,00 EUR sperrt sie).
     "am_umsatzsteuersatz",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 94): die Konfession des Ehegatten, gefragt bei Zusammenveranlagung (kein Kegel-Feld: ohne Antwort
+    // bleibt es bei Satz mal volle ESt nach Person A, wie in `gesamt`; mit Antwort zahlt bei genau einem Mitglied nur dessen Anteil).
+    "kist_konfession_partner",
 ];
 
 /// `SCHEIBEN['an_gesamt']["kegel"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`

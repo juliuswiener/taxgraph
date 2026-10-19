@@ -1887,3 +1887,70 @@ async fn kist_anteil_zaehlt_gewinn_vermietung_und_rente_der_person_zu() {
         erwarte_kist(name, &ergebnis(scheibe, &basis).await, zahl, kist);
     }
 }
+
+// ---- Scheibe `an_gesamt` (Nr. 94, zuletzt aufgenommen): nur Lohn je Person; Person B ohne eigene Werbungskosten, mit dem Pauschbetrag
+// 1.230 EUR wie in `est_zusammen` (Einkuenfte 58.770 und 18.770 EUR, gleiche Handrechnung wie in `gesamt`). `kist_gezahlt` und
+// `kist_erstattet` kennt diese Scheibe nicht, die Sperre `kirchensteuer_betrag_offen` entfaellt hier.
+
+/// Ein Ehepaar in `an_gesamt`; `konf_b` `None` laesst die Frage nach der Konfession des Ehegatten unbeantwortet.
+fn kist_an_gesamt(lohn_b: i64, konf_a: &'static str, konf_b: Option<&'static str>, land: &'static str) -> Paare {
+    let mut p = vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(6_000_000)),
+        ("bruttoarbeitslohn_partner", json!(lohn_b)),
+        ("kist_konfession", json!(konf_a)),
+        ("kist_bundesland", json!(land)),
+    ];
+    if let Some(k) = konf_b {
+        p.push(("kist_konfession_partner", json!(k)));
+    }
+    p
+}
+
+async fn erwarte_kist_an_gesamt(faelle: &[KistFall]) {
+    for &(name, lohn_b, konf_a, konf_b, land, zahl, kist) in faelle {
+        let basis = mit(kegel_an_gesamt(), kist_an_gesamt(lohn_b, konf_a, konf_b, land));
+        erwarte_kist(&format!("an_gesamt, {name}"), &ergebnis("an_gesamt", &basis).await, zahl, kist);
+    }
+}
+
+/// Fall 1: beide Ehegatten Mitglied (gleiche oder verschiedene Kirche): die Summe bleibt Satz mal volle gemeinsame `ESt`.
+#[tokio::test]
+async fn kist_an_gesamt_fall_1_beide_mitglied_bleibt_satz_mal_volle_est() {
+    erwarte_kist_an_gesamt(&[
+        ("A ev, B rk (konfessionsverschieden)", 2_000_000, "evangelisch", Some("roemisch-katholisch"), "nordrhein_westfalen", 1_383_800, 124_542),
+        ("A ev, B ev (konfessionsgleich)", 2_000_000, "evangelisch", Some("evangelisch"), "nordrhein_westfalen", 1_383_800, 124_542),
+    ])
+    .await;
+}
+
+/// Fall 3: nur ein Ehegatte Mitglied: nur der Anteil des Mitglieds, nach dem Grundtarif auf die Summe der Einkuenfte.
+#[tokio::test]
+async fn kist_an_gesamt_fall_3_nur_ein_mitglied_zahlt_seinen_anteil() {
+    erwarte_kist_an_gesamt(&[
+        ("A ev, B keine: Anteil von A (91,25 %)", 2_000_000, "evangelisch", Some("keine"), "nordrhein_westfalen", 1_383_800, 113_648),
+        ("A keine, B ev: Anteil von B (8,75 %), nicht 0", 2_000_000, "keine", Some("evangelisch"), "nordrhein_westfalen", 1_383_800, 10_893),
+        ("Bayern 8 %, A ev, B keine", 2_000_000, "evangelisch", Some("keine"), "bayern", 1_383_800, 101_020),
+        ("Alleinverdiener A ev, B keine: Anteil 1", 0, "evangelisch", Some("keine"), "nordrhein_westfalen", 823_800, 74_142),
+        ("Alleinverdiener A keine, B ev: Anteil 0", 0, "keine", Some("evangelisch"), "nordrhein_westfalen", 823_800, 0),
+    ])
+    .await;
+}
+
+/// Die Werbungskosten von Person A mindern nur ihre Einkuenfte, nicht die von Person B (die hat hier nur den Pauschbetrag): A hat 220 Tage
+/// mal 30 km Entfernungspauschale (220 x (20 x 0,30 + 10 x 0,38) = 2.156 EUR, Saetze aus `params/2025/`), Einkuenfte 57.844 und 18.770 EUR,
+/// zvE 76.542, gemeinsame `ESt` 13.546 EUR, Grundtarif 13.582 und 1.336 EUR (Skript, Zeile `AN-EP`).
+#[tokio::test]
+async fn kist_an_gesamt_werbungskosten_von_person_a_mindern_nicht_die_einkuenfte_von_person_b() {
+    let basis = mit(
+        mit(kegel_an_gesamt(), kist_an_gesamt(2_000_000, "evangelisch", Some("keine"), "nordrhein_westfalen")),
+        vec![("ep_arbeitstage", json!(220)), ("ep_entfernung_km", json!(30)), ("ep_eigenes_kfz", json!(true))],
+    );
+    erwarte_kist("an_gesamt, EP von A", &ergebnis("an_gesamt", &basis).await, 1_354_600, 110_995);
+}
+
+/// Ohne Antwort zu Person B bleibt es wie bisher (Satz mal volle `ESt` nach Person A): die Antwort ist kein Kegel-Feld, die Zahl kommt auch ohne sie.
+#[tokio::test]
+async fn kist_an_gesamt_ohne_antwort_zu_person_b_rechnet_wie_bisher() {
+    erwarte_kist_an_gesamt(&[("B unbeantwortet", 2_000_000, "evangelisch", None, "nordrhein_westfalen", 1_383_800, 124_542)]).await;
+}

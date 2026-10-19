@@ -92,10 +92,12 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// (Abweichung Nr. 86), 89 -> 91, 407 -> 409 und 320 -> 322, die Kegel bleiben;
 /// danach am 2026-10-19 das Feld `am_umsatzsteuersatz` in `an_gesamt` und `gesamt` (Abweichung Nr. 88), 91 -> 92 und 409 -> 410, die
 /// Kegel bleiben, `rentner_gesamt` bleibt 322;
+/// danach am 2026-10-19 das Feld `kist_konfession_partner` nur in `an_gesamt` (Abweichung Nr. 94), 92 -> 93, der Kegel bleibt, `gesamt`
+/// und `rentner_gesamt` fragen es schon;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 92, 33),
+    (Scheibe::AnGesamt, 93, 33),
     (Scheibe::Gesamt, 410, 35),
     (Scheibe::RentnerGesamt, 322, 28),
 ];
