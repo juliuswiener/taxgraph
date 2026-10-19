@@ -78,7 +78,8 @@ relevant ist. Diese Aussage gehört ins Manifest (Signatur, Geltungsbedingungen,
 Wo ein Paragraph sehr lang ist (§ 32a, § 9), bleibt die Datei trotzdem der ganze
 Paragraph; der für eine Regel maßgebliche Ausschnitt wird über das Feld `auszug`
 im Manifest gebildet und dort **wörtlich gegen die Quelle geprüft** (siehe
-`pipeline/quellen.py`).
+`pipeline/quellen.py`; Manifest und Skript fielen mit L4, 2026-10-19, Verlauf: Tag
+`python-standard-letzter`. Die Anker der Bindung prüft heute `rust/bindung/tests/anker.rs`).
 
 ### Bestandsaufnahme (2026-07-10)
 

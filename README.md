@@ -24,7 +24,8 @@ Gate G0 (Go/No-Go fuer Catala) mit Daten beantworten.
   Datenquelle pro Wert. `params/<vz>/`.
 - **Differentialtest gegen GETTSIM 1.2.1**: Catala nach Python kompiliert und
   ueber tausende geseedete zvE-Werte pro VZ mit GETTSIM verglichen.
-  `oracle/gettsim/`, Report in `reports/s02-divergenzen.md`.
+  Report in `reports/s02-divergenzen.md`. Der Test (`oracle/gettsim/`, `make s02`) fiel mit L4
+  am 2026-10-19; Verlauf: Tag `python-standard-letzter`.
 - **Default-Logic-Ergonomietest**: § 4 Abs. 5 Nr. 6b/6c (Arbeitszimmer und
   Homeoffice-Tagespauschale) inklusive gegenseitigem Ausschluss.
   `rules/estg/p04_arbeitszimmer_homeoffice/`, Report in `reports/s03-ergonomie.md`.
@@ -35,8 +36,7 @@ Gate G0 (Go/No-Go fuer Catala) mit Daten beantworten.
 Voraussetzungen und exakte Versionen: `docs/setup.md`.
 
 ```bash
-make tests   # alle Clerk-Scope-Tests (12 gruen)
-make s02     # Differentialtest Catala vs GETTSIM, erzeugt reports/s02-divergenzen.md
+make tests   # alle Clerk-Scope-Tests
 ```
 
 ### Dienst starten (seit dem Cutover 2026-10-04: Rust)
@@ -71,22 +71,9 @@ make serve          # Rust-Dienst, das Produkt: http://127.0.0.1:8000 (SERVE_POR
 
 ### Verifizierte Regeln reproduzieren (frischer Clone)
 
-Die Pipeline-Laeufe unter `pipeline/runs/` sind gitignored — ein frischer Clone
-hat sie nicht. Das deterministische Verdikt jeder **verifizierten** Regel liegt
-stattdessen als committeter Snapshot unter `pipeline/snapshots/<rule_id>.json`
-(Catala A/B, Judge-Verdikt, Gates, `sha256(catala_a)` als Integritaets-Waechter).
-Ein frischer Clone regatet daraus ohne Modellkosten:
-
-```bash
-make snapshot-verify   # sha256-Integritaet aller Snapshots (schnell, kein clerk)
-python pipeline/produktion/run.py --regate   # rekonstruiert das Verdikt aus Snapshots
-```
-
-Ein Live-Report in `runs/` schlaegt den Snapshot (in-flight vor Archiv); der
-Snapshot ist kanonisch nur, wenn kein Live-Report existiert. Ein manipulierter
-Snapshot (catala_a geaendert, Hash nicht) failt hart — nie stiller PASS
-(`pipeline/tests/test_snapshot.py`). Snapshots nach einer Abnahme nachziehen:
-`python pipeline/snapshot.py write --all`.
+Die Python-Pipeline (`pipeline/`) mit ihren Snapshots und `make snapshot-verify` fiel mit L4 am
+2026-10-19. Die Regeln pruefen `make tests` (Catala) und `make rust-test` (das Tor, mit den
+135 Golden-Faellen). Den alten Stand liefert der Tag `python-standard-letzter`.
 
 ## Repo-Layout
 
@@ -95,7 +82,6 @@ rules/estg/p32a/                        # § 32a literate Catala + Tests
 rules/estg/p04_arbeitszimmer_homeoffice/# § 4 Abs. 5 Nr. 6b/6c literate Catala + Tests
 params/2024|2025|2026/                  # Tarifparameter je VZ mit Quellen
 params/derive_coefficients.py           # Ableitung/Validierung der Koeffizienten
-oracle/gettsim/                         # Differentialtest-Harness + Assembler
 golden/                                 # Golden-Test-Korpus (M1.4); Lauf: make golden (Rust); Rechenkern: rust/engine/
 docstore/                               # Dokumentstore-Schema, Ingest, docker-compose (M1.5)
 sources/                                # Fassungsarchiv: eingefrorene Gesetzestexte + Hash
@@ -111,7 +97,7 @@ scripts/                                # Installations- und Verifikationsskript
   § 32a, Einzel- und Zusammenveranlagung (`rules/estg/p32a/`, Tests in
   `rules/estg/arbeitnehmerfall/`). Differentiell gegen GETTSIM: die zvE-Ableitung
   ist exakt, Divergenzen reduzieren sich auf die dokumentierten § 32a-Effekte
-  (`make p1`, Report `reports/p1-arbeitnehmerfall.md`).
+  (Report `reports/p1-arbeitnehmerfall.md`; `make p1` fiel mit L4).
 - **M1.4 Golden-Korpus** (`golden/`): 57 Faelle (§ 32a-Tarif, Arbeitnehmerfall, Entfernungspauschale, Arbeitszimmer/Homeoffice
   end-to-end), je mit Zitatanker-Gate gegen `sources/` und Wertabgleich gegen
   Catala (`make golden`).

@@ -49,8 +49,8 @@ VOR-Musterfall: `gesamtbeitraege_inkl_ag` = AN-Anteil ∪ AG-Anteil ∪ Beiträg
 
 ## `datei` / Anker-Verifikation (Auflage B — Gate d)
 
-Jeder `anker_ref.zitatanker` wird **voll-Länge** via `pipeline/gates._normalize` gegen die Quelldatei
-geprüft. Die Datei löst der Gate über `regel_id → rules.yaml norm_source`; bei Catala-Scope-Quellen
+Jeder `anker_ref.zitatanker` wird **voll-Länge** vom Wächter `rust/bindung/tests/anker.rs` gegen die Quelldatei
+geprüft (die Regel `normalisiere` stammt aus dem gelöschten `pipeline/gates._normalize`). Die Datei löst der Gate über `regel_id → rules.yaml norm_source`; bei Catala-Scope-Quellen
 (EP hat keinen rules.yaml-Eintrag) MUSS `anker_ref.datei` explizit gesetzt sein. Ohne diese Prüfung
 driften UI-Anker von den Freezes ab — die Zitatanker-Doktrin gilt auch hier.
 
@@ -94,7 +94,7 @@ bei `veranlagung == "zusammen"` (`bindung_regel_bedingungen.yaml`).
    EÜR-Betrags-Kz (`E60…`, eigene Datenart) werden NICHT als `elster_kz` gebunden, sondern nur in
    `elster_kz_grund` referenziert (wie das GWG-Beispiel). Begründung: Gate (c) bleibt einschemig
    (E10-2025); EÜR ist eine andere Datenart mit eigenem XSD (später, kein Datenart-Misch).
-4. **(d) Anker-Verifikation** — jeder `anker_ref.zitatanker` voll-Länge via `pipeline/gates._normalize`
+4. **(d) Anker-Verifikation** — jeder `anker_ref.zitatanker` voll-Länge via `rust/bindung/tests/anker.rs`
    gegen die Quelldatei (`anker_ref.datei` oder `regel_id → rules.yaml norm_source`).
 5. **Negativtest (Pflicht):** absichtlich manipulierte Einträge (`§` im Fragetext, erfundene E-Nr,
    unbelegter Slot, verfälschter Zitatanker, gemischte `exakt`/`summand` auf einem Slot) MÜSSEN das

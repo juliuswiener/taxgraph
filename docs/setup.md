@@ -58,7 +58,8 @@ Es werden zwei virtuelle Umgebungen genutzt (System-Python bleibt unangetastet):
 - `oracle/.venv312` (Python 3.12): GETTSIM **und** die Catala-Python-Runtime.
   Die von Catala erzeugte Python-Runtime nutzt PEP-695-Syntax
   (`class Array[T: Value]`) und benoetigt daher Python >= 3.12. Der
-  Differentialtest laeuft in dieser Umgebung.
+  Differentialtest gegen GETTSIM lief in dieser Umgebung und fiel mit L4 (2026-10-19);
+  die Umgebung bleibt fuer `params-check`, `params-import`, `docstore-*` und `elster-check`.
 
 ```bash
 # uv wird als Environment-Manager verwendet (schnell, reproduzierbar)
@@ -74,18 +75,12 @@ mit L2). `rust/bindung/tests/ci_pins.rs` prueft, dass kein anderer Installations
 
 `scripts/install-gettsim.sh` fuehrt genau diese zwei Kommandos aus.
 
-## 3. Differentialtest ausfuehren
+## 3. Differentialtest (entfallen)
 
-```bash
-make s02
-```
-
-Das Kommando kompiliert das Catala-Modul `Einkommensteuertarif` nach Python
-(`clerk build p32a-python`), fasst das Python-Paket zusammen
-(`oracle/gettsim/assemble_catala.sh`) und startet den Harness
-(`oracle/gettsim/harness.py`), der pro Veranlagungszeitraum 1000 geseedete
-zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
-`reports/s02-divergenzen.md` neu erzeugt.
+`make s02` (Catala nach Python kompilieren, 1000 geseedete zvE-Werte je Veranlagungszeitraum durch
+Catala und GETTSIM schicken, `reports/s02-divergenzen.md` erzeugen) fiel mit L4 am 2026-10-19,
+samt `oracle/gettsim/`. Der Bericht bleibt als Verlauf. Den lauffaehigen Stand liefert der Tag
+`python-standard-letzter`.
 
 ## Makefile-Ziele
 
@@ -94,8 +89,6 @@ zvE-Werte plus Randwerte durch Catala und GETTSIM schickt und
 | `make tests` | Alle Clerk-Scope-Tests (S0.1 Tarif + S0.3 Arbeitszimmer/Homeoffice). |
 | `make s01` | Nur die § 32a-Tarif-Tests. |
 | `make s03` | Nur die Arbeitszimmer/Homeoffice-Tests. |
-| `make build-python` | Catala -> Python-Paket bauen und zusammenfuegen. |
-| `make s02` | Differentialtest gegen GETTSIM, erzeugt den Divergenzreport. |
 | `make params-check` | Ableitung/Validierung der Tarifkoeffizienten. |
 | `make eric-gate` | ERiC-Offline-Gate: E10-2025-XSD-Struktur + checkESt. Prueft eine Minimal-XML, **kein** Abgabeweg-Nachweis. |
 | `make abgabeweg-freigabe-rust` | Lokaler Freigabenachweis des ERiC-Abgabewegs ueber den echten HTTP-Endpunkt (`rust/api/tests/einreichen_eric_echt.rs`): echter Prozess `taxgraph-api`, echte ERiC-Bibliothek, echte Herstellerkennung, nur Pruefung. Jede fehlende Voraussetzung und jeder andere Lauf als genau ein bestandener Test ist exit != 0. |
@@ -175,6 +168,11 @@ Abrufdatum und SHA256 abgelegt (`make sources-check`).
   (min/max), kein ganzzahliges Ab-/Aufrunden. Fuer die gesetzliche Abrundung auf
   volle Euro wird `Decimal.truncate` verwendet (bei nichtnegativen Werten gleich
   dem Abrunden).
+
+> Vermerk 2026-10-19: Die folgenden Abschnitte (OpenRouter, `max_tokens`, `yamlstrict`) beschreiben die
+> Python-Pipeline (`pipeline/`), die mit L4 fiel. Sie bleiben als Verlauf; `models.yaml` und die Gates
+> liegen nur noch im Tag `python-standard-letzter`. `yamlstrict.py` bleibt fuer `params/`, `golden/`,
+> `docstore/` und `elster/`.
 
 ## OpenRouter: `provider.only` ist keine Praeferenzliste
 
