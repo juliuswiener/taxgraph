@@ -1132,7 +1132,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für seine Basis-Krankenversicherung gezahlt?"
-    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne Zusatzleistungen."
+    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 25), ohne Zusatzleistungen. Trage den Beitrag so ein, wie dort steht. Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 250000
     herkunft_slots: null
     elster_kz: null
@@ -1151,7 +1151,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung), ohne private Zusatzversicherung."
+    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 26), ohne private Zusatzversicherung. Trage den Beitrag so ein, wie dort steht. Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: null
@@ -1300,6 +1300,69 @@ bindungen:
     anker_ref:
       quelle: "§ 10 Abs. 4 S. 2 EStG"
       zitatanker: "Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # Steuerfreie Arbeitgeberzuschuesse zur KV/PV des Ehegatten (Lohnsteuerbescheinigung Nr. 24 a, 24 b, 24 c; Abweichung Nr. 92, Spiegel der drei
+  # Felder `zuschuss_ag_*` von Person A in bindung_n_vor_gwg.yaml: Begruendung dort). Klasse g: kein eigenes Kz, der Wert geht in dieselben
+  # Kz wie bei Person A (E2003705, E2003807, E2003907), in den Container von Person B (`PARTNER_INSTANZ`, `rust/elster/src/tabellen.rs`).
+  - feld_id: zuschuss_ag_kv_gesetzlich_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: zuschuss_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss_partner, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch deines Partners auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu seiner gesetzlichen Krankenversicherung hat der Arbeitgeber deines Ehe-/Lebenspartners dieses Jahr gezahlt?"
+    hilfe_kurz: "Person-individuell: steht in der Lohnsteuerbescheinigung deines Partners unter Nr. 24 a. Das ist der steuerfreie Zuschuss, den der Arbeitgeber zusätzlich zahlt, zum Beispiel wenn dein Partner freiwillig gesetzlich versichert ist. Bei Pflichtversicherten bleibt Nr. 24 a leer: dann trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 120000
+    herkunft_slots: ["LStB Nr. 24 a"]
+    elster_kz: null
+    elster_kz_grund: "Person-B-Spiegel (Klasse g): derselbe Kz E2003705 wie Person A (VOR/Stfr_AG_Zusch, Container Person B)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: zuschuss_ag_kv_privat_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: zuschuss_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss_partner, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch deines Partners auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu seiner privaten Krankenversicherung hat der Arbeitgeber deines Ehe-/Lebenspartners dieses Jahr gezahlt?"
+    hilfe_kurz: "Person-individuell: steht in der Lohnsteuerbescheinigung deines Partners unter Nr. 24 b. Das ist der steuerfreie Zuschuss des Arbeitgebers zur privaten Krankenversicherung. Hat dein Partner keinen, trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 120000
+    herkunft_slots: ["LStB Nr. 24 b"]
+    elster_kz: null
+    elster_kz_grund: "Person-B-Spiegel (Klasse g): derselbe Kz E2003807 wie Person A (VOR/Stfr_AG_Zusch, Container Person B)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: zuschuss_ag_pv_partner
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: zuschuss_kv_pv_partner}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss_partner, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch deines Partners auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu seiner Pflegeversicherung hat der Arbeitgeber deines Ehe-/Lebenspartners dieses Jahr gezahlt?"
+    hilfe_kurz: "Person-individuell: steht in der Lohnsteuerbescheinigung deines Partners unter Nr. 24 c. Das ist der steuerfreie Zuschuss des Arbeitgebers zur gesetzlichen Pflegeversicherung (soziale Pflegeversicherung oder private Pflege-Pflichtversicherung). Hat dein Partner keinen, trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 20000
+    herkunft_slots: ["LStB Nr. 24 c"]
+    elster_kz: null
+    elster_kz_grund: "Person-B-Spiegel (Klasse g): derselbe Kz E2003907 wie Person A (VOR/Stfr_AG_Zusch, Container Person B)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: geburtsjahr_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, signatur_slot: geburtsjahr_partner}

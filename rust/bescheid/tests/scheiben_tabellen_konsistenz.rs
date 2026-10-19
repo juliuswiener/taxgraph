@@ -96,12 +96,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// `…_beginn_jahr_partner`, `…_art_partner`, `…_alter_bei_beginn_partner`) nur in `gesamt` (Abweichung Nr. 87), 410 -> 415, der Kegel bleibt;
 /// danach am 2026-10-19 das Feld `kist_konfession_partner` nur in `an_gesamt` (Abweichung Nr. 94), 92 -> 93, der Kegel bleibt, `gesamt`
 /// und `rentner_gesamt` fragen es schon;
+/// danach am 2026-10-19 die sechs Zuschussfelder (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`, `zuschuss_ag_pv`, je Person) in
+/// `an_gesamt`, `gesamt` und `rentner_gesamt` (Abweichung Nr. 92), 93 -> 99, 415 -> 421 und 322 -> 328, die Kegel bleiben;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 93, 33),
-    (Scheibe::Gesamt, 415, 35),
-    (Scheibe::RentnerGesamt, 322, 28),
+    (Scheibe::AnGesamt, 99, 33),
+    (Scheibe::Gesamt, 421, 35),
+    (Scheibe::RentnerGesamt, 328, 28),
 ];
 
 fn registry() -> &'static Registry {
@@ -394,6 +396,11 @@ const BETRAGSFELDER_OHNE_KZ: &[&str] = &[
     "vv_gebaeude_afa",
     "vv_schuldzinsen",
     "vv_sonstige_wk",
+    // Seit 2026-10-19 (Abweichung Nr. 92): nicht in der Python-Liste. Die drei Zuschuesse des Ehegatten sind der Spiegel von Person A
+    // (Klasse g): kein eigenes Kz, `deklariere` traegt sie unter denselben Kz in `person_b`.
+    "zuschuss_ag_kv_gesetzlich_partner",
+    "zuschuss_ag_kv_privat_partner",
+    "zuschuss_ag_pv_partner",
 ];
 
 /// `cent`-Felder in den nutzerwaehlbaren Scheiben ohne Kz.

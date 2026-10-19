@@ -1254,7 +1254,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für deine Basis-Krankenversicherung gezahlt?"
-    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 25)."
+    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 25). Trage den Beitrag so ein, wie dort steht. Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 250000
     herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag KV", "LStB Nr. 25"]
     elster_kz: null
@@ -1273,7 +1273,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Der Pflege-Pflichtbeitrag (gesetzlich), ohne private Pflege-Zusatzversicherung. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 26)."
+    hilfe_kurz: "Der Pflege-Pflichtbeitrag (gesetzlich), ohne private Pflege-Zusatzversicherung. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 26). Trage den Beitrag so ein, wie dort steht. Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 50000
     herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag PV", "LStB Nr. 26"]
     elster_kz: null
@@ -1415,6 +1415,76 @@ bindungen:
     anker_ref:
       quelle: "§ 10 Abs. 4 S. 2 EStG"
       zitatanker: "Anspruch auf vollständige oder teilweise Erstattung oder Übernahme von Krankheitskosten"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  # Steuerfreie Arbeitgeberzuschuesse zur KV/PV (Lohnsteuerbescheinigung Nr. 24 a, 24 b, 24 c; gebaut 2026-10-19, Abweichung Nr. 92 in
+  # rust/fixtures/README.md; Vault: decisions/julius-entscheidet-zuschussfelder-bauen-beleg-abruf-s1-und-s2-planen-quellen-skripte-nach-
+  # rust-berufsverbaende-bauen-2026-10-19, d-37). Sie MINDERN die abziehbaren Basisbeitraege der Person (§ 10 Abs. 2 S. 1 Nr. 1 EStG,
+  # `bescheid/src/abzuege.rs` `basisbeitrag_nach_zuschuss`, nie unter 0); `basis_kv` und `basis_pv` bleiben der volle Beitrag. Das Element
+  # steht im Beleg je Art getrennt (24 a gesetzliche KV, 24 b private KV, 24 c gesetzliche Pflege) und in der Erklaerung je Art in einem
+  # eigenen Kz (`Stfr_AG_Zusch`, je Person ein Container).
+  # Optionale Betraege (leer heisst 0), KEINE Pflichtfrage und kein Kegel-Feld: haengt an `feld_bedingung` auf `mit_anspruch_auf_zuschuss`
+  # (positiv nur ein bestaetigtes Nein schliesst die Frage aus) und `signatur_slot` als Etikett, nie an `geltungsbedingung` (Entscheidung
+  # ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-an-geltungsbedingung). Nicht `nicht_negativ`: der Schematyp (`GanzzahlOhneFuehrNull`)
+  # kennt das Minus; die Rechnung nimmt eine Summe unter 0 als 0.
+  - feld_id: zuschuss_ag_kv_gesetzlich
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: zuschuss_kv_pv}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu deiner gesetzlichen Krankenversicherung hat dir dein Arbeitgeber dieses Jahr gezahlt?"
+    hilfe_kurz: "Steht in der Lohnsteuerbescheinigung unter Nr. 24 a. Das ist der steuerfreie Zuschuss, den der Arbeitgeber zusätzlich zahlt, zum Beispiel wenn du freiwillig gesetzlich versichert bist. Bei Pflichtversicherten trägt der Arbeitgeber seinen Anteil direkt ab, Nr. 24 a bleibt leer: dann trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 120000
+    herkunft_slots: ["LStB Nr. 24 a"]
+    elster_kz: E2003705
+    elster_kz_grund: "VOR/Stfr_AG_Zusch/E2003705 (E10-2025.xsd): „Gesetzliche Krankenversicherung laut Nr. 24 a der Lohnsteuerbescheinigung“. Je Person ein Container (Person A = Basis, Person B = person_b)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: zuschuss_ag_kv_privat
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: zuschuss_kv_pv}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu deiner privaten Krankenversicherung hat dir dein Arbeitgeber dieses Jahr gezahlt?"
+    hilfe_kurz: "Steht in der Lohnsteuerbescheinigung unter Nr. 24 b. Das ist der steuerfreie Zuschuss des Arbeitgebers zu deiner privaten Krankenversicherung. Hast du keinen, trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 120000
+    herkunft_slots: ["LStB Nr. 24 b"]
+    elster_kz: E2003807
+    elster_kz_grund: "VOR/Stfr_AG_Zusch/E2003807 (E10-2025.xsd): „Private Krankenversicherung laut Nr. 24 b der Lohnsteuerbescheinigung“. Je Person ein Container (Person A = Basis, Person B = person_b)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
+      datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
+  - feld_id: zuschuss_ag_pv
+    vorschlagbar_von: [beleg]
+    quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: zuschuss_kv_pv}
+    slot_beitrag: summand
+    typ: cent
+    einheit: EUR
+    askable: true
+    feld_bedingung: {feld: mit_anspruch_auf_zuschuss, wert: true, grund: "Die Frage nach dem Zuschuss steht, solange du den Anspruch auf einen Zuschuss oder eine Beihilfe nicht verneint hast: ohne Anspruch gibt es keinen Zuschuss zu erfassen."}
+    vorjahr: vorschlag
+    fragetext_laie: "Wie viel steuerfreien Zuschuss zu deiner Pflegeversicherung hat dir dein Arbeitgeber dieses Jahr gezahlt?"
+    hilfe_kurz: "Steht in der Lohnsteuerbescheinigung unter Nr. 24 c. Das ist der steuerfreie Zuschuss des Arbeitgebers zur gesetzlichen Pflegeversicherung (soziale Pflegeversicherung oder private Pflege-Pflichtversicherung). Hast du keinen, trage 0 ein. Den Beitrag trägst du oben ohne Abzug des Zuschusses ein, die Software zieht ihn ab."
+    beispielwert: 20000
+    herkunft_slots: ["LStB Nr. 24 c"]
+    elster_kz: E2003907
+    elster_kz_grund: "VOR/Stfr_AG_Zusch/E2003907 (E10-2025.xsd): „Gesetzliche Pflegeversicherung laut Nr. 24 c der Lohnsteuerbescheinigung“. Je Person ein Container (Person A = Basis, Person B = person_b)."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "§ 10 Abs. 2 S. 1 Nr. 1 EStG"
+      zitatanker: "steuerfreie Zuschüsse zu einer Kranken- oder Pflegeversicherung stehen insgesamt in unmittelbarem wirtschaftlichen Zusammenhang mit den Vorsorgeaufwendungen"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
   # ========================= GWG — p6_2_gwg_sofortabzug =========================

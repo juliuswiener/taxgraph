@@ -534,6 +534,45 @@ fn steuerermaessigungen(
     )
 }
 
+/// Der Basisbeitrag einer Person in Cent (§ 10 Abs. 1 Nr. 3 `EStG`): `basis_kv + basis_pv`, vermindert um die steuerfreien
+/// Arbeitgeberzuschuesse zur KV und PV (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`, `zuschuss_ag_pv`; Lohnsteuerbescheinigung
+/// Nr. 24 a, b, c), dazu `kind_kv_pv` (die Beitraege fuer Kinder, ohne Zuschuss). `suffix` ist `""` fuer Person A, `"_partner"` fuer den
+/// Ehegatten. Der Zuschuss steht in unmittelbarem wirtschaftlichem Zusammenhang mit den Beitraegen und ist nicht abziehbar (§ 10 Abs. 2
+/// S. 1 Nr. 1 `EStG`): der eigene Beitrag sinkt um ihn, nie unter 0. Ein Zuschuss von 0 oder darunter laesst den Beitrag unveraendert
+/// (auch einen negativen, wie bisher); mehr als der Beitrag zieht nichts ueber 0 ab.
+///
+/// Der EINE Rechenpfad fuer `an_gesamt` (`zweige/an_gesamt.rs`), `gesamt` und `rentner_gesamt` (Abweichung Nr. 92).
+///
+/// ponytail: die drei Zuschuesse stehen zusammen gegen die Summe aus `basis_kv` und `basis_pv`, nicht je Art gegen ihren Beitrag. Wer die
+/// Privatversicherung (Nr. 28 des Belegs fasst KV und Pflege zusammen) in nur einem der beiden Felder eintraegt, rechnet so richtig; ein
+/// Pflegezuschuss ueber dem Pflegebeitrag mindert dafuer auch den KV-Beitrag. Upgrade: je Art getrennt, wenn der Beleg die Beitraege
+/// getrennt liefert (Nr. 90).
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einer Summe oder Differenz jenseits von `i64`.
+pub(crate) fn basisbeitrag_nach_zuschuss(
+    f: &Felder,
+    suffix: &str,
+    kind_kv_pv: i64,
+) -> Result<i64, BescheidFehler> {
+    let fid = |name: &str| format!("{name}{suffix}");
+    let beitrag = summe(&[
+        feld_int_oder_null(f, &fid("basis_kv"))?,
+        feld_int_oder_null(f, &fid("basis_pv"))?,
+    ])?;
+    let zuschuss = summe(&[
+        feld_int_oder_null(f, &fid("zuschuss_ag_kv_gesetzlich"))?,
+        feld_int_oder_null(f, &fid("zuschuss_ag_kv_privat"))?,
+        feld_int_oder_null(f, &fid("zuschuss_ag_pv"))?,
+    ])?;
+    let eigener = if zuschuss > 0 {
+        minus(beitrag, zuschuss)?.max(0)
+    } else {
+        beitrag
+    };
+    summe(&[eigener, kind_kv_pv])
+}
+
 /// KV/PV-Sonderausgaben einer Person; `partner` waehlt die `_partner`-Felder (ohne Kind-Beitraege).
 fn kv_pv_sonderausgaben(
     f: &Felder,
@@ -542,11 +581,7 @@ fn kv_pv_sonderausgaben(
 ) -> Result<Euro, BescheidFehler> {
     let s = if partner { "_partner" } else { "" };
     let fid = |name: &str| format!("{name}{s}");
-    let basis = summe(&[
-        feld_int_oder_null(f, &fid("basis_kv"))?,
-        feld_int_oder_null(f, &fid("basis_pv"))?,
-        kind_kv_pv,
-    ])?;
+    let basis = basisbeitrag_nach_zuschuss(f, s, kind_kv_pv)?;
     let weitere = summe(&[
         feld_int_oder_null(f, &fid("vorsorge_arbeitslosenversicherung"))?,
         feld_int_oder_null(f, &fid("vorsorge_erwerbsunfaehigkeit"))?,
@@ -767,6 +802,48 @@ mod tests {
         assert!(abs3_eligible(&f, Vz::Vz2025).unwrap());
         let f = felder(&store(&[("geburtsjahr", json!(1990), true)]));
         assert!(!abs3_eligible(&f, Vz::Vz2025).unwrap());
+    }
+
+    /// Der Basisbeitrag nach Abzug der steuerfreien Zuschuesse zur KV und PV (Abweichung Nr. 92), in Cent, je Person. Beitrag KV 3.000 +
+    /// PV 600 Euro, Handrechnung je Zeile. Der Zuschuss zieht nie ueber 0 ab (Zeile 4); die Kind-Beitraege kommen ungekuerzt dazu, auch
+    /// wenn der Zuschuss den eigenen Beitrag uebersteigt (Zeile 5); ein Zuschuss von 0 oder darunter laesst den Beitrag stehen (Zeile 8).
+    /// Die Zuschuesse der anderen Person liest die Funktion nie mit: sie stehen hier hoch, und das Ergebnis haengt nicht von ihnen ab.
+    #[test]
+    fn basisbeitrag_nach_zuschuss_je_person_nie_unter_0_und_ohne_kuerzung_der_kinder() {
+        // (Zuschuss gesetzliche KV, private KV, PV, Kind-Beitraege, Soll), alles Cent
+        let tabelle: [(i64, i64, i64, i64, i64); 8] = [
+            (0, 0, 0, 0, 360_000),
+            (150_000, 0, 20_000, 0, 190_000),
+            (0, 310_000, 40_000, 0, 10_000),
+            (400_000, 0, 0, 0, 0),
+            (400_000, 0, 0, 30_000, 30_000),
+            (100_000, 0, 0, 30_000, 290_000),
+            (0, 0, 0, 30_000, 390_000),
+            (-50_000, 0, 0, 0, 360_000),
+        ];
+        for suffix in ["", "_partner"] {
+            let fremd = if suffix.is_empty() { "_partner" } else { "" };
+            for (gkv, pkv, pv, kind, soll) in tabelle {
+                let werte = [
+                    (format!("basis_kv{suffix}"), 300_000),
+                    (format!("basis_pv{suffix}"), 60_000),
+                    (format!("zuschuss_ag_kv_gesetzlich{suffix}"), gkv),
+                    (format!("zuschuss_ag_kv_privat{suffix}"), pkv),
+                    (format!("zuschuss_ag_pv{suffix}"), pv),
+                    (format!("zuschuss_ag_kv_gesetzlich{fremd}"), 9_000_000),
+                    (format!("zuschuss_ag_kv_privat{fremd}"), 9_000_000),
+                    (format!("zuschuss_ag_pv{fremd}"), 9_000_000),
+                ];
+                let ev: Vec<(&str, serde_json::Value, bool)> =
+                    werte.iter().map(|(n, w)| (n.as_str(), json!(*w), true)).collect();
+                let f = felder(&store(&ev));
+                assert_eq!(
+                    basisbeitrag_nach_zuschuss(&f, suffix, kind).unwrap(),
+                    soll,
+                    "{suffix:?}: Zuschuss {gkv} / {pkv} / {pv}, Kind {kind}"
+                );
+            }
+        }
     }
 
     /// Das 55. Lebensjahr im Jahr der Vollendung (Abweichung Nr. 32): VZ 2025 minus Geburtsjahr 1970 ergibt genau 55. Nur

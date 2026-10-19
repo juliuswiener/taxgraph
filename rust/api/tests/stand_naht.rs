@@ -148,16 +148,18 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// nur `gesamt` +5 mit den fuenf `versorgung_*_partner`-Feldern: 415, Abweichung Nr. 87 am 2026-10-19; `an_gesamt` bleibt 92,
 /// `rentner_gesamt` 322 (dort stehen die fuenf Felder seit Nr. 33),
 /// danach nur `an_gesamt` +1 mit `kist_konfession_partner`: 93, Abweichung Nr. 94 am 2026-10-19; `gesamt` und `rentner_gesamt` fragen sie schon.
+/// danach alle drei +6 mit den Zuschussfeldern je Person (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`, `zuschuss_ag_pv`):
+/// 99, 421 und 328, dazu `n_vor_gwg` 74 -> 77, Abweichung Nr. 92 am 2026-10-19.
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
     let d = dienst();
     for (scheibe, n) in [
         ("ep", 6),
-        ("n_vor_gwg", 74),
-        ("an_gesamt", 93),
-        ("gesamt", 415),
-        ("rentner_gesamt", 322),
+        ("n_vor_gwg", 77),
+        ("an_gesamt", 99),
+        ("gesamt", 421),
+        ("rentner_gesamt", 328),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
         assert_eq!(sb.cfg.scheibe().to_string(), scheibe);

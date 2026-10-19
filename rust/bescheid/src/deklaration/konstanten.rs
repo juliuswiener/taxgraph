@@ -147,7 +147,7 @@ pub(super) fn ring_kandidaten(scheibe: Scheibe) -> &'static [&'static str] {
 }
 
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_AN_GESAMT: [&str; 29] = [
+pub(super) const RING_AN_GESAMT: [&str; 35] = [
     "am_anschaffung_monat",
     "am_anschaffungskosten",
     "arbeitsmittel_nutzungsdauer",
@@ -177,9 +177,15 @@ pub(super) const RING_AN_GESAMT: [&str; 29] = [
     "vpf_tage_24h_nach_drei_monaten",
     "vpf_tage_an_abreise_nach_drei_monaten",
     "vpf_tage_ueber_8h_nach_drei_monaten",
+    "zuschuss_ag_kv_gesetzlich",
+    "zuschuss_ag_kv_gesetzlich_partner",
+    "zuschuss_ag_kv_privat",
+    "zuschuss_ag_kv_privat_partner",
+    "zuschuss_ag_pv",
+    "zuschuss_ag_pv_partner",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_GESAMT: [&str; 108] = [
+pub(super) const RING_GESAMT: [&str; 114] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "am_anschaffung_monat",
@@ -288,9 +294,15 @@ pub(super) const RING_GESAMT: [&str; 108] = [
     "vpf_tage_an_abreise_nach_drei_monaten",
     "vpf_tage_ueber_8h_nach_drei_monaten",
     "waehlervereinigungen_betrag",
+    "zuschuss_ag_kv_gesetzlich",
+    "zuschuss_ag_kv_gesetzlich_partner",
+    "zuschuss_ag_kv_privat",
+    "zuschuss_ag_kv_privat_partner",
+    "zuschuss_ag_pv",
+    "zuschuss_ag_pv_partner",
 ];
 /// Ring-Kandidaten der Scheibe (s. [`ring_kandidaten`]).
-pub(super) const RING_RENTNER_GESAMT: [&str; 91] = [
+pub(super) const RING_RENTNER_GESAMT: [&str; 97] = [
     "afa_jahresbetrag",
     "agb_aufwendungen",
     "basis_kv_partner",
@@ -382,6 +394,12 @@ pub(super) const RING_RENTNER_GESAMT: [&str; 91] = [
     "vorsorge_rv_alt_ohne_ueberschuss_partner",
     "vorsorge_unfall_haftpflicht_partner",
     "waehlervereinigungen_betrag",
+    "zuschuss_ag_kv_gesetzlich",
+    "zuschuss_ag_kv_gesetzlich_partner",
+    "zuschuss_ag_kv_privat",
+    "zuschuss_ag_kv_privat_partner",
+    "zuschuss_ag_pv",
+    "zuschuss_ag_pv_partner",
 ];
 
 /// Zwei Listen, dieselbe Fachfrage, keine Verbindung: die Bindung sagt mit `gate: false` "keine Voraussetzung", eine eigene
