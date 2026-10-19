@@ -28,6 +28,8 @@ mod event_naht;
 mod flag_und_schalter_hermetisch;
 #[path = "fragen_naht.rs"]
 mod fragen_naht;
+#[path = "gesamt_ehegatte_versorgung_hermetisch.rs"]
+mod gesamt_ehegatte_versorgung_hermetisch;
 #[path = "gwg_folgefrage_hermetisch.rs"]
 mod gwg_folgefrage_hermetisch;
 #[path = "http_grenzen_hermetisch.rs"]
