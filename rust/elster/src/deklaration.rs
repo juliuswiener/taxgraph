@@ -304,7 +304,7 @@ const VERSORGUNG_SPERRE_STERBEGELD: &str = "Versorgungsbezüge über 0 Euro: Ang
 const VERSORGUNG_SPERRE_MEHRERE_JAHRE: &str = "Versorgungsbezüge über 0 Euro: Angegeben sind Versorgungsbezüge für mehrere Kalenderjahre (Nummer 9 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür Zeile 16, und die Erklärung trägt diese Zeile nicht; ohne sie fehlt die ermäßigte Besteuerung (Fünftelregelung). Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 const VERSORGUNG_SPERRE_NICHT_GANZJAEHRIG: &str = "Versorgungsbezüge über 0 Euro: Angegeben ist, dass die Versorgungsbezüge nicht in allen zwölf Monaten gezahlt wurden (Nummer 31 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür in Zeile 14 den ersten und den letzten Zahlungsmonat, und die Erklärung trägt diese Zeile nicht. Die Abgabe ist dafür gesperrt. Trage die Versorgungsbezüge im amtlichen Formular selbst ein.";
 
-/// Eine Rueckfrage zum Versorgungsbezug (Abweichung Nr. 66) oder zum Lohn (Abweichung Nr. 85): die Felder von Person A und Ehegatte
+/// Eine Rueckfrage zum Versorgungsbezug (Abweichung Nr. 66) oder zum Lohn (Abweichung Nr. 85, 86): die Felder von Person A und Ehegatte
 /// (Ja/Nein, kein Kz), der Grund der Sperre bei Ja und das Merkmal des Falls fuer den Grund der fehlenden Antwort (Abweichung Nr. 79).
 struct Rueckfrage {
     person_a: &'static str,
@@ -364,20 +364,30 @@ const VERSORGUNG_RUECKFRAGEN: [Rueckfrage; 4] = [
 const LOHN_SPERRE_MEHRERE_JAHRE: &str = "Arbeitslohn: Angegeben ist Arbeitslohn für mehrere Jahre oder eine Entschädigung, zum Beispiel eine Abfindung (Nummer 10 der Lohnsteuerbescheinigung). Der Vordruck verlangt dafür Zeile 17, und die Erklärung trägt diese Zeile nicht; ohne sie fehlt die ermäßigte Besteuerung (Fünftelregelung). Die Abgabe ist dafür gesperrt. Trage den Arbeitslohn im amtlichen Formular selbst ein.";
 const LOHN_SPERRE_AUSLANDSTAETIGKEIT: &str = "Arbeitslohn: Angegeben ist steuerfreier Arbeitslohn nach dem Auslandstätigkeitserlass. Der Vordruck verlangt dafür Zeile 22 und je Staat und Person eine Anlage N-AUS, und die Erklärung trägt beides nicht. Der steuerfreie Arbeitslohn wirkt sich auf den persönlichen Steuersatz aus (Progressionsvorbehalt). Die Abgabe ist dafür gesperrt. Trage den Arbeitslohn im amtlichen Formular selbst ein.";
 
-/// Der Grund der Abgabe-Sperre (Abweichung Nr. 85), wenn der Nutzer eine der Rueckfragen zum Lohn nicht mit Ja oder Nein beantwortet
+/// Der Grund der Abgabe-Sperre (Abweichung Nr. 86), wenn der Nutzer die Rueckfrage zu Leistungen des Arbeitgebers mit Ja beantwortet
+/// ([`LOHN_RUECKFRAGEN`]): steuerfreie und pauschal besteuerte Leistungen fuer Fahrten zwischen Wohnung und Arbeitsstaette (Zeile 51 der
+/// Anlage N, Nr. 17 und 18 der Lohnsteuerbescheinigung), steuerfreie Leistungen fuer Fahrtkosten bei Auswaertstaetigkeit (Zeile 71), bei
+/// doppelter Haushaltsfuehrung (Zeile 34 der Anlage N-DHF) und die steuerfreie Sammelbefoerderung (Grossbuchstabe F, Zeilen 32, 40 und
+/// 48). Die Erklaerung traegt keine dieser Angaben, und die Anrechnung auf Werbungskosten rechnet sie nicht (nur Verpflegung ist
+/// belegt, § 9 Abs. 4a Satz 11). Quelle: `sources/bfinv/anlage_n_2025.txt`, `sources/bfinv/dhf_2025.txt`,
+/// `sources/bfinv/anleitungen/anl_n_2025.txt`, `sources/bfinv/anleitungen/anl_ndhf_2025.txt`.
+const LOHN_SPERRE_ERSTATTUNGEN: &str = "Arbeitslohn: Angegeben sind Leistungen des Arbeitgebers für Fahrten, für eine doppelte Haushaltsführung oder für eine Sammelbeförderung (Nummer 17 und 18 der Lohnsteuerbescheinigung, Großbuchstabe F). Der Vordruck verlangt dafür die Zeile 51 und die Zeile 71 der Anlage N, die Zeile 34 der Anlage N-DHF und die Angabe zur Sammelbeförderung (Zeilen 32, 40 und 48), und die Erklärung trägt diese Angaben nicht. Die Abgabe ist dafür gesperrt. Trage diese Angaben im amtlichen Formular selbst ein.";
+
+/// Der Grund der Abgabe-Sperre (Abweichung Nr. 85, 86), wenn der Nutzer eine der Rueckfragen zum Lohn nicht mit Ja oder Nein beantwortet
 /// hat; das Gegenstueck zu [`rueckfrage_unbeantwortet_grund`] (Nr. 79) fuer den Lohn. Er nennt die fehlende Antwort, das Merkmal des
-/// Falls und die Sperre, und er ist nie der Text des Ja.
+/// Falls und die Sperre, und er ist nie der Text des Ja. Der Schluss sagt "die Angaben dazu", nicht "den Arbeitslohn": die Leistungen des
+/// Arbeitgebers sind kein Arbeitslohn.
 fn lohn_rueckfrage_unbeantwortet_grund(merkmal: &str) -> String {
     format!(
-        "Arbeitslohn: Die Frage, ob {merkmal}, ist nicht mit Ja oder Nein beantwortet. Die Eingaben zeigen diesen Fall nicht, und die Erklärung trägt die Zeilen dafür nicht. Die Abgabe ist gesperrt, bis du die Frage beantwortest. Antwortest du Ja, bleibt die Abgabe gesperrt, und du trägst den Arbeitslohn im amtlichen Formular selbst ein."
+        "Arbeitslohn: Die Frage, ob {merkmal}, ist nicht mit Ja oder Nein beantwortet. Die Eingaben zeigen diesen Fall nicht, und die Erklärung trägt die Zeilen dafür nicht. Die Abgabe ist gesperrt, bis du die Frage beantwortest. Antwortest du Ja, bleibt die Abgabe gesperrt, und du trägst die Angaben dazu im amtlichen Formular selbst ein."
     )
 }
 
-/// Die Rueckfragen zum Lohn (Abweichung Nr. 85), in der Reihenfolge, in der ihre Gruende in `unvollstaendig` stehen. Sie gelten je Person,
-/// deren bestaetigter Bruttoarbeitslohn ueber 0 liegt ([`Bau::lohn_rueckfragen`]); genau dann steht die Frage in der Fragenliste
+/// Die Rueckfragen zum Lohn (Abweichung Nr. 85, 86), in der Reihenfolge, in der ihre Gruende in `unvollstaendig` stehen. Sie gelten je
+/// Person, deren bestaetigter Bruttoarbeitslohn ueber 0 liegt ([`Bau::lohn_rueckfragen`]); genau dann steht die Frage in der Fragenliste
 /// (Bindung `feld_bedingung`). Wie bei den Rueckfragen zum Versorgungsbezug ([`VERSORGUNG_RUECKFRAGEN`]) sperrt ein bestaetigtes Ja mit
 /// dem Text des Falls und jede andere Lage ausser einem bestaetigten Nein mit dem Text der fehlenden Antwort.
-const LOHN_RUECKFRAGEN: [Rueckfrage; 2] = [
+const LOHN_RUECKFRAGEN: [Rueckfrage; 3] = [
     Rueckfrage {
         person_a: "lohn_mehrere_jahre",
         partner: "lohn_mehrere_jahre_partner",
@@ -389,6 +399,12 @@ const LOHN_RUECKFRAGEN: [Rueckfrage; 2] = [
         partner: "lohn_auslandstaetigkeit_partner",
         text: LOHN_SPERRE_AUSLANDSTAETIGKEIT,
         merkmal: "steuerfreier Arbeitslohn nach dem Auslandstätigkeitserlass gezahlt wurde",
+    },
+    Rueckfrage {
+        person_a: "lohn_erstattungen",
+        partner: "lohn_erstattungen_partner",
+        text: LOHN_SPERRE_ERSTATTUNGEN,
+        merkmal: "der Arbeitgeber Fahrtkosten oder Kosten einer doppelten Haushaltsführung erstattet oder bezuschusst oder dich zur Arbeit befördert hat",
     },
 ];
 
@@ -1062,7 +1078,7 @@ impl Bau<'_> {
         self.rueckfragen_pruefen(&VERSORGUNG_RUECKFRAGEN, partner, rueckfrage_unbeantwortet_grund);
     }
 
-    /// Die Rueckfragen `liste` der Person (Abweichung Nr. 66, Nr. 79, Nr. 85): ein bestaetigtes Ja gibt den Text des Falls unter dem Feld
+    /// Die Rueckfragen `liste` der Person (Abweichung Nr. 66, Nr. 79, Nr. 85, Nr. 86): ein bestaetigtes Ja gibt den Text des Falls unter dem Feld
     /// der Frage, ein bestaetigtes Nein keinen Grund, jede andere Lage (fehlend, vorlaeufig, nicht boolesch) den Text, den `unbeantwortet`
     /// aus dem Merkmal der Frage baut. Die Rueckfragen zum Versorgungsbezug und zum Lohn teilen diese eine Pruefung.
     fn rueckfragen_pruefen(&mut self, liste: &[Rueckfrage], partner: bool, unbeantwortet: fn(&str) -> String) {
@@ -1076,7 +1092,7 @@ impl Bau<'_> {
         }
     }
 
-    /// Die Rueckfragen zum Lohn (Abweichung Nr. 85): je Person, deren bestaetigter Bruttoarbeitslohn ueber 0 liegt, die Fragen aus
+    /// Die Rueckfragen zum Lohn (Abweichung Nr. 85, 86): je Person, deren bestaetigter Bruttoarbeitslohn ueber 0 liegt, die Fragen aus
     /// [`LOHN_RUECKFRAGEN`]. Der Ehegatte zaehlt nur bei bestaetigter Zusammenveranlagung, wie im Bescheid. Genau dann steht die Frage in
     /// der Fragenliste (Bindung `feld_bedingung` am Bruttoarbeitslohn), die Sperre verlangt also nie eine Antwort auf eine verborgene Frage.
     /// Der Aufruf steht nach der Feldschleife, weil der Lohn kein eigener Zweig der Schleife ist.
@@ -3721,7 +3737,8 @@ mod tests {
         );
     }
 
-    /// Abweichung Nr. 85: die Rueckfragen zum Lohn (mehrere Jahre/Entschaedigung, Auslandstaetigkeitserlass) je Person. Ein bestaetigtes Ja
+    /// Abweichung Nr. 85, 86: die Rueckfragen zum Lohn (mehrere Jahre/Entschaedigung, Auslandstaetigkeitserlass, Leistungen des
+    /// Arbeitgebers) je Person. Ein bestaetigtes Ja
     /// gibt den Text des Falls unter dem Feld der Frage, ein bestaetigtes Nein keinen Grund, jede andere Lage (fehlend, vorlaeufig, nicht
     /// boolesch) den Text der fehlenden Antwort. Die Fragen gelten nur bei einem BESTAETIGTEN Bruttoarbeitslohn der Person ueber 0, die des
     /// Ehegatten nur bei bestaetigter Zusammenveranlagung.
@@ -3752,9 +3769,13 @@ mod tests {
         // Die Nummer der Lohnsteuerbescheinigung und die Zeile des Vordrucks stehen im Text: der Nutzer sucht sie auf seinem Ausdruck.
         assert!(super::LOHN_SPERRE_MEHRERE_JAHRE.contains("Nummer 10") && super::LOHN_SPERRE_MEHRERE_JAHRE.contains("Zeile 17"));
         assert!(super::LOHN_SPERRE_AUSLANDSTAETIGKEIT.contains("Zeile 22") && super::LOHN_SPERRE_AUSLANDSTAETIGKEIT.contains("Anlage N-AUS"));
+        // Abweichung Nr. 86: die Zeilen der drei Stellen, die Nummern der Bescheinigung und die Sammelbefoerderung stehen im Text.
+        let erst = super::LOHN_SPERRE_ERSTATTUNGEN;
+        assert!(["Zeile 51", "Zeile 71", "Zeile 34 der Anlage N-DHF", "Sammelbeförderung", "Nummer 17 und 18"].iter().all(|m| erst.contains(m)), "{erst}");
         let faelle = [
             ("lohn_mehrere_jahre", super::LOHN_SPERRE_MEHRERE_JAHRE, "Abfindung"),
             ("lohn_auslandstaetigkeit", super::LOHN_SPERRE_AUSLANDSTAETIGKEIT, "Auslandstätigkeitserlass"),
+            ("lohn_erstattungen", super::LOHN_SPERRE_ERSTATTUNGEN, "doppelten Haushaltsführung"),
         ];
         for partner in [false, true] {
             let s = if partner { "_partner" } else { "" };
@@ -3825,14 +3846,16 @@ mod tests {
             ("lohn_mehrere_jahre".to_owned(), feld(json!(false), b)),
             ("lohn_auslandstaetigkeit".to_owned(), feld(json!(false), b)),
             ("lohn_auslandstaetigkeit_partner".to_owned(), feld(json!(false), b)),
+            ("lohn_erstattungen".to_owned(), feld(json!(false), b)),
+            ("lohn_erstattungen_partner".to_owned(), feld(json!(false), b)),
         ]);
         let d = deklariere(&felder, &index, 2025, None).unwrap();
         let ids: Vec<&str> = d.unvollstaendig().iter().map(|e| e.feld_id.as_str()).collect();
         assert_eq!(ids, ["lohn_mehrere_jahre_partner"], "nur das Ja des Ehegatten sperrt, unter seinem Feld");
     }
 
-    /// Abweichung Nr. 85: ohne jede Antwort stehen die Gruende der fehlenden Antwort je Person in der Reihenfolge der Fragen, zwei Nein
-    /// sperren nichts und aendern die Erklaerung nicht, zwei Ja geben zwei Gruende des Falls. Neben einem Grund anderer Herkunft bleibt
+    /// Abweichung Nr. 85, 86: ohne jede Antwort stehen die Gruende der fehlenden Antwort je Person in der Reihenfolge der Fragen, Nein
+    /// sperrt nichts und aendert die Erklaerung nicht, Ja gibt je Frage den Grund des Falls. Neben einem Grund anderer Herkunft bleibt
     /// dieser stehen (die Pruefung ersetzt keinen Grund).
     #[test]
     fn eine_unbeantwortete_lohnfrage_sperrt_mit_eigenem_text_ohne_die_erklaerung_zu_aendern() {
@@ -3863,8 +3886,8 @@ mod tests {
             }
             f
         };
-        let a_namen = ["lohn_mehrere_jahre", "lohn_auslandstaetigkeit"];
-        let b_namen = ["lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner"];
+        let a_namen = ["lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_erstattungen"];
+        let b_namen = ["lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner", "lohn_erstattungen_partner"];
         let ids = |d: &Deklaration| d.unvollstaendig().iter().map(|e| e.feld_id.clone()).collect::<Vec<String>>();
         // Ohne jede Antwort: Person A zuerst, dann der Ehegatte, in der Reihenfolge der Fragen; jeder Grund nennt Antwort und Sperre.
         let ohne = deklariere(&basis(true), &index, 2025, None).unwrap();
@@ -3879,37 +3902,35 @@ mod tests {
                 e.grund
             );
         }
-        // Nur Person A mit Lohn (Einzelveranlagung): zwei Gruende, keiner des Ehegatten.
+        // Nur Person A mit Lohn (Einzelveranlagung): drei Gruende, keiner des Ehegatten.
         let einzel = deklariere(&basis(false), &index, 2025, None).unwrap();
         assert_eq!(ids(&einzel), a_namen, "Einzelveranlagung: nur Person A");
-        // Viermal Nein: nichts sperrt, und die Erklaerung ist dieselbe wie ohne Antwort (die Sperre aendert keine Zeile).
+        // Sechsmal Nein: nichts sperrt, und die Erklaerung ist dieselbe wie ohne Antwort (die Sperre aendert keine Zeile).
         let mut nein = basis(true);
         for n in a_namen.iter().chain(&b_namen) {
             nein.insert((*n).to_owned(), feld(json!(false)));
         }
         let mit_nein = deklariere(&nein, &index, 2025, None).unwrap();
-        assert!(mit_nein.unvollstaendig().is_empty(), "viermal Nein sperren: {:?}", mit_nein.unvollstaendig());
+        assert!(mit_nein.unvollstaendig().is_empty(), "sechsmal Nein sperren: {:?}", mit_nein.unvollstaendig());
         assert_eq!(mit_nein.deklaration, ohne.deklaration, "Nein aendert die Erklaerung");
         assert_eq!(mit_nein.person_b, ohne.person_b, "Nein aendert die zweite Anlage N");
-        // Drei Nein und eine fehlende Antwort: genau die fehlende sperrt.
+        // Fuenf Nein und eine fehlende Antwort: genau die fehlende sperrt.
         for n in a_namen.iter().chain(&b_namen) {
             let mut f = nein.clone();
             f.remove(*n);
             let d = deklariere(&f, &index, 2025, None).unwrap();
             assert_eq!(ids(&d), [(*n).to_owned()], "nur {n} fehlt");
         }
-        // Vier Ja: vier Gruende des Falls in der Reihenfolge der Fragen, die Erklaerung bleibt gleich.
+        // Sechs Ja: sechs Gruende des Falls in der Reihenfolge der Fragen, die Erklaerung bleibt gleich.
         let mut ja = basis(true);
         for n in a_namen.iter().chain(&b_namen) {
             ja.insert((*n).to_owned(), feld(json!(true)));
         }
         let mit_ja = deklariere(&ja, &index, 2025, None).unwrap();
-        assert_eq!(ids(&mit_ja), [a_namen, b_namen].concat(), "vier Ja: Reihenfolge und Felder der Gruende");
+        assert_eq!(ids(&mit_ja), [a_namen, b_namen].concat(), "sechs Ja: Reihenfolge und Felder der Gruende");
         let texte: Vec<&str> = mit_ja.unvollstaendig().iter().map(|e| e.grund.as_str()).collect();
-        assert_eq!(
-            texte,
-            [super::LOHN_SPERRE_MEHRERE_JAHRE, super::LOHN_SPERRE_AUSLANDSTAETIGKEIT, super::LOHN_SPERRE_MEHRERE_JAHRE, super::LOHN_SPERRE_AUSLANDSTAETIGKEIT]
-        );
+        let je_person = [super::LOHN_SPERRE_MEHRERE_JAHRE, super::LOHN_SPERRE_AUSLANDSTAETIGKEIT, super::LOHN_SPERRE_ERSTATTUNGEN];
+        assert_eq!(texte, [je_person, je_person].concat());
         assert_eq!(mit_ja.deklaration, ohne.deklaration, "ein Ja aendert die Zeilen der Erklaerung nicht, es sperrt nur");
         // Neben einem Grund anderer Herkunft bleibt dieser stehen: die Rueckfrage zum Versorgungsbezug und die zum Lohn sperren getrennt.
         let mut beides = nein.clone();

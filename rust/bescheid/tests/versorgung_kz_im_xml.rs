@@ -117,6 +117,7 @@ fn lohn(euro: i64) -> Paare {
         ("p36_lohnsteuer", json!(300_000)),
         ("lohn_mehrere_jahre", json!(false)),
         ("lohn_auslandstaetigkeit", json!(false)),
+        ("lohn_erstattungen", json!(false)),
     ]
 }
 
@@ -152,6 +153,7 @@ fn ehegatte(lohn_euro: i64, bezug_partner: Option<[i64; 3]>) -> Paare {
         ("p36_lohnsteuer_partner", json!(300_000)),
         ("lohn_mehrere_jahre_partner", json!(false)),
         ("lohn_auslandstaetigkeit_partner", json!(false)),
+        ("lohn_erstattungen_partner", json!(false)),
     ];
     if let Some([rente, bmg, beginn]) = bezug_partner {
         p.extend([

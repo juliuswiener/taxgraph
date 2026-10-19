@@ -1,9 +1,11 @@
-//! Die Rueckfragen zum Lohn (Abweichung Nr. 85, Julius 2026-10-19, d-29): die HTTP-Naht. Ohne `PARITY=1`, ohne Python, ohne Netz, ohne `ERiC`.
+//! Die Rueckfragen zum Lohn (Abweichung Nr. 85 und 86, Julius 2026-10-19, d-29): die HTTP-Naht. Ohne `PARITY=1`, ohne Python, ohne Netz, ohne
+//! `ERiC`.
 //!
-//! **Worum es geht.** Zwei Faelle verraten die Eingaben nicht: Arbeitslohn fuer mehrere Jahre und Entschaedigungen, z. B. Abfindungen
-//! (Zeile 17 der Anlage N), und steuerfreier Arbeitslohn nach dem Auslandstaetigkeitserlass (Zeile 22, Anlage N-AUS). Die Erklaerung
-//! traegt diese Zeilen nicht. Darum fragt sie je Person mit Lohn danach; ein bestaetigtes Ja sperrt die Abgabe mit dem Text des Falls,
-//! eine fehlende Antwort mit eigenem Text, nur ein bestaetigtes Nein sperrt nichts.
+//! **Worum es geht.** Drei Faelle verraten die Eingaben nicht: Arbeitslohn fuer mehrere Jahre und Entschaedigungen, z. B. Abfindungen
+//! (Zeile 17 der Anlage N), steuerfreier Arbeitslohn nach dem Auslandstaetigkeitserlass (Zeile 22, Anlage N-AUS) und Leistungen des
+//! Arbeitgebers fuer Fahrten, Auswaertstaetigkeit, doppelte Haushaltsfuehrung und Sammelbefoerderung (Zeilen 51 und 71, Anlage N-DHF Zeile
+//! 34). Die Erklaerung traegt diese Zeilen nicht. Darum fragt sie je Person mit Lohn danach (eine Frage je Fall); ein bestaetigtes Ja
+//! sperrt die Abgabe mit dem Text des Falls, eine fehlende Antwort mit eigenem Text, nur ein bestaetigtes Nein sperrt nichts.
 //!
 //! **Hier geprueft.** (1) Die Fragen stehen NUR bei einem bestaetigten Bruttoarbeitslohn ueber 0, die des Ehegatten NUR bei
 //! Zusammenveranlagung und bestaetigtem Lohn des Ehegatten. (2) Der ganze Weg: ohne Antwort 409 `deklaration_unvollstaendig`, Ja 409 mit
@@ -29,9 +31,9 @@ use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
 
-/// Die zwei Fragen von Person A und die des Ehegatten, in der Reihenfolge der Faelle.
-const FRAGEN_A: [&str; 2] = ["lohn_mehrere_jahre", "lohn_auslandstaetigkeit"];
-const FRAGEN_B: [&str; 2] = ["lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner"];
+/// Die drei Fragen von Person A und die des Ehegatten, in der Reihenfolge der Faelle.
+const FRAGEN_A: [&str; 3] = ["lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_erstattungen"];
+const FRAGEN_B: [&str; 3] = ["lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner", "lohn_erstattungen_partner"];
 
 type Paare = Vec<(&'static str, Value, bool)>;
 
@@ -117,7 +119,7 @@ async fn aendere(d: &Dienst, feld: &str, wert: &Value) {
     assert_eq!(status, 201, "POST (aendern) {feld}: {antwort}");
 }
 
-/// Die Akten `gesamt.json` und `rentner.json` tragen ohne Zutun keine Antwort auf die zwei Fragen des Lohns (`rentner.json` hat keinen Lohn;
+/// Die Akten `gesamt.json` und `rentner.json` tragen ohne Zutun keine Antwort auf die drei Fragen des Lohns (`rentner.json` hat keinen Lohn;
 /// `gesamt.json` hat die Antworten Nein, die diese Tests entfernen, wo sie die fehlende Antwort messen).
 fn ohne_antworten() -> Vec<(&'static str, Value)> {
     FRAGEN_A.iter().map(|f| (*f, Value::Null)).collect()
@@ -171,15 +173,15 @@ async fn gesperrt(d: &Dienst) -> Vec<String> {
         .collect()
 }
 
-/// Person A: die zwei Fragen stehen NUR bei einem bestaetigten Bruttoarbeitslohn ueber 0 (positiver Beweis) und solange sie
+/// Person A: die drei Fragen stehen NUR bei einem bestaetigten Bruttoarbeitslohn ueber 0 (positiver Beweis) und solange sie
 /// unbeantwortet sind. Ohne Lohn, bei Lohn 0 und bei einem nur vorlaeufigen Lohn steht keine; beantwortet verschwindet sie aus der Liste.
 #[tokio::test]
 async fn die_fragen_von_person_a_stehen_nur_mit_einem_bestaetigten_lohn_ueber_0() {
     let d = akte("gesamt.json", &ohne_antworten(), &[]).await;
-    assert_eq!(sichtbar(&d).await, (FRAGEN_A.to_vec(), vec![]), "Lohn 48.500 EUR, ohne Antwort: beide Fragen von Person A");
+    assert_eq!(sichtbar(&d).await, (FRAGEN_A.to_vec(), vec![]), "Lohn 48.500 EUR, ohne Antwort: alle drei Fragen von Person A");
 
     let d = akte("gesamt.json", &[], &[]).await;
-    assert_eq!(sichtbar(&d).await, (vec![], vec![]), "beide beantwortet: keine Frage offen");
+    assert_eq!(sichtbar(&d).await, (vec![], vec![]), "alle beantwortet: keine Frage offen");
 
     let mut f = ohne_antworten();
     f.push(("bruttoarbeitslohn", json!(0)));
@@ -197,7 +199,7 @@ async fn die_fragen_von_person_a_stehen_nur_mit_einem_bestaetigten_lohn_ueber_0(
     assert_eq!(sichtbar(&d).await, (vec![], vec![]), "kein Lohn angegeben: die Fragen sind verborgen");
 }
 
-/// Ehegatte: die zwei Fragen stehen NUR bei Zusammenveranlagung UND bestaetigtem Lohn des Ehegatten, und sie gehoeren dem Ehegatten: der
+/// Ehegatte: die drei Fragen stehen NUR bei Zusammenveranlagung UND bestaetigtem Lohn des Ehegatten, und sie gehoeren dem Ehegatten: der
 /// Lohn von Person A fragt die des Ehegatten nicht.
 #[tokio::test]
 async fn die_fragen_des_ehegatten_stehen_nur_bei_zusammenveranlagung_mit_lohn() {
@@ -257,18 +259,22 @@ async fn die_fragetexte_nennen_die_person_um_die_es_geht() {
 }
 
 /// Person A, der ganze Weg auf der Akte `gesamt.json`: ohne Antwort sperrt `POST /einreichen` mit 409 `deklaration_unvollstaendig`, die
-/// Liste nennt beide Fragen, und jeder Grund sagt, dass die Antwort fehlt. Ist eine Frage mit Nein beantwortet, nennt die Liste genau die
-/// andere. Mit Ja auf diese Frage bleibt es 409 mit genau diesem Feld, und der Grund nennt Merkmal, Sperre und Formular (nicht mehr die
+/// Liste nennt alle drei Fragen, und jeder Grund sagt, dass die Antwort fehlt. Sind zwei Fragen mit Nein beantwortet, nennt die Liste genau
+/// die dritte. Mit Ja auf diese Frage bleibt es 409 mit genau diesem Feld, und der Grund nennt Merkmal, Sperre und Formular (nicht mehr die
 /// fehlende Antwort). Auf Nein geaendert, ist die Sperre weg. Wie weit die Abgabe danach kommt, haengt von Schema, Hersteller-ID und
 /// `ERiC` der Umgebung ab (der Test setzt nichts davon voraus).
 #[tokio::test]
 async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
-    let faelle = [("lohn_mehrere_jahre", "Zeile 17"), ("lohn_auslandstaetigkeit", "Auslandstätigkeitserlass")];
+    let faelle = [
+        ("lohn_mehrere_jahre", "Zeile 17"),
+        ("lohn_auslandstaetigkeit", "Auslandstätigkeitserlass"),
+        ("lohn_erstattungen", "Zeile 51"),
+    ];
     for (frage, merkmal) in faelle {
         let d = akte("gesamt.json", &ohne_antworten(), &[]).await;
         assert!(sichtbar(&d).await.0.contains(&frage), "{frage}: die Frage steht nicht in der Fragenliste");
 
-        // Ohne Antwort: 409, beide Fragen stehen in der Liste, jeder Grund nennt die fehlende Antwort und die Sperre.
+        // Ohne Antwort: 409, alle drei Fragen stehen in der Liste, jeder Grund nennt die fehlende Antwort und die Sperre.
         let (status, a) = sende(&d, "POST", "/fall/lo/einreichen", Some(&json!({}))).await;
         assert_eq!(status, 409, "{frage} unbeantwortet: erwartet 409, erhalten {status}: {a}");
         assert_eq!(a["grund"], "deklaration_unvollstaendig", "{a}");
@@ -283,7 +289,7 @@ async fn ja_sperrt_die_abgabe_und_nein_gibt_sie_frei() {
             );
         }
 
-        // Die andere mit Nein: genau diese Frage bleibt in der Liste.
+        // Die anderen mit Nein: genau diese Frage bleibt in der Liste.
         for andere in FRAGEN_A.iter().filter(|f| **f != frage) {
             let (status, antwort) = sende(&d, "POST", "/fall/lo/event", Some(&ereignis(andere, &json!(false), true, None))).await;
             assert_eq!(status, 201, "POST /event {andere}: {antwort}");
@@ -331,16 +337,23 @@ async fn das_ja_des_ehegatten_sperrt_nur_bei_zusammenveranlagung() {
     zusammen.push(("veranlagung", json!("zusammen")));
     let basis = || mit(mit(partner_kap(), lohn_b(30_000)), antworten(&FRAGEN_A, false));
 
-    // Ohne Antwort des Ehegatten: beide Fragen des Ehegatten sperren, keine von Person A (sie hat beantwortet).
+    // Ohne Antwort des Ehegatten: alle drei Fragen des Ehegatten sperren, keine von Person A (sie hat beantwortet).
     let d = akte("gesamt.json", &zusammen, &basis()).await;
     assert_eq!(gesperrt(&d).await, FRAGEN_B, "ohne Antwort");
 
-    // Kontrolle: zweimal Nein sperrt nichts.
+    // Kontrolle: dreimal Nein sperrt nichts.
     let d = akte("gesamt.json", &zusammen, &mit(basis(), antworten(&FRAGEN_B, false))).await;
-    assert!(gesperrt(&d).await.is_empty(), "zweimal Nein");
+    assert!(gesperrt(&d).await.is_empty(), "dreimal Nein");
 
     // Das Ja des Ehegatten sperrt unter dem Feld seiner Frage; auf Nein geaendert, ist die Sperre weg.
-    let ja = mit(basis(), vec![("lohn_mehrere_jahre_partner", json!(true), true), ("lohn_auslandstaetigkeit_partner", json!(false), true)]);
+    let ja = mit(
+        basis(),
+        vec![
+            ("lohn_mehrere_jahre_partner", json!(true), true),
+            ("lohn_auslandstaetigkeit_partner", json!(false), true),
+            ("lohn_erstattungen_partner", json!(false), true),
+        ],
+    );
     let d = akte("gesamt.json", &zusammen, &ja).await;
     assert_eq!(gesperrt(&d).await, ["lohn_mehrere_jahre_partner"]);
     aendere(&d, "lohn_mehrere_jahre_partner", &json!(false)).await;

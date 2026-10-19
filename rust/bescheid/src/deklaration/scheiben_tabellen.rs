@@ -57,7 +57,7 @@ pub(super) const SCHEIBEN_N_VOR_GWG_TEIL_RINGE: [(&str, &str, &[&str]); 1] = [
 
 /// `SCHEIBEN['an_gesamt']["felder"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + AN_GESAMT_FLAGS + AN_GESAMT_PARTNER + VOR_PARTNER_FELDER + KV_PV_PARTNER_FELDER + P36_ANRECHNUNG + KIST_KONFESSION_FELDER + P35A_MITVER_ANZEIGE + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 89] = [
+pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 91] = [
     "bruttoarbeitslohn", "veranlagung", "ep_arbeitstage", "ep_entfernung_km",
     "ep_oepnv_kosten", "ep_eigenes_kfz", "ep_ziel_des_weges", "ep_ziel_adresse", "ep_unfallkosten",
     "vor_an_anteil_rv", "vor_ag_anteil_rv", "vor_rv_ausserhalb_lstb", "versicherungsart",
@@ -82,6 +82,8 @@ pub(super) const SCHEIBEN_AN_GESAMT_FELDER: [&str; 89] = [
     // Nur in Rust (2026-10-19, Abweichung Nr. 85): die zwei Rueckfragen zum Lohn je Person, gefragt bei einem Bruttoarbeitslohn ueber 0
     // (kein Kegel-Feld: ein Ja sperrt die Abgabe, `Bau::lohn_rueckfragen`, die Zahl aendert sich nicht).
     "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 86): die Rueckfrage zu Leistungen des Arbeitgebers je Person, gleiche Bauart.
+    "lohn_erstattungen", "lohn_erstattungen_partner",
 ];
 
 /// `SCHEIBEN['an_gesamt']["kegel"]` = `('bruttoarbeitslohn', 'veranlagung') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + DHF_RING + DHF_BEDINGUNGEN + VERPFLEGUNG_TAGE + AN_GESAMT_FLAGS + ('fam_anzahl_kinder', 'verlustvortrag_bestand')`
@@ -100,7 +102,7 @@ pub(super) const SCHEIBEN_AN_GESAMT_KEGEL: [&str; 33] = [
 
 /// `SCHEIBEN['gesamt']["felder"]` = `VV_GESAMT_FELDER + VV_ABS2_TATBESTAND + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + EP_FORMALIEN + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + KAP_ANTRAG_FELDER + P36_ANRECHNUNG_KAP + P32D_Q_KAP + AN_GESAMT_FLAGS + GESAMT_PARTNER_19 + GESAMT_PARTNER_KAP + VORSORGE_PARTNER_FELDER + GESAMT_VERSORGUNG + GESAMT_ABZUEGE + GESAMT_FREIBETRAEGE + GESAMT_GEWINN + GESAMT_GEWINN_PARTNER + GESAMT_33B + GESAMT_33B_PARTNER + KIND_SCREENING + AUSGABEN_SCREENING + PARTNER_SCREENING + INSTANZ_ZAEHLFELDER + VV_ANLAGE_FORMALIEN + GESAMT_DBA + GESAMT_P23 + P23_SCREENING + P22_NR3_EINKUENFTE + GESAMT_P33A + GESAMT_P32B + GESAMT_P35C + GESAMT_REALSPLITTING + DHF_RING + DHF_BEDINGUNGEN + DHF_AUSLANDSGRENZE + DHF_FORMALIEN + VERPFLEGUNG_TAGE + VERPFLEGUNG_TAGE_NACH_FRIST + VERPFLEGUNG_GUARD + VERPFLEGUNG_FRIST + VERPFLEGUNG_KUERZUNG + VERPFLEGUNG_EINZELREISE + AGB_TATBESTAND + UEBERNACHTUNG_RING + UEBERNACHTUNG_BEDINGUNGEN + ARBEITSMITTEL_RING + ARBEITSMITTEL_AFA_GESAMT + P36_ANRECHNUNG + P36_ANRECHNUNG_PARTNER + KIST_KONFESSION_FELDER + KIRCHENSTEUER_ARBEITGEBER_FELDER + P16_4_GATE_FELDER + P16_4_GATE_FELDER_PARTNER + STEUERKLASSE_FELDER + STAMMDATEN_FELDER + STAMMDATEN_FELDER_PARTNER`
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 407] = [
+pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 409] = [
     "vv_einnahmen", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_erhaltungsaufwand",
     "vv_sonstige_wk", "vv_entgelt_quote_prozent", "vv_wohnzwecke", "vv_auf_dauer",
     "veranlagung", "bruttoarbeitslohn", "ep_arbeitstage", "ep_entfernung_km",
@@ -210,6 +212,8 @@ pub(super) const SCHEIBEN_GESAMT_FELDER: [&str; 407] = [
     // Nur in Rust (2026-10-19, Abweichung Nr. 85): die zwei Rueckfragen zum Lohn je Person (kein Kegel-Feld: ein Ja sperrt die Abgabe,
     // die Zahl aendert sich nicht).
     "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 86): die Rueckfrage zu Leistungen des Arbeitgebers je Person, gleiche Bauart.
+    "lohn_erstattungen", "lohn_erstattungen_partner",
 ];
 
 /// `SCHEIBEN['gesamt']["kegel"]` = `VV_GESAMT_FELDER + ('veranlagung', 'bruttoarbeitslohn') + EP_FELDER + VOR_FELDER + KV_PV_FELDER + KAP_FELDER + AN_GESAMT_FLAGS + AGB_TATBESTAND`
@@ -243,7 +247,7 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// Zusammenveranlagung). "Nein" verbirgt acht und zehn Felder dieser Liste; der Ring liest gespeicherte Werte wie bisher.
 /// Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 320] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 322] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -327,6 +331,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 320] = [
     "versorgung_zweiter_bezug_partner", "versorgung_sterbegeld_partner", "versorgung_mehrere_jahre_partner", "versorgung_nicht_ganzjaehrig_partner",
     // Nur in Rust (2026-10-19, Abweichung Nr. 85): die zwei Rueckfragen zum Lohn je Person (kein Kegel-Feld).
     "lohn_mehrere_jahre", "lohn_auslandstaetigkeit", "lohn_mehrere_jahre_partner", "lohn_auslandstaetigkeit_partner",
+    // Nur in Rust (2026-10-19, Abweichung Nr. 86): die Rueckfrage zu Leistungen des Arbeitgebers je Person (kein Kegel-Feld).
+    "lohn_erstattungen", "lohn_erstattungen_partner",
 ];
 
 /// `SCHEIBEN['rentner_gesamt']["kegel"]` = `RENTNER_KEGEL + AGB_TATBESTAND`
