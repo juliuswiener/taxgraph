@@ -34,6 +34,7 @@ felder:
   - am_afa_ist_anschaffungsjahr
   - am_anschaffung_monat
   - am_anschaffungskosten
+  - am_computer_software
   - am_gwg_sofortabzug_gewaehlt
   - am_massgebliche_ak
   - am_umsatzsteuersatz

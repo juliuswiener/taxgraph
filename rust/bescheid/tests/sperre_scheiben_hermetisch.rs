@@ -101,11 +101,158 @@ fn am_fall(
     Fall { scheibe: Scheibe::Gesamt, gruppe: "am_netto", name, events, erwartet }
 }
 
+/// Abweichung Nr. 89, Gruppe `am_computer`: ein Geraet der Liste im BMF-Schreiben vom 22.02.2022 (Antwort `am_computer_software`).
+/// Die Events nennt der Fall selbst. Python kennt die Regel nicht; die Erwartung ist die Entscheidung von main (2026-10-19):
+/// ein BESTAETIGTES „ja“ ersetzt Satz, Wahl und Nutzungsdauer (Nutzungsdauer 1, voller Abzug im Kaufjahr, Rz. 1.4); offen bleibt nur, was die
+/// Zahl aendert: die Antwort auf „in diesem Jahr gekauft“, eine vorlaeufige Nutzungsdauer, bei eigener Nutzungsdauer ueber 1 im Kaufjahr
+/// der Monat. Ohne bestaetigtes „ja“ bleibt jeder Zweig wie nach Nr. 88.
+fn cs_fall(scheibe: Scheibe, name: &'static str, events: Vec<Ev>, erwartet: Option<&'static str>) -> Fall {
+    Fall { scheibe, gruppe: "am_computer", name, events, erwartet }
+}
+
 // Eine Tabelle von Faellen, keine Logik: die Laenge ist die Zahl der Faelle.
 #[allow(clippy::too_many_lines)]
 fn faelle() -> Vec<Fall> {
     let offen = Some("arbeitsmittel_afa_ueber_gwg_offen");
     vec![
+        // Abweichung Nr. 89: das Geraet der Liste. Preis 900,00 EUR liegt im Band; ohne „ja“ fehlte der Satz (Fall oben), mit „ja“ nicht.
+        cs_fall(
+            Scheibe::Gesamt,
+            "900,00 EUR, Liste ja, Kaufjahr: kein Satz, keine Wahl, kein Monat noetig",
+            vec![z("am_anschaffungskosten", 90_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", true, true)],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, Kaufjahr, ohne Nutzungsdauer und ohne Monat: Nutzungsdauer 1 (Rz. 1.4)",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", true, true)],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, Folgejahr bestaetigt: Abzug 0, keine Sperre",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", false, true)],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, Anschaffungsjahr unbeantwortet: das Jahr entscheidet zwischen Abzug und 0",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, true)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, Anschaffungsjahr nur vorlaeufig",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", true, false)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, eigene Nutzungsdauer 3, Kaufjahr ohne Monat: die Verteilung braucht den Monat",
+            vec![
+                z("am_anschaffungskosten", 150_000, true),
+                b("am_computer_software", true, true),
+                z("arbeitsmittel_nutzungsdauer", 3, true),
+                b("am_afa_ist_anschaffungsjahr", true, true),
+            ],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, eigene Nutzungsdauer 3, Kaufjahr, Monat 7",
+            vec![
+                z("am_anschaffungskosten", 150_000, true),
+                b("am_computer_software", true, true),
+                z("arbeitsmittel_nutzungsdauer", 3, true),
+                b("am_afa_ist_anschaffungsjahr", true, true),
+                z("am_anschaffung_monat", 7, true),
+            ],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, eigene Nutzungsdauer 3, Folgejahr: kein Monat noetig",
+            vec![
+                z("am_anschaffungskosten", 150_000, true),
+                b("am_computer_software", true, true),
+                z("arbeitsmittel_nutzungsdauer", 3, true),
+                b("am_afa_ist_anschaffungsjahr", false, true),
+            ],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, eigene Nutzungsdauer 1, Kaufjahr ohne Monat: ein Jahr braucht keinen Monat",
+            vec![
+                z("am_anschaffungskosten", 150_000, true),
+                b("am_computer_software", true, true),
+                z("arbeitsmittel_nutzungsdauer", 1, true),
+                b("am_afa_ist_anschaffungsjahr", true, true),
+            ],
+            None,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja, Nutzungsdauer 3 nur vorlaeufig, Monat 7: die Antwort aendert die Zahl",
+            vec![
+                z("am_anschaffungskosten", 150_000, true),
+                b("am_computer_software", true, true),
+                z("arbeitsmittel_nutzungsdauer", 3, false),
+                b("am_afa_ist_anschaffungsjahr", true, true),
+                z("am_anschaffung_monat", 7, true),
+            ],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "700,00 EUR, Liste ja, Kaufjahr, ohne Wahl des Sofortabzugs: kein GWG, die Wahl entfaellt",
+            vec![z("am_anschaffungskosten", 70_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", true, true)],
+            None,
+        ),
+        // Ohne bestaetigtes „ja“ bleibt der Weg nach Nr. 88 Zeile fuer Zeile.
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste ja nur vorlaeufig, ohne Nutzungsdauer: wie ohne Antwort",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, false), b("am_afa_ist_anschaffungsjahr", true, true)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "1.500,00 EUR, Liste nein, ohne Nutzungsdauer: Abschreibung braucht sie",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", false, true), b("am_afa_ist_anschaffungsjahr", true, true)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "900,00 EUR, Liste nein, Satz offen: das Band sperrt wie nach Nr. 88",
+            vec![z("am_anschaffungskosten", 90_000, true), b("am_computer_software", false, true), b("am_gwg_sofortabzug_gewaehlt", true, true)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::Gesamt,
+            "500,00 EUR, Liste nein, ohne Wahl des Sofortabzugs: die Wahl fehlt wie vor Nr. 89",
+            vec![z("am_anschaffungskosten", 50_000, true), b("am_computer_software", false, true)],
+            offen,
+        ),
+        // Dieselben Zweige auf der Scheibe `an_gesamt`.
+        cs_fall(
+            Scheibe::AnGesamt,
+            "an_gesamt: 900,00 EUR, Liste ja, Kaufjahr: kein Satz noetig",
+            vec![z("am_anschaffungskosten", 90_000, true), b("am_computer_software", true, true), b("am_afa_ist_anschaffungsjahr", true, true)],
+            None,
+        ),
+        cs_fall(
+            Scheibe::AnGesamt,
+            "an_gesamt: 1.500,00 EUR, Liste ja, Anschaffungsjahr unbeantwortet",
+            vec![z("am_anschaffungskosten", 150_000, true), b("am_computer_software", true, true)],
+            offen,
+        ),
+        cs_fall(
+            Scheibe::AnGesamt,
+            "an_gesamt: 900,00 EUR, Liste nein, Satz offen",
+            vec![z("am_anschaffungskosten", 90_000, true), b("am_computer_software", false, true), b("am_gwg_sofortabzug_gewaehlt", true, true)],
+            offen,
+        ),
         // Abweichung Nr. 88, Grenzen in Cent: 19 % -> 95.200, 7 % -> 85.600, keine Umsatzsteuer -> 80.000.
         am_fall("900,00 EUR, Wahl ja, 19 %: Sofortabzug", 90_000, true, Some("satz_19"), None, None),
         am_fall("952,00 EUR, Wahl ja, 19 %: genau die Grenze", 95_200, true, Some("satz_19"), None, None),
@@ -1400,6 +1547,14 @@ fn werbungskosten_dhf_verpflegung_uebernachtung_arbeitsmittel() {
 #[test]
 fn arbeitsmittel_grenze_gilt_netto_und_der_satz_sperrt_nur_im_band() {
     pruefe("am_netto");
+}
+
+/// Abweichung Nr. 89: ein bestaetigtes „ja“ zu „Das Geraet steht auf der Liste“ (BMF-Schreiben vom 22.02.2022) ersetzt Satz, Wahl und
+/// Nutzungsdauer; offen bleiben nur die Antwort zum Anschaffungsjahr, eine vorlaeufige Nutzungsdauer und bei eigener Nutzungsdauer ueber
+/// 1 im Kaufjahr der Monat. Ohne bestaetigtes „ja“ ist jeder Zweig wie nach Nr. 88. Die Meldung „weicht vom Python-Orakel ab“ gilt hier nicht.
+#[test]
+fn geraet_der_liste_ersetzt_satz_wahl_und_nutzungsdauer_und_fragt_das_anschaffungsjahr() {
+    pruefe("am_computer");
 }
 
 /// § 24b: `fam_alleinstehend` bestaetigt und Zusammenveranlagung widersprechen sich.

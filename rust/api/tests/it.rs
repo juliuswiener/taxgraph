@@ -14,6 +14,8 @@ mod bereich_rand_hermetisch;
 mod c2_satz3_fragen_hermetisch;
 #[path = "chat_stderr_prozess_hermetisch.rs"]
 mod chat_stderr_prozess_hermetisch;
+#[path = "computer_software_nr89.rs"]
+mod computer_software_nr89;
 #[path = "daten_im_dienst.rs"]
 mod daten_im_dienst;
 #[path = "dienstwohnung_gestrichen_hermetisch.rs"]

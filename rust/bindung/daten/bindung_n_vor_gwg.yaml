@@ -1025,8 +1025,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Was hat das Arbeitsmittel gekostet (zum Beispiel Laptop, Werkzeug, Fachbücher)?"
-    hilfe_kurz: "Der Preis auf der Rechnung, mit Umsatzsteuer. Das ist der Betrag, den du absetzt. Ob du ihn sofort absetzen kannst, entscheidet der Preis ohne Umsatzsteuer: Er darf höchstens 800 Euro betragen (bei 19 % Umsatzsteuer sind das 952 Euro, bei 7 % 856 Euro). Darüber verteilt sich der Abzug über die Jahre."
+    fragetext_laie: "Was hat das Arbeitsmittel gekostet (zum Beispiel Notebook, Werkzeug, Fachbücher)?"
+    hilfe_kurz: "Der Preis auf der Rechnung, mit Umsatzsteuer. Das ist der Betrag, den du absetzt. Ob der Sofortabzug möglich ist, entscheidet der Preis ohne Umsatzsteuer: Er darf höchstens 800 Euro betragen (bei 19 % Umsatzsteuer sind das 952 Euro, bei 7 % 856 Euro). Darüber verteilt sich der Abzug über die Jahre. Für Computer und Software auf der Liste im BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software gilt das nicht: Dort rechnet die App mit einem Jahr Nutzungsdauer (siehe die Frage nach der Liste)."
     beispielwert: 60000
     herkunft_slots: null
     elster_kz: null
@@ -1036,6 +1036,36 @@ bindungen:
       quelle: "§ 6 Abs. 2 S. 1 EStG"
       zitatanker: "800 Euro nicht übersteigen"
       datei: "sources/gesetze-im-internet/estg_p6_2026-07-14.txt"
+  # Geraet der Liste im BMF-Schreiben vom 22.02.2022 (gebaut 2026-10-19, Abweichung Nr. 89 in rust/fixtures/README.md; Vault:
+  # decisions/computer-und-software-ist-normale-abschreibung-mit-einem-jahr-nutzungsdauer-kein-gwg-2026-10-19).
+  # Computerhardware und Software der Liste (Rz. 2 bis 5) haben eine Nutzungsdauer von einem Jahr (Rz. 1): eine normale Abschreibung,
+  # kein GWG und keine Sofortabschreibung (Rz. 1.1); der volle Abzug im Anschaffungsjahr wird nicht beanstandet (Rz. 1.4), im Folgejahr
+  # gibt es bei einem Jahr keinen Abzug mehr. Ein bestaetigtes Ja ersetzt Umsatzsteuersatz (`am_umsatzsteuersatz` traegt dazu eine
+  # `und`-Bedingung), Wahl des Sofortabzugs und Nutzungsdauer; die eigene Nutzungsdauer bleibt waehlbar (Rz. 1.2). Die Frage steht VOR der
+  # Satzfrage, damit niemand den Satz beantwortet, den ein Ja unnoetig macht.
+  # Haengt an `feld_bedingung` (`groesser_als`, positiver Beweis: die Frage steht, sobald ein bestaetigter Preis ueber 800,00 EUR
+  # vorliegt) und `signatur_slot`, nie an `geltungsbedingung` (kein Gate, Entscheidung ein-neues-betragsfeld-haengt-an-feld-bedingung-nie-
+  # an-geltungsbedingung). KEIN `vorjahr`-Flag: die Antwort gehoert zu diesem Geraet in diesem Jahr.
+  # ponytail: die Frage steht erst ueber 800,00 EUR; darunter laeuft das Geraet wie jedes Arbeitsmittel ueber den Sofortabzug (derselbe Abzug).
+  # ponytail: das Bestandsverzeichnis (Rz. 1.2, R 5.4 EStR 2012) ist ein Satz im Hilfetext, keine Pflichtfrage: das Schreiben sagt nicht, ob es
+  # fuer Werbungskosten gilt.
+  - feld_id: am_computer_software
+    quelle: {regel_id: p9_1_3_nr6_7_arbeitsmittel_afa, signatur_slot: computer_software}
+    typ: bool
+    einheit: null
+    askable: true
+    feld_bedingung: {feld: am_anschaffungskosten, groesser_als: 80000, grund: "Ob das Gerät auf der Liste im BMF-Schreiben steht, entscheidet nur über 800 Euro: bis 800 Euro brutto ist der Sofortabzug ohnehin möglich und ergibt denselben Abzug. Die Frage steht erst, wenn ein bestätigter Preis über 800 Euro vorliegt."}
+    fragetext_laie: "Steht das Gerät oder die Software auf der Liste im BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software (zum Beispiel Notebook, Desktop-Computer, Monitor, Drucker, Tastatur, Maus, USB-Stick oder Betriebs- und Anwendersoftware)?"
+    hilfe_kurz: "Das BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software legt für Computer und Software eine Nutzungsdauer von einem Jahr fest. Das ist eine normale Abschreibung und kein geringwertiges Wirtschaftsgut: Die 800-Euro-Grenze gilt hier nicht, und der Abzug im Kaufjahr ist voll (kein Zwölftel nach dem Kaufmonat). Auf der Liste stehen Computer, Notebooks (auch Tablets und Slate-Computer), Desktop-Computer, Workstations, Dockingstations, externe Speicher und Netzteile sowie Peripheriegeräte wie Monitor, Drucker, Tastatur, Maus, Scanner oder USB-Stick (Rz. 2 und 3), außerdem Betriebs- und Anwendersoftware (Rz. 5). Bei der Hardware gilt das nur, wenn der Hersteller sie nach der EU-Verordnung zur umweltgerechten Gestaltung von Computern kennzeichnen muss (Rz. 4). Smartphones nennt das Schreiben nicht: Antworte dafür „Nein“. Bei „Ja“ rechnet die App mit einem Jahr; Umsatzsteuersatz und Sofortabzug spielen dann keine Rolle mehr. Eine eigene Nutzungsdauer über ein Jahr trägst du nur ein, wenn du länger verteilen willst (Rz. 1.2); dann brauchst du auch den Kaufmonat. Sag bei „in diesem Jahr gekauft“ die Wahrheit: In einem späteren Jahr gibt es bei einem Jahr Nutzungsdauer keinen Abzug mehr. Das Schreiben verlangt außerdem die Aufnahme ins Bestandsverzeichnis (Rz. 1.2, R 5.4 EStR); ob das für Werbungskosten gilt, sagt es nicht."
+    beispielwert: true
+    herkunft_slots: null
+    elster_kz: null
+    elster_kz_grund: "Steuert nur Nutzungsdauer und Abzug (BMF-Schreiben vom 22.02.2022, Rz. 1 und 1.4); kein Deklarationsfeld, der Betrag steht in am_anschaffungskosten."
+    vz_gueltigkeit: [2024, 2025, 2026]
+    anker_ref:
+      quelle: "BMF-Schreiben vom 22.02.2022 (BStBl I S. 187), Rz. 1"
+      zitatanker: "eine betriebsgewöhnliche Nutzungsdauer von einem Jahr zugrunde gelegt werden"
+      datei: "sources/bmf/bmf_nutzungsdauer_computer_software_2022-02-22.txt"
   # Umsatzsteuersatz der Rechnung (gebaut 2026-10-19, Abweichung Nr. 88 in rust/fixtures/README.md; Vault:
   # decisions/julius-entscheidet-gwg-grenze-netto-toolchain-festlegen-abruf-bauen-handrechnung-und-stufe-b-loeschen-2026-10-19).
   # Beim Arbeitnehmer gilt die 800-Euro-Grenze fuer den Preis OHNE Umsatzsteuer (R 9.12 LStR, Aussage von Julius; Anleitung N 2025),
@@ -1053,7 +1083,16 @@ bindungen:
     einheit: null
     enum_werte: ["satz_19", "satz_7", "keine_ust"]
     askable: true
-    feld_bedingung: {feld: am_anschaffungskosten, groesser_als: 80000, grund: "Der Umsatzsteuersatz entscheidet nur, wenn der Preis über 800 Euro liegt (die Grenze gilt netto, R 9.12 LStR): bis 800 Euro brutto ist der Sofortabzug bei jedem Satz möglich. Die Frage steht erst, wenn ein bestätigter Preis über 800 Euro vorliegt."}
+    # Abweichung Nr. 89: ein BESTAETIGTES „ja“ zu `am_computer_software` nimmt die Frage weg (`und`, `wert_nicht: true`): ein Geraet der
+    # Liste im BMF-Schreiben vom 22.02.2022 durchlaeuft die Netto-Pruefung nicht, der Satz aendert dort nichts.
+    feld_bedingung:
+      feld: am_anschaffungskosten
+      groesser_als: 80000
+      grund: "Der Umsatzsteuersatz entscheidet nur, wenn der Preis über 800 Euro liegt (die Grenze gilt netto, R 9.12 LStR): bis 800 Euro brutto ist der Sofortabzug bei jedem Satz möglich. Die Frage steht erst, wenn ein bestätigter Preis über 800 Euro vorliegt."
+      und:
+        feld: am_computer_software
+        wert_nicht: true
+        grund: "Ein Gerät oder eine Software auf der Liste im BMF-Schreiben vom 22.02.2022 ist kein geringwertiges Wirtschaftsgut: Es hat eine Nutzungsdauer von einem Jahr, die 800-Euro-Grenze und damit der Umsatzsteuersatz entscheiden dort nichts. Nur ein bestätigtes Ja nimmt die Frage weg; ein Nein, keine Antwort oder ein vorläufiges Ja lassen sie stehen."
     fragetext_laie: "Welchen Umsatzsteuersatz nennt die Rechnung für dieses Arbeitsmittel?"
     hilfe_kurz: "Die Umsatzsteuer steht auf der Rechnung, meist 19 %, bei Fachbüchern 7 %. Die Grenze von 800 Euro für den Sofortabzug gilt für den Preis ohne Umsatzsteuer: bei 19 % bis 952 Euro, bei 7 % bis 856 Euro. Steht keine Umsatzsteuer auf der Rechnung (zum Beispiel beim Kauf von privat), wähle „Keine Umsatzsteuer“. Wichtig ist die Antwort nur, wenn der Preis zwischen 800 und 952 Euro liegt; bei einem höheren Preis wählst du einfach den Satz der Rechnung."
     beispielwert: "satz_19"
@@ -1089,7 +1128,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viele Jahre willst du die Anschaffungskosten verteilen (übliche Nutzungsdauer)?"
-    hilfe_kurz: "Der AfA-Zeitraum für Arbeitsmittel ohne GWG. Typisch: 3 Jahre für Laptop, 5 Jahre für Möbel, 10 Jahre für Einbauteile."
+    hilfe_kurz: "Der AfA-Zeitraum für Arbeitsmittel ohne GWG, zum Beispiel 5 Jahre für Möbel oder 10 Jahre für Einbauteile. Für Computer und Software auf der Liste im BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software gilt ein Jahr: Antworte bei der Frage nach der Liste mit „Ja“ und lass dieses Feld leer. Trägst du hier trotzdem eine längere Dauer ein, verteilt die App den Abzug darüber (das Schreiben erlaubt das, Rz. 1.2)."
     beispielwert: 3
     bereich: {min: 1, max: 30, grund: "Nutzungsdauer in Jahren"}
     herkunft_slots: null
@@ -1616,7 +1655,7 @@ bindungen:
     einheit: Jahre
     askable: true
     fragetext_laie: "Über wie viele Jahre schreibst du das Gerät ab (übliche Nutzungsdauer)?"
-    hilfe_kurz: "Nur nötig, wenn du das Gerät nicht sofort absetzen kannst (über 800 Euro, ohne Verzeichnis oder nicht allein nutzbar). Typisch: 3 Jahre für einen Laptop, 5 Jahre für Möbel."
+    hilfe_kurz: "Nur nötig, wenn das Gerät nicht über den Sofortabzug läuft (über 800 Euro, ohne Verzeichnis oder nicht allein nutzbar). Typisch: 5 Jahre für Möbel, 10 Jahre für Einbauteile. Für Computer und Software auf der Liste im BMF-Schreiben zur Nutzungsdauer von Computerhardware und Software gilt ein Jahr (Rz. 1): Trage dann 1 ein."
     beispielwert: 3
     bereich: {min: 1, max: 30, grund: "Nutzungsdauer in Jahren"}
     herkunft_slots: null

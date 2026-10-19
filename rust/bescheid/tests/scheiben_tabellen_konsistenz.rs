@@ -98,11 +98,13 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// und `rentner_gesamt` fragen es schon;
 /// danach am 2026-10-19 die sechs Zuschussfelder (`zuschuss_ag_kv_gesetzlich`, `zuschuss_ag_kv_privat`, `zuschuss_ag_pv`, je Person) in
 /// `an_gesamt`, `gesamt` und `rentner_gesamt` (Abweichung Nr. 92), 93 -> 99, 415 -> 421 und 322 -> 328, die Kegel bleiben;
+/// danach am 2026-10-19 das Feld `am_computer_software` in `an_gesamt` und `gesamt` (Abweichung Nr. 89), 99 -> 100 und 421 -> 422, die
+/// Kegel bleiben, `rentner_gesamt` bleibt 328;
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
-    (Scheibe::AnGesamt, 99, 33),
-    (Scheibe::Gesamt, 421, 35),
+    (Scheibe::AnGesamt, 100, 33),
+    (Scheibe::Gesamt, 422, 35),
     (Scheibe::RentnerGesamt, 328, 28),
 ];
 

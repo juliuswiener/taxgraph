@@ -12,7 +12,9 @@ use rust_decimal::Decimal;
 use super::rechnen::{add, R};
 use super::slot;
 use crate::abzuege::oepnv_eur;
-use crate::arbeitsmittel_grenze::{satz_prozent, sofortabzug, Sofortabzug, GWG_GRENZE_CENT};
+use crate::arbeitsmittel_grenze::{
+    computer_ja, computer_weg, satz_prozent, sofortabzug, ComputerWeg, Sofortabzug, GWG_GRENZE_CENT,
+};
 use crate::{
     cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_true, py_int, summe, wert,
     BescheidFehler, Felder,
@@ -40,6 +42,8 @@ const VERPFLEGUNG_TAGE_NACH_FRIST: [&str; 3] = [
 pub(super) const ARBEITSMITTEL_KOSTEN: &str = "am_anschaffungskosten";
 /// Der Umsatzsteuersatz der Rechnung (Abweichung Nr. 88, [`crate::arbeitsmittel_grenze`]).
 const ARBEITSMITTEL_SATZ: &str = "am_umsatzsteuersatz";
+/// Die Antwort „steht auf der Liste im BMF-Schreiben vom 22.02.2022“ (Abweichung Nr. 89, [`crate::arbeitsmittel_grenze`]).
+const ARBEITSMITTEL_LISTE: &str = "am_computer_software";
 
 /// Teile des `wk_input`, die in beiden Zweigen gleich gebaut werden.
 pub(super) struct WkTeile {
@@ -204,13 +208,20 @@ pub(super) fn wk_teile(f: &Felder, vz: Vz) -> R<WkTeile> {
     })
 }
 
-/// Arbeitsmittel-GWG (AK ≤ 800 EUR, Wahlrecht ausgeuebt): AK in EURO.
+/// Abweichung Nr. 89: ist das Arbeitsmittel ein Geraet der Liste im BMF-Schreiben vom 22.02.2022? Dann ist es kein `GWG`: weder der
+/// Sofortabzug bis 800 EUR ([`am_gwg`]) noch der im Band ([`mit_sofortabzug_im_band`]) zaehlen, und die Netto-Pruefung entfaellt.
+fn liste_ja(f: &Felder) -> bool {
+    computer_ja(wert(f, ARBEITSMITTEL_LISTE))
+}
+
+/// Arbeitsmittel-GWG (AK ≤ 800 EUR, Wahlrecht ausgeuebt): AK in EURO. Ein Geraet der Liste ist keins (Abweichung Nr. 89).
 fn am_gwg(f: &Felder) -> R<Option<Euro>> {
     let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
-    Ok(
-        (0 < k && k <= GWG_GRENZE_CENT && ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt")))
-            .then(|| cent_zu_euro(k)),
-    )
+    Ok((0 < k
+        && k <= GWG_GRENZE_CENT
+        && !liste_ja(f)
+        && ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt")))
+    .then(|| cent_zu_euro(k)))
 }
 
 /// Abweichung Nr. 88: Sofortabzug eines Arbeitsmittels, dessen BRUTTOPREIS ueber 800 EUR liegt, dessen Preis ohne Umsatzsteuer
@@ -226,8 +237,32 @@ pub(super) fn mit_sofortabzug_im_band(f: &Felder, wk: Euro) -> R<Euro> {
     let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
     let satz = satz_prozent(wert(f, ARBEITSMITTEL_SATZ));
     if k > GWG_GRENZE_CENT
+        && !liste_ja(f)
         && sofortabzug(Decimal::from(k), satz) == Sofortabzug::Moeglich
         && ist_true(wert(f, "am_gwg_sofortabzug_gewaehlt"))
+    {
+        return add(wk, cent_zu_euro(k));
+    }
+    Ok(wk)
+}
+
+/// Abweichung Nr. 89: der Abzug eines Geraets der Liste im BMF-Schreiben vom 22.02.2022 mit der Nutzungsdauer von einem Jahr (Rz. 1):
+/// der volle Bruttopreis in EURO, im Anschaffungsjahr (Rz. 1.4: kein Zwoelftel nach dem Kaufmonat), in jedem anderen Jahr 0. Eine eigene
+/// Nutzungsdauer ueber ein Jahr (Rz. 1.2) laeuft ueber [`am_afa`] wie vor Nr. 89.
+///
+/// Er kommt NACH `werbungskosten_n` zu den Werbungskosten dazu, wie der Sofortabzug im Band ([`mit_sofortabzug_im_band`]): der
+/// Catala-Scope `p6_2_gwg` zaehlt den uebergebenen Preis gegen 800 EUR und lieferte fuer 1.500 EUR 0. Ob das Anschaffungsjahr bestaetigt
+/// ist, haelt die Sperre; ohne Antwort zaehlt hier das Folgejahr (0), wie bei jeder `AfA`.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`].
+pub(super) fn mit_computer_im_kaufjahr(f: &Felder, wk: Euro) -> R<Euro> {
+    let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
+    let nd = feld_int_oder_null(f, "arbeitsmittel_nutzungsdauer")?;
+    if k > 0
+        && liste_ja(f)
+        && computer_weg(nd) == ComputerWeg::EinJahr
+        && ist_true(wert(f, "am_afa_ist_anschaffungsjahr"))
     {
         return add(wk, cent_zu_euro(k));
     }
@@ -238,13 +273,18 @@ pub(super) fn mit_sofortabzug_im_band(f: &Felder, wk: Euro) -> R<Euro> {
 /// 856,00 EUR; ohne beantworteten Satz im Band zaehlt die AfA wie bisher, die Sperre haelt das Ergebnis offen).
 /// `ak_als_cent` waehlt die Schluessel-Variante: an_gesamt uebergibt `anschaffungskosten_cent`, gesamt
 /// `anschaffungskosten` (EURO). `None` = kein Abzug.
+///
+/// Abweichung Nr. 89: ein Geraet der Liste ist kein `GWG`, die Netto-Pruefung entfaellt; mit der Nutzungsdauer von einem Jahr (keine
+/// eigene Angabe oder 1) rechnet [`mit_computer_im_kaufjahr`] den Abzug, hier gibt es keinen; mit einer eigenen Nutzungsdauer ueber
+/// ein Jahr (Rz. 1.2) laeuft die Verteilung wie sonst.
 fn am_afa(f: &Felder, ak_als_cent: bool) -> R<Option<Euro>> {
     let k = feld_int_oder_null(f, ARBEITSMITTEL_KOSTEN)?;
-    if sofortabzug(Decimal::from(k), satz_prozent(wert(f, ARBEITSMITTEL_SATZ))) == Sofortabzug::Moeglich {
+    let liste = liste_ja(f);
+    if !liste && sofortabzug(Decimal::from(k), satz_prozent(wert(f, ARBEITSMITTEL_SATZ))) == Sofortabzug::Moeglich {
         return Ok(None);
     }
     let nd = feld_int_oder_null(f, "arbeitsmittel_nutzungsdauer")?;
-    if nd <= 0 {
+    if nd <= 0 || (liste && computer_weg(nd) == ComputerWeg::EinJahr) {
         return Ok(None);
     }
     let ist_aj = ist_true(wert(f, "am_afa_ist_anschaffungsjahr"));
@@ -359,6 +399,95 @@ mod netto_grenze {
             ("900 brutto, Satz offen, Nutzungsdauer 4: die Schaetzung rechnet die AfA, die Sperre haelt sie zurueck", am(90_000, None, true, Some(4)), Some(225), None, 225),
         ];
         for (name, f, an, gwg, afa) in faelle {
+            assert_eq!(am_an_gesamt(&f).unwrap().map(Euro::get), an, "{name}: an_gesamt");
+            let (g, a) = am_gesamt(&f).unwrap();
+            assert_eq!((g.map(Euro::get), a.get()), (gwg, afa), "{name}: gesamt");
+        }
+    }
+}
+
+/// Abweichung Nr. 89 an den Aufrufstellen der Rechnung: wer den Abzug eines Geraets der Liste zaehlt (nach dem Scope), wer den
+/// Sofortabzug und die `AfA` auslaesst. Die Sperre und die Ende-zu-Ende-Faelle stehen in `tests/sperre_scheiben_hermetisch.rs`,
+/// `tests/gesamt_mischfaelle_hermetisch.rs` und `api/tests/kette_endstand_hermetisch.rs`.
+#[cfg(test)]
+mod computer_liste {
+    use domain::Euro;
+    use serde_json::{json, Value};
+
+    use super::{am_an_gesamt, am_gesamt, mit_computer_im_kaufjahr, mit_sofortabzug_im_band};
+    use crate::testhilfe::{felder, store};
+
+    /// Felder eines Arbeitsmittels: Preis in Cent, Antwort zur Liste (oder keine), Nutzungsdauer (oder keine), Anschaffungsjahr, Monat
+    /// (oder keiner), Wahl des Sofortabzugs, Satz (oder keiner).
+    fn cs(
+        preis: i64,
+        liste: Option<bool>,
+        nd: Option<i64>,
+        kaufjahr: bool,
+        monat: Option<i64>,
+        sofort: bool,
+        satz: Option<&str>,
+    ) -> crate::Felder {
+        let mut e: Vec<(&str, Value, bool)> = vec![
+            ("am_anschaffungskosten", json!(preis), true),
+            ("am_gwg_sofortabzug_gewaehlt", json!(sofort), true),
+            ("am_afa_ist_anschaffungsjahr", json!(kaufjahr), true),
+        ];
+        if let Some(l) = liste {
+            e.push(("am_computer_software", json!(l), true));
+        }
+        if let Some(n) = nd {
+            e.push(("arbeitsmittel_nutzungsdauer", json!(n), true));
+        }
+        if let Some(m) = monat {
+            e.push(("am_anschaffung_monat", json!(m), true));
+        }
+        if let Some(s) = satz {
+            e.push(("am_umsatzsteuersatz", json!(s), true));
+        }
+        felder(&store(&e))
+    }
+
+    /// Der Abzug im Kaufjahr kommt NACH dem Scope dazu: nur bei „ja“, nur mit einem Jahr Nutzungsdauer (keine Angabe oder 1), nur im
+    /// Anschaffungsjahr, volle Euro (abgerundet), nie ein Zwoelftel.
+    #[test]
+    fn der_abzug_im_kaufjahr_zaehlt_nur_bei_ja_mit_einem_jahr_im_anschaffungsjahr() {
+        // (Name, Felder, Aufschlag in EURO auf 1.000)
+        let faelle = [
+            ("ja, 1.500, keine Angabe, Kaufjahr, Oktober", cs(150_000, Some(true), None, true, Some(10), false, None), 1_500),
+            ("ja, 1.500, Nutzungsdauer 1, Kaufjahr, Oktober", cs(150_000, Some(true), Some(1), true, Some(10), false, None), 1_500),
+            ("ja, 900 im Band, ohne Satz und Wahl", cs(90_000, Some(true), None, true, None, false, None), 900),
+            ("ja, 1.500,99: volle Euro", cs(150_099, Some(true), None, true, None, false, None), 1_500),
+            ("ja, 1.500, Folgejahr: 0", cs(150_000, Some(true), None, false, Some(10), false, None), 0),
+            ("ja, 1.500, Nutzungsdauer 3: die Verteilung, nicht hier", cs(150_000, Some(true), Some(3), true, Some(10), false, None), 0),
+            ("nein, 1.500, Nutzungsdauer 1: wie vor Nr. 89", cs(150_000, Some(false), Some(1), true, Some(10), false, None), 0),
+            ("keine Antwort, 1.500: wie vor Nr. 89", cs(150_000, None, Some(1), true, Some(10), false, None), 0),
+            ("ja, Preis 0", cs(0, Some(true), None, true, None, false, None), 0),
+        ];
+        for (name, f, soll) in faelle {
+            let ist = mit_computer_im_kaufjahr(&f, Euro::new(1_000)).unwrap().get() - 1_000;
+            assert_eq!(ist, soll, "{name}");
+        }
+    }
+
+    /// Ein Geraet der Liste ist kein `GWG`: der Sofortabzug im Band zaehlt nicht (sonst stuende der Preis doppelt in den Werbungskosten),
+    /// der Sofortabzug bis 800 EUR und die `AfA` der Netto-Pruefung auch nicht; die eigene Nutzungsdauer ueber ein Jahr verteilt wie sonst
+    /// (`(an_gesamt, gesamt)`: `AfA` in `an_gesamt`, `GWG` und `AfA` in `gesamt`).
+    #[test]
+    fn ein_geraet_der_liste_ist_kein_gwg_und_die_eigene_nutzungsdauer_verteilt_wie_sonst() {
+        // (Name, Felder, Aufschlag im Band, AfA an_gesamt, GWG an gesamt, AfA gesamt)
+        let faelle = [
+            ("ja, 900, Wahl ja, Satz 19: kein Sofortabzug im Band", cs(90_000, Some(true), None, true, None, true, Some("satz_19")), 0, None, None, 0),
+            ("nein, 900, Wahl ja, Satz 19: Sofortabzug im Band", cs(90_000, Some(false), None, true, None, true, Some("satz_19")), 900, None, None, 0),
+            ("ja, 700, Wahl ja: kein GWG", cs(70_000, Some(true), None, true, None, true, None), 0, None, None, 0),
+            ("nein, 700, Wahl ja: GWG", cs(70_000, Some(false), None, true, None, true, None), 0, Some(700), Some(700), 0),
+            ("ja, 1.200, Nutzungsdauer 3, Juli: AfA 200", cs(120_000, Some(true), Some(3), true, Some(7), false, None), 0, Some(200), None, 200),
+            ("ja, 700, Nutzungsdauer 3, Folgejahr: AfA 233, kein GWG", cs(70_000, Some(true), Some(3), false, None, true, None), 0, Some(233), None, 233),
+            ("ja, 1.500, keine Angabe: die AfA hat nichts, der Abzug kommt danach", cs(150_000, Some(true), None, true, Some(10), false, None), 0, None, None, 0),
+        ];
+        for (name, f, band, an, gwg, afa) in faelle {
+            let ist = mit_sofortabzug_im_band(&f, Euro::new(1_000)).unwrap().get() - 1_000;
+            assert_eq!(ist, band, "{name}: Sofortabzug im Band");
             assert_eq!(am_an_gesamt(&f).unwrap().map(Euro::get), an, "{name}: an_gesamt");
             let (g, a) = am_gesamt(&f).unwrap();
             assert_eq!((g.map(Euro::get), a.get()), (gwg, afa), "{name}: gesamt");

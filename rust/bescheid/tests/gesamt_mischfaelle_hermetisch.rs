@@ -85,6 +85,22 @@
 //! Skript `handrechnung.py` im Auftragsordner (exakte Brueche, Tarif wie oben, Eichung an M2a 13.452 und M2b 13.674), nicht der
 //! Rust-Code.
 //!
+//! **C1 bis C7 Computer und Software (Abweichung Nr. 89).** Zweite Lesung: offen. BMF-Schreiben vom 22.02.2022 (`BStBl` I S. 187,
+//! `sources/bmf/bmf_nutzungsdauer_computer_software_2022-02-22.txt`): Computerhardware und Software der Liste (Rz. 2 bis 5) haben eine
+//! Nutzungsdauer von einem Jahr (Rz. 1), das ist eine normale Abschreibung nach § 7 Abs. 1 `EStG` (Rz. 1.1), kein `GWG`; der volle Abzug im
+//! Anschaffungsjahr wird nicht beanstandet (Rz. 1.4), ein Zwoelftel nach dem Kaufmonat entfaellt; eine andere Nutzungsdauer bleibt
+//! waehlbar (Rz. 1.2). Folgejahre: ein Gut mit einem Jahr Nutzungsdauer ist im Kaufjahr aufgebraucht, der Abzug im Folgejahr ist 0 (das
+//! Schreiben nennt das nicht ausdruecklich, `not_mentioned`). Sonst wie M2a: Lohn 62.000, Pendlerkosten 1.580 + 2.100 Unfall = 3.680, zvE = gdb - 36,
+//! gleicher Tarif. C1 1.500 brutto, Antwort „ja“, keine eigene Nutzungsdauer, Kaufjahr, Kaufmonat 10: Abzug 1.500, gdb = 62.000 - 3.680 -
+//! 1.500 = 56.820, zvE 56.784, `ESt` 13.179. C2 900 brutto, „ja“, weder Satz noch
+//! Wahl des Sofortabzugs: Abzug 900, gdb 57.420, zvE 57.384, `ESt` 13.406 (wie N1). C3 wie C1 im Folgejahr: Abzug 0, gdb 58.320, zvE 58.284,
+//! `ESt` 13.751. C4 1.200 brutto, „ja“, eigene Nutzungsdauer 3, gekauft im Juli: die bisherige Verteilung, 1.200 / 3 = 400, (13 - 7) / 12 = 6/12,
+//! also 200 (wie M2b): gdb 58.120, zvE 58.084, `ESt` 13.674. C5 1.500 brutto, „nein“, Nutzungsdauer 1, gekauft im Oktober: der Weg
+//! vor Nr. 89, 1.500 / 1 x (13 - 10) / 12 = 375: gdb 57.945, zvE 57.909, `ESt` 13.607. C6 wie C1 mit eigener Nutzungsdauer 1: Abzug 1.500,
+//! 13.179. C7 700 brutto, „ja“, Nutzungsdauer 3, Juli: kein `GWG` trotz Preis unter 800, 700 / 3 x 6/12 = 116 (abgerundet): gdb 58.204, zvE
+//! 58.168, `ESt` 13.706. Die Steuer rechnet das Skript `handrechnung.py` im Auftragsordner (exakte Brueche, Eichung an M2a, M2b, g14, g23, g29
+//! und a5), nicht der Rust-Code.
+//!
 //! **P1 Privatverkauf.** Zweite Lesung: Julius. Lohn 40.000 Euro, einzeln, dazu ein Grundstueck, am 15.03.2021 fuer 100.000 Euro gekauft und am
 //! 20.09.2025 fuer 145.000 Euro verkauft (innerhalb von zehn Jahren, § 23 Abs. 1 Satz 1 Nr. 1; nicht selbst bewohnt). Gewinn =
 //! 145.000 − 100.000 = 45.000 (§ 23 Abs. 3 Satz 1), ueber der Freigrenze von 1.000 Euro, also steuerpflichtig (Satz 5).
@@ -352,6 +368,32 @@ fn pendler_mit_arbeitsmittel(preis: i64, satz: &'static str) -> Paare {
     ])
 }
 
+/// Abweichung Nr. 89: ein Notebook (Geraet der Liste im BMF-Schreiben vom 22.02.2022) mit `preis` Cent BRUTTO. `liste` ist die
+/// Antwort auf „Das Geraet steht auf der Liste“ (`None` = unbeantwortet), `nd` die eigene Nutzungsdauer (`None` = keine),
+/// `kaufjahr` die Antwort auf „in diesem Jahr gekauft“, `monat` der Kaufmonat. Weder Umsatzsteuersatz noch Wahl des Sofortabzugs.
+fn pendler_mit_notebook(
+    preis: i64,
+    liste: Option<bool>,
+    nd: Option<i64>,
+    kaufjahr: bool,
+    monat: Option<i64>,
+) -> Paare {
+    let mut mehr: Paare = vec![
+        ("am_anschaffungskosten", json!(preis)),
+        ("am_afa_ist_anschaffungsjahr", json!(kaufjahr)),
+    ];
+    if let Some(l) = liste {
+        mehr.push(("am_computer_software", json!(l)));
+    }
+    if let Some(n) = nd {
+        mehr.push(("arbeitsmittel_nutzungsdauer", json!(n)));
+    }
+    if let Some(m) = monat {
+        mehr.push(("am_anschaffung_monat", json!(m)));
+    }
+    pendler_mit_unfall(mehr)
+}
+
 /// Arbeitsmittel ueber 800 Euro: 1.200 Euro, drei Jahre Nutzungsdauer, gekauft im Juli 2025 (`AfA` im Kaufjahr).
 fn pendler_mit_afa() -> Paare {
     pendler_mit_unfall(vec![
@@ -483,6 +525,70 @@ fn faelle() -> Vec<FallDef> {
             gdb: 58_120,
             zve: 58_084,
             est: 13_674,
+        },
+        // Abweichung Nr. 89 (BMF-Schreiben vom 22.02.2022): Computer und Software der Liste haben ein Jahr Nutzungsdauer, kein GWG.
+        FallDef {
+            name: "C1 Notebook 1.500 brutto, Liste ja, Kaufmonat Oktober: voller Abzug im Kaufjahr",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(1_500), Some(true), None, true, Some(10))),
+            gdb: 56_820,
+            zve: 56_784,
+            est: 13_179,
+        },
+        FallDef {
+            name: "C2 Notebook 900 brutto, Liste ja, ohne Satz und Wahl: voller Abzug",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(900), Some(true), None, true, None)),
+            gdb: 57_420,
+            zve: 57_384,
+            est: 13_406,
+        },
+        FallDef {
+            name: "C3 Notebook 1.500 brutto, Liste ja, Folgejahr: kein Abzug mehr",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(1_500), Some(true), None, false, None)),
+            gdb: 58_320,
+            zve: 58_284,
+            est: 13_751,
+        },
+        FallDef {
+            name: "C4 Notebook 1.200 brutto, Liste ja, eigene Nutzungsdauer 3, Juli: die Verteilung wie vor Nr. 89",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(1_200), Some(true), Some(3), true, Some(7))),
+            gdb: 58_120,
+            zve: 58_084,
+            est: 13_674,
+        },
+        FallDef {
+            name: "C5 Notebook 1.500 brutto, Liste nein, Nutzungsdauer 1, Oktober: Zwoelftel wie vor Nr. 89",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(1_500), Some(false), Some(1), true, Some(10))),
+            gdb: 57_945,
+            zve: 57_909,
+            est: 13_607,
+        },
+        FallDef {
+            name: "C6 Notebook 1.500 brutto, Liste ja, eigene Nutzungsdauer 1, Oktober: voller Abzug",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(1_500), Some(true), Some(1), true, Some(10))),
+            gdb: 56_820,
+            zve: 56_784,
+            est: 13_179,
+        },
+        FallDef {
+            name: "C7 Notebook 700 brutto, Liste ja, Nutzungsdauer 3, Juli: Verteilung, kein GWG",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_notebook(cent(700), Some(true), Some(3), true, Some(7))),
+            gdb: 58_204,
+            zve: 58_168,
+            est: 13_706,
         },
         FallDef {
             name: "P1 Privatverkauf eines Grundstuecks innerhalb von zehn Jahren",
