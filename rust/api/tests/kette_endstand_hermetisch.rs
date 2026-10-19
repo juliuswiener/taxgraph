@@ -1479,6 +1479,130 @@ async fn g31_arbeitsmittel_856_eur_brutto_bei_7_prozent_sind_noch_sofortabzug() 
     erwarte_kette("g31", &a, 1_324_200, [56_988, 56_952, 13_242, 13_242]);
 }
 
+/// Abweichung Nr. 89 (BMF-Schreiben vom 22.02.2022, `BStBl` I S. 187): ein Notebook, ein Geraet der Liste in Rz. 2 und 3, mit `preis` Cent
+/// BRUTTO, der Antwort auf „steht auf der Liste“ (`liste`), eigener Nutzungsdauer (`nd`), der Antwort „in diesem Jahr gekauft“
+/// (`kaufjahr`) und dem Kaufmonat. 30 km an 220 Tagen wie `g14`. Weder Umsatzsteuersatz noch Wahl des Sofortabzugs.
+fn notebook_aenderungen(
+    preis: i64,
+    liste: Option<bool>,
+    nd: Option<i64>,
+    kaufjahr: bool,
+    monat: Option<i64>,
+) -> Paare {
+    let mut p = vec![
+        ("ep_arbeitstage", json!(220)),
+        ("ep_entfernung_km", json!(30)),
+        ("am_anschaffungskosten", json!(preis)),
+        ("am_afa_ist_anschaffungsjahr", json!(kaufjahr)),
+    ];
+    if let Some(l) = liste {
+        p.push(("am_computer_software", json!(l)));
+    }
+    if let Some(n) = nd {
+        p.push(("arbeitsmittel_nutzungsdauer", json!(n)));
+    }
+    if let Some(m) = monat {
+        p.push(("am_anschaffung_monat", json!(m)));
+    }
+    p
+}
+
+/// Abweichung Nr. 89, Scheibe `gesamt`: 900,00 EUR brutto, Antwort „ja“, weder Satz noch Wahl noch Nutzungsdauer. Das Geraet ist kein
+/// `GWG` (die 800-Euro-Grenze gilt nicht), die Nutzungsdauer ist ein Jahr, der Abzug im Kaufjahr voll (Rz. 1.4): `GdE` 56.944 EUR wie `g29`,
+/// aber ohne die Satzfrage. Von Hand gerechnet (Skript `handrechnung.py`, Eichung an g14, g23, g29).
+#[tokio::test]
+async fn g32_notebook_900_eur_ja_ist_voller_abzug_ohne_satz_und_wahl() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), notebook_aenderungen(90_000, Some(true), None, true, None)),
+    )
+    .await;
+    erwarte_kette("g32", &a, 1_322_600, [56_944, 56_908, 13_226, 13_226]);
+}
+
+/// Abweichung Nr. 89, Scheibe `gesamt`: 1.500,00 EUR brutto, „ja“, keine eigene Nutzungsdauer, gekauft im Oktober: voller Abzug, kein
+/// Zwoelftel nach dem Kaufmonat (Rz. 1.4). `GdE` 57.844 - 1.500 = 56.344, zvE 56.308, `ESt` 12.999 EUR.
+#[tokio::test]
+async fn g33_notebook_1500_eur_ja_im_kaufjahr_ist_voller_abzug_ohne_zwoelftel() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), notebook_aenderungen(150_000, Some(true), None, true, Some(10))),
+    )
+    .await;
+    erwarte_kette("g33", &a, 1_299_900, [56_344, 56_308, 12_999, 12_999]);
+}
+
+/// Abweichung Nr. 89, Scheibe `gesamt`: dasselbe Geraet im Folgejahr (nicht in diesem Jahr gekauft): mit einem Jahr Nutzungsdauer im
+/// Kaufjahr aufgebraucht, der Abzug ist 0. `GdE` 57.844, zvE 57.808, `ESt` 13.568 EUR.
+#[tokio::test]
+async fn g34_notebook_1500_eur_ja_im_folgejahr_hat_keinen_abzug_mehr() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), notebook_aenderungen(150_000, Some(true), None, false, None)),
+    )
+    .await;
+    erwarte_kette("g34", &a, 1_356_800, [57_844, 57_808, 13_568, 13_568]);
+}
+
+/// Abweichung Nr. 89, Scheibe `gesamt`: „ja“ mit eigener Nutzungsdauer 3 (Rz. 1.2: abweichen ist erlaubt): die Verteilung wie vor Nr. 89,
+/// 1.500 / 3 = 500, Oktober (13 - 10) / 12 = 3/12, also 125. `GdE` 57.719, zvE 57.683, `ESt` 13.520 EUR.
+#[tokio::test]
+async fn g35_notebook_1500_eur_ja_mit_eigener_nutzungsdauer_3_verteilt_wie_bisher() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), notebook_aenderungen(150_000, Some(true), Some(3), true, Some(10))),
+    )
+    .await;
+    erwarte_kette("g35", &a, 1_352_000, [57_719, 57_683, 13_520, 13_520]);
+}
+
+/// Abweichung Nr. 89, Scheibe `gesamt`: „nein“ mit Nutzungsdauer 1 und Oktober: der Weg vor Nr. 89, ein Zwoelftel-Anteil
+/// (1.500 x 3/12 = 375). Ohne „ja“ gilt die Sonderregel nicht. `GdE` 57.469, zvE 57.433, `ESt` 13.425 EUR.
+#[tokio::test]
+async fn g36_notebook_1500_eur_nein_mit_nutzungsdauer_1_hat_das_zwoelftel_nach_dem_kaufmonat() {
+    let a = ergebnis(
+        "gesamt",
+        &mit(kegel_gesamt(), notebook_aenderungen(150_000, Some(false), Some(1), true, Some(10))),
+    )
+    .await;
+    erwarte_kette("g36", &a, 1_342_500, [57_469, 57_433, 13_425, 13_425]);
+}
+
+/// Abweichung Nr. 89, Scheibe `an_gesamt` (60.000 EUR Lohn, 30 km an 220 Tagen, Pauschale 2.156 EUR): 1.500,00 EUR brutto, „ja“,
+/// Kaufjahr Oktober. Einkuenfte 60.000 - 2.156 - 1.500 = 56.344, zvE 56.308, `ESt` 12.999 EUR = 1.299.900 ct (wie `g33` in `gesamt`).
+/// Der Abzug kommt NACH dem Catala-Scope dazu (`mit_computer_im_kaufjahr`): der Scope zaehlt 1.500 EUR gegen 800 EUR und lieferte 0.
+#[tokio::test]
+async fn a8_notebook_1500_eur_ja_ist_in_an_gesamt_voller_abzug() {
+    let a = ergebnis(
+        "an_gesamt",
+        &mit(kegel_an_gesamt(), mit(vec![("bruttoarbeitslohn", json!(6_000_000))], notebook_aenderungen(150_000, Some(true), None, true, Some(10)))),
+    )
+    .await;
+    erwarte_zahl("a8", &a, 1_299_900);
+}
+
+/// Abweichung Nr. 89, Scheibe `an_gesamt`: 900,00 EUR brutto im Band, „ja“, ohne Satz: voller Abzug, 1.322.600 ct (wie `a7`).
+#[tokio::test]
+async fn a9_notebook_900_eur_ja_ist_in_an_gesamt_voller_abzug_ohne_satz() {
+    let a = ergebnis(
+        "an_gesamt",
+        &mit(kegel_an_gesamt(), mit(vec![("bruttoarbeitslohn", json!(6_000_000))], notebook_aenderungen(90_000, Some(true), None, true, None))),
+    )
+    .await;
+    erwarte_zahl("a9", &a, 1_322_600);
+}
+
+/// Abweichung Nr. 89, Scheibe `an_gesamt`: dasselbe Geraet im Folgejahr, Abzug 0: 57.844 - 36 = 57.808, 1.356.800 ct.
+#[tokio::test]
+async fn a10_notebook_1500_eur_ja_im_folgejahr_hat_in_an_gesamt_keinen_abzug() {
+    let a = ergebnis(
+        "an_gesamt",
+        &mit(kegel_an_gesamt(), mit(vec![("bruttoarbeitslohn", json!(6_000_000))], notebook_aenderungen(150_000, Some(true), None, false, None))),
+    )
+    .await;
+    erwarte_zahl("a10", &a, 1_356_800);
+}
+
 /// Wie `g18` mit 30.000 EUR Progressionseinkuenfte: die Anrechnung rechnet `p32b_wrapper` nach. 4 x Messbetrag (20.000 EUR)
 /// ist wieder der kleinste Wert. Python: tarifliche 62.144 EUR, festzusetzende 44.991 EUR (= Steuer nach § 32b 64.991 - 20.000).
 #[tokio::test]
