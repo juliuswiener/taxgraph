@@ -11,7 +11,9 @@ use std::path::{Path, PathBuf};
 
 use elster::EricFehler;
 
-use crate::{ffi, zertifikat_abgelehnt, Servermeldung, Zertifikat};
+use crate::{
+    ffi, servermeldungen, zertifikat_abgelehnt, Servermeldung, Zertifikat, ERIC_SENDE, ERIC_VALIDIERE,
+};
 
 /// Warum der Abruf abbricht.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -363,25 +365,93 @@ pub fn dekodiere_datenpaket(
     dekodiere_paket(&eric, &handle, &pin_c, &base64_c)
 }
 
-/// STUMPF.
-///
-/// # Errors
-/// [`AbrufFehler`].
-pub fn hole_beleg(
-    _lib: Option<&Path>,
-    _zertifikat: &Zertifikat,
-    _auftrag: &AbrufAuftrag,
-    _log_dir: &Path,
-) -> Result<Vec<u8>, AbrufFehler> {
-    Err(AbrufFehler::AntwortUnlesbar("stumpf"))
+/// Ein Aufruf von `EricBearbeiteVorgang` (`ERIC_VALIDIERE | ERIC_SENDE`); `rc != 0` ist
+/// [`AbrufFehler::Abgelehnt`] mit Code und Text der Servermeldung, nie dem Datenteil.
+fn frage(
+    eric: &ffi::Eric,
+    handle: &ffi::ZertifikatWaechter<'_>,
+    pin: &CStr,
+    schritt: &'static str,
+    datenart: &CStr,
+    xml: &str,
+) -> Result<String, AbrufFehler> {
+    let xml_c = CString::new(xml).map_err(|_| eingabe("xml", "enthaelt ein NUL-Byte"))?;
+    let (rc, _rueckgabe, serverantwort) =
+        eric.bearbeite(&xml_c, datenart, ERIC_VALIDIERE | ERIC_SENDE, handle, pin)?;
+    if rc != 0 {
+        return Err(AbrufFehler::Abgelehnt {
+            schritt,
+            rc,
+            meldungen: servermeldungen(&serverantwort),
+        });
+    }
+    Ok(serverantwort)
 }
 
-/// STUMPF.
+/// Holt den Beleg `VaSt_LStB` bei ELSTER ab und gibt den entschluesselten Klartext zurueck: Anfrage,
+/// Wahl der `<Id>`, Abholung, `EricDekodiereDaten`. EIN Zertifikat, EINE ERiC-Instanz. Der Aufruf
+/// geht ans Netz (`ERIC_SENDE`), wie [`crate::sende`]; nur das Programm `taxgraph-abruf` ruft ihn.
+///
+/// Reihenfolge, jede Stufe bricht VOR dem naechsten ERiC-Aufruf ab: Zertifikat (Pfad, Datei, PIN),
+/// dann erst ERiC laden, das Zertifikat oeffnen, anfragen, abholen, entschluesseln. `log_dir` nimmt
+/// `eric.log` auf (Besitzer-only).
 ///
 /// # Errors
-/// [`AbrufFehler::Ablage`].
-pub fn lege_beleg_ab(_basis: &Path, _klartext: &[u8]) -> Result<PathBuf, AbrufFehler> {
-    Err(AbrufFehler::Ablage("stumpf"))
+/// [`AbrufFehler`]; `Abgelehnt` nennt Code und Text der Servermeldung, nie Steuer-ID oder Datenteil.
+pub fn hole_beleg(
+    lib: Option<&Path>,
+    zertifikat: &Zertifikat,
+    auftrag: &AbrufAuftrag,
+    log_dir: &Path,
+) -> Result<Vec<u8>, AbrufFehler> {
+    let (pfad_c, pin_c) = zertifikat_als_c(zertifikat)?;
+    let datenart_c = CString::new(auftrag.datenart_version())
+        .map_err(|_| eingabe("datenart", "enthaelt ein NUL-Byte"))?;
+    let lib = lib.ok_or(EricFehler::NichtGefunden)?;
+    let eric = ffi::Eric::laden(lib, log_dir)?;
+    let handle = eric
+        .zertifikat_oeffnen(&pfad_c)
+        .map_err(|rc| AbrufFehler::Zertifikat(zertifikat_abgelehnt(rc)))?;
+
+    let anfrage = frage(&eric, &handle, &pin_c, "Anfrage", &datenart_c, &auftrag.anfrage_xml())?;
+    let id = waehle_id(&anfrage)?;
+    let abholung = frage(&eric, &handle, &pin_c, "Abholung", &datenart_c, &auftrag.abholung_xml(&id)?)?;
+    let paket_c = CString::new(datenpaket(&abholung)?).map_err(|_| AbrufFehler::DatenpaketNulByte)?;
+    let klartext = dekodiere_paket(&eric, &handle, &pin_c, &paket_c)?;
+    if klartext.is_empty() {
+        return Err(AbrufFehler::AntwortUnlesbar("Klartext"));
+    }
+    Ok(klartext)
+}
+
+/// Legt den Klartext in ein neues Verzeichnis `taxgraph_beleg_*` (0700) unter `basis` als
+/// `beleg.xml` (0600) und gibt den Pfad der Datei zurueck. Bei einem Fehler bleibt nichts liegen.
+/// Der Beleg traegt Steuerdaten: kein anderer Benutzer liest ihn, der Pfad geht auf den Schirm, der
+/// Inhalt nie.
+///
+/// # Errors
+/// [`AbrufFehler::Ablage`] (`Verzeichnis` oder `Datei`).
+pub fn lege_beleg_ab(basis: &Path, klartext: &[u8]) -> Result<PathBuf, AbrufFehler> {
+    use std::io::Write as _;
+    use std::os::unix::fs::{OpenOptionsExt as _, PermissionsExt as _};
+
+    let dir = tempfile::Builder::new()
+        .prefix("taxgraph_beleg_")
+        .permissions(std::fs::Permissions::from_mode(0o700))
+        .tempdir_in(basis)
+        .map_err(|_| AbrufFehler::Ablage("Verzeichnis"))?;
+    let pfad = dir.path().join("beleg.xml");
+    let mut datei = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(&pfad)
+        .map_err(|_| AbrufFehler::Ablage("Datei"))?;
+    datei
+        .write_all(klartext)
+        .map_err(|_| AbrufFehler::Ablage("Datei"))?;
+    // Erst jetzt bleibt das Verzeichnis; vorher raeumt `dir` beim Fallen auf.
+    Ok(dir.keep().join("beleg.xml"))
 }
 
 #[cfg(test)]

@@ -119,7 +119,7 @@ fn lies_args(args: &[String]) -> Result<Args, String> {
     })
 }
 
-fn zeile(aus: &mut dyn Write, text: &str) {
+pub(crate) fn zeile(aus: &mut dyn Write, text: &str) {
     // Eine Ausgabe, die nicht ankommt, aendert den Exit-Code nicht: der Versand ist dann schon
     // entschieden oder abgebrochen.
     let _ = writeln!(aus, "{text}");
@@ -147,36 +147,54 @@ fn dry_run(args: &Args, xml: &[u8], zertifikat: &Zertifikat, aus: &mut dyn Write
     0
 }
 
-/// Die zweite Huerde des Echtversands: dieselbe Phrase noch einmal, am Terminal getippt.
-fn bestaetigt(stdin: &mut dyn BufRead, ist_terminal: bool, aus: &mut dyn Write) -> bool {
+/// Die zweite Huerde: dieselbe Phrase noch einmal, am Terminal getippt. `kopf` steht vor jeder
+/// Verweigerung (zum Beispiel `[versand] ECHTVERSAND`), `bitte` ist die Aufforderung vor der Phrase.
+pub(crate) fn bestaetigt_phrase(
+    stdin: &mut dyn BufRead,
+    ist_terminal: bool,
+    aus: &mut dyn Write,
+    kopf: &str,
+    bitte: &str,
+    phrase: &str,
+) -> bool {
     if !ist_terminal {
         zeile(
             aus,
-            "[versand] ECHTVERSAND VERWEIGERT — keine interaktive Bestaetigung moeglich (stdin ist \
-             kein Terminal).",
+            &format!(
+                "{kopf} VERWEIGERT — keine interaktive Bestaetigung moeglich (stdin ist kein Terminal)."
+            ),
         );
         return false;
     }
-    let _ = write!(
-        aus,
-        "Echtversand ans Finanzamt — tippe zur Bestaetigung erneut ein (nicht kopieren):\n{ECHTVERSAND_FREIGABE}\n> "
-    );
+    let _ = write!(aus, "{bitte}\n{phrase}\n> ");
     let _ = aus.flush();
     let mut eingabe = String::new();
     match stdin.read_line(&mut eingabe) {
         Ok(0) | Err(_) => {
-            zeile(aus, "[versand] ECHTVERSAND VERWEIGERT — keine interaktive Bestaetigung moeglich.");
+            zeile(aus, &format!("{kopf} VERWEIGERT — keine interaktive Bestaetigung moeglich."));
             false
         }
         Ok(_) => {
-            if eingabe.strip_suffix('\n').unwrap_or(&eingabe) == ECHTVERSAND_FREIGABE {
+            if eingabe.strip_suffix('\n').unwrap_or(&eingabe) == phrase {
                 true
             } else {
-                zeile(aus, "[versand] ECHTVERSAND VERWEIGERT — Bestaetigung stimmte nicht ueberein.");
+                zeile(aus, &format!("{kopf} VERWEIGERT — Bestaetigung stimmte nicht ueberein."));
                 false
             }
         }
     }
+}
+
+/// Die zweite Huerde des Echtversands.
+fn bestaetigt(stdin: &mut dyn BufRead, ist_terminal: bool, aus: &mut dyn Write) -> bool {
+    bestaetigt_phrase(
+        stdin,
+        ist_terminal,
+        aus,
+        "[versand] ECHTVERSAND",
+        "Echtversand ans Finanzamt — tippe zur Bestaetigung erneut ein (nicht kopieren):",
+        ECHTVERSAND_FREIGABE,
+    )
 }
 
 /// Der Modus fuer `sende`; `None`, wenn eine Huerde des Echtversands nicht genommen wurde.

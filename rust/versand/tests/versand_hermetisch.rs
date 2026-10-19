@@ -1227,7 +1227,8 @@ fn das_programm_ruft_nach_beiden_huerden_ab_und_legt_den_beleg_in_0700_0600_ab()
     std::fs::create_dir_all(&ziel).unwrap();
     let (rc, aus) = l.abruf_echt(&ziel.to_string_lossy());
     assert_eq!(rc, 0, "{aus}");
-    let pfad = aus.lines().find_map(|z| z.strip_prefix("[abruf] Beleg abgelegt: ")).unwrap_or_default();
+    // Die Aufforderung `> ` endet ohne Zeilenumbruch (am Terminal setzt ihn die Eingabetaste); der Test tippt nicht.
+    let pfad = aus.lines().find_map(|z| z.split_once("[abruf] Beleg abgelegt: ")).map(|(_, p)| p).unwrap_or_default();
     let pfad = PathBuf::from(pfad);
     assert!(pfad.starts_with(&ziel), "{pfad:?} liegt nicht unter {ziel:?}:\n{aus}");
     assert_eq!(std::fs::read(&pfad).unwrap(), KLARTEXT);
@@ -1259,7 +1260,9 @@ fn das_programm_meldet_eine_ablehnung_mit_exit_eins_und_behaelt_das_log() {
     // Ein Fehler aus der Antwort (kein Beleg) ist ebenfalls Exit 1.
     let ohne = anfrage_antwort(&[(ID_A, "VaSt_RBM", "202501")]);
     let Some(l) = Lauf::neu(&abruf_skript(&ohne, &abholung_antwort(PAKET))) else { return };
-    let (rc, aus) = l.abruf_echt(&l.wurzel.path().join("ziel").to_string_lossy());
+    let ziel = l.wurzel.path().join("ziel");
+    std::fs::create_dir_all(&ziel).unwrap();
+    let (rc, aus) = l.abruf_echt(&ziel.to_string_lossy());
     assert_eq!(rc, 1, "{aus}");
     assert!(aus.contains("VaSt_RBM 202501"), "{aus}");
 }
@@ -1277,6 +1280,15 @@ fn das_programm_bricht_bei_ungueltiger_eingabe_vor_eric_ab() {
         assert_eq!(rc, 2, "{args:?}: {aus}");
         assert!(aus.contains(feld), "{feld} fehlt in:\n{aus}");
     }
+    // Ein Ziel, das kein Verzeichnis ist, bricht VOR den Huerden und VOR ERiC ab: ein abgeholter Beleg ginge sonst verloren.
+    let fehlt = l.wurzel.path().join("gibt-es-nicht").to_string_lossy().into_owned();
+    let (rc, aus) = l.abruf_programm(
+        &["--idnr", IDNR, "--jahr", "2025", "--ziel", &fehlt, "--abruf", "--freigabe", ABRUF_FREIGABE],
+        &tippen,
+        true,
+    );
+    assert_eq!(rc, 2, "{aus}");
+    assert!(aus.contains("Ziel ist kein Verzeichnis") && !aus.contains("tippe"), "{aus}");
     // Ohne Hersteller-ID in der Umgebung.
     let (rc, aus) = l.abruf_programm_mit("", &["--idnr", IDNR, "--jahr", "2025", "--dry-run"], "", false);
     assert_eq!(rc, 2, "{aus}");
