@@ -26,6 +26,16 @@
  *   zertifikat_rc    Rueckgabe von EricGetHandleToCertificate (fehlt die Datei: 0, Handle 77)
  *   zertifikat_pfad, zertifikat_zaehler, zertifikat_geschlossen  was die Zertifikatsfunktionen sahen
  *   gesehen/<n>.crypto  Version, Handle und PIN-LAENGE des Crypto-Parameters (nie die PIN selbst)
+ *
+ * Nur fuer `rust/versand`, der Abruf der Lohnsteuerbescheinigung (Abweichung Nr. 91). Die Attrappe
+ * entschluesselt nichts: EricDekodiereDaten antwortet nach den Steuerdateien und notiert, was ankam.
+ *   dekodiere_rc        Rueckgabe von EricDekodiereDaten; fehlt die Datei: 0
+ *   dekodiert           die Bytes, die EricDekodiereDaten in den Rueckgabepuffer schreibt (auch mit rc != 0:
+ *                       ERiC laesst den Inhalt dann undefiniert, ein Aufrufer darf ihn nie nutzen); fehlt die
+ *                       Datei: leer. EricRueckgabepufferLaenge nennt die Laenge, auch hinter einem NUL-Byte
+ *   dekodiere_zaehler   Zahl der Aufrufe von EricDekodiereDaten
+ *   dekodiere_eingabe   das Base64, Byte fuer Byte wie es ankam
+ *   dekodiere_crypto    Handle und PIN-LAENGE (nie die PIN selbst)
  */
 #include <pthread.h>
 #include <stdint.h>
@@ -36,6 +46,7 @@
 
 typedef struct {
     char *text;
+    size_t laenge; /* die Bytes in `text` ohne das NUL am Ende (EricRueckgabepufferLaenge) */
 } Puffer;
 
 static char g_log_pfad[4096];
@@ -118,11 +129,16 @@ void *EricRueckgabepufferErzeugen(void) {
     zaehle("puffer_erzeugt");
     Puffer *p = malloc(sizeof *p);
     p->text = strdup("");
+    p->laenge = 0;
     return p;
 }
 
 const char *EricRueckgabepufferInhalt(void *h) {
     return h ? ((Puffer *)h)->text : NULL;
+}
+
+uint32_t EricRueckgabepufferLaenge(void *h) {
+    return h ? (uint32_t)((Puffer *)h)->laenge : 0;
 }
 
 int EricRueckgabepufferFreigeben(void *h) {
@@ -173,6 +189,36 @@ int EricCloseHandleToCertificate(uint32_t handle) {
         fclose(f);
     }
     return 0;
+}
+
+/* Nur fuer `rust/versand`: EricDekodiereDaten (ericapi.h). Die Attrappe entschluesselt nichts; sie schreibt den
+ * Inhalt der Steuerdatei `dekodiert` Byte fuer Byte in den Rueckgabepuffer (auch bei rc != 0, ERiC laesst den
+ * Inhalt dann undefiniert) und notiert Eingabe, Handle und PIN-LAENGE (nie die PIN). */
+int EricDekodiereDaten(uint32_t handle, const char *pin, const char *base64, void *rueckgabe) {
+    char p[4200];
+    zaehle("dekodiere_zaehler");
+    pfad_in(p, sizeof p, "dekodiere_eingabe");
+    FILE *fe = fopen(p, "wb");
+    if (fe) {
+        fputs(base64 ? base64 : "", fe);
+        fclose(fe);
+    }
+    pfad_in(p, sizeof p, "dekodiere_crypto");
+    FILE *fc = fopen(p, "wb");
+    if (fc) {
+        fprintf(fc, "handle=%u\npin_laenge=%zu\n", (unsigned)handle, pin ? strlen(pin) : (size_t)0);
+        fclose(fc);
+    }
+    Puffer *pf = rueckgabe;
+    if (pf) {
+        size_t n = 0;
+        pfad_in(p, sizeof p, "dekodiert");
+        char *klar = lies_datei(p, &n);
+        free(pf->text);
+        pf->text = klar ? klar : strdup("");
+        pf->laenge = klar ? n : 0;
+    }
+    return lies_zahl("dekodiere_rc", 0);
 }
 
 /* Der Block `n` (ab 1) des Skripts; der letzte, wenn es weniger gibt. */
@@ -277,11 +323,13 @@ int EricBearbeiteVorgang(const char *xml, const char *datenart, uint32_t flags, 
     if (pf) {
         free(pf->text);
         pf->text = strdup(text);
+        pf->laenge = strlen(pf->text);
     }
     Puffer *ps = serverantwort;
     if (ps) {
         free(ps->text);
         ps->text = strdup(server_text ? server_text : "");
+        ps->laenge = strlen(ps->text);
     }
     if (log && g_log_pfad[0]) {
         snprintf(name, sizeof name, "%s/eric.log", g_log_pfad);

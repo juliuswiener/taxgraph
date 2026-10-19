@@ -146,6 +146,15 @@ impl fmt::Debug for Zertifikat {
     }
 }
 
+/// Der Text, wenn ERiC das Zertifikat ablehnt (`EricGetHandleToCertificate`): nennt den Code, nie
+/// Pfad oder PIN.
+fn zertifikat_abgelehnt(rc: i32) -> String {
+    format!(
+        "ERiC lehnt das Zertifikat ab (EricGetHandleToCertificate rc={rc}) — Pfad/Format/PIN \
+         pruefen, siehe elster/VERSAND.md. Wert nicht geloggt."
+    )
+}
+
 /// Was ERiC zurueckgab.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Antwort {
@@ -349,12 +358,9 @@ pub fn sende(
     let lib = lib.ok_or(EricFehler::NichtGefunden)?;
     let log_dir = ffi::neues_log_dir()?;
     let eric = ffi::Eric::laden(lib, &log_dir)?;
-    let handle = eric.zertifikat_oeffnen(&pfad_c).map_err(|rc| {
-        VersandFehler::ZertifikatFehlt(format!(
-            "ERiC lehnt das Zertifikat ab (EricGetHandleToCertificate rc={rc}) — Pfad/Format/PIN \
-             pruefen, siehe elster/VERSAND.md. Wert nicht geloggt."
-        ))
-    })?;
+    let handle = eric
+        .zertifikat_oeffnen(&pfad_c)
+        .map_err(|rc| VersandFehler::ZertifikatFehlt(zertifikat_abgelehnt(rc)))?;
     let (rc, rueckgabe_xml, serverantwort_xml) =
         eric.bearbeite(&xml_c, &datenart_c, ERIC_VALIDIERE | ERIC_SENDE, &handle, &pin_c)?;
     Ok(Antwort {
