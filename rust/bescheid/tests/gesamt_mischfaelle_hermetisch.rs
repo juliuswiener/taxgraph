@@ -16,8 +16,9 @@
 //! ZWEITE LESUNG (2026-10-19): alle sieben Zahlen halten. Eine unabhaengige Nachrechnung in exakten Bruechen, jeder
 //! Schritt gegen die eingefrorenen Gesetzestexte gelesen, Tarifkonstanten 2025 extern bestaetigt (`BGBl` 2024 I Nr. 449 nicht
 //! selbst gelesen). Die Leseliste liegt im Vault unter `audits/messbelege/nm-beleg-gesamt/leseliste.md`. Offen bleibt, was
-//! unten bei M1 (knapper Fall), A1 (kuenstlicher Fall), M2a (Entfernungspauschale 2025: Gesetzestext fehlt im Korpus; GWG:
-//! Schwellenlesart brutto oder netto) steht.
+//! unten bei M1 (knapper Fall), A1 (kuenstlicher Fall), M2a (Entfernungspauschale 2025: Gesetzestext fehlt im Korpus) steht.
+//! Die GWG-Schwellenlesart (brutto oder netto) ist seit Abweichung Nr. 88 entschieden: netto, siehe N1 bis N7 (zweite Lesung dazu
+//! offen).
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: VZ 2025, von Hand aus Gesetzestext und `params/2025/`, mit exakten Bruchzahlen
 //! nachgerechnet (Rechenskript im Auftragsordner, kein Zugriff auf den Rust-Code), nie aus dem Rust-Code gelesen.
@@ -61,9 +62,8 @@
 //! 5 km × 0,38) = 200 × 7,90 = 1.580 (§ 9 Abs. 1 Satz 3 Nr. 4, `params/2025/entfernungspauschale.yaml`; der eingefrorene § 9 ist die
 //! Fassung 2026 mit 0,38 ab km 1, die Staffel 2025 steht nur in der YAML; unter dem Hoechstbetrag
 //! 4.500, mit Kraftwagen ohnehin ohne Grenze). Unfallkosten 2.100 (BMF-Schreiben Rz. 30, kommen zur Pauschale dazu).
-//! Arbeitsmittel mit Anschaffungskosten 780 Euro (ein Arbeitnehmer hat keinen Vorsteuerabzug: es ist der Bruttopreis; ob die
-//! 800-Euro-Grenze brutto oder netto gilt, ist offen, Anleitung N 2025 Z. 307 sagt „ohne Umsatzsteuer“; 780 und 1.200 liegen auf
-//! derselben Seite beider Lesarten), Sofortabzug
+//! Arbeitsmittel mit Anschaffungskosten 780 Euro (ein Arbeitnehmer hat keinen Vorsteuerabzug: es ist der Bruttopreis; die
+//! 800-Euro-Grenze gilt netto, siehe N1 bis N7; 780 und 1.200 liegen auf derselben Seite beider Lesarten), Sofortabzug
 //! als GWG (§ 9 Abs. 1 Satz 3 Nr. 7 Satz 2 mit § 6 Abs. 2 Satz 1 bis 3: bis 800 Euro). Werbungskosten
 //! 1.580 + 2.100 + 780 = 4.460, ueber dem Arbeitnehmer-Pauschbetrag 1.230: gdb = 62.000 − 4.460 = 57.540; zvE = 57.504. Zone 3:
 //! 13.452,62, abgerundet 13.452.
@@ -72,6 +72,18 @@
 //! GWG), Nutzungsdauer 3 Jahre, gekauft im Juli 2025. `AfA` nach § 7 Abs. 1: 1.200 / 3 = 400 im Jahr, im Anschaffungsjahr je VOLLEM
 //! Monat vor dem Anschaffungsmonat ein Zwoelftel weniger: (13 − 7) / 12 = 6/12, also 200. Werbungskosten 1.580 + 2.100 + 200 =
 //! 3.880: gdb = 58.120; zvE = 58.084. Zone 3: 13.674,32, abgerundet 13.674.
+//!
+//! **N1 bis N7 Arbeitsmittel an der Netto-Grenze (Abweichung Nr. 88).** Zweite Lesung: offen. Regel von Julius (2026-10-19, R 9.12
+//! LStR, im Korpus `source_unavailable`; Anleitung N 2025 Z. 307 sagt „höchstens 800 € (ohne Umsatzsteuer)“): geprueft wird der Preis
+//! OHNE Umsatzsteuer gegen 800,00 Euro, abgezogen wird der volle Bruttopreis. Netto <= 800,00 genau dann, wenn brutto x 100 <=
+//! 80.000 x (100 + Satz in Prozent): 19 % -> 95.200 Cent, 7 % -> 85.600 Cent, ohne Umsatzsteuer -> 80.000 Cent (jeweils ohne Rest,
+//! also keine Rundungsfrage an der Grenze). Sonst wie M2a: Lohn 62.000, Pendlerkosten 1.580 + 2.100 Unfall = 3.680, zvE = gdb - 36,
+//! gleicher Tarif. Sofortabzug N1 900: gdb = 62.000 - 3.680 - 900 = 57.420, zvE 57.384, ESt 13.406. N2 952: 57.368 / 57.332 /
+//! 13.387. N4 856: 57.464 / 57.428 / 13.423. N6 800: 57.520 / 57.484 / 13.444. Ein Cent darueber gilt die `AfA` ueber vier Jahre,
+//! Folgejahr (volle Jahresrate), auf volle Euro abgerundet: N3 952,01 / 4 = 238,0025 -> 238: gdb 58.082, zvE 58.046, ESt 13.659.
+//! N5 856,01 / 4 -> 214: 58.106 / 58.070 / 13.668. N7 800,01 / 4 -> 200: 58.120 / 58.084 / 13.674. Die Steuer rechnet das
+//! Skript `handrechnung.py` im Auftragsordner (exakte Brueche, Tarif wie oben, Eichung an M2a 13.452 und M2b 13.674), nicht der
+//! Rust-Code.
 //!
 //! **P1 Privatverkauf.** Zweite Lesung: Julius. Lohn 40.000 Euro, einzeln, dazu ein Grundstueck, am 15.03.2021 fuer 100.000 Euro gekauft und am
 //! 20.09.2025 fuer 145.000 Euro verkauft (innerhalb von zehn Jahren, § 23 Abs. 1 Satz 1 Nr. 1; nicht selbst bewohnt). Gewinn =
@@ -327,6 +339,19 @@ fn pendler_mit_gwg() -> Paare {
     ])
 }
 
+/// Abweichung Nr. 88: ein Arbeitsmittel (Schreibtisch, nicht der Laptop) mit `preis` Cent BRUTTO und dem Umsatzsteuersatz der
+/// Rechnung. Gewaehlt ist der Sofortabzug; ueber der Netto-Grenze greift stattdessen die `AfA` ueber vier Jahre (Folgejahr des
+/// Kaufs: volle Jahresrate).
+fn pendler_mit_arbeitsmittel(preis: i64, satz: &'static str) -> Paare {
+    pendler_mit_unfall(vec![
+        ("am_anschaffungskosten", json!(preis)),
+        ("am_umsatzsteuersatz", json!(satz)),
+        ("am_gwg_sofortabzug_gewaehlt", json!(true)),
+        ("arbeitsmittel_nutzungsdauer", json!(4)),
+        ("am_afa_ist_anschaffungsjahr", json!(false)),
+    ])
+}
+
 /// Arbeitsmittel ueber 800 Euro: 1.200 Euro, drei Jahre Nutzungsdauer, gekauft im Juli 2025 (`AfA` im Kaufjahr).
 fn pendler_mit_afa() -> Paare {
     pendler_mit_unfall(vec![
@@ -390,6 +415,71 @@ fn faelle() -> Vec<FallDef> {
             kategorien: &[Unfall, Afa],
             scheibe: Scheibe::Gesamt,
             eingabe: || lohn_einzel(62_000, pendler_mit_afa()),
+            gdb: 58_120,
+            zve: 58_084,
+            est: 13_674,
+        },
+        // Abweichung Nr. 88 (Regel von Julius, R 9.12 LStR): geprueft wird der Preis ohne Umsatzsteuer gegen 800,00 Euro,
+        // abgezogen wird der volle Bruttopreis. Bruttogrenzen: 19 % -> 952,00, 7 % -> 856,00, ohne Umsatzsteuer -> 800,00.
+        FallDef {
+            name: "N1 Arbeitsmittel 900,00 brutto bei 19 %: Sofortabzug",
+            kategorien: &[Unfall, Gwg],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(cent(900), "satz_19")),
+            gdb: 57_420,
+            zve: 57_384,
+            est: 13_406,
+        },
+        FallDef {
+            name: "N2 Arbeitsmittel 952,00 brutto bei 19 %: genau die Grenze, Sofortabzug",
+            kategorien: &[Unfall, Gwg],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(95_200, "satz_19")),
+            gdb: 57_368,
+            zve: 57_332,
+            est: 13_387,
+        },
+        FallDef {
+            name: "N3 Arbeitsmittel 952,01 brutto bei 19 %: ein Cent darueber, AfA",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(95_201, "satz_19")),
+            gdb: 58_082,
+            zve: 58_046,
+            est: 13_659,
+        },
+        FallDef {
+            name: "N4 Arbeitsmittel 856,00 brutto bei 7 %: genau die Grenze, Sofortabzug",
+            kategorien: &[Unfall, Gwg],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(85_600, "satz_7")),
+            gdb: 57_464,
+            zve: 57_428,
+            est: 13_423,
+        },
+        FallDef {
+            name: "N5 Arbeitsmittel 856,01 brutto bei 7 %: ein Cent darueber, AfA",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(85_601, "satz_7")),
+            gdb: 58_106,
+            zve: 58_070,
+            est: 13_668,
+        },
+        FallDef {
+            name: "N6 Arbeitsmittel 800,00 ohne Umsatzsteuer (Kauf von privat): Sofortabzug",
+            kategorien: &[Unfall, Gwg],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(80_000, "keine_ust")),
+            gdb: 57_520,
+            zve: 57_484,
+            est: 13_444,
+        },
+        FallDef {
+            name: "N7 Arbeitsmittel 800,01 ohne Umsatzsteuer: ein Cent darueber, AfA",
+            kategorien: &[Unfall, Afa],
+            scheibe: Scheibe::Gesamt,
+            eingabe: || lohn_einzel(62_000, pendler_mit_arbeitsmittel(80_001, "keine_ust")),
             gdb: 58_120,
             zve: 58_084,
             est: 13_674,

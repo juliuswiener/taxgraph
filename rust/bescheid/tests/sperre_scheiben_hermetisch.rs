@@ -79,10 +79,64 @@ struct Fall {
     erwartet: Option<&'static str>,
 }
 
+/// Abweichung Nr. 88, Gruppe `am_netto`: ein Arbeitsmittel mit `preis` Cent brutto, der Wahl des Sofortabzugs, dem
+/// Umsatzsteuersatz der Rechnung (`satz`, `None` = unbeantwortet) und der Nutzungsdauer (`nd`, `None` = unbeantwortet).
+/// Python kennt die Netto-Regel nicht; die Erwartung ist die Regel von Julius (R 9.12 LStR, 2026-10-19): Der Preis ohne
+/// Umsatzsteuer darf 800,00 EUR nicht uebersteigen, der Satz ist nur im Band bis 952,00 EUR (19 %) noetig.
+fn am_fall(
+    name: &'static str,
+    preis: i64,
+    sofort: bool,
+    satz: Option<&'static str>,
+    nd: Option<i64>,
+    erwartet: Option<&'static str>,
+) -> Fall {
+    let mut events = vec![z("am_anschaffungskosten", preis, true), b("am_gwg_sofortabzug_gewaehlt", sofort, true)];
+    if let Some(s) = satz {
+        events.push(t("am_umsatzsteuersatz", s, true));
+    }
+    if let Some(n) = nd {
+        events.push(z("arbeitsmittel_nutzungsdauer", n, true));
+    }
+    Fall { scheibe: Scheibe::Gesamt, gruppe: "am_netto", name, events, erwartet }
+}
+
 // Eine Tabelle von Faellen, keine Logik: die Laenge ist die Zahl der Faelle.
 #[allow(clippy::too_many_lines)]
 fn faelle() -> Vec<Fall> {
+    let offen = Some("arbeitsmittel_afa_ueber_gwg_offen");
     vec![
+        // Abweichung Nr. 88, Grenzen in Cent: 19 % -> 95.200, 7 % -> 85.600, keine Umsatzsteuer -> 80.000.
+        am_fall("900,00 EUR, Wahl ja, 19 %: Sofortabzug", 90_000, true, Some("satz_19"), None, None),
+        am_fall("952,00 EUR, Wahl ja, 19 %: genau die Grenze", 95_200, true, Some("satz_19"), None, None),
+        am_fall("952,01 EUR, Wahl ja, 19 %, ohne Nutzungsdauer: Abschreibung braucht sie", 95_201, true, Some("satz_19"), None, offen),
+        am_fall("952,01 EUR, Wahl ja, 19 %, Nutzungsdauer 4: Abschreibung", 95_201, true, Some("satz_19"), Some(4), None),
+        am_fall("856,00 EUR, Wahl ja, 7 %: genau die Grenze", 85_600, true, Some("satz_7"), None, None),
+        am_fall("856,01 EUR, Wahl ja, 7 %, ohne Nutzungsdauer: Abschreibung braucht sie", 85_601, true, Some("satz_7"), None, offen),
+        am_fall("900,00 EUR, Wahl ja, 7 %, ohne Nutzungsdauer: ueber der Grenze 856,00", 90_000, true, Some("satz_7"), None, offen),
+        am_fall("900,00 EUR, 7 %, Nutzungsdauer 4: Abschreibung", 90_000, true, Some("satz_7"), Some(4), None),
+        am_fall("800,00 EUR, Wahl ja, ohne Satz: unter der Grenze braucht es keinen", 80_000, true, None, None, None),
+        am_fall("800,01 EUR, Wahl ja, keine Umsatzsteuer, ohne Nutzungsdauer: ueber 800,00", 80_001, true, Some("keine_ust"), None, offen),
+        am_fall("800,01 EUR, keine Umsatzsteuer, Nutzungsdauer 4: Abschreibung", 80_001, true, Some("keine_ust"), Some(4), None),
+        // Der Satz fehlt im Band: sichtbar offen, nie still 19 %. Auch mit Nutzungsdauer (die Abschreibung waere ein stilles Raten).
+        am_fall("800,01 EUR, Wahl ja, Satz offen, Nutzungsdauer 4: im Band sperrt die fehlende Antwort", 80_001, true, None, Some(4), offen),
+        am_fall("900,00 EUR, Wahl ja, Satz offen", 90_000, true, None, None, offen),
+        am_fall("952,00 EUR, Wahl ja, Satz offen: das obere Ende des Bandes", 95_200, true, None, None, offen),
+        // Ueber dem Band entscheidet der Satz nie: keine Antwort noetig.
+        am_fall("952,01 EUR, Satz offen, Nutzungsdauer 4: ueber dem Band", 95_201, true, None, Some(4), None),
+        am_fall("1.200,00 EUR, Satz offen, Nutzungsdauer 3: ueber dem Band", 120_000, false, None, Some(3), None),
+        // Wie die Wahl des Sofortabzugs zaehlt auch der Satz erst bestaetigt: ein vorlaeufiges Ja oeffnet den Abzug nicht.
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "am_netto",
+            name: "900,00 EUR, Wahl ja, 19 % nur vorlaeufig",
+            events: vec![
+                z("am_anschaffungskosten", 90_000, true),
+                b("am_gwg_sofortabzug_gewaehlt", true, true),
+                t("am_umsatzsteuersatz", "satz_19", false),
+            ],
+            erwartet: offen,
+        },
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "rente",
@@ -1175,16 +1229,19 @@ fn faelle() -> Vec<Fall> {
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "wk",
-            name: "Arbeitsmittel 900 EUR ohne Nutzungsdauer",
-            events: vec![z("am_anschaffungskosten", 90_000, true)],
+            // Abweichung Nr. 88: die drei Zeilen mit Preis ueber 800 EUR stehen bei 1.000 EUR statt 900 EUR (Python-Orakel
+            // gemessen mit 900 EUR). 900 EUR liegt im Band bis 952,00 EUR brutto, in dem der Umsatzsteuersatz entscheidet;
+            // diese Zeilen sollen weiter ihren eigenen Grund messen (Nutzungsdauer, Monat), nicht die fehlende Satz-Antwort.
+            name: "Arbeitsmittel 1.000 EUR ohne Nutzungsdauer",
+            events: vec![z("am_anschaffungskosten", 100_000, true)],
             erwartet: Some("arbeitsmittel_afa_ueber_gwg_offen"),
         },
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "wk",
-            name: "Arbeitsmittel 900 EUR, Nutzungsdauer 5",
+            name: "Arbeitsmittel 1.000 EUR, Nutzungsdauer 5",
             events: vec![
-                z("am_anschaffungskosten", 90_000, true),
+                z("am_anschaffungskosten", 100_000, true),
                 z("arbeitsmittel_nutzungsdauer", 5, true),
             ],
             erwartet: None,
@@ -1192,9 +1249,9 @@ fn faelle() -> Vec<Fall> {
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "wk",
-            name: "Arbeitsmittel 900 EUR, Anschaffungsjahr ja ohne Monat",
+            name: "Arbeitsmittel 1.000 EUR, Anschaffungsjahr ja ohne Monat",
             events: vec![
-                z("am_anschaffungskosten", 90_000, true),
+                z("am_anschaffungskosten", 100_000, true),
                 z("arbeitsmittel_nutzungsdauer", 5, true),
                 b("am_afa_ist_anschaffungsjahr", true, true),
             ],
@@ -1335,6 +1392,14 @@ fn dba_p32b_p16_flag_kapital_und_gewinn() {
 #[test]
 fn werbungskosten_dhf_verpflegung_uebernachtung_arbeitsmittel() {
     pruefe("wk");
+}
+
+/// Abweichung Nr. 88: die 800-EUR-Grenze des Arbeitsmittels gilt netto (R 9.12 LStR). Im Band 800,01 bis 952,00 EUR brutto
+/// entscheidet der Umsatzsteuersatz der Rechnung; ohne bestaetigte Antwort sperrt der Guard, darunter und darueber nicht.
+/// Die Meldung "weicht vom Python-Orakel ab" gilt hier nicht: Python kennt die Regel nicht.
+#[test]
+fn arbeitsmittel_grenze_gilt_netto_und_der_satz_sperrt_nur_im_band() {
+    pruefe("am_netto");
 }
 
 /// § 24b: `fam_alleinstehend` bestaetigt und Zusammenveranlagung widersprechen sich.
