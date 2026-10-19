@@ -10,10 +10,10 @@ Deshalb wird jedes Manifest dieses Projekts strikt geladen: doppelte Schluessel
 sind ein Fehler, kein Ueberschreiben.
 
     from yamlstrict import load_yaml
-    cfg = load_yaml("pipeline/produktion/rules.yaml")
+    cfg = load_yaml("golden/cases/g32a_2024_single_0.yaml")
 
-Betrifft alle Manifeste, die Gates steuern: rules.yaml, models.yaml, tasks.yaml,
-golden/cases/*, params/*, docstore- und sources-Metadaten.
+Betrifft alle Manifeste, die Gates steuern: golden/cases/*, params/*, docstore- und
+sources-Metadaten.
 """
 
 from __future__ import annotations
