@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/th/p4_p5_ekm"
+  norm: "§§ 4, 5 ThürKiStG (konfessionsverschiedene und glaubensverschiedene Ehe), Sammlung der Evangelischen Kirche in Mitteldeutschland"
+  fassung: "Sammlung Stand 01.07.2022; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-ekm.de/pdf/12696.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_th_p4_p5_ekm_2026-10-19.txt"
+  sha256: "3424196e158e3b4e54ff1158e9a00eb3b78823911a5b9c96bf4d4691c7ac7abf"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

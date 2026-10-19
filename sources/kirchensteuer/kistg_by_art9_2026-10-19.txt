@@ -1,0 +1,21 @@
+Quelle: https://www.gesetze-bayern.de/Content/Document/BayKirchStG/true
+Abgerufen: 2026-10-19
+Norm: Art. 9 BayKirchStG (Bemessungsgrundlage bei konfessionsverschiedener und glaubensverschiedener Ehe)
+Fassung: Text gilt ab 01.05.2019 laut Quelle; Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+Art. 9
+Bemessungsgrundlage bei konfessionsverschiedener und glaubensverschiedener Ehe
+(1) Gehören Ehegatten verschiedenen umlageerhebenden Gemeinschaften an (konfessionsverschiedene Ehe), so wird die Umlage
+1.
+in den Fällen der Einzelveranlagung zur Einkommensteuer aus der nach Art. 8 Abs. 2 ermittelten Einkommensteuer jedes Ehegatten,
+2.
+in den Fällen der Zusammenveranlagung zur Einkommensteuer für jede der beteiligten Gemeinschaften aus dem Teil der gemeinsamen nach Art. 8 Abs. 2 ermittelten Einkommensteuer erhoben, die auf ihn entfällt. Zur Feststellung des Anteils ist die für die Ehegatten veranlagte, gemeinsame, nach Art. 8 Abs. 2 ermittelte Einkommensteuer im Verhältnis der Summe der Einkünfte eines jeden Ehegatten aufzuteilen; § 51a Abs. 2 Sätze 2 und 3 EStG finden entsprechende Anwendung. Soweit die Einkommensteuer mit dem Steuersatz nach § 32d Abs. 1 EStG ermittelt wird, ist sie zur Berechnung der Umlage der Einkommensteuer dem Ehegatten zuzurechnen, der Gläubiger der Kapitaleinkünfte ist; bei gemeinschaftlicher Beteiligung beider Ehegatten an den Kapitaleinkünften erfolgt die Zurechnung nach dem Verhältnis der Beteiligung.
+(2) Gehört ein Ehegatte keiner umlageerhebenden Gemeinschaft an (glaubensverschiedene Ehe), so wird die Umlage
+1.
+in den Fällen der Einzelveranlagung zur Einkommensteuer aus der nach Art. 8 Abs. 2 ermittelten Einkommensteuer des umlagepflichtigen Ehegatten,
+2.
+in den Fällen der Zusammenveranlagung zur Einkommensteuer für den umlagepflichtigen Ehegatten aus dem Teil der gemeinsamen nach Art. 8 Abs. 2 ermittelten Einkommensteuer erhoben, der auf diesen Ehegatten entfällt. Abs. 1 Nr. 2 Sätze 2 und 3 gelten entsprechend.

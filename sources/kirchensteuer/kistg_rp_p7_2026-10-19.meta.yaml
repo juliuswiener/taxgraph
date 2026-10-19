@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/rp/p7"
+  norm: "§ 7 KiStG Rheinland-Pfalz (Bemessungsgrundlagen, Ehegatten)"
+  fassung: "Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 16.10.2008 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-evpfalz.de/pdf/14478.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_rp_p7_2026-10-19.txt"
+  sha256: "e191a2f2b2bf9b72dc7e764a4e1d59e44fda7f9c1224f659521406182024492a"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

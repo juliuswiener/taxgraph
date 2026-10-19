@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/st/p4"
+  norm: "§ 4 KiStG Sachsen-Anhalt (Ehegatten)"
+  fassung: "Stand laut Seite 06.11.2024; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/ST/KiStG/4/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_st_p4_2026-10-19.txt"
+  sha256: "e03ccfe0bc17ea5f0da47a0d35f52d81bbb1631d4daa9537a0c371d7e6568211"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

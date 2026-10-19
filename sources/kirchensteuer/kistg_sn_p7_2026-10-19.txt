@@ -1,0 +1,18 @@
+Quelle: https://www.landesrecht.online/SN/S%C3%A4chsKiStG/7/llms.txt
+Abgerufen: 2026-10-19
+Norm: § 7 SächsKiStG (Konfessionsverschiedene Ehe)
+Fassung: Stand laut Seite 12.06.2025; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+# § 7 Konfessionsverschiedene Ehe
+(1) ¹Gehören Ehegatten verschiedenen steuererhebenden Kirchen an (konfessionsverschiedene Ehe) und liegen die Voraussetzungen für eine Zusammenveranlagung bei der Einkommensteuer vor, werden die Kircheneinkommen- und die Kirchenlohnsteuer von beiden Ehegatten in folgender Weise erhoben:
+1.
+wenn die Ehegatten zur Einkommensteuer veranlagt werden, von der Hälfte der Einkommensteuer;
+2.
+wenn ein Ehegatte oder beide Ehegatten lohnsteuerpflichtig sind, von der Hälfte der Lohnsteuer.
+²Die Ehegatten haften als Gesamtschuldner. ³Im Lohnsteuerabzugsverfahren ist die Kirchensteuer bei jedem Ehegatten auch für den anderen einzubehalten.
+(2) Liegen die Voraussetzungen für eine Zusammenveranlagung zur Einkommensteuer nicht vor oder werden die Ehegatten einzeln veranlagt, werden die Kircheneinkommen- und die Kirchenlohnsteuer von jedem Ehegatten nach seiner Kirchenzugehörigkeit und nach der jeweils in seiner Person gegebenen Steuerbemessungsgrundlage erhoben.
+(3) Für die Erhebung der anderen in § 4 Abs. 1 genannten Kirchensteuerarten gilt Absatz 2 entsprechend.5

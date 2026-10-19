@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sn/p8"
+  norm: "§ 8 SächsKiStG (Glaubensverschiedene Ehe)"
+  fassung: "Stand laut Seite 12.06.2025; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/SN/S%C3%A4chsKiStG/8/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_sn_p8_2026-10-19.txt"
+  sha256: "f59059c68ed15d7d65145983e2540d9706e3c40daa5ce1c96debfe77f562088c"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

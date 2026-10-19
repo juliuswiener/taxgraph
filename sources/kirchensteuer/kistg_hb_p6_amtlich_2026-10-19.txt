@@ -1,0 +1,23 @@
+Quelle: https://www.transparenz.bremen.de/metainformationen/gesetz-ueber-die-erhebung-von-steuern-durch-kirchen-andere-religionsgemeinschaften-und-weltanschauungsgemeinschaften-in-der-freien-hansestadt-bremen-kirchensteuergesetz-kistg-in-der-fassung-vom-23-august-2001-74489?template=20_gp_ifg_meta_detail_d
+Abgerufen: 2026-10-19
+Norm: § 6 KiStG Bremen (Bemessungsgrundlagen, Gesamtschuldner), amtliche Fassung
+Fassung: Fassung vom 23.08.2001, Gültigkeit laut Seite 25.03.2016 bis 22.05.2020 (nicht die neueste Fassung); Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§ 6
+Bemessungsgrundlagen, Gesamtschuldner (1) Die Kirchensteuern sind gemäß den jeweils in der Person des Kirchensteuerpflichtigen gegebenen Steuerbemessungsgrundlagen zu erheben.
+(2) Zur Berechnung der Kirchensteuer nach § 5 Abs. 1 Nr. 1 und 3 ist § 51 a des Einkommensteuergesetzes anzuwenden.
+(3) Gehören Ehegatten derselben steuerberechtigten Kirche an (konfessionsgleiche Ehe), so bemißt sich die Kirchensteuer vom Einkommen
+1. bei der Einzelveranlagung zur Einkommensteuer (§ 26a des Einkommensteuergesetzes) und beim Steuerabzug vom Arbeitslohn nach der Steuer jedes Ehegatten;
+2. bei der Zusammenveranlagung zur Einkommensteuer (§ 26b des Einkommensteuergesetzes) nach der gemeinsamen Einkommensteuer beider Ehegatten.
+(4) Gehören Ehegatten verschiedenen steuererhebenden Kirchen im Sinne des § 2 Abs. 3 an (konfessionsverschiedene Ehe), so bemißt sich die Kirchensteuer vom Einkommen
+1. bei der Einzelveranlagung zur Einkommensteuer (§ 26a des Einkommensteuergesetzes) und beim Steuerabzug vom Arbeitslohn nach der Steuer jedes Ehegatten;
+2. bei der Zusammenveranlagung zur Einkommensteuer (§ 26b des Einkommensteuergesetzes) nach der Hälfte der gemeinsamen Einkommensteuer beider Ehegatten.
+(5) Gehört nur ein Ehegatte einer steuererhebenden Kirche im Sinne des § 2 Abs. 3 an (glaubensverschiedene Ehe), so bemißt sich die Kirchensteuer vom Einkommen
+1. bei der Einzelveranlagung zur Einkommensteuer (§ 26a des Einkommensteuergesetzes) und beim Steuerabzug vom Arbeitslohn nach der Steuer des kirchensteuerpflichtigen Ehegatten;
+2. bei der Zusammenveranlagung zur Einkommensteuer (§ 26b des Einkommensteuergesetzes) nach dem Teil der gemeinsamen Einkommensteuer beider Ehegatten, der auf den kirchensteuerpflichtigen Ehegatten entfällt, wenn die gemeinsame Steuer im Verhältnis der Einkommensteuerbeträge aufgeteilt wird, die sich nach Anwendung des § 32a Abs. 1 bis 3 des Einkommensteuergesetzes auf die im Rahmen der Zusammenveranlagung ermittelten Einkünfte eines jeden Ehegatten errechnen würden. § 51a Absatz 2 des Einkommensteuergesetzes ist bei der Ermittlung der Einkünfte eines jeden Ehegatten anzuwenden. Ist in der gemeinsamen Einkommensteuer eine nach den Vorschriften des § 32d des Einkommensteuergesetzes berechnete Einkommensteuer enthalten, sind sowohl die entsprechenden Einkünfte als auch die auf die Einkünfte entfallende Einkommensteuer nicht in die Aufteilung einzubeziehen. Die nach § 32d des Einkommensteuergesetzes berechnete Einkommensteuer ist in voller Höhe dem Ehegatten zuzurechnen, dem die entsprechenden Einkünfte zuzurechnen sind.
+(6) Besteht die Kirchensteuerpflicht nicht während des ganzen Kalenderjahres, wird im Rahmen der Veranlagung zur Einkommensteuer für die Kalendermonate, in denen die Kirchensteuerpflicht gegeben ist, je ein Zwölftel des Betrages erhoben, der sich bei ganzjähriger Kirchensteuerpflicht als Jahressteuerschuld ergäbe.
+(7) Ehegatten sind in den Fällen des Absatzes 3 Nr. 2 und des Absatzes 4 Nr. 2 Gesamtschuldner der Kirchensteuer. Die Vorschriften der Abgabenordnung über die Aufteilung einer Gesamtschuld sind sinngemäß anzuwenden.

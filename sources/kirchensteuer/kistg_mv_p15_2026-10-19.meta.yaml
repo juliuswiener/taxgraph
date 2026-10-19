@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/mv/p15"
+  norm: "§ 15 KiStG M-V (Glaubensverschiedene Ehe)"
+  fassung: "Stand laut Seite; Wortlaut gegengelesen mit Gesetzentwurf Landtag M-V Drucksache 6/2999; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/MV/KiStG/15/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_mv_p15_2026-10-19.txt"
+  sha256: "9199f55c9d298050a8cef484f600e9ee13c6df37f6a34148cc3e46aa679947ec"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

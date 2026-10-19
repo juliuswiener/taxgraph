@@ -1,0 +1,46 @@
+Quelle: https://www.kirchenrecht-evpfalz.de/pdf/14478.pdf
+Abgerufen: 2026-10-19
+Norm: § 7 KiStG Rheinland-Pfalz (Bemessungsgrundlagen, Ehegatten)
+Fassung: Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 16.10.2008 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§7
+(1) 1Vorbehaltlich des Absatzes 2 bemisst sich die Kirchensteuer nach dem Maßstab der
+Einkommensteuer (§ 5 Abs. 1 Nr. 1)
+1. soweit eine Veranlagung zur Einkommensteuer vorzunehmen ist, nach der Einkommensteuerschuld des Kirchensteuerpflichtigen,
+2. soweit ein Steuerabzug vom Arbeitslohn vorzunehmen ist, nach der Lohnsteuer des
+Kirchensteuerpflichtigen; Entsprechendes gilt, wenn eine pauschale Einkommensteuer des Kirchensteuerpflichtigen als Lohnsteuer entrichtet wird,
+3. soweit ein Steuerabzug vom Kapitalertrag vorzunehmen ist, nach der Kapitalertragsteuer des Kirchensteuerpflichtigen; dies gilt für Kapitalerträge, an denen mehrere
+Personen beteiligt sind, nur dann, wenn für sämtliche Beteiligte dasselbe Merkmal für
+den Kirchensteuerabzug gilt oder wenn ausschließlich Ehegatten an den Kapitalerträgen beteiligt sind; sind ausschließlich Ehegatten an den Kapitalerträgen beteiligt, wer-
+07.02.2022 EKPf
+5
+120.00 KiStG
+Kirchensteuergesetz Rheinland-Pfalz
+den die Kapitalerträge den Ehegatten hälftig zugerechnet, wenn diese nicht gemeinsam
+einen abweichenden Aufteilungsmaßstab erklären.
+Soweit für mehrere Personen eine Zusammenveranlagung zur Einkommensteuer vorzunehmen ist, gilt als Einkommensteuerschuld des einzelnen kirchensteuerpflichtigen Beteiligten der Teil der gemeinsamen Einkommensteuerschuld, der auf ihn entfällt, wenn die
+gemeinsame Steuer im Verhältnis der Einkommensteuerbeträge aufgeteilt wird, die sich
+bei Anwendung des § 32 a Abs. 1 des Einkommensteuergesetzes (EinkommensteuerGrundtarif) auf die Einkünfte eines jeden Beteiligten ergeben. 3Ist in der gemeinsamen
+Einkommensteuerschuld im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des
+§ 32 d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer aus
+der Berechnung des Satzes 2 auszuscheiden und die gesondert ermittelte Einkommensteuer
+dem kirchensteuerpflichtigen Beteiligten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen. 4Bei der Ermittlung der Einkünfte eines jeden Beteiligten ist
+§ 51 a des Einkommensteuergesetzes entsprechend anzuwenden.
+2
+(2) 1Sind Ehegatten beide kirchensteuerpflichtig, so bemisst sich die Kirchensteuer für den
+einzelnen Ehegatten abweichend von Absatz 1,
+1. soweit eine Zusammenveranlagung zur Einkommensteuer vorzunehmen ist, nach der
+Hälfte der gemeinsamen Einkommensteuerschuld der Ehegatten;
+2. soweit ein Steuerabzug vom Arbeitslohn nach den Grundsätzen der
+Zusammenveranlagung zur Einkommensteuer vorzunehmen ist, nach der Hälfte der
+Lohnsteuer beider Ehegatten.
+2Die Ehegatten sind Gesamtschuldner. 3Die Sätze 1 und 2 gelten nur, wenn die Kirchensteuer für beide beteiligten Kirchen nach Maßgabe des § 14 Abs. 1 durch die Landesfinanzbehörden verwaltet wird.
+(3) 1Soweit die Einkommensteuer durch den Steuerabzug vom Kapitalertrag abgegolten
+ist, erhöht sich die Einkommensteuerschuld um diesen Betrag. 2Dies gilt nicht, soweit auf
+den Steuerabzug vom Kapitalertrag Kirchensteuer nach dem Maßstab der Kapitalertragsteuer zu entrichten ist.
+(4) 1Maßstab für die Kirchensteuer sind die für das Steuerjahr festzusetzende Einkommensteuer, die für das Steuerjahr zu entrichtende Lohnsteuer und die zu entrichtende Kapitalertragsteuer. 2Die Einkommensteuer und die Lohnsteuer im Sinne des Satzes 1 sind
+nach Maßgabe des § 51 a des Einkommensteuergesetzes zu ermitteln.

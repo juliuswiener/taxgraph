@@ -1,0 +1,30 @@
+Quelle: https://www.kirchenrecht-wuerttemberg.de/pdf/17396.pdf
+Abgerufen: 2026-10-19
+Norm: § 19 KiStG Baden-Württemberg (Kircheneinkommensteuer), Sammlung der Evangelischen Landeskirche in Württemberg
+Fassung: Stand 23.06.2025, Gesetz geändert 27.05.2025 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§ 19
+Kircheneinkommensteuer
+(1) Die Kirchensteuer der Einkommensteuerpflichtigen wird zusammen mit der Einkommensteuer oder nach § 51 a Abs. 2 d EStG veranlagt und erhoben (Kircheneinkommensteuer). Die Vorschriften des Einkommensteuerrechts über die Erhebung von Vorauszahlungen gelten entsprechend.
+(2) Werden Ehegatten oder Lebenspartner zur Einkommensteuer zusammen veranlagt,
+wird die Kircheneinkommensteuer der Ehegatten oder Lebenspartner in einem Betrag
+festgesetzt. Die Ehegatten oder Lebenspartner sind Gesamtschuldner.
+(3) Absatz 2 gilt auch, wenn die Ehegatten oder Lebenspartner verschiedenen Religionsgemeinschaften angehören, für die Kircheneinkommensteuer zu erheben ist. Die Steuer
+entfällt auf die Religionsgemeinschaften je zur Hälfte.
+23.06.2025 EKWue
+7
+879
+Kirchensteuergesetz – KiStG
+(4) Ist die Kircheneinkommensteuer nur von einem Ehegatten oder Lebenspartner zu erheben, so ist dessen Anteil an der gemeinschaftlichen Bemessungsgrundlage maßgebend.
+Die Anteile der Ehegatten oder Lebenspartner an der gemeinschaftlichen Bemessungsgrundlage bestimmen sich nach dem Verhältnis der Steuerbeträge, die sich bei Anwendung
+des Einkommensteuer-Grundtarifs auf die Summe der Einkünfte eines jeden Ehegatten
+oder Lebenspartners ergeben. Bei der Ermittlung der Summe der Einkünfte findet § 51 a
+Abs. 2 EStG entsprechende Anwendung. Ist in der gemeinschaftlichen Bemessungsgrundlage im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des § 32 d EStG ermittelte
+Einkommensteuer enthalten, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer dem kirchensteuerpflichtigen Ehegatten oder Lebenspartner mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen. Entsprechendes gilt für die Veranlagung nach § 51 a Abs. 2 d EStG.
+(5) Absatz 3 findet keine Anwendung, wenn die für die Ehegatten oder Lebenspartner
+geltenden Steuersätze voneinander abweichen. Die Steuer wird dann für jeden Ehegatten
+oder Lebenspartner nach Absatz 4 erhoben.

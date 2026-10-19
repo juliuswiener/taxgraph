@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/hh/p5"
+  norm: "§ 5 HmbKiStG (Kirchensteuer vom Einkommen bei glaubensverschiedenen Ehen und Lebenspartnerschaften)"
+  fassung: "Stand laut Seite 17.12.2018; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/HH/HmbKiStG/5/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_hh_p5_2026-10-19.txt"
+  sha256: "3f4db7180986c5447936ff61707e1fbf89ef707ac5c996910b7a096b017cfab6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

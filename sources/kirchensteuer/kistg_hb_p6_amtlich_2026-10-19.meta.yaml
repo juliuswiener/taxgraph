@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/hb/p6_amtlich"
+  norm: "§ 6 KiStG Bremen (Bemessungsgrundlagen, Gesamtschuldner), amtliche Fassung"
+  fassung: "Fassung vom 23.08.2001, Gültigkeit laut Seite 25.03.2016 bis 22.05.2020 (nicht die neueste Fassung); Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal"
+  quelle_url: "https://www.transparenz.bremen.de/metainformationen/gesetz-ueber-die-erhebung-von-steuern-durch-kirchen-andere-religionsgemeinschaften-und-weltanschauungsgemeinschaften-in-der-freien-hansestadt-bremen-kirchensteuergesetz-kistg-in-der-fassung-vom-23-august-2001-74489?template=20_gp_ifg_meta_detail_d"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_hb_p6_amtlich_2026-10-19.txt"
+  sha256: "cb9920d7283c8a1d4b85f57ca3228f24d338a02f02b5a9db0a177f76de522390"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

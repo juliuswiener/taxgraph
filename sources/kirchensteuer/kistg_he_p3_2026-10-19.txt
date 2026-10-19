@@ -1,0 +1,28 @@
+Quelle: https://www.kirchenrecht-ekhn.de/pdf/19568.pdf
+Abgerufen: 2026-10-19
+Norm: § 3 KiStG Hessen (Kirchensteuer bei Ehegatten)
+Fassung: Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 20.02.2020 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§3
+(1) 1Werden Ehegatten nach § 26b des Einkommensteuergesetzes zusammen zur Einkommensteuer veranlagt und gehören die Ehegatten verschiedenen steuererhebenden Kirchen an (konfessionsverschiedene Ehe), so wird die Kirchensteuer für jede der beiden
+beteiligten Kirchen als Zuschlag zur Hälfte der gemeinsamen Einkommensteuer der Ehegatten erhoben. 2Im Lohnsteuerabzugsverfahren wird bei konfessionsverschiedenen Ehegatten, die nicht nach § 38b des Einkommensteuergesetzes in die Steuerklasse I oder II
+einzureihen sind, die Kirchensteuer für jede der beiden beteiligten Kirchen als Zuschlag
+zur Hälfte der Lohnsteuer erhoben.
+(2) 1Werden Ehegatten nach § 26b des Einkommensteuergesetzes zusammen zur Einkommensteuer veranlagt und gehört nur einer der Ehegatten einer steuererhebenden Kirche
+an (glaubensverschiedene Ehe), so wird die Kirchensteuer als Zuschlag zur Einkommensteuer zu dem Teil der nach Maßgabe des § 2 Abs. 2 Satz 1 ermittelten gemeinsamen
+Einkommensteuer erhoben, der auf den jeweiligen Ehegatten entfällt, wenn die gemeinsame Einkommensteuer im Verhältnis der Steuerbeträge aufgeteilt wird, die sich bei Anwendung des § 32a Abs. 1 bis 3 des Einkommensteuergesetzes (Einkommensteuergrundtarif) auf die Summe der Einkünfte eines jeden Ehegatten ergeben würden. 2§ 51a Abs. 2
+Satz 2 des Einkommensteuergesetzes ist bei der Ermittlung der Summe der Einkünfte eines
+jeden Ehegatten entsprechend anzuwenden. 3Ist in der gemeinsamen Einkommensteuer
+eine nach § 32d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten, sind
+die insoweit gesondert besteuerten Kapitaleinkünfte und die hierauf entfallende gesondert
+ermittelte Einkommensteuer vor Aufteilung der gemeinsamen Einkommensteuer auszuscheiden. 4Die auf die Kapitaleinkünfte des kirchensteuerpflichtigen Ehegatten entfallende
+nach § 32d Einkommensteuergesetz gesondert ermittelte Einkommensteuer ist dem nach
+Satz 1 ermittelten Anteil des kirchensteuerpflichtigen Ehegatten an der gemeinsamen Einkommensteuer hinzuzurechnen. 5Im Lohnsteuerabzugsverfahren wird bei glaubensverschiedenen Ehegatten die Kirchensteuer als Zuschlag zur Lohnsteuer des der steuererhebenden Kirche angehörenden Ehegatten erhoben.
+2
+07.02.2022 EKHN
+KiStG HE 925
+Kirchensteuergesetz Hessen

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/th/p4_aggregator"
+  norm: "§ 4 ThürKiStG (Konfessionsverschiedene Ehe)"
+  fassung: "Stand laut Seite 05.12.2018; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/TH/Th%C3%BCrKiStG/4/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_th_p4_aggregator_2026-10-19.txt"
+  sha256: "2fe4e15537a3a7db233d3e375dbedcd2689b098026ca82e5e8297f36da3c5a8b"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

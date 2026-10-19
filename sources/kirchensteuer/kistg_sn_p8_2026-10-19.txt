@@ -1,0 +1,14 @@
+Quelle: https://www.landesrecht.online/SN/S%C3%A4chsKiStG/8/llms.txt
+Abgerufen: 2026-10-19
+Norm: § 8 SächsKiStG (Glaubensverschiedene Ehe)
+Fassung: Stand laut Seite 12.06.2025; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+# § 8 Glaubensverschiedene Ehe
+(1) Gehört nur ein Ehegatte einer steuererhebenden Kirche an (glaubensverschiedene Ehe), erhebt diese Kirche die Kirchensteuer von ihm nach der in seiner Person gegebenen Steuerbemessungsgrundlage.
+(2) ¹Werden die Ehegatten zur Einkommensteuer zusammen veranlagt, ist die nach § 4 Absatz 2 ermittelte gemeinsame Einkommensteuer aufzuteilen. ²Maßgebend ist das Verhältnis der Einkommensteuerbeträge nach dem Grundtarif (§ 32a Absatz 1 des Einkommensteuergesetzes, ohne Berücksichtigung der in § 32a Absatz 1 Satz 2 des Einkommensteuergesetzes genannten besonderen Tarifvorschriften) auf die Summe der Einkünfte jedes Ehegatten. ³Dabei ist die Summe der Einkünfte jedes Ehegatten unter entsprechender Berücksichtigung von § 51a Absatz 2 Satz 2 des Einkommensteuergesetzes um die nach § 3 Nummer 40 des Einkommensteuergesetzes steuerfreien Beträge zu erhöhen und um die nach § 3c Absatz 2 des Einkommensteuergesetzes nicht abziehbaren Beträge zu mindern. ⁴Einkünfte aus Kapitalvermögen nach § 32d Absatz 1 des Einkommensteuergesetzes und die Einkommensteuer darauf nach dem gesonderten Steuertarif bleiben bei der Berechnung nach den Sätzen 1 bis 3 unberücksichtigt. ⁵Die Einkommensteuer nach dem gesonderten Steuertarif für Einkünfte aus Kapitalvermögen ist dem kirchensteuerpflichtigen Ehegatten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen.
+(3) Werden die Ehegatten oder Ehegatten und die Kinder oder Einzelpersonen und Kinder zur Vermögensteuer zusammen veranlagt, ist die gemeinsame Vermögensteuer im Verhältnis der Vermögensteuerbeträge aufzuteilen, die sich bei der Veranlagung eines jeden einzelnen von ihnen zur Vermögensteuer ergeben würde.
+(4) Unberührt bleiben die Bestimmungen über das besondere Kirchgeld in glaubensverschiedener Ehe oder Lebenspartnerschaft.6

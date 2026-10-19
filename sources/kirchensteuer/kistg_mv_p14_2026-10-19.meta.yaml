@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/mv/p14"
+  norm: "§ 14 KiStG M-V (Konfessionsverschiedene Ehe)"
+  fassung: "Stand laut Seite; Wortlaut gegengelesen mit Gesetzentwurf Landtag M-V Drucksache 6/2999; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/MV/KiStG/14/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_mv_p14_2026-10-19.txt"
+  sha256: "079251ceecc562f91c95e4e0a1fd01cdefa34b0c0bdfa3f7fbcab95c7fbf1802"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/bb/p5"
+  norm: "§ 5 BbgKiStG (Erhebung der Kirchensteuer bei Ehegatten)"
+  fassung: "Fassung laut Quelle, zuletzt geändert durch Artikel 1 des Gesetzes vom 1. April 2019; Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal"
+  quelle_url: "https://bravors.brandenburg.de/gesetze/bbgkistg"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_bb_p5_2026-10-19.txt"
+  sha256: "1635e103153148a39ba77611b7dc3fbcf1f5da9314ef3ac07d46ddae4144d4ee"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

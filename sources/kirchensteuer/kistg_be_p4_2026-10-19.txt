@@ -1,0 +1,67 @@
+Quelle: https://kirchenrecht-berlin.de/pdf/19635.pdf
+Abgerufen: 2026-10-19
+Norm: § 4 KiStG Berlin (Besteuerung von Ehegatten und Lebenspartnern)
+Fassung: Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 01.04.2019 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§4
+Besteuerung von Ehegatten und Lebenspartnern
+(1) 1Hat eine steuerberechtigte Religionsgemeinschaft die Verwaltung der Kirchensteuer
+gemäß § 1 Absatz 2 auf die Berliner Finanzbehörden übertragen oder erhebt sie Steuern
+aufgrund einer von der Senatsverwaltung für Finanzen anerkannten Steuerordnung in eigener Verwaltung (steuererhebende Religionsgemeinschaft) und gehören Ehegatten derselben steuererhebenden Religionsgemeinschaft an (konfessionsgleiche Ehen), so werden
+sie im Fall einer Zusammenveranlagung zur Maßstabsteuer auch gemeinsam zu der von
+der Maßstabsteuer abhängigen Steuer herangezogen. 2Die Steuer bemisst sich nach der
+gegen die Ehegatten festgesetzten Maßstabsteuer. 3Die §§ 44, 268 bis 280 der Abgabenordnung finden entsprechende Anwendung.
+(2) 1Gehören Ehegatten verschiedenen steuererhebenden Religionsgemeinschaften an
+(konfessionsverschiedene Ehen) und haben sie bei der Veranlagung zur Maßstabsteuer die
+Zusammenveranlagung gewählt, so ist, wenn die steuererhebenden Religionsgemeinschaften dies vereinbaren, von jedem Ehegatten die von der Maßstabsteuer abhängige
+Steuer in Höhe der Hälfte des Betrages zu erheben, der im Falle der konfessionsgleichen
+Ehe nach Absatz 1 gegen beide Ehegatten festzusetzen wäre. 2Im Lohnsteuerabzugsverfahren wird, wenn die steuererhebenden Religionsgemeinschaften dies vereinbaren, die
+Kirchensteuer der beiden Ehegatten von der Hälfte der Lohnsteuer erhoben und ist bei
+jedem Ehegatten auch für den anderen einzubehalten. 3Wird die Kirchensteuer als Zuschlag
+zur Kapitalertragsteuer erhoben, so bemisst sich die Kirchensteuer nach der gemäß § 3
+Absatz 1 Satz 1 Nummer 1 in Verbindung mit § 51a Absatz 2b und Absatz 2c Satz 7 des
+Einkommensteuergesetzes ermittelten Bemessungsgrundlage. 4Erfolgt eine Veranlagung
+07.02.2022 EKBO
+3
+510 KiStG
+Berliner Kirchensteuergesetz
+nach § 51a Absatz 2d des Einkommensteuergesetzes, so bemisst sich die Kirchensteuer
+bei gemeinsamen Kapitalerträgen der Ehegatten nach der Hälfte der gemeinsamen Bemessungsgrundlage nach § 3 Absatz 1 Satz 1 Nummer 1. 5In den Fällen der Sätze 1 und 2
+haften die Ehegatten als Gesamtschuldner im Sinne der §§ 44, 268 bis 280 der Abgabenordnung. 6Liegen die Voraussetzungen für eine Zusammenveranlagung nicht vor oder
+werden die Ehegatten einzeln, getrennt oder besonders zur Einkommensteuer veranlagt,
+so wird die Kirchensteuer von jedem Ehegatten nach seiner Kirchenzugehörigkeit und nach
+der jeweils in seiner Person gegebenen Steuerbemessungsgrundlage erhoben. 7Fehlt eine
+Vereinbarung der steuererhebenden Religionsgemeinschaften oder werden die Ehegatten
+zu einer Maßstabsteuer, die nicht die Einkommensteuer ist, kraft Gesetzes zusammenveranlagt, so ist jeder Ehegatte nach seinem Anteil an der gegen die Ehegatten festgesetzten
+Maßstabsteuer zur Steuer heranzuziehen. 8Die Anteile der Ehegatten an der Maßstabsteuer
+bemessen sich insoweit nach Maßgabe des Absatzes 3.
+(3) 1Gehört nur ein Ehegatte einer steuererhebenden Religionsgemeinschaft an (glaubensverschiedene Ehen), so ist die zu erhebende Kirchensteuer bei Zusammenveranlagung
+zur Einkommensteuer nach dem Teil der Einkommensteuer beider Ehegatten zu bemessen,
+der auf den kirchenangehörigen Ehegatten entfällt. 2Zur Feststellung dieses Anteils ist die
+Einkommensteuer beider Ehegatten im Verhältnis der Einkommensteuerbeträge aufzuteilen, die sich bei der Anwendung des Einkommensteuertarifs nach § 32a Absatz 1 des
+Einkommensteuergesetzes ohne Berücksichtigung besonderer Tarifvorschriften nach
+§§ 32b, 34, 34b und 34c des Einkommensteuergesetzes auf die Summe der Einkünfte eines
+jeden Ehegatten ergeben würden; § 51a Absatz 2 Satz 2 des Einkommensteuergesetzes ist
+bei der Ermittlung der Einkünfte eines jeden Ehegatten entsprechend anzuwenden. 3Soweit
+in der gemeinsamen Einkommensteuerschuld im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des § 32d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten ist, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer aus der Berechnung des Satzes 2 auszuscheiden und die gesondert
+ermittelte Einkommensteuer dem kirchensteuerpflichtigen Ehegatten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen. 4Die kirchlichen Regelungen zur
+Berechnung eines besonderen Kirchgeldes im Falle einer glaubensverschiedenen Ehe im
+Sinne des § 3 Absatz 1 Satz 1 Nummer 5 bleiben unberührt.
+(4) 1Im Falle einer glaubensverschiedenen Ehe ist die Erhebung eines besonderen Kirchgeldes im Sinne des § 3 Absatz 1 Satz 1 Nummer 5 ausgeschlossen, wenn der Ehegatte
+des Steuerpflichtigen Mitglied einer Religionsgemeinschaft ist, die als Körperschaft des
+öffentlichen Rechts aufgrund einer außerhalb des Landes Berlin staatlich anerkannten
+Steuerordnung Steuern erhebt. 2Satz 1 gilt nicht, soweit in der Steuerordnung oder den
+Steuerbeschlüssen der jeweiligen steuererhebenden Religionsgemeinschaft Regelungen
+getroffen sind, nach denen die Kirchensteuern des Ehegatten eines Steuerpflichtigen auf
+das besondere Kirchgeld angerechnet werden.
+4
+07.02.2022 EKBO
+KiStG 510
+Berliner Kirchensteuergesetz
+(5) 1Die Regelungen dieses Gesetzes zu Ehegatten und Ehen sind entsprechend auf Lebenspartnerinnen, Lebenspartner und Lebenspartnerschaften anzuwenden. 2Satz 1 ist auch
+für Veranlagungszeiträume vor 2014 anzuwenden, wenn die Kirchensteuer noch nicht bestandskräftig festgesetzt worden ist und nur, soweit die Anwendung zu keiner ungünstigeren Kirchensteuerfestsetzung als bei Einzelveranlagung der Lebenspartnerinnen oder
+Lebenspartner führt.

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/hb/p6_bek"
+  norm: "§ 6 KiStG Bremen (Bemessungsgrundlagen, Gesamtschuldner), Sammlung der Bremischen Evangelischen Kirche"
+  fassung: "Sammlung Stand 07.02.2022, Gesetz zuletzt geändert 19.05.2020 laut Quelle; Beleggrad E-K: wörtlicher Gesetzestext aus der kirchlichen Rechtssammlung, die den Landestext mit Fassungsstand wiedergibt (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.kirchenrecht-bremen.de/pdf/13850.pdf"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_hb_p6_bek_2026-10-19.txt"
+  sha256: "e65d42f90a1365f45def68f19ea315d92c0c9ff9f60a29d9392e3b9372654904"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

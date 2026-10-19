@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/th/p5_aggregator"
+  norm: "§ 5 ThürKiStG (Glaubensverschiedene Ehe)"
+  fassung: "Stand laut Seite 05.12.2018; Beleggrad A (abgeleitet): Text des privaten Aggregators landesrecht.online (amtliches Portal liefert nur eine Skriptseite)"
+  quelle_url: "https://www.landesrecht.online/TH/Th%C3%BCrKiStG/5/llms.txt"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_th_p5_aggregator_2026-10-19.txt"
+  sha256: "88e4ff5dae77cde10cb1a24196dbe9dad0593551d0e2adf789eabdc2b9b1fcfd"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

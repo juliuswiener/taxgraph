@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/nw/p6_p7"
+  norm: "§§ 6, 7 KiStG NRW (konfessionsverschiedene und glaubensverschiedene Ehe)"
+  fassung: "aktuelle Fassung laut Quelle gültig ab 29.11.2019; §§ 4 bis 7 zuletzt geändert 01.04.2014; Beleggrad E: wörtlicher Gesetzestext aus einem amtlichen Landesrechtsportal"
+  quelle_url: "https://recht.nrw.de/lrgv/gesetz/29112019-gesetz-ueber-die-erhebung-von-kirchensteuern-im-land-nordrhein-westfalen/"
+  abrufdatum: "2026-10-19"
+  datei: "kistg_nw_p6_p7_2026-10-19.txt"
+  sha256: "ec3dfa6081fbf4140b2b70e14cfd172b17a0c4b4f267288acd628c0c0d3c1723"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]
