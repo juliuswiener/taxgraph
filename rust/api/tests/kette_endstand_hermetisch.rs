@@ -1739,3 +1739,113 @@ async fn behinderten_pauschbetrag_des_ehegatten_wirkt_in_beiden_zweigen_gleich()
         "DEFEKT: der Pauschbetrag des Ehegatten wirkt in den Zweigen verschieden (GdE, zvE): gesamt {gesamt:?}, rentner {rentner:?}"
     );
 }
+
+
+// ---- Abweichung Nr. 94: Kirchensteuer bei Zusammenveranlagung, wenn nur ein Ehegatte Mitglied ist ---------------------------
+//
+// Die Landes-Kirchensteuergesetze erheben bei Zusammenveranlagung nur von dem Teil der gemeinsamen ESt, der auf das Mitglied
+// entfaellt (NRW § 7 Abs. 2, BY Art. 9 Abs. 2 Nr. 2, BW § 19 Abs. 4; die uebrigen Laender gleich). Der Teil folgt dem Verhaeltnis der
+// Grundtarif-Betraege (§ 32a Abs. 1) auf die Summe der Einkuenfte jeder Person; ein Ehegatte mit Lohn zaehlt Lohn minus
+// Arbeitnehmer-Pauschbetrag (§ 9a Satz 2: nur bis zur Hoehe der Einnahmen), gesondert besteuerte Kapitaleinkuenfte zaehlen nicht (NRW § 7
+// Abs. 2 Satz 3). Vor Nr. 94 rechnete die App Satz mal VOLLE gemeinsame ESt, wenn Person A Mitglied war, und 0, wenn nur Person B es war.
+//
+// HERKUNFT DER ERWARTUNGSWERTE: Handrechnung nach Gesetz, Skript `handrechnung.py` im Cache-Ordner des Auftrags (Tarif und Pauschbetraege aus
+// `params/2025/`, nicht aus der App; geeicht an `a4` (zvE 85.668 -> 16.480 EUR) und `a5` (zvE 58.734 -> 13.924 EUR)). Lohn A 60.000 EUR, Lohn B
+// 20.000 EUR: Einkuenfte 58.770 und 18.770, zvE 77.468 (Pauschbetrag 2 x 36), gemeinsame ESt 2 x Tarif(38.734) = 13.838 EUR, Grundtarif auf die
+// Einkuenfte 13.938 (A) und 1.336 EUR (B), Anteil A 13.938 / 15.274, Anteil B 1.336 / 15.274. Kirchensteuer Cent = ESt in Euro x Satz x Anteil,
+// auf den Cent abgerundet. Die Rechnung gilt in allen drei Gesamtlauf-Scheiben gleich (nur Lohn: kein Unterschied im Zweig).
+
+/// Ein Ehepaar mit Lohn; `konf_b` `None` laesst die Frage nach der Konfession des Ehegatten unbeantwortet.
+fn kist_ehepaar(
+    lohn_b: i64,
+    konf_a: &'static str,
+    konf_b: Option<&'static str>,
+    land: &'static str,
+) -> Paare {
+    let mut p = vec![
+        ("veranlagung", json!("zusammen")),
+        ("bruttoarbeitslohn", json!(6_000_000)),
+        ("bruttoarbeitslohn_partner", json!(lohn_b)),
+        ("kist_konfession", json!(konf_a)),
+        ("kist_bundesland", json!(land)),
+        // Die Sperre `kirchensteuer_betrag_offen` (Person A Mitglied) verlangt beide Betraege; sie gehoert nicht zu Nr. 94.
+        ("kist_gezahlt", json!(0)),
+        ("kist_erstattet", json!(0)),
+    ];
+    if let Some(k) = konf_b {
+        p.push(("kist_konfession_partner", json!(k)));
+    }
+    p
+}
+
+/// `zahl_cent` ist die gemeinsame ESt (Positivkontrolle der Handrechnung), `kist_cent` die Schaetzung der Kirchensteuer.
+fn erwarte_kist(name: &str, a: &Value, zahl_cent: i64, kist_cent: i64) {
+    erwarte_zahl(name, a, zahl_cent);
+    assert_eq!(
+        a["kist_cent"].as_i64(),
+        Some(kist_cent),
+        "{name}: kist_cent -- {a}"
+    );
+}
+
+/// (Name, Lohn B in Cent, Konfession A, Konfession B, Land, gemeinsame ESt in Cent, Kirchensteuer in Cent) -- Zahlen aus `handrechnung.out`.
+type KistFall = (
+    &'static str,
+    i64,
+    &'static str,
+    Option<&'static str>,
+    &'static str,
+    i64,
+    i64,
+);
+
+const KIST_FAELLE: [KistFall; 7] = [
+    ("A ev, B keine: Anteil von A (91,25 %)", 2_000_000, "evangelisch", Some("keine"), "nordrhein_westfalen", 1_383_800, 113_648),
+    ("A keine, B ev: Anteil von B (8,75 %), nicht 0", 2_000_000, "keine", Some("evangelisch"), "nordrhein_westfalen", 1_383_800, 10_893),
+    ("A ev, B rk: die Summe bleibt Satz mal volle ESt", 2_000_000, "evangelisch", Some("roemisch-katholisch"), "nordrhein_westfalen", 1_383_800, 124_542),
+    ("Bayern 8 %, A ev, B keine", 2_000_000, "evangelisch", Some("keine"), "bayern", 1_383_800, 101_020),
+    ("Alleinverdiener A ev, B keine: Anteil 1", 0, "evangelisch", Some("keine"), "nordrhein_westfalen", 823_800, 74_142),
+    ("Alleinverdiener A keine, B ev: Anteil 0", 0, "keine", Some("evangelisch"), "nordrhein_westfalen", 823_800, 0),
+    ("Konfession von B unbeantwortet: wie bisher, volle ESt", 2_000_000, "evangelisch", None, "nordrhein_westfalen", 1_383_800, 124_542),
+];
+
+/// Scheibe `gesamt`.
+#[tokio::test]
+async fn kist_bei_zusammenveranlagung_gesamt_nach_landesrecht() {
+    for (name, lohn_b, konf_a, konf_b, land, zahl, kist) in KIST_FAELLE {
+        let basis = mit(mit(kegel_gesamt(), ehepaar()), kist_ehepaar(lohn_b, konf_a, konf_b, land));
+        erwarte_kist(&format!("gesamt, {name}"), &ergebnis("gesamt", &basis).await, zahl, kist);
+    }
+}
+
+/// Scheibe `rentner_gesamt` (Rente 0, Lohn beider Ehegatten: derselbe Zweig fuer Person B wie in `gesamt`).
+#[tokio::test]
+async fn kist_bei_zusammenveranlagung_rentner_nach_landesrecht() {
+    for (name, lohn_b, konf_a, konf_b, land, zahl, kist) in KIST_FAELLE {
+        let basis = mit(
+            mit(kegel_rentner(), vec![("rentner_jahresrente", json!(0))]),
+            mit(ehepaar(), kist_ehepaar(lohn_b, konf_a, konf_b, land)),
+        );
+        erwarte_kist(
+            &format!("rentner_gesamt, {name}"),
+            &ergebnis("rentner_gesamt", &basis).await,
+            zahl,
+            kist,
+        );
+    }
+}
+
+/// Einzelveranlagung bleibt wie bisher: Satz mal ESt (58.734 EUR zvE -> 13.924 EUR, 9 % = 125.316 ct), Person B zaehlt nicht.
+#[tokio::test]
+async fn kist_bei_einzelveranlagung_bleibt_satz_mal_est() {
+    let basis = mit(
+        kegel_gesamt(),
+        vec![
+            ("kist_konfession", json!("evangelisch")),
+            ("kist_bundesland", json!("nordrhein_westfalen")),
+            ("kist_gezahlt", json!(0)),
+            ("kist_erstattet", json!(0)),
+        ],
+    );
+    erwarte_kist("gesamt, einzel", &ergebnis("gesamt", &basis).await, 1_392_400, 125_316);
+}
