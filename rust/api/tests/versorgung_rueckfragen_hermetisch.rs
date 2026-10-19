@@ -566,7 +566,68 @@ async fn der_grad_der_gesamtfrage_hebt_die_sperre_der_altersgrenze_auf_oder_laes
     assert!(!fragen_ids(&d).await.iter().any(|f| f == GRAD), "die beantwortete Frage steht noch in der Liste");
 }
 
-type Fall = (&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>);
+/// Die Eingangsfrage "keine Behinderung und keine Pflege" (die eigene Behinderung eingeschlossen) und das Feld des Pauschbetrags.
+const KEINE_BEHINDERUNG: &str = "keine_behinderung_pflege";
+const GRAD_RENTNER: &str = "rentner_grad_der_behinderung";
+
+/// Person A im Gesamtlauf: geboren 1965 (VZ 2025: Grenze 60 sperrt, Grenze 63 = 2028 gibt frei), Bezug der Art `altersgrenze_sonstige`.
+/// `eingang` ist die Antwort auf die Eingangsfrage (`None` = nicht beantwortet), `bestaetigt` ihr Status, `mehr` weitere Antworten.
+async fn lage_gesamt(eingang: Option<bool>, bestaetigt: bool, mehr: &[(&'static str, Value, bool)]) -> Dienst {
+    let ersetze = vec![("veranlagung", json!("einzel")), ("geburtsjahr", json!(1965))];
+    let mut alle = altersgrenzen_bezug_a(30_000, 59);
+    if let Some(wert) = eingang {
+        alle.push((KEINE_BEHINDERUNG, json!(wert), bestaetigt));
+        if !wert {
+            // Wer eine Behinderung bestaetigt, muss die Fahrtkostenfragen beantworten (sonst 409 `fahrtkostenpauschale_offen`).
+            alle.push(("fahrtkosten_pausch_ag_bl_tbl_h", json!(false), true));
+            alle.push(("fahrtkosten_pausch_gdb80_oder_70g", json!(false), true));
+        }
+    }
+    alle.extend(mehr.iter().cloned());
+    akte("gesamt.json", &ersetze, &alle).await
+}
+
+/// Abweichung Nr. 84, die Fragenliste: wer die Behinderung bestaetigt verneint, wird nicht nach dem Grad gefragt. KONTROLLEN im selben
+/// Lauf: wer eine Behinderung bestaetigt, wer nur vorlaeufig verneint und wer die Eingangsfrage nicht beantwortet hat, bekommt die Frage.
+#[tokio::test]
+async fn wer_die_behinderung_verneint_wird_nicht_nach_dem_grad_gefragt() {
+    for (name, eingang, bestaetigt, soll) in [
+        ("Eingangsfrage unbeantwortet", None, true, true),
+        ("Behinderung bestaetigt (false)", Some(false), true, true),
+        ("vorlaeufiges Nein (true, nicht bestaetigt)", Some(true), false, true),
+        ("bestaetigtes Nein (true)", Some(true), true, false),
+    ] {
+        let d = lage_gesamt(eingang, bestaetigt, &[]).await;
+        assert_eq!(fragen_ids(&d).await.iter().any(|i| i == GRAD), soll, "{name}: Grad-Frage in der Fragenliste");
+    }
+}
+
+/// Abweichung Nr. 84, der ganze Weg: Person A, geboren 1965, Bezug der Art `altersgrenze_sonstige`. Die bestaetigte Verneinung gilt als
+/// Grad 0 (Grenze 63 = 2028), die Abgabe ist nicht gesperrt. KONTROLLE: ohne die Verneinung sperrt dieselbe Lage (Grenze 60 = 2025).
+/// Ein vorlaeufiges Nein leitet nichts ab, und ein beantworteter Grad geht der Verneinung vor, auch einer, der nach ihr dazukommt.
+#[tokio::test]
+async fn die_verneinte_behinderung_gilt_als_grad_0_und_ein_beantworteter_grad_geht_vor() {
+    assert_eq!(offen(&lage_gesamt(None, true, &[]).await).await, [A], "KONTROLLE: ohne Verneinung gilt Grenze 60 und die Abgabe sperrt");
+    assert_eq!(offen(&lage_gesamt(Some(false), true, &[]).await).await, [A], "Behinderung bestaetigt, kein Grad: Grenze 60 sperrt");
+    assert_eq!(offen(&lage_gesamt(Some(true), false, &[]).await).await, [A], "vorlaeufiges Nein leitet nichts ab");
+    assert_eq!(offen(&lage_gesamt(Some(true), true, &[]).await).await, Vec::<String>::new(), "bestaetigtes Nein gilt als Grad 0");
+
+    // Ein beantworteter Grad ab 50 geht vor, auf beiden Feldern; ein Grad unter 50 neben der Verneinung bleibt frei.
+    for feld in [GRAD, GRAD_RENTNER] {
+        let d = lage_gesamt(Some(true), true, &[(feld, json!(50), true)]).await;
+        assert_eq!(offen(&d).await, [A], "{feld} 50 neben der Verneinung: der Grad gilt, die Abgabe sperrt");
+        let d = lage_gesamt(Some(true), true, &[(feld, json!(30), true)]).await;
+        assert_eq!(offen(&d).await, Vec::<String>::new(), "{feld} 30 neben der Verneinung: Grenze 63");
+    }
+
+    // Reihenfolge der Antworten: erst Behinderung und Grad 50 im Feld des Pauschbetrags, dann die Verneinung. Der gespeicherte Grad gilt.
+    let d = lage_gesamt(Some(false), true, &[(GRAD_RENTNER, json!(50), true)]).await;
+    assert_eq!(offen(&d).await, [A], "Grad 50 gespeichert, Behinderung bestaetigt: Grenze 60");
+    aendere(&d, KEINE_BEHINDERUNG, &json!(true)).await;
+    assert_eq!(offen(&d).await, [A], "Grad 50 gespeichert, danach Verneinung: der gespeicherte Grad geht vor");
+}
+
+type Fall =(&'static str, &'static str, Vec<(&'static str, Value)>, Vec<(&'static str, Value, bool)>);
 
 /// Ein Bezug ueber dem Lohn sperrt den Bescheid (`versorgung_ueber_lohn`, Nr. 50). `GET /fragen` zeigt die Sperre wie `/stand` und
 /// `/ergebnis` (200, `ring_gesperrt`, Klartext) und bleibt vollstaendig. Vorher: 500 `OverflowError: ... der Guard haette sperren

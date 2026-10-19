@@ -175,6 +175,47 @@ fn das_feld_der_rentner_scheibe_geht_dem_der_gesamtfrage_vor() {
     assert_eq!(lage(&fremd, VZ, A).altersgrenze, Some("darueber".to_owned()), "der Grad des Ehegatten zaehlt nicht fuer Person A");
 }
 
+/// Abweichung Nr. 84 (Entscheid d-27, Option A): Wer die Eingangsfrage `keine_behinderung_pflege` bestaetigt mit `true` beantwortet hat,
+/// gilt ohne beantworteten Grad als Grad 0 (Grenze 63); ein beantworteter Grad geht vor, auf jedem der beiden Felder. Nur Person A.
+#[test]
+fn die_bestaetigte_verneinung_der_behinderung_gilt_als_grad_0() {
+    // Geboren 1965, Alter bei Beginn 58: Grenze 60 = 2025 (`darueber`), Grenze 63 = 2028 (`lohn`).
+    const FLAG: &str = "keine_behinderung_pflege";
+    let mit_flag = |wert: bool, bestaetigt: bool, grad: Option<(&'static str, i64)>| {
+        let mut ev = bezug_a(3_000_000, 58, 1965, None);
+        ev.push((FLAG, json!(wert), bestaetigt));
+        if let Some((feld, g)) = grad {
+            ev.push((feld, json!(g), true));
+        }
+        lage(&ev, VZ, A).altersgrenze
+    };
+    let lohn = Some("lohn".to_owned());
+    let darueber = Some("darueber".to_owned());
+    assert_eq!(lage(&bezug_a(3_000_000, 58, 1965, None), VZ, A).altersgrenze, darueber, "KONTROLLE: ohne Eingangsfrage gilt Grenze 60");
+    assert_eq!(mit_flag(true, true, None), lohn, "bestaetigtes Nein, kein Grad: Grad 0, Grenze 63");
+    assert_eq!(mit_flag(true, false, None), darueber, "vorlaeufiges Nein leitet nichts ab");
+    assert_eq!(mit_flag(false, true, None), darueber, "Behinderung bestaetigt, kein Grad: Grenze 60");
+    for feld in GRAD_A {
+        assert_eq!(mit_flag(true, true, Some((feld, 50))), darueber, "{feld}: Grad 50 geht der Verneinung vor");
+        assert_eq!(mit_flag(true, true, Some((feld, 100))), darueber, "{feld}: Grad 100 geht der Verneinung vor");
+        assert_eq!(mit_flag(true, true, Some((feld, 30))), lohn, "{feld}: Grad 30 neben der Verneinung: Grenze 63");
+    }
+    // Der Ehegatte hat keine Eingangsfrage im Ring: weder die von Person A noch die eigene (`keine_behinderung_pflege_partner`) zaehlt.
+    for flag in [FLAG, "keine_behinderung_pflege_partner"] {
+        let mut ev = vec![
+            ("versorgung_jahresrente_partner", json!(3_000_000), true),
+            ("versorgung_bemessungsgrundlage_partner", json!(3_000_000), true),
+            ("versorgung_beginn_jahr_partner", json!(2020), true),
+            ("versorgung_art_partner", json!("altersgrenze_sonstige"), true),
+            ("versorgung_alter_bei_beginn_partner", json!(58), true),
+            ("geburtsjahr_partner", json!(1965), true),
+            ("veranlagung", json!("zusammen"), true),
+        ];
+        ev.push((flag, json!(true), true));
+        assert_eq!(lage(&ev, VZ, B).altersgrenze, darueber, "Ehegatte, {flag} = true: kein Grad 0, Grenze 60");
+    }
+}
+
 /// Der Wert entsteht nur, wo das Alters-Gate nicht erfuellt ist und beide Betraege mindestens 1 Euro ergeben; erfuellt das Gate, gilt
 /// der Weg der Zeilen 11 bis 13 und der Ring setzt `versorgung_zeile`.
 #[test]

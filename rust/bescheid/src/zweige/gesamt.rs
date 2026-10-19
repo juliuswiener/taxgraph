@@ -249,6 +249,9 @@ struct VersorgungsFelder {
     /// Der Grad, den der Gesamtlauf fragt (Abweichung Nr. 80), nur bei einem Bezug der Art `altersgrenze_sonstige`. Der Ehegatte hat
     /// keinen: `gesamt` fuehrt keinen Bezug des Ehegatten, nur die Rentner-Scheibe, und die fragt seinen Grad immer.
     grad_gesamtfrage: Option<&'static str>,
+    /// Die Eingangsfrage des Gesamtlaufs "keine Behinderung und keine Pflege" (Abweichung Nr. 84, Entscheid d-27). Bestaetigt `true` und
+    /// ohne beantworteten Grad gilt Grad 0 (Grenze 63). Der Ehegatte hat sie nicht: `gesamt` fuehrt keinen Bezug des Ehegatten.
+    keine_behinderung: Option<&'static str>,
     geburtsjahr: &'static str,
 }
 
@@ -261,6 +264,7 @@ const VERSORGUNG_A: VersorgungsFelder = VersorgungsFelder {
     alter_bei_beginn: "versorgung_alter_bei_beginn",
     grad_der_behinderung: "rentner_grad_der_behinderung",
     grad_gesamtfrage: Some("versorgung_grad_der_behinderung"),
+    keine_behinderung: Some("keine_behinderung_pflege"),
     geburtsjahr: "geburtsjahr",
 };
 
@@ -273,6 +277,7 @@ const VERSORGUNG_B: VersorgungsFelder = VersorgungsFelder {
     alter_bei_beginn: "versorgung_alter_bei_beginn_partner",
     grad_der_behinderung: "rentner_grad_der_behinderung_partner",
     grad_gesamtfrage: None,
+    keine_behinderung: None,
     geburtsjahr: "geburtsjahr_partner",
 };
 
@@ -394,9 +399,17 @@ pub(crate) enum VersorgungLage {
 /// Behinderung nicht bestaetigt (die Rentner-Scheibe fragt ihn immer, der Gesamtlauf bei einem Bezug der Art `altersgrenze_sonstige`,
 /// Abweichung Nr. 80), gilt vorsichtig die niedrigere Grenze: eine zu fruehe Grenze sperrt, eine zu spaete liesse einen
 /// Versorgungsbezug als Arbeitslohn durch.
+///
+/// Abweichung Nr. 84 (Entscheid d-27, Option A): Wer die Eingangsfrage "keine Behinderung und keine Pflege" bestaetigt mit `true`
+/// beantwortet hat (sie schliesst die eigene Behinderung ein), gilt ohne beantworteten Grad als Grad 0, also Grenze 63. Ein
+/// beantworteter Grad geht vor, auch ein Grad ab 50 neben der Verneinung. Ein vorlaeufiges `true` leitet nichts ab: es steht nicht in
+/// den Feldern, die der Ring liest.
 fn altersgrenze_im_jahr(f: &Felder, n: &VersorgungsFelder) -> R<i64> {
     let grad = grad_feld(f, n);
     if wert(f, grad).is_none() {
+        if n.keine_behinderung.is_some_and(|k| ist_true(wert(f, k))) {
+            return Ok(altersgrenze_fuer_grad(0));
+        }
         return Ok(altersgrenze_fuer_grad(50));
     }
     Ok(altersgrenze_fuer_grad(feld_int_oder_null(f, grad)?))
