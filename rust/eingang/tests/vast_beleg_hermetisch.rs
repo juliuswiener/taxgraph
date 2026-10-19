@@ -225,6 +225,14 @@ fn eine_falsche_version_wird_abgelehnt() {
 }
 
 #[test]
+fn ein_beleg_ganz_ohne_namensraum_wird_abgelehnt() {
+    // `xmlns=""` (oben) und gar kein `xmlns` sind zwei Lagen: der Leser sieht für das eine einen leeren, für das andere keinen Namensraum.
+    let xml = beleg_gut().replace(&format!(" xmlns=\"{BELEG_NAMENSRAUM}\""), "");
+    assert!(!xml.contains("xmlns"), "KONTROLLE: die Fixtur trägt keinen Namensraum mehr");
+    assert_eq!(fehler(&xml), BelegFehler::FalscheVersion("-".into()));
+}
+
+#[test]
 fn ein_falsches_jahr_wird_abgelehnt() {
     assert_eq!(fehler(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2024", 1, &grund_alle())), BelegFehler::FalschesJahr("2024".into()));
     assert_eq!(fehler(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2026", 1, &grund_alle())), BelegFehler::FalschesJahr("2026".into()));
