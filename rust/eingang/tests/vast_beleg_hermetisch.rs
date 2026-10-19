@@ -146,6 +146,22 @@ fn ein_beleg_ohne_betraege_ergibt_eine_leere_zuordnung() {
 }
 
 #[test]
+fn ein_kommentar_mitten_im_betrag_laesst_die_zahl_ganz() {
+    // Der Kommentar teilt den Text in zwei Knoten; wer nur den ersten liest, bekäme 98 statt 9876,54.
+    let grund = grund_alle().replace("<LSteuer>9876.54</LSteuer>", "<LSteuer>98<!-- Notiz -->76.54</LSteuer>");
+    let werte = beleg_xml_zu_werten(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2025", 1, &grund)).unwrap();
+    assert_eq!(werte["LSteuer"], "9876.54");
+}
+
+#[test]
+fn ein_leeres_betragselement_ist_nicht_besetzt_und_keine_null() {
+    let grund = grund_alle().replace("<LSteuer>9876.54</LSteuer>", "<LSteuer></LSteuer>");
+    let werte = beleg_xml_zu_werten(&beleg_mit(BELEG_NAMENSRAUM, Some("202501"), "2025", 1, &grund)).unwrap();
+    assert_eq!(werte.len(), 14);
+    assert!(!werte.contains_key("LSteuer"));
+}
+
+#[test]
 fn ein_zweiter_beleg_wird_abgelehnt_nicht_summiert_und_nicht_der_erste_genommen() {
     let zwei = im_behaelter(&[beleg_gut(), beleg_gut()]);
     assert_eq!(fehler(&zwei), BelegFehler::MehrereBelege(2));
@@ -188,12 +204,12 @@ fn eine_falsche_version_wird_abgelehnt() {
     assert_eq!(fehler(&beleg_mit(alt_ns, Some("202401"), "2024", 1, &grund_alle())), BelegFehler::FalscheVersion("202401".into()));
     // Namensraum 2025, Attribut 2024.
     assert_eq!(fehler(&beleg_mit(BELEG_NAMENSRAUM, Some("202401"), "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("202401".into()));
-    // Attribut 2025, Namensraum 2024.
-    assert_eq!(fehler(&beleg_mit(alt_ns, Some("202501"), "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("202501".into()));
+    // Attribut 2025, Namensraum 2024: der Fehler nennt den Namensraum, nicht das (richtige) Attribut.
+    assert_eq!(fehler(&beleg_mit(alt_ns, Some("202501"), "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("v202401".into()));
     // Attribut fehlt (im Schema Pflicht).
     assert_eq!(fehler(&beleg_mit(BELEG_NAMENSRAUM, None, "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("-".into()));
     // Ohne Namensraum.
-    assert_eq!(fehler(&beleg_mit("", Some("202501"), "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("202501".into()));
+    assert_eq!(fehler(&beleg_mit("", Some("202501"), "2025", 1, &grund_alle())), BelegFehler::FalscheVersion("-".into()));
 }
 
 #[test]
