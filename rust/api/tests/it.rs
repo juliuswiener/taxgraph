@@ -10,6 +10,8 @@ mod arbeitsmittel_satzfrage_bedingung;
 mod backup_restore_rundlauf;
 #[path = "bereich_rand_hermetisch.rs"]
 mod bereich_rand_hermetisch;
+#[path = "berufsverband_hermetisch.rs"]
+mod berufsverband_hermetisch;
 #[path = "c2_satz3_fragen_hermetisch.rs"]
 mod c2_satz3_fragen_hermetisch;
 #[path = "chat_stderr_prozess_hermetisch.rs"]
