@@ -151,9 +151,10 @@ s03:
 params-check:
 	. $(VENV312); python params/derive_coefficients.py
 
-## Verify the frozen source archive against the recorded SHA256 hashes.
+## Verify the frozen source archive against the recorded SHA256 hashes. Rust seit 2026-10-20 (rust/quellen, Programm
+## taxgraph-quellen); dieselben Zeilen und dasselbe Urteil wie scripts/verify_sources.py, das bleibt, bis die Python-Skripte gehen.
 sources-check:
-	python3 scripts/verify_sources.py
+	cd rust && cargo run -q -p quellen -- pruefe --wurzel ..
 
 ## Die 135 Golden-Faelle gegen die Catala-Formalisierung (Wert und Zitatanker), in Rust seit L3 (Vault
 ## golden-ohne-python-anker-pruefung-nach-rust-2026-10-12): golden_werte rechnet jeden Fall durch die Rust-Engine,

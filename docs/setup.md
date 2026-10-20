@@ -155,7 +155,9 @@ jeweils geltende Fassung. Standard-Fallback fuer datierte/historische Fassungen:
   `esth.bundesfinanzministerium.de`, § 32a.
 
 Abgerufene Texte werden nach dem Einfrier-Prinzip in `sources/` mit URL,
-Abrufdatum und SHA256 abgelegt (`make sources-check`).
+Abrufdatum und SHA256 abgelegt (`make sources-check`). Das Werkzeug dafür ist
+`taxgraph-quellen` (Crate `rust/quellen`; Unterbefehle `einfrieren`, `pdf-einfrieren`,
+`pruefe`, Aufruf in `sources/README.md`).
 
 ## Bekannte Reibungspunkte (dokumentiert, keine Blocker)
 
@@ -311,7 +313,7 @@ Verwandte Fallstricke derselben Klasse:
 
 - Eine **leere Quelle** passt zu ihrem eigenen SHA256. `sources-check` war grün,
   während zwei Paragraphen leer eingefroren waren. Der Verifier misst jetzt den
-  Wortlaut, nicht die Dateigröße, und `scripts/freeze_source.py` prüft vor dem
+  Wortlaut, nicht die Dateigröße, und `taxgraph-quellen einfrieren` prüft vor dem
   Schreiben.
 - Ein **doppelter YAML-Schlüssel** überschreibt still den vorherigen Wert. Ein
   vergessener `test_seed:`-Block hätte eine Regel mit einem grünen Test-Gate
