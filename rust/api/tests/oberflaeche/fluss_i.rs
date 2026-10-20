@@ -340,8 +340,8 @@ fn korrigiere(u: &Umgebung, feld: &'static str, neu: Gib) {
 fn fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
-    // Das Kreuz „Kapitalertraege des Partners“ ist noetig: ohne es endet der Durchlauf in der Sperre `partner_kegel_offen`
-    // ohne offene Frage (siehe Bericht). Der Partner gibt dann 0 EUR an, wie im Kegel der Handrechnung.
+    // Hier ist das Kreuz „Kapitalertraege des Partners“ gesetzt: der Partner beantwortet die fuenf Kapital-Fragen mit 0 EUR. Ohne das
+    // Kreuz (Entscheidung d-47: keine Sperre, keine Fragen) laeuft `fluss_i_ehepaar_ohne_kapitalertraege_des_partners_...` unten.
     bis_zur_ersten_frage(&u, "gesamt", &["kein_kap_partner"]);
     let verlauf = durchlauf(&u, &ehepaar("keine", "evangelisch", "bayern"), &[]);
     let fall = u.fall();
@@ -457,4 +457,34 @@ fn fluss_i_einzelnutzer_nur_lohn_mit_kirchensteuer() {
     );
     pruefe_ergebnis(&u, "Einzelveranlagung, evangelisch, NRW", 1_392_400, 125_316);
     pruefe_konsole(&u, "Einzelnutzer");
+}
+
+/// Befund A des ersten Laufs, behoben mit der Entscheidung d-47 (Julius, 2026-10-20): das Ehepaar, das in der Ankreuzliste NICHTS
+/// ankreuzt (der Partner hatte keine Kapitalertraege), bekommt die Steuerzahl. Vorher stand statt der Zahl der Satz zur Sperre
+/// `partner_kegel_offen`, ohne offene Frage und ohne Weg. Die Zahl ist die des Laufs mit Kreuz und fuenf Nullen (13.838,00 EUR).
+#[test]
+fn fluss_i_ehepaar_ohne_kapitalertraege_des_partners_erreicht_die_steuerzahl() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    let verlauf = durchlauf(&u, &ehepaar("keine", "evangelisch", "bayern"), &[]);
+    let fall = u.fall();
+    let kap = ["kap_kapitalertraege_partner", "kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"];
+    pp!(
+        "I.ohne_kreuz_fragt_die_oberflaeche_die_kapital_felder_des_partners_nicht",
+        kap.iter().all(|f| wie_oft(&verlauf, f) == 0),
+        "die Oberflaeche fragte {:?}",
+        kap.iter().filter(|f| wie_oft(&verlauf, f) > 0).collect::<Vec<_>>()
+    );
+    let felder = u.stand_felder(&fall);
+    eprintln!("MESSUNG kein_kap_partner im Fall: {}", felder["kein_kap_partner"]);
+    pp!(
+        "I.das_leere_kreuz_steht_als_keine_kapitalertraege_im_fall",
+        felder["kein_kap_partner"]["wert"] == json!(true) && kap.iter().all(|f| felder.get(*f).is_none_or(Value::is_null)),
+        "kein_kap_partner im Fall: {}; Kapital-Felder des Partners im Fall: {:?}",
+        felder["kein_kap_partner"],
+        kap.iter().filter(|f| felder.get(**f).is_some_and(|v| !v.is_null())).collect::<Vec<_>>()
+    );
+    pruefe_ergebnis(&u, "Ehepaar ohne Kapitalertraege des Partners, nur B evangelisch, Bayern", 1_383_800, 9_683);
+    pruefe_konsole(&u, "Ehepaar ohne Kapital");
 }

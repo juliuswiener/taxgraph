@@ -1867,6 +1867,56 @@ async fn behinderten_pauschbetrag_des_ehegatten_wirkt_in_beiden_zweigen_gleich()
     );
 }
 
+/// Das Ehepaar ohne Kapitalertraege des Partners (Fall X): Lohn A 60.000 EUR, Lohn B 20.000 EUR, `kein_kap_partner` bestaetigt `true`,
+/// die fuenf Kapital-Felder des Ehegatten fehlen.
+fn ehepaar_ohne_kapitalertraege() -> Paare {
+    let fuenf = ["kap_kapitalertraege_partner", "kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"];
+    let lohn = vec![("bruttoarbeitslohn", json!(6_000_000)), ("bruttoarbeitslohn_partner", json!(2_000_000))];
+    let mut paare = mit(mit(kegel_gesamt(), ehepaar()), lohn);
+    paare.retain(|(f, _)| !fuenf.contains(f));
+    mit(paare, vec![("kein_kap_partner", json!(true))])
+}
+
+/// Abweichung Nr. 96 (Julius d-47): ein Ehepaar, das „keine Kapitalertraege des Partners“ bestaetigt und die fuenf Kapital-Felder des
+/// Ehegatten nicht beantwortet, bekommt dieselbe Zahl wie das Paar, das die Kapitalertraege ankreuzt und die fuenf Felder mit 0 beantwortet
+/// (Gegenprobe). Vor der Aenderung sperrte der erste Fall mit `partner_kegel_offen`, ohne offene Frage. Lohn A 60.000 EUR, Lohn B 20.000 EUR:
+/// gemeinsame `ESt` 13.838 EUR (Handrechnung der Kirchensteuer-Faelle unten, Tarif aus `params/2025/`).
+#[tokio::test]
+async fn ehepaar_ohne_kapitalertraege_des_partners_hat_dieselbe_zahl_wie_mit_kreuz_und_fuenf_nullen() {
+    let lohn = vec![("bruttoarbeitslohn", json!(6_000_000)), ("bruttoarbeitslohn_partner", json!(2_000_000))];
+    // Y: Kreuz gesetzt („ja, das gab es“ = kein_kap_partner false), die fuenf Felder mit 0 beantwortet.
+    let mit_kreuz = mit(mit(mit(kegel_gesamt(), ehepaar()), lohn), vec![("kein_kap_partner", json!(false))]);
+    // X: kein Kreuz (kein_kap_partner true), die fuenf Felder fehlen.
+    let ohne_kreuz = ehepaar_ohne_kapitalertraege();
+
+    let y = ergebnis("gesamt", &mit_kreuz).await;
+    erwarte_zahl("Y mit Kreuz und fuenf Nullen", &y, 1_383_800);
+    let x = ergebnis("gesamt", &ohne_kreuz).await;
+    assert_ne!(
+        x["grund"], "partner_kegel_offen",
+        "DEFEKT: das Ehepaar ohne Kapitalertraege des Partners wird mit `partner_kegel_offen` gesperrt: {x}"
+    );
+    erwarte_zahl("X ohne Kreuz, ohne die fuenf Felder", &x, 1_383_800);
+    assert_eq!(x["zahl_cent"], y["zahl_cent"], "X und Y muessen dieselbe Zahl geben");
+    // Schweigen ist kein „keine“: fehlt auch das Kreuz, bleibt die Sperre.
+    let stumm: Paare = ohne_kreuz.iter().filter(|(f, _)| *f != "kein_kap_partner").cloned().collect();
+    let s = ergebnis("gesamt", &stumm).await;
+    assert_eq!(s["grund"], "partner_kegel_offen", "DEFEKT: ohne das Kreuz muss die Sperre bleiben: {s}");
+}
+
+/// Grenze der Aenderung (Nr. 96): bestaetigt das Paar „keine Kapitalertraege des Partners“ und steht trotzdem ein Kapitalbetrag des Ehegatten
+/// nur VORLAEUFIG im Fall, verlangt die Sperre `partner_kegel_offen` die fuenf Felder nicht mehr, aber die Zahl bleibt aus: ein vorlaeufiger
+/// Betrag faellt nie still aus der Rechnung (`feste_zahl`, Lage 3 `ring_betrag_vorlaeufig`). Die Frage dazu entfaellt mit dem Kreuz.
+#[tokio::test]
+async fn ein_nur_vorlaeufiger_kapitalbetrag_des_partners_gibt_auch_mit_dem_kreuz_keine_zahl() {
+    let mut paare = ehepaar_ohne_kapitalertraege();
+    paare.push(("kap_kapitalertraege_partner", json!(100_000)));
+    let a = ergebnis_vorlaeufig("gesamt", &paare, &["kap_kapitalertraege_partner"]).await;
+    eprintln!("MESSUNG vorlaeufig: grund={} zahl_cent={} sperr_felder={}", a["grund"], a["zahl_cent"], a["sperr_felder"]);
+    assert_ne!(a["grund"], "bestaetigt", "DEFEKT: ein vorlaeufiger Kapitalbetrag des Partners faellt still aus der Zahl: {a}");
+    assert!(a["zahl_cent"].is_null(), "DEFEKT: trotz vorlaeufigem Betrag steht eine Zahl da: {a}");
+}
+
 
 // ---- Abweichung Nr. 94: Kirchensteuer bei Zusammenveranlagung, wenn nur ein Ehegatte Mitglied ist ---------------------------
 //

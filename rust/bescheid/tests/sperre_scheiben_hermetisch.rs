@@ -923,6 +923,95 @@ fn faelle() -> Vec<Fall> {
             events: vec![t("veranlagung", "zusammen", true)],
             erwartet: Some("partner_kegel_offen"),
         },
+        // Abweichung Nr. 96 (Julius d-47, 2026-10-20): ein BESTAETIGTES `kein_kap_partner = ja` („keine Kapitalertraege beim
+        // Partner“) nimmt die fuenf Kapital-Felder des Ehegatten aus der Sperre `partner_kegel_offen`. Die Erwartung ist die Entscheidung,
+        // nicht das Python-Orakel (Python sperrt hier, `BEKANNTE_TREFFER`). Nur das Kreuz, nur bestaetigt, nur diese fuenf Felder.
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "zusammen, Lohn B da, Kreuz „keine Kapitalertraege des Partners“ bestaetigt, die fuenf Kapital-Felder fehlen: keine Sperre",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, true),
+                b("kein_kap_partner", true, true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "dasselbe, Kreuz unbeantwortet: Schweigen ist kein „keine“",
+            events: vec![t("veranlagung", "zusammen", true), z("bruttoarbeitslohn_partner", 0, true)],
+            erwartet: Some("partner_kegel_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "dasselbe, Kreuz „Kapitalertraege des Partners“ gesetzt (kein_kap_partner = nein), Felder fehlen",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, true),
+                b("kein_kap_partner", false, true),
+            ],
+            erwartet: Some("partner_kegel_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "dasselbe, „keine“ nur vorlaeufig: ein vorlaeufiges Kreuz befreit nicht",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, true),
+                b("kein_kap_partner", true, false),
+            ],
+            erwartet: Some("partner_kegel_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "Kreuz „keine“ bestaetigt, aber Lohn B fehlt: das Kreuz befreit nur von den Kapital-Feldern",
+            events: vec![t("veranlagung", "zusammen", true), b("kein_kap_partner", true, true)],
+            erwartet: Some("partner_kegel_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "Kreuz „keine“ bestaetigt, Lohn B nur vorlaeufig",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, false),
+                b("kein_kap_partner", true, true),
+            ],
+            erwartet: Some("partner_kegel_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "Kontrolle: Kreuz „Kapitalertraege des Partners“ gesetzt und die fuenf Felder mit 0 bestaetigt: keine Sperre (wie bisher)",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, true),
+                b("kein_kap_partner", false, true),
+                z("kap_kapitalertraege_partner", 0, true),
+                z("kap_gewinn_aktien_partner", 0, true),
+                z("kap_gewinn_sonstige_partner", 0, true),
+                z("kap_verlust_aktien_partner", 0, true),
+                z("kap_verlust_sonstige_partner", 0, true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::Gesamt,
+            gruppe: "kap_partner_kreuz",
+            name: "Kreuz „keine“ bestaetigt und trotzdem ein Kapitalbetrag des Partners: der Widerspruch sperrt weiter",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                z("bruttoarbeitslohn_partner", 0, true),
+                b("kein_kap_partner", true, true),
+                z("kap_kapitalertraege_partner", 100_000, true),
+            ],
+            erwartet: Some("flag_konsistenz_offen"),
+        },
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "betrag",
@@ -1521,6 +1610,14 @@ fn fremd_arten_der_scheibe() {
 #[test]
 fn partner_kegel_nur_auf_der_gesamt_scheibe() {
     pruefe("partner19");
+}
+
+/// Abweichung Nr. 96 (Julius d-47): ein bestaetigtes „keine Kapitalertraege des Partners“ befreit `partner_kegel_offen` von den fuenf
+/// Kapital-Feldern des Ehegatten, sonst nichts. Unbeantwortet, „nein“ und vorlaeufig sperren wie bisher, ebenso ein fehlender Lohn B.
+/// Die Meldung „weicht vom Python-Orakel ab“ gilt hier nicht: Python sperrt in diesem Fall.
+#[test]
+fn kreuz_keine_kapitalertraege_des_partners_befreit_nur_bestaetigt_von_den_fuenf_kapital_feldern() {
+    pruefe("kap_partner_kreuz");
 }
 
 /// Ein verneintes Screening-Flag ohne bestaetigten Betrag sperrt: Lohnersatz, Verlustvortrag, Unterhalt, Kirchensteuer, Realsplitting, Fahrtkostenpauschale.
