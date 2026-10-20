@@ -1043,6 +1043,11 @@ fn der_abruf_geht_durch_anfrage_abholung_und_dekodierung() {
         );
     }
     assert_eq!(l.datei("dekodiere_eingabe").unwrap(), PAKET, "das Datenpaket ohne Leerraum");
+    assert_eq!(
+        l.datei("dekodiere_crypto").unwrap(),
+        format!("handle=77\npin_laenge={}\n", PIN.len()),
+        "die Dekodierung bekommt dasselbe Zertifikat und dieselbe PIN wie die Aufrufe davor"
+    );
     assert_eq!(l.zaehler("dekodiere_zaehler"), Some(1));
     assert_eq!(l.zaehler("zertifikat_zaehler"), Some(1), "ein Zertifikat, einmal geoeffnet");
     assert_eq!(l.datei("zertifikat_geschlossen").unwrap(), "77\n");
