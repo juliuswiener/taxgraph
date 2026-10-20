@@ -321,23 +321,29 @@ async fn die_zuschussfelder_sind_auf_jeder_scheibe_mit_basisbeitrag_beantwortbar
 /// zvE 55.284, Steuer 12.614 Euro (ohne Zuschuss 11.492). F2 gesetzlich: Lohn 45.000, KV 3.000 + PV 600, Zuschuss 1.500 + 200 = 1.700:
 /// Abzug 1.900, zvE 41.834, Steuer 7.912 (ohne 7.363). F3 privat: Lohn 100.000, KV 7.000 + PV 1.200, Zuschuss Nr. 24 b 3.100 + 400 = 3.500:
 /// Abzug 4.700, zvE 94.034, Steuer 28.582 (ohne 27.112). Die Unterschiede 1.122, 549 und 1.470 Euro sind die des Audits.
+///
+/// Seit d-46 (4-Prozent-Kuerzung bei `gesetzlich_an`) gilt F2 mit Kuerzung: Beitrag 3.000 · 0,96 + 600 = 3.480, minus Zuschuss 1.700 = 1.780,
+/// zvE 41.954, Steuer 7.951 Euro (`rechnung_bau.py`; vorher 7.912, Abzug 1.900 durch den Hoechstbetrag). F1 und F3 sind nicht `gesetzlich_an`.
 #[tokio::test]
 async fn der_zuschuss_mindert_den_abzug_die_drei_faelle_des_audits_an_gesamt() {
     let f1 = ergebnis("an_gesamt", &plus(an("gesetzlich_freiwillig", 60_000, 5_500, 1_000), zuschuss(ZUSCHUSS_A, 2_650, 0, 400))).await;
     assert_eq!(zahl(&f1), 12_614 * 100, "F1: {f1}");
     let f2 = ergebnis("an_gesamt", &plus(an("gesetzlich_an", 45_000, 3_000, 600), zuschuss(ZUSCHUSS_A, 1_500, 0, 200))).await;
-    assert_eq!(zahl(&f2), 7_912 * 100, "F2: {f2}");
+    assert_eq!(zahl(&f2), 7_951 * 100, "F2: {f2}");
     let f3 = ergebnis("an_gesamt", &plus(an("privat", 100_000, 7_000, 1_200), zuschuss(ZUSCHUSS_A, 0, 3_100, 400))).await;
     assert_eq!(zahl(&f3), 28_582 * 100, "F3: {f3}");
 }
 
 /// `AK5b` (f): ohne Zuschuss bleibt jede Zahl wie heute. Dieselben drei Faelle ohne die Zuschussfelder: 11.492, 7.363 und 27.112 Euro
 /// (Handrechnung `handrechnung.py`, „App-Lesart"). Gegenprobe zu den Zuschuss-Tests: wer nichts eintraegt, rechnet wie vorher.
+///
+/// Seit d-46 gilt fuer `gesetzlich_an` die 4-Prozent-Kuerzung: 7.402 statt 7.363 Euro (zvE 40.254, `rechnung_bau.py`); die zwei anderen Arten
+/// bleiben bei den alten Zahlen.
 #[tokio::test]
 async fn ohne_zuschuss_bleibt_jede_zahl_wie_heute() {
     for (art, lohn, kv, pv, steuer) in [
         ("gesetzlich_freiwillig", 60_000, 5_500, 1_000, 11_492),
-        ("gesetzlich_an", 45_000, 3_000, 600, 7_363),
+        ("gesetzlich_an", 45_000, 3_000, 600, 7_402),
         ("privat", 100_000, 7_000, 1_200, 27_112),
     ] {
         let a = ergebnis("an_gesamt", &an(art, lohn, kv, pv)).await;
@@ -345,7 +351,7 @@ async fn ohne_zuschuss_bleibt_jede_zahl_wie_heute() {
     }
     // Ein Zuschuss von 0 ist kein Zuschuss.
     let null = ergebnis("an_gesamt", &plus(an("gesetzlich_an", 45_000, 3_000, 600), zuschuss(ZUSCHUSS_A, 0, 0, 0))).await;
-    assert_eq!(zahl(&null), 7_363 * 100, "Zuschuss 0: {null}");
+    assert_eq!(zahl(&null), 7_402 * 100, "Zuschuss 0: {null}");
 }
 
 /// `AK5b` (d): ein Zuschuss groesser als der Beitrag zieht nicht ueber 0 ab. Beitrag 3.600, Zuschuss 4.000: Abzug 0, nicht −400; das ist
@@ -361,6 +367,10 @@ async fn ein_zuschuss_ueber_dem_beitrag_zieht_nicht_ueber_null_ab() {
 /// `AK5b` (e), `an_gesamt` und `gesamt` bei Zusammenveranlagung: Person B hat einen eigenen Zuschuss, Person A keinen, und umgekehrt: je
 /// dieselbe Steuer (Lohn je 40.001, Beitrag je 3.600, ein Zuschuss von 1.700 bei einer Person: Abzug 5.500, zvE 71.970, Steuer 12.132 Euro).
 /// Ohne Zuschuss 11.616 (Abzug 7.200), mit je 1.700 bei beiden 12.654 (Abzug 3.800). Ein vertauschtes oder fehlendes Feld faellt hier auf.
+///
+/// Seit d-46 sind beide Personen `gesetzlich_an` und gekuerzt (je KV 3.000 · 0,96 + PV 600 = 3.480; `rechnung_bau.py`): keiner zvE 70.510,
+/// Steuer 11.690 Euro (Abzug 6.960); ein Zuschuss von 1.700 bei einer Person: Abzug 5.260, zvE 72.210, Steuer 12.206; bei beiden: Abzug 3.560,
+/// zvE 73.910, Steuer 12.728.
 #[tokio::test]
 async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
     for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
@@ -368,10 +378,10 @@ async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
         let nur_a = ergebnis(scheibe, &bauen(zuschuss(ZUSCHUSS_A, 1_500, 0, 200), vec![])).await;
         let keiner = ergebnis(scheibe, &bauen(vec![], vec![])).await;
         let beide = ergebnis(scheibe, &bauen(zuschuss(ZUSCHUSS_A, 1_500, 0, 200), zuschuss(ZUSCHUSS_B, 1_500, 0, 200))).await;
-        assert_eq!(zahl(&nur_b), 12_132 * 100, "{scheibe}, nur der Ehegatte: {nur_b}");
-        assert_eq!(zahl(&nur_a), 12_132 * 100, "{scheibe}, nur Person A: {nur_a}");
-        assert_eq!(zahl(&keiner), 11_616 * 100, "{scheibe}, keiner: {keiner}");
-        assert_eq!(zahl(&beide), 12_654 * 100, "{scheibe}, beide: {beide}");
+        assert_eq!(zahl(&nur_b), 12_206 * 100, "{scheibe}, nur der Ehegatte: {nur_b}");
+        assert_eq!(zahl(&nur_a), 12_206 * 100, "{scheibe}, nur Person A: {nur_a}");
+        assert_eq!(zahl(&keiner), 11_690 * 100, "{scheibe}, keiner: {keiner}");
+        assert_eq!(zahl(&beide), 12_728 * 100, "{scheibe}, beide: {beide}");
     }
 }
 
@@ -379,13 +389,15 @@ async fn bei_zusammenveranlagung_zaehlt_der_zuschuss_je_person_fuer_sich() {
 /// mindert den Abzug der anderen Person nicht. Lohn je 40.001, Beitrag je 3.600; Person A mit Zuschuss 4.000 (Abzug 0), der Ehegatte ohne
 /// (Abzug 3.600): zvE 73.870, Steuer 12.716 Euro (Handrechnung `handrechnung.py`, Abschnitt g), vertauscht dieselbe Steuer und dieselbe wie bei
 /// einer Person ganz ohne Beitrag. Ein Abzug von −400 bei Person A (ungeklemmt) liesse den Abzug auf 3.200 sinken und die Steuer auf 12.840 steigen.
+///
+/// Seit d-46 ist die andere Person `gesetzlich_an` und gekuerzt (Abzug 3.480 statt 3.600; `rechnung_bau.py`): zvE 73.990, Steuer 12.754 Euro.
 #[tokio::test]
 async fn ein_zuschuss_ueber_dem_beitrag_mindert_den_abzug_der_anderen_person_nicht() {
     for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
         let a_ueber = ergebnis(scheibe, &bauen(zuschuss(ZUSCHUSS_A, 4_000, 0, 0), vec![])).await;
         let b_ueber = ergebnis(scheibe, &bauen(vec![], zuschuss(ZUSCHUSS_B, 4_000, 0, 0))).await;
-        assert_eq!(zahl(&a_ueber), 12_716 * 100, "{scheibe}, Zuschuss von Person A ueber ihrem Beitrag: {a_ueber}");
-        assert_eq!(zahl(&b_ueber), 12_716 * 100, "{scheibe}, Zuschuss des Ehegatten ueber seinem Beitrag: {b_ueber}");
+        assert_eq!(zahl(&a_ueber), 12_754 * 100, "{scheibe}, Zuschuss von Person A ueber ihrem Beitrag: {a_ueber}");
+        assert_eq!(zahl(&b_ueber), 12_754 * 100, "{scheibe}, Zuschuss des Ehegatten ueber seinem Beitrag: {b_ueber}");
     }
 }
 
@@ -408,6 +420,100 @@ async fn der_zuschuss_gilt_auch_in_der_rentner_scheibe() {
     let voll = ergebnis("rentner_gesamt", &rentner(4_000, 800)).await;
     assert_eq!(zahl(&mit_zuschuss), zahl(&netto), "Zuschuss gleich kleinerer Beitrag: {mit_zuschuss} gegen {netto}");
     assert_ne!(zahl(&mit_zuschuss), zahl(&voll), "KONTROLLE: der volle Beitrag rechnet eine andere Steuer: {voll}");
+}
+
+/// Die 4-Prozent-Kuerzung fuer den Anspruch auf Krankengeld (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4 `EStG`, Entscheidung d-46 vom 2026-10-20: Regel nach
+/// Versicherungsart, keine neue Frage). Die Lohnsteuerbescheinigung Nr. 25 meldet den Beitrag ungekuerzt (BMF-Schreiben vom 05.09.2024,
+/// Zeile 59), die App kuerzt den KV-Beitrag pflichtversicherter Arbeitnehmer (`gesetzlich_an`) um 4 Prozent, nie den PV-Beitrag.
+///
+/// HERKUNFT DER ERWARTUNGSWERTE: Handrechnung `rechnung_bau.py` (Auftragsordner), Tarif aus `params/2025/`, geeicht an den Steuerwerten der
+/// Tests oben (6 von 6 Einzeltarif, 2 von 2 Splitting). Fall A: Lohn 45.000, KV 3.000 + PV 600: Abzug 3.000 · 0,96 + 600 = 3.480, zvE
+/// 45.000 − 1.230 − 3.480 − 36 = 40.254, Steuer 7.402 Euro (ohne Kuerzung: zvE 40.134, 7.363).
+///
+/// `an_gesamt` und `gesamt` (die Scheiben mit `versicherungsart`): `gesetzlich_an` zahlt 39 Euro mehr, `gesetzlich_freiwillig` und `privat`
+/// bleiben bei 7.363 (Gegenprobe: ohne Art-Unterscheidung wuerden alle drei gleich rechnen).
+#[tokio::test]
+async fn gesetzlich_an_kuerzt_den_kv_beitrag_um_vier_prozent_die_anderen_arten_nicht() {
+    for scheibe in ["an_gesamt", "gesamt"] {
+        let bauen = |art: &'static str| if scheibe == "an_gesamt" { an(art, 45_000, 3_000, 600) } else { gesamt(art, 45_000, 3_000, 600) };
+        for (art, steuer) in [("gesetzlich_an", 7_402), ("gesetzlich_freiwillig", 7_363), ("privat", 7_363)] {
+            let a = ergebnis(scheibe, &bauen(art)).await;
+            assert_eq!(zahl(&a), steuer * 100, "{scheibe}, {art}: {a}");
+        }
+    }
+}
+
+/// Die Kuerzung trifft nur den KV-Beitrag: der PV-Beitrag bleibt voll. Lohn 45.000, `gesetzlich_an`: KV 0 und PV 600 geben Abzug 600, zvE 43.134,
+/// Steuer 8.339 Euro (kein Fehler bei Beitrag 0, keine Kuerzung des PV-Beitrags, gleich `gesetzlich_freiwillig`); KV 3.000 und PV 0 geben Abzug
+/// 2.880, zvE 40.854, Steuer 7.594 Euro (`gesetzlich_freiwillig`: Abzug 3.000, zvE 40.734, 7.556).
+#[tokio::test]
+async fn die_kuerzung_trifft_nie_den_pv_beitrag_und_nicht_den_beitrag_null() {
+    for art in ["gesetzlich_an", "gesetzlich_freiwillig"] {
+        let nur_pv = ergebnis("an_gesamt", &an(art, 45_000, 0, 600)).await;
+        assert_eq!(zahl(&nur_pv), 8_339 * 100, "{art}: KV 0, PV 600 bleibt voll: {nur_pv}");
+    }
+    let nur_kv = ergebnis("an_gesamt", &an("gesetzlich_an", 45_000, 3_000, 0)).await;
+    assert_eq!(zahl(&nur_kv), 7_594 * 100, "gesetzlich_an, KV 3.000, PV 0: {nur_kv}");
+    let nur_kv_frei = ergebnis("an_gesamt", &an("gesetzlich_freiwillig", 45_000, 3_000, 0)).await;
+    assert_eq!(zahl(&nur_kv_frei), 7_556 * 100, "Gegenprobe freiwillig, KV 3.000, PV 0: {nur_kv_frei}");
+}
+
+/// Zusammenveranlagung, `an_gesamt` und `gesamt`, Lohn je 40.001, Beitrag je KV 3.000 + PV 600: beide `gesetzlich_an` gibt zvE 70.510, Steuer
+/// 11.690 Euro (ohne Kuerzung 11.616); nur Person A `gesetzlich_an` (Ehegatte freiwillig) und nur der Ehegatte `gesetzlich_an` (Person A
+/// freiwillig) geben je zvE 70.390, Steuer 11.652; beide freiwillig bleiben bei 11.616. Ein Vertauschen der Felder von Person A und Ehegatte
+/// faellt hier auf, weil die zwei gemischten Faelle dieselbe Zahl geben, aber nicht dieselbe wie „beide“.
+#[tokio::test]
+async fn bei_zusammenveranlagung_kuerzt_jede_person_nach_ihrer_eigenen_versicherungsart() {
+    let frei = |p: Paare| mit(p, "versicherungsart_partner", json!("gesetzlich_freiwillig"));
+    for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
+        let beide = ergebnis(scheibe, &bauen(vec![], vec![])).await;
+        let nur_a = ergebnis(scheibe, &frei(bauen(vec![], vec![]))).await;
+        let nur_b = ergebnis(scheibe, &mit(bauen(vec![], vec![]), "versicherungsart", json!("gesetzlich_freiwillig"))).await;
+        let keiner = ergebnis(scheibe, &frei(mit(bauen(vec![], vec![]), "versicherungsart", json!("gesetzlich_freiwillig")))).await;
+        assert_eq!(zahl(&beide), 11_690 * 100, "{scheibe}, beide gesetzlich_an: {beide}");
+        assert_eq!(zahl(&nur_a), 11_652 * 100, "{scheibe}, nur Person A gesetzlich_an: {nur_a}");
+        assert_eq!(zahl(&nur_b), 11_652 * 100, "{scheibe}, nur der Ehegatte gesetzlich_an: {nur_b}");
+        assert_eq!(zahl(&keiner), 11_616 * 100, "{scheibe}, beide freiwillig: {keiner}");
+    }
+}
+
+/// Zuschuss und Kuerzung zusammen (Nr. 92 und d-46): die Kuerzung rechnet vom vollen KV-Beitrag, der Zuschuss kommt danach ab. Der Anlage-
+/// Vorsorgeaufwand-Vordruck 2025 kennt zu den Zuschuss-Zeilen (21, 26, 34 bis 36) keine „davon mit Anspruch“-Zeile, zu den Erstattungen
+/// schon (15, 20, 32): der Zuschuss mindert die Basis der 4 Prozent nicht (`derived`, keine Quelle sagt es wortlich). Fall F2 des Audits:
+/// Lohn 45.000, KV 3.000 + PV 600, Zuschuss 1.500 + 200: Beitrag 3.480 − 1.700 = 1.780, zvE 41.954, Steuer 7.951 Euro (ohne Kuerzung 7.912).
+#[tokio::test]
+async fn zuschuss_kommt_nach_der_kuerzung_ab() {
+    let f2 = ergebnis("an_gesamt", &plus(an("gesetzlich_an", 45_000, 3_000, 600), zuschuss(ZUSCHUSS_A, 1_500, 0, 200))).await;
+    assert_eq!(zahl(&f2), 7_951 * 100, "F2 gesetzlich_an: {f2}");
+    let frei = ergebnis("an_gesamt", &plus(an("gesetzlich_freiwillig", 45_000, 3_000, 600), zuschuss(ZUSCHUSS_A, 1_500, 0, 200))).await;
+    assert_eq!(zahl(&frei), 7_912 * 100, "F2 freiwillig bleibt: {frei}");
+}
+
+/// `rentner_gesamt`: dieselbe Funktion. Wer dort `gesetzlich_an` waehlt, bekommt die Kuerzung wie in den anderen Scheiben (Gleichwertigkeit, keine
+/// Handrechnung der Rentensteuer): KV 4.000 + PV 800 mit `gesetzlich_an` rechnet wie KV 3.840 + PV 800 mit `gesetzlich_freiwillig` und anders als
+/// KV 4.000 + PV 800 mit `gesetzlich_freiwillig` (die Rentner-Scheibe fragt `gesetzlich_freiwillig` als Regelfall, siehe `rentner`).
+#[tokio::test]
+async fn in_der_rentner_scheibe_kuerzt_nur_gesetzlich_an() {
+    let an_art = ergebnis("rentner_gesamt", &mit(rentner(4_000, 800), "versicherungsart", json!("gesetzlich_an"))).await;
+    let gekuerzt = ergebnis("rentner_gesamt", &rentner(3_840, 800)).await;
+    let voll = ergebnis("rentner_gesamt", &rentner(4_000, 800)).await;
+    assert_eq!(zahl(&an_art), zahl(&gekuerzt), "gesetzlich_an gleich KV um 160 kleiner: {an_art} gegen {gekuerzt}");
+    assert_ne!(zahl(&an_art), zahl(&voll), "KONTROLLE: freiwillig mit vollem Beitrag rechnet eine andere Steuer: {voll}");
+}
+
+/// Die Erklaerung an das Finanzamt aendert sich nicht: Zeile 11 der Anlage Vorsorgeaufwand traegt den Beitrag so, wie die Lohnsteuerbescheinigung
+/// ihn nennt (Nr. 25, ungekuerzt); das Finanzamt kuerzt selbst. Kz E2001203 (gesetzliche KV, Arbeitnehmer) steht bei Person A und beim
+/// Ehegatten auf 3.000 Euro, Kz E2001505 (Pflege) auf 600. Die Kuerzung steht nirgends in der Erklaerung.
+#[tokio::test]
+async fn die_erklaerung_traegt_den_kv_beitrag_ungekuerzt() {
+    let paare = plus(mit(gesamt("gesetzlich_an", 40_001, 3_000, 600), "veranlagung", json!("zusammen")), partner(40_001, 3_000, 600, true));
+    let d = fall_mit("gesamt", &paare).await;
+    let (status, dekl) = sende(&d, "GET", "/fall/kvz/deklaration", None).await;
+    assert_eq!(status, 200, "GET /deklaration: {dekl}");
+    assert_eq!(dekl["deklaration"]["E2001203"], json!(3_000), "Person A, KV ungekuerzt: {dekl}");
+    assert_eq!(dekl["person_b"]["E2001203"], json!(3_000), "Ehegatte, KV ungekuerzt: {dekl}");
+    assert_eq!(dekl["deklaration"]["E2001505"], json!(600), "Person A, Pflege: {dekl}");
+    assert_eq!(dekl["person_b"]["E2001505"], json!(600), "Ehegatte, Pflege: {dekl}");
 }
 
 /// AK5a/AK5c: die sechs Fragen stehen, solange der Anspruch auf einen Zuschuss nicht bestaetigt verneint ist (`feld_bedingung` auf

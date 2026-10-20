@@ -16,6 +16,11 @@
 //! `handrechnung.py` im Auftragsordner, Ausgabe `handrechnung.out`). Je Fall: Lohn − max(Werbungskosten, Arbeitnehmer-Pauschbetrag 1.230) −
 //! Basisbeitrag KV + PV − Sonderausgaben-Pauschbetrag 36 = zvE, darauf der Tarif § 32a (Zusammenveranlagung: Splitting, 2 × Steuer der Haelfte).
 //! Der Arbeitnehmer-Pauschbetrag gilt je Person. Die Steuer ist die festzusetzende Einkommensteuer.
+//!
+//! STAND d-46 (2026-10-20): Die Personen sind `gesetzlich_an`, die App kuerzt ihren KV-Beitrag um 4 Prozent (Krankengeld-Anspruch, § 10 Abs. 1
+//! Nr. 3 Buchst. a S. 4 `EStG`): der Basisbeitrag 3.600 wird zu 3.480, das zvE steigt je Person um 120 Euro. Die Zahlen unten tragen diese
+//! Kuerzung (`rechnung_altfaelle.py` im Auftragsordner, geeicht: jede alte Zahl wird aus dem alten zvE zurueckgerechnet). Ohne sie waeren es
+//! zvE 45.134 / Steuer 9.007 (Einzel) und 70.270 / 11.616 (zusammen); die Kommentare an den Tests nennen die alten Zahlen in Klammern.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -295,8 +300,9 @@ async fn die_beitragsfelder_sind_auf_den_scheiben_mit_werbungskosten_beantwortba
 }
 
 /// `AK1` (i) und (iv), `an_gesamt` und `gesamt`, alleinstehend: ein Beitrag allein unter dem Pauschbetrag aendert die Steuer nicht. Lohn 50.000,
-/// Basisbeitrag 3.600: zvE 45.134, Steuer 9.007 Euro (Handrechnung E0). Ohne Beitrag, mit Beitrag 0, mit 178 Euro (Beispiel der Anleitung zur
-/// Anlage N), mit genau 1.230 Euro (= Pauschbetrag), nur Entfernungspauschale 600 und nur Beitrag 800: immer 9.007.
+/// Basisbeitrag 3.600 (gekuerzt 3.480): zvE 45.254, Steuer 9.047 Euro (Handrechnung E0; vor d-46 zvE 45.134, 9.007). Ohne Beitrag, mit Beitrag 0,
+/// mit 178 Euro (Beispiel der Anleitung zur Anlage N), mit genau 1.230 Euro (= Pauschbetrag), nur Entfernungspauschale 600 und nur Beitrag 800:
+/// immer 9.047.
 #[tokio::test]
 async fn ein_beitrag_unter_dem_pauschbetrag_aendert_die_steuer_nicht() {
     for (scheibe, basis) in einzel_faelle() {
@@ -309,23 +315,24 @@ async fn ein_beitrag_unter_dem_pauschbetrag_aendert_die_steuer_nicht() {
             ("nur Beitrag 800", plus(basis.clone(), beitrag(80_000))),
         ] {
             let e = ergebnis(scheibe, &paare).await;
-            assert_eq!(zahl(&e), 9_007 * 100, "{scheibe}, {name}: {e}");
+            assert_eq!(zahl(&e), 9_047 * 100, "{scheibe}, {name}: {e}");
         }
     }
 }
 
 /// `AK1` (ii), `an_gesamt` und `gesamt`: liegen die Werbungskosten ueber dem Pauschbetrag, sinkt die Steuer um den Beitrag. Beitrag 1.500:
-/// zvE 44.864, Steuer 8.916 Euro (Handrechnung E3). Der Beitrag ZAEHLT ZU der Entfernungspauschale: 600 + 800 = 1.400, zvE 44.964, Steuer
-/// 8.949 Euro (E6), obwohl jeder der beiden Posten allein unter dem Pauschbetrag liegt. Cent-Rest: 1.500,01 Euro rechnen und erklaeren als
-/// 1.501 Euro (aufgerundet), zvE 44.863, Steuer 8.915 (E7); 1.500,00 Euro bleibt 8.916 (E8).
+/// zvE 44.984, Steuer 8.956 Euro (Handrechnung E3; vor d-46 zvE 44.864, 8.916). Der Beitrag ZAEHLT ZU der Entfernungspauschale: 600 + 800 =
+/// 1.400, zvE 45.084, Steuer 8.990 Euro (E6; vorher 44.964, 8.949), obwohl jeder der beiden Posten allein unter dem Pauschbetrag liegt.
+/// Cent-Rest: 1.500,01 Euro rechnen und erklaeren als 1.501 Euro (aufgerundet), zvE 44.983, Steuer 8.956 (E7; vorher 44.863, 8.915); 1.500,00
+/// Euro bleibt 8.956 (E8).
 #[tokio::test]
 async fn ein_beitrag_ueber_dem_pauschbetrag_senkt_die_steuer_und_zaehlt_zur_entfernungspauschale() {
     for (scheibe, basis) in einzel_faelle() {
         for (name, paare, steuer) in [
-            ("Beitrag 1.500", plus(basis.clone(), beitrag(150_000)), 8_916),
-            ("Entfernungspauschale 600 + Beitrag 800", plus(pendeln(basis.clone()), beitrag(80_000)), 8_949),
-            ("Beitrag 1.500,01, aufgerundet 1.501", plus(basis.clone(), beitrag(150_001)), 8_915),
-            ("Beitrag 1.500,00", plus(basis.clone(), beitrag(150_000)), 8_916),
+            ("Beitrag 1.500", plus(basis.clone(), beitrag(150_000)), 8_956),
+            ("Entfernungspauschale 600 + Beitrag 800", plus(pendeln(basis.clone()), beitrag(80_000)), 8_990),
+            ("Beitrag 1.500,01, aufgerundet 1.501", plus(basis.clone(), beitrag(150_001)), 8_956),
+            ("Beitrag 1.500,00", plus(basis.clone(), beitrag(150_000)), 8_956),
         ] {
             let e = ergebnis(scheibe, &paare).await;
             assert_eq!(zahl(&e), steuer * 100, "{scheibe}, {name}: {e}");
@@ -334,8 +341,9 @@ async fn ein_beitrag_ueber_dem_pauschbetrag_senkt_die_steuer_und_zaehlt_zur_entf
 }
 
 /// `AK1` (iii), Zusammenveranlagung, `an_gesamt` und `gesamt`: der Arbeitnehmer-Pauschbetrag gilt JE PERSON. Lohn je 40.001, Basisbeitrag je
-/// 3.600. Ohne Beitrag zvE 70.270, Steuer 11.616 Euro (Z0). Beitrag 2.000 nur beim Ehegatten: Abzug 1.230 + 2.000, zvE 69.500, Steuer 11.384
-/// (Z1); nur bei Person A, vertauscht: dieselbe Steuer (Z2); bei beiden: zvE 68.730, Steuer 11.154 (Z3); nur 178 beim Ehegatten: wie ohne (Z4).
+/// 3.600 (je gekuerzt 3.480). Ohne Beitrag zvE 70.510, Steuer 11.690 Euro (Z0; vor d-46 70.270, 11.616). Beitrag 2.000 nur beim Ehegatten: Abzug
+/// 1.230 + 2.000, zvE 69.740, Steuer 11.456 (Z1; vorher 69.500, 11.384); nur bei Person A, vertauscht: dieselbe Steuer (Z2); bei beiden: zvE
+/// 68.970, Steuer 11.226 (Z3; vorher 68.730, 11.154); nur 178 beim Ehegatten: wie ohne (Z4).
 #[tokio::test]
 async fn bei_zusammenveranlagung_zaehlt_der_beitrag_je_person_fuer_sich() {
     for (scheibe, bauen) in [("an_gesamt", an_paar as fn(Paare, Paare) -> Paare), ("gesamt", gesamt_paar)] {
@@ -344,11 +352,11 @@ async fn bei_zusammenveranlagung_zaehlt_der_beitrag_je_person_fuer_sich() {
         let nur_a = ergebnis(scheibe, &bauen(vec![(A, json!(200_000))], vec![])).await;
         let beide = ergebnis(scheibe, &bauen(vec![(A, json!(200_000))], vec![(B, json!(200_000))])).await;
         let b_klein = ergebnis(scheibe, &bauen(vec![], vec![(B, json!(17_800))])).await;
-        assert_eq!(zahl(&keiner), 11_616 * 100, "{scheibe}, keiner: {keiner}");
-        assert_eq!(zahl(&nur_b), 11_384 * 100, "{scheibe}, nur der Ehegatte: {nur_b}");
-        assert_eq!(zahl(&nur_a), 11_384 * 100, "{scheibe}, nur Person A: {nur_a}");
-        assert_eq!(zahl(&beide), 11_154 * 100, "{scheibe}, beide: {beide}");
-        assert_eq!(zahl(&b_klein), 11_616 * 100, "{scheibe}, nur der Ehegatte mit 178 Euro: {b_klein}");
+        assert_eq!(zahl(&keiner), 11_690 * 100, "{scheibe}, keiner: {keiner}");
+        assert_eq!(zahl(&nur_b), 11_456 * 100, "{scheibe}, nur der Ehegatte: {nur_b}");
+        assert_eq!(zahl(&nur_a), 11_456 * 100, "{scheibe}, nur Person A: {nur_a}");
+        assert_eq!(zahl(&beide), 11_226 * 100, "{scheibe}, beide: {beide}");
+        assert_eq!(zahl(&b_klein), 11_690 * 100, "{scheibe}, nur der Ehegatte mit 178 Euro: {b_klein}");
     }
 }
 
@@ -358,7 +366,7 @@ async fn bei_zusammenveranlagung_zaehlt_der_beitrag_je_person_fuer_sich() {
 async fn bei_einzelveranlagung_zaehlt_das_feld_des_ehegatten_nicht() {
     for (scheibe, basis) in einzel_faelle() {
         let e = ergebnis(scheibe, &plus(basis, vec![(B, json!(200_000))])).await;
-        assert_eq!(zahl(&e), 9_007 * 100, "{scheibe}: {e}");
+        assert_eq!(zahl(&e), 9_047 * 100, "{scheibe}: {e}");
     }
 }
 
