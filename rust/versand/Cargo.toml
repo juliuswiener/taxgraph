@@ -11,7 +11,12 @@ workspace = true
 name = "taxgraph-versand"
 path = "src/main.rs"
 
+[[bin]]
+name = "taxgraph-abruf"
+path = "src/main_abruf.rs"
+
 [dependencies]
+chrono = { workspace = true }
 elster = { path = "../elster" }
 libloading = { workspace = true }
 roxmltree = { workspace = true }

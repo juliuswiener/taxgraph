@@ -18,6 +18,12 @@
 //!    Zusammenfassung.
 //!
 //! Erfolg heisst `rc == 0` UND eine Telenummer ([`Antwort::erfolg`]).
+//!
+//! Der Abruf der Lohnsteuerbescheinigung (`ElsterVaStDaten`, Abweichung Nr. 91) steht im selben
+//! Crate und folgt derselben Regel: nur das Programm `taxgraph-abruf` ruft [`hole_beleg`] auf, mit
+//! `--dry-run` ohne ERiC, sonst nur nach der woertlichen Freigabe [`ABRUF_FREIGABE`] und ihrer
+//! zweiten Eingabe am Terminal. Die Steuer-ID bleibt ein Aufrufparameter; der Beleg liegt in einer
+//! Datei (0600) in einem Verzeichnis (0700), gedruckt wird nur der Pfad.
 #![deny(unsafe_code)]
 #![cfg_attr(
     test,
@@ -29,6 +35,8 @@
     )
 )]
 
+mod abruf;
+mod abruf_cli;
 mod cli;
 mod ffi;
 mod merker;
@@ -38,6 +46,11 @@ use std::fmt;
 use std::os::unix::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
 
+pub use abruf::{
+    datenpaket, dekodiere_datenpaket, hole_beleg, lege_beleg_ab, waehle_id, AbrufAuftrag,
+    AbrufFehler,
+};
+pub use abruf_cli::{lauf_abruf, AbrufUmgebung, ABRUF_FREIGABE};
 pub use cli::{lauf, Umgebung};
 pub use elster::{EricFehler, ERIC_VALIDIERE};
 pub use merker::{merker_im_xml, pruefe_merker_konsistenz};
@@ -142,6 +155,15 @@ impl fmt::Debug for Zertifikat {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("Zertifikat { pfad: <nicht gezeigt>, pin: <nicht gezeigt> }")
     }
+}
+
+/// Der Text, wenn ERiC das Zertifikat ablehnt (`EricGetHandleToCertificate`): nennt den Code, nie
+/// Pfad oder PIN.
+fn zertifikat_abgelehnt(rc: i32) -> String {
+    format!(
+        "ERiC lehnt das Zertifikat ab (EricGetHandleToCertificate rc={rc}) — Pfad/Format/PIN \
+         pruefen, siehe elster/VERSAND.md. Wert nicht geloggt."
+    )
 }
 
 /// Was ERiC zurueckgab.
@@ -347,12 +369,9 @@ pub fn sende(
     let lib = lib.ok_or(EricFehler::NichtGefunden)?;
     let log_dir = ffi::neues_log_dir()?;
     let eric = ffi::Eric::laden(lib, &log_dir)?;
-    let handle = eric.zertifikat_oeffnen(&pfad_c).map_err(|rc| {
-        VersandFehler::ZertifikatFehlt(format!(
-            "ERiC lehnt das Zertifikat ab (EricGetHandleToCertificate rc={rc}) — Pfad/Format/PIN \
-             pruefen, siehe elster/VERSAND.md. Wert nicht geloggt."
-        ))
-    })?;
+    let handle = eric
+        .zertifikat_oeffnen(&pfad_c)
+        .map_err(|rc| VersandFehler::ZertifikatFehlt(zertifikat_abgelehnt(rc)))?;
     let (rc, rueckgabe_xml, serverantwort_xml) =
         eric.bearbeite(&xml_c, &datenart_c, ERIC_VALIDIERE | ERIC_SENDE, &handle, &pin_c)?;
     Ok(Antwort {

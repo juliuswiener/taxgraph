@@ -21,6 +21,13 @@ type FnPufferInhalt = unsafe extern "C" fn(*mut c_void) -> *const c_char;
 type FnPufferFreigeben = unsafe extern "C" fn(*mut c_void) -> c_int;
 type FnGetHandle = unsafe extern "C" fn(*mut u32, *mut u32, *const c_char) -> c_int;
 type FnCloseHandle = unsafe extern "C" fn(u32) -> c_int;
+type FnPufferLaenge = unsafe extern "C" fn(*mut c_void) -> u32;
+type FnDekodiere = unsafe extern "C" fn(
+    u32,           // zertifikatHandle
+    *const c_char, // pin
+    *const c_char, // base64Eingabe
+    *mut c_void,   // rueckgabePuffer
+) -> c_int;
 type FnBearbeiteVorgang = unsafe extern "C" fn(
     *const c_char, // datenpuffer (XML)
     *const c_char, // datenartVersion, z.B. "ESt_2025"
@@ -47,6 +54,8 @@ pub(crate) struct Eric {
     puffer_erzeugen: FnPufferErzeugen,
     puffer_inhalt: FnPufferInhalt,
     puffer_freigeben: FnPufferFreigeben,
+    puffer_laenge: FnPufferLaenge,
+    dekodiere_daten: FnDekodiere,
     bearbeite_vorgang: FnBearbeiteVorgang,
     beende: FnBeende,
     get_handle: FnGetHandle,
@@ -84,6 +93,8 @@ impl Eric {
             puffer_erzeugen: symbol(&lib, b"EricRueckgabepufferErzeugen\0")?,
             puffer_inhalt: symbol(&lib, b"EricRueckgabepufferInhalt\0")?,
             puffer_freigeben: symbol(&lib, b"EricRueckgabepufferFreigeben\0")?,
+            puffer_laenge: symbol(&lib, b"EricRueckgabepufferLaenge\0")?,
+            dekodiere_daten: symbol(&lib, b"EricDekodiereDaten\0")?,
             bearbeite_vorgang: symbol(&lib, b"EricBearbeiteVorgang\0")?,
             beende: symbol(&lib, b"EricBeende\0")?,
             get_handle: symbol(&lib, b"EricGetHandleToCertificate\0")?,
@@ -166,6 +177,25 @@ impl Eric {
         Ok((rc, self.inhalt(&rueck), self.inhalt(&server)))
     }
 
+    /// `EricDekodiereDaten(handle, pin, base64, puffer)`: entschluesselt ein abgeholtes Datenpaket.
+    /// Der Puffer wird in jedem Fall freigegeben. Rueckgabe: rc und die Bytes des Puffers; sie sind
+    /// nur bei rc == 0 gueltig (ERiC: sonst undefiniert), der Aufrufer prueft das.
+    pub(crate) fn dekodiere(
+        &self,
+        zertifikat: &ZertifikatWaechter<'_>,
+        pin: &CStr,
+        base64: &CStr,
+    ) -> Result<(i32, Vec<u8>), EricFehler> {
+        let ziel = self.puffer()?;
+        // SAFETY: gueltige C-Strings, die den Aufruf ueberleben; das Handle stammt aus
+        // EricGetHandleToCertificate und lebt, solange `zertifikat` lebt; der Puffer stammt aus
+        // EricRueckgabepufferErzeugen und lebt bis sein Waechter faellt.
+        let rc = unsafe {
+            (self.dekodiere_daten)(zertifikat.handle, pin.as_ptr(), base64.as_ptr(), ziel.puffer)
+        };
+        Ok((rc, self.bytes(&ziel)))
+    }
+
     fn puffer(&self) -> Result<PufferWaechter<'_>, EricFehler> {
         // SAFETY: ERiC ist initialisiert; der Aufruf hat keine Vorbedingung.
         let puffer = unsafe { (self.puffer_erzeugen)() };
@@ -173,6 +203,24 @@ impl Eric {
             return Err(EricFehler::Puffer);
         }
         Ok(PufferWaechter { eric: self, puffer })
+    }
+
+    /// Kopiert die Bytes des Puffers: so viele, wie `EricRueckgabepufferLaenge` nennt, nicht bis zum
+    /// ersten NUL (ein Klartext, der Bytes enthaelt, wuerde sonst abgeschnitten).
+    fn bytes(&self, p: &PufferWaechter<'_>) -> Vec<u8> {
+        // SAFETY: `p.puffer` ist gueltig, bis `p` faellt.
+        let laenge = unsafe { (self.puffer_laenge)(p.puffer) };
+        // SAFETY: wie oben.
+        let roh = unsafe { (self.puffer_inhalt)(p.puffer) };
+        let Ok(laenge) = usize::try_from(laenge) else {
+            return Vec::new();
+        };
+        if roh.is_null() || laenge == 0 {
+            return Vec::new();
+        }
+        // SAFETY: ERiC liefert ein Byte-Array von genau `laenge` Bytes (plus NUL), das bis zur
+        // Freigabe des Puffers lebt.
+        unsafe { std::slice::from_raw_parts(roh.cast::<u8>(), laenge) }.to_vec()
     }
 
     /// Kopiert den Text des Puffers (NUL-terminiert, lebt bis zur Freigabe).
