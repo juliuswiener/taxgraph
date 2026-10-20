@@ -1864,6 +1864,36 @@ async fn behinderten_pauschbetrag_des_ehegatten_wirkt_in_beiden_zweigen_gleich()
     );
 }
 
+/// Abweichung Nr. NN (Julius d-47): ein Ehepaar, das „keine Kapitalertraege des Partners“ bestaetigt und die fuenf Kapital-Felder des
+/// Ehegatten nicht beantwortet, bekommt dieselbe Zahl wie das Paar, das die Kapitalertraege ankreuzt und die fuenf Felder mit 0 beantwortet
+/// (Gegenprobe). Vor der Aenderung sperrte der erste Fall mit `partner_kegel_offen`, ohne offene Frage. Lohn A 60.000 EUR, Lohn B 20.000 EUR:
+/// gemeinsame ESt 13.838 EUR (Handrechnung der Kirchensteuer-Faelle unten, Tarif aus `params/2025/`).
+#[tokio::test]
+async fn ehepaar_ohne_kapitalertraege_des_partners_hat_dieselbe_zahl_wie_mit_kreuz_und_fuenf_nullen() {
+    let lohn = vec![("bruttoarbeitslohn", json!(6_000_000)), ("bruttoarbeitslohn_partner", json!(2_000_000))];
+    let fuenf = ["kap_kapitalertraege_partner", "kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"];
+    // Y: Kreuz gesetzt („ja, das gab es“ = kein_kap_partner false), die fuenf Felder mit 0 beantwortet.
+    let mit_kreuz = mit(mit(mit(kegel_gesamt(), ehepaar()), lohn.clone()), vec![("kein_kap_partner", json!(false))]);
+    // X: kein Kreuz (kein_kap_partner true), die fuenf Felder fehlen.
+    let mut ohne_kreuz = mit(mit(kegel_gesamt(), ehepaar()), lohn);
+    ohne_kreuz.retain(|(f, _)| !fuenf.contains(f));
+    let ohne_kreuz = mit(ohne_kreuz, vec![("kein_kap_partner", json!(true))]);
+
+    let y = ergebnis("gesamt", &mit_kreuz).await;
+    erwarte_zahl("Y mit Kreuz und fuenf Nullen", &y, 1_383_800);
+    let x = ergebnis("gesamt", &ohne_kreuz).await;
+    assert_ne!(
+        x["grund"], "partner_kegel_offen",
+        "DEFEKT: das Ehepaar ohne Kapitalertraege des Partners wird mit `partner_kegel_offen` gesperrt: {x}"
+    );
+    erwarte_zahl("X ohne Kreuz, ohne die fuenf Felder", &x, 1_383_800);
+    assert_eq!(x["zahl_cent"], y["zahl_cent"], "X und Y muessen dieselbe Zahl geben");
+    // Schweigen ist kein „keine“: fehlt auch das Kreuz, bleibt die Sperre.
+    let stumm: Paare = ohne_kreuz.iter().filter(|(f, _)| *f != "kein_kap_partner").cloned().collect();
+    let s = ergebnis("gesamt", &stumm).await;
+    assert_eq!(s["grund"], "partner_kegel_offen", "DEFEKT: ohne das Kreuz muss die Sperre bleiben: {s}");
+}
+
 
 // ---- Abweichung Nr. 94: Kirchensteuer bei Zusammenveranlagung, wenn nur ein Ehegatte Mitglied ist ---------------------------
 //
