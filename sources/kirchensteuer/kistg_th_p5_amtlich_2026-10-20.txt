@@ -1,0 +1,28 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_th_p5_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 5 ThürKiStG (Glaubensverschiedene Ehe oder Lebenspartnerschaft)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 5. Dezember 2018 (GVBl. S. 669); PDF KiStG_TH_2000.pdf sha256 b061cc14b50ed80829b339f21ec17c121d9d4b0b55518e58b9508ce5c211cdec; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§5
+Glaubensverschiedene Ehe oder Lebenspartnerschaft
+(1) Gehört nur ein Ehegatte oder Lebenspartner einer steuererhebenden Kirche an (glaubensverschie-
+dene Ehe oder Lebenspartnerschaft), so erhebt die steuererhebende Kirche die Kirchensteuer von ihm
+nach der in seiner Person gegebenen Steuerbemessungsgrundlage.
+(2) Werden die Ehegatten oder Lebenspartner zur Einkommensteuer zusammen veranlagt, so ist die
+nach § 3 Abs. 1 Satz 2 ermittelte gemeinsame Einkommensteuer im Verhältnis der Steuerbeträge auf-
+zuteilen, die sich bei Anwendung des § 32a Abs. 1 EStG (Einkommensteuertarif) auf die Summe der
+Einkünfte eines jeden Ehegatten oder Lebenspartners ergeben. § 51a Abs. 2 Satz 2 EStG ist bei der Er-
+mittlung der Einkünfte eines jeden Ehegatten oder Lebenspartners entsprechend anzuwenden. Ist in
+der gemeinsamen Einkommensteuerschuld im Sinne des Satzes 1 eine nach dem gesonderten Steu-
+ertarif des § 32d Abs. 1 EStG ermittelte Einkommensteuer enthalten, ist diese mit gesondertem Steu-
+ertarif ermittelte Einkommensteuer aus der Berechnung des Satzes 1 auszuscheiden. Dem der steuer-
+erhebenden Kirche angehörenden Ehegatten oder Lebenspartner ist die nach § 32d Abs. 1 EStG ermit-
+telte Einkommensteuer zuzurechnen, die unter Berücksichtigung der Kirchensteuer nach § 32d Abs. 1
+Satz 3 EStG berechnet wurde. Die Kirchensteuer des der steuererhebenden Kirche angehörenden Ehe-
+gatten oder Lebenspartners ist nach dem auf ihn entfallenden Teil der Maßstabsteuer zu bemessen.
+(3) Unberührt bleiben die Bestimmungen über das Kirchgeld in glaubensverschiedener Ehe oder Le-
+benspartnerschaft.

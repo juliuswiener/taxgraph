@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/he/p3_amtlich"
+  norm: "§ 3 KiStG Hessen (Kirchensteuer bei Ehegatten)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 20. Februar 2020 (GVBl. S. 146); PDF KiStG_HE_1950.pdf sha256 e8935c05258c448e5810ab97c55527586d1e0d0a6159f4c448612da9ef31f507; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_he_p3_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_he_p3_amtlich_2026-10-20.txt"
+  sha256: "736d56a0717f1d7da92e098e0446582a4edd196adc350e263626707d29d91f05"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

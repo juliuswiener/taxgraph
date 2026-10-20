@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/hh/p5a_amtlich"
+  norm: "§ 5a HmbKiStG (Kirchensteuer vom Einkommen bei konfessionsverschiedenen Ehen)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 17. Dezember 2018 (HmbGVBl. S. 410); PDF KiStG_HA.pdf sha256 c4d068fef7b7ef6a7c1d06fb71b1cb9838eb9e7b2474caaf7313c0c6935ea20a; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_hh_p5a_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_hh_p5a_amtlich_2026-10-20.txt"
+  sha256: "b5337ffdf8ccd8751231e35f51213545a496247511f31e2fc4327ef1c26e2287"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

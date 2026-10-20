@@ -1,0 +1,69 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_be_p4_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 4 KiStG Berlin (Besteuerung von Ehegatten und Lebenspartnern)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 01.04.2019 (GVBl. S. 246); PDF KiStG_BE_2009.pdf sha256 826ad7d6ee66215e6507da7d1c1a1735e3d7fe724e70e167303389a4f1ab1867; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§4
+Besteuerung von Ehegatten und Lebenspartnern
+(1) Hat eine steuerberechtigte Religionsgemeinschaft die Verwaltung der Kirchensteuer gemäß § 1
+Absatz 2 auf die Berliner Finanzbehörden übertragen oder erhebt sie Steuern aufgrund einer von der
+Senatsverwaltung für Finanzen anerkannten Steuerordnung in eigener Verwaltung (steuererhebende
+Religionsgemeinschaft) und gehören Ehegatten derselben steuererhebenden Religionsgemeinschaft
+an (konfessionsgleiche Ehen), so werden sie im Fall einer Zusammenveranlagung zur Maßstabsteuer
+auch gemeinsam zu der von der Maßstabsteuer abhängigen Steuer herangezogen. Die Steuer bemisst
+sich nach der gegen die Ehegatten festgesetzten Maßstabsteuer. Die §§ 44, 268 bis 280 der Abgaben-
+ordnung finden entsprechende Anwendung.
+(2) Gehören Ehegatten verschiedenen steuererhebenden Religionsgemeinschaften an (konfessions-
+verschiedene Ehen) und haben sie bei der Veranlagung zur Maßstabsteuer die Zusammenveranla-
+gung gewählt, so ist, wenn die steuererhebenden Religionsgemeinschaften dies vereinbaren, von je-
+dem Ehegatten die von der Maßstabsteuer abhängige Steuer in Höhe der Hälfte des Betrages zu er-
+heben, der im Falle der konfessionsgleichen Ehe nach Absatz 1 gegen beide Ehegatten festzusetzen
+wäre. Im Lohnsteuerabzugsverfahren wird, wenn die steuererhebenden Religionsgemeinschaften dies
+vereinbaren, die Kirchensteuer der beiden Ehegatten von der Hälfte der Lohnsteuer erhoben und ist
+bei jedem Ehegatten auch für den anderen einzubehalten. Wird die Kirchensteuer als Zuschlag zur
+Kapitalertragsteuer erhoben, so bemisst sich die Kirchensteuer nach der gemäß § 3 Absatz 1 Satz 1
+Nummer 1 in Verbindung mit § 51a Absatz 2b und Absatz 2c Satz 7 des Einkommensteuergesetzes er-
+mittelten Bemessungsgrundlage. Erfolgt eine Veranlagung nach § 51a Absatz 2d des Einkommensteu-
+ergesetzes, so bemisst sich die Kirchensteuer bei gemeinsamen Kapitalerträgen der Ehegatten nach
+der Hälfte der gemeinsamen Bemessungsgrundlage nach § 3 Absatz 1 Satz 1 Nummer 1. In den Fäl-
+len der Sätze 1 und 2 haften die Ehegatten als Gesamtschuldner im Sinne der §§ 44, 268 bis 280 der
+Abgabenordnung. Liegen die Voraussetzungen für eine Zusammenveranlagung nicht vor oder werden
+die Ehegatten einzeln, getrennt oder besonders zur Einkommensteuer veranlagt, so wird die Kirchen-
+steuer von jedem Ehegatten nach seiner Kirchenzugehörigkeit und nach der jeweils in seiner Person
+gegebenen Steuerbemessungsgrundlage erhoben. Fehlt eine Vereinbarung der steuererhebenden Re-
+ligionsgemeinschaften oder werden die Ehegatten zu einer Maßstabsteuer, die nicht die Einkommen-
+steuer ist, kraft Gesetzes zusammenveranlagt, so ist jeder Ehegatte nach seinem Anteil an der gegen
+die Ehegatten festgesetzten Maßstabsteuer zur Steuer heranzuziehen. Die Anteile der Ehegatten an
+der Maßstabsteuer bemessen sich insoweit nach Maßgabe des Absatzes 3.
+(3) Gehört nur ein Ehegatte einer steuererhebenden Religionsgemeinschaft an (glaubensverschiedene
+Ehen), so ist die zu erhebende Kirchensteuer bei Zusammenveranlagung zur Einkommensteuer nach
+dem Teil der Einkommensteuer beider Ehegatten zu bemessen, der auf den kirchenangehörigen Ehe-
+gatten entfällt. Zur Feststellung dieses Anteils ist die Einkommensteuer beider Ehegatten im Verhält-
+nis der Einkommensteuerbeträge aufzuteilen, die sich bei der Anwendung des Einkommensteuertarifs
+nach § 32a Absatz 1 des Einkommensteuergesetzes ohne Berücksichtigung besonderer Tarifvorschrif-
+ten nach §§ 32b, 34, 34b und 34c des Einkommensteuergesetzes auf die Summe der Einkünfte eines
+jeden Ehegatten ergeben würden; § 51a Absatz 2 Satz 2 des Einkommensteuergesetzes ist bei der Er-
+mittlung der Einkünfte eines jeden Ehegatten entsprechend anzuwenden. Soweit in der gemeinsamen
+Einkommensteuerschuld im Sinne des Satzes 2 eine nach dem gesonderten Steuertarif des § 32d des
+Einkommensteuergesetzes ermittelte Einkommensteuer enthalten ist, sind die gesondert besteuer-
+ten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer aus der Berechnung des Satzes 2
+auszuscheiden und die gesondert ermittelte Einkommensteuer dem kirchensteuerpflichtigen Ehegat-
+ten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen. Die kirchlichen Regelun-
+gen zur Berechnung eines besonderen Kirchgeldes im Falle einer glaubensverschiedenen Ehe im Sin-
+ne des § 3 Absatz 1 Satz 1 Nummer 5 bleiben unberührt.
+(4) Im Falle einer glaubensverschiedenen Ehe ist die Erhebung eines besonderen Kirchgeldes im Sinne
+des § 3 Absatz 1 Satz 1 Nummer 5 ausgeschlossen, wenn der Ehegatte des Steuerpflichtigen Mitglied
+einer Religionsgemeinschaft ist, die als Körperschaft des öffentlichen Rechts aufgrund einer außerhalb
+des Landes Berlin staatlich anerkannten Steuerordnung Steuern erhebt. Satz 1 gilt nicht, soweit in der
+Steuerordnung oder den Steuerbeschlüssen der jeweiligen steuererhebenden Religionsgemeinschaft
+Regelungen getroffen sind, nach denen die Kirchensteuern des Ehegatten eines Steuerpflichtigen auf
+das besondere Kirchgeld angerechnet werden.
+(5) Die Regelungen dieses Gesetzes zu Ehegatten und Ehen sind entsprechend auf Lebenspartnerin-
+nen, Lebenspartner und Lebenspartnerschaften anzuwenden. Satz 1 ist auch für Veranlagungszeiträu-
+me vor 2014 anzuwenden, wenn die Kirchensteuer noch nicht bestandskräftig festgesetzt worden ist
+und nur, soweit die Anwendung zu keiner ungünstigeren Kirchensteuerfestsetzung als bei Einzelveran-
+lagung der Lebenspartnerinnen oder Lebenspartner führt.

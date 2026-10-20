@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sn/p7_amtlich"
+  norm: "§ 7 SächsKiStG (Konfessionsverschiedene Ehe)"
+  fassung: "Fassung vom 12.06.2025 laut Seitenkopf des PDF; PDF Saechsisches-Kirchensteuergesetz.pdf sha256 3ebe910acffe3844eb70ee6a4e0d8b3fe63c7444f64d9625e83029f0db0042a1; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_sn_p7_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_sn_p7_amtlich_2026-10-20.txt"
+  sha256: "d59d7365b4d2dacc2f1f4fc8fc2558f6b7d5ea05c013ee23fbb114fb538432bb"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

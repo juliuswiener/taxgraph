@@ -1,0 +1,44 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_st_p4_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 4 KiStG LSA (Erhebung der Kirchensteuer als Zuschlag zur Einkommensteuer bei Ehegatten)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 6. November 2024 (GVBl. LSA S. 316); PDF KiStG_ST_2001.pdf sha256 7e3da341d10530c9354f97a28533d3561550e6b2bf9ddb94b6fe08afb06ca4bb; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§4
+Erhebung der Kirchensteuer als Zuschlag zur Einkommensteuer bei Ehegatten
+(1) Ehegatten, die derselben steuererhebenden Religionsgemeinschaft angehören (konfessionsgleiche
+Ehe) und zur Einkommensteuer zusammen veranlagt werden, werden gemeinsam zur Kirchensteuer
+herangezogen. Die Kirchensteuer bemisst sich nach der gegen die Ehegatten festgesetzten Einkom-
+mensteuer. Die Ehegatten haften als Gesamtschuldner im Sinne der Abgabenordnung.
+(2) Gehören Ehegatten verschiedenen steuererhebenden Religionsgemeinschaften an (konfessions-
+verschiedene Ehe) und werden sie zur Einkommensteuer zusammen veranlagt, wird die Kirchensteu-
+er von beiden Ehepartnern von der Hälfte des Betrags erhoben, der im Falle der konfessionsgleichen
+Ehe nach Absatz 1 gegen beide Ehegatten festzusetzen wäre. Im Lohnsteuerabzugsverfahren wird die
+Kirchensteuer von beiden Ehegatten von der Hälfte der Lohnsteuer erhoben und ist bei jedem Ehe-
+gatten auch für den anderen einzubehalten. Die Ehegatten haften als Gesamtschuldner im Sinne der
+Abgabenordnung. Liegen die Voraussetzungen für eine Zusammenveranlagung zur Einkommensteu-
+er nicht vor oder werden die Ehegatten einzeln veranlagt, wird die Kirchensteuer von jedem Ehegat-
+ten nach seiner Kirchenzugehörigkeit und nach der jeweils in seiner Person gegebenen Steuerbemes-
+sungsgrundlage erhoben; Entsprechendes gilt für die Erhebung der Kirchensteuer auf die Kapitaler-
+tragsteuer, wenn für einen oder beide Ehegatten die Einkommensteuer durch Abzug vom Kapitaler-
+trag erhoben wird.
+(3) Gehört nur ein Ehegatte einer steuererhebenden Religionsgemeinschaft an (glaubensverschiede-
+ne Ehe), so wird die Kirchensteuer von ihm nach der in seiner Person gegebenen Steuerbemessungs-
+grundlage erhoben. Werden die Ehegatten in glaubensverschiedener Ehe zusammen veranlagt, ist die
+Kirchensteuer auf den Teil der gemeinsamen Einkommensteuer zu erheben, der auf den der steuer-
+erhebenden Religionsgemeinschaft angehörenden Ehegatten entfällt. Die gemeinsame Einkommen-
+steuer ist im Verhältnis der Steuerbeträge aufzuteilen, die sich bei der Anwendung von § 32a Abs. 1
+des Einkommensteuergesetzes ohne Berücksichtigung der in § 32a Abs. 1 Satz 2 des Einkommensteu-
+ergesetzes genannten besonderen Tarifvorschriften auf die Summe der Einkünfte eines jeden Ehe-
+gatten ergeben würden. Bei der Ermittlung der Einkünfte eines jeden Ehegatten sind die Regelungen
+des § 51 a des Einkommensteuergesetzes zur Erhöhung und Minderung des zu versteuernden Einkom-
+mens entsprechend anzuwenden. Ist in der gemeinsamen Einkommensteuerschuld im Sinne des Sat-
+zes 2 eine nach dem gesonderten Steuertarif des § 32d des Einkommensteuergesetzes ermittelte Ein-
+kommensteuer enthalten, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermit-
+telte Einkommensteuer aus der Berechnung des Satzes 2 auszuscheiden und die gesondert ermittel-
+te Einkommensteuer dem kirchensteuerpflichtigen Ehegatten mit dem auf ihn entfallenden Anteil an
+den Kapitalerträgen zuzurechnen. Unberührt bleiben die kirchlichen Steuerordnungen und Beschlüsse
+über das Kirchgeld in glaubensverschiedener Ehe.

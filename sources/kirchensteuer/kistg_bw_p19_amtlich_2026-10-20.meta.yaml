@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/bw/p19_amtlich"
+  norm: "§ 19 KiStG Baden-Württemberg (Kircheneinkommensteuer)"
+  fassung: "Gesamtausgabe zum 20.10.2026, letzte berücksichtigte Änderung durch Artikel 6 des Gesetzes vom 27. Mai 2025 (GBl. 2025 Nr. 43); PDF KiStG_BW_1978.pdf sha256 cc936765a311d7a224d0e9055b78a657240196a5a5db4853928c189b18eee598; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_bw_p19_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_bw_p19_amtlich_2026-10-20.txt"
+  sha256: "1d09447161237e98cdf98ad3526c5a1b2df3e70d1682794250d3faafed7ff1f6"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

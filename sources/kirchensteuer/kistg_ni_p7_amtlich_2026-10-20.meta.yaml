@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/ni/p7_amtlich"
+  norm: "§ 7 KiStRG Niedersachsen (Bemessungsgrundlagen der Kirchensteuer)"
+  fassung: "VORIS Niedersachsen (Wolters Kluwer), gespeichert 20.10.2026 17:57 Uhr, Zuletzt geändert durch Gesetz vom 23. März 2022 (Nds. GVBl. S. 201); PDF csh-da-filter…WKDE_LTR_0000003520.pdf sha256 5739027f6e4e9360cf8014b89b4792f2a6c7a7213bdabbed8952f76bb5492614; Beleggrad E mit Vorbehalt: wörtlicher Gesetzestext aus dem PDF des Portals VORIS Niedersachsen (Host voris.wolterskluwer-online.de, Wolters Kluwer; ob das als amtlich gilt, ist offen), vom Nutzer am 20.10.2026 im Browser geladen; Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße und Portalfuß entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_ni_p7_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_ni_p7_amtlich_2026-10-20.txt"
+  sha256: "cac095f2ddbcc833d7334ac9b2479657e4d16c5a91cdb8f310da25d9f37ce224"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

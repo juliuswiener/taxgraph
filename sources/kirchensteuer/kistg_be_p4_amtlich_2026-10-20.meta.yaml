@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/be/p4_amtlich"
+  norm: "§ 4 KiStG Berlin (Besteuerung von Ehegatten und Lebenspartnern)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 01.04.2019 (GVBl. S. 246); PDF KiStG_BE_2009.pdf sha256 826ad7d6ee66215e6507da7d1c1a1735e3d7fe724e70e167303389a4f1ab1867; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_be_p4_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_be_p4_amtlich_2026-10-20.txt"
+  sha256: "f1625936b2f82f813f7115319322aaaed3bbeabd7962d72e42384e8771706f6e"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

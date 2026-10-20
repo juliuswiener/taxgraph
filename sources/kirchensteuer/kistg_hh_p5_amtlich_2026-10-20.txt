@@ -1,0 +1,43 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_hh_p5_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 5 HmbKiStG (Kirchensteuer vom Einkommen bei glaubensverschiedenen Ehen)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 17. Dezember 2018 (HmbGVBl. S. 410); PDF KiStG_HA.pdf sha256 c4d068fef7b7ef6a7c1d06fb71b1cb9838eb9e7b2474caaf7313c0c6935ea20a; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§5
+Kirchensteuer vom Einkommen bei glaubensverschiedenen Ehen
+und glaubensverschiedenen Lebenspartnerschaften
+(1) Die Kirchensteuer vom Einkommen bemisst sich, wenn nur ein Ehegatte oder Lebenspartner einer
+steuererhebenden Körperschaft angehört (glaubensverschiedene Ehe oder glaubensverschiedene Le-
+benspartnerschaft), nach der in seiner Person gegebenen Steuerbemessungsgrundlage.
+1
+(2) Werden die Ehegatten oder Lebenspartner zusammen zur Einkommensteuer veranlagt, so ist bei
+dem Ehegatten oder Lebenspartner, der einer steuererhebenden Körperschaft angehört, die Kirchen-
+2
+steuer vom Einkommen anteilig zu berechnen. Die Kirchensteuer ist nach dem Teil der gemeinsamen
+Einkommensteuer zu berechnen, der auf den kirchensteuerpflichtigen Ehegatten oder Lebenspart-
+ner entfällt, wenn die gemeinsame Steuer im Verhältnis der Steuerbeträge, die sich bei Anwendung
+des Einkommensteuer-Grundtarifs auf die Summe der Einkünfte eines jeden Ehegatten oder Lebens-
+3
+partners ergeben würden, auf die Ehegatten oder Lebenspartner verteilt wird. Bei der Ermittlung der
+Summe der Einkünfte eines jeden Ehegatten oder Lebenspartners ist § 51a des Einkommensteuerge-
+setzes entsprechend anzuwenden.
+1
+(3) Ist in der gemeinsamen Einkommensteuer im Sinne des Absatzes 2 Satz 2 eine nach dem geson-
+derten Steuertarif des § 32d des Einkommensteuergesetzes ermittelte Einkommensteuer enthalten,
+sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteuer aus
+der Berechnung auszuscheiden und die gesondert ermittelte Einkommensteuer dem kirchensteuer-
+pflichtigen Ehegatten oder Lebenspartner mit dem auf ihn entfallenden Anteil an den Kapitalerträgen
+2
+zuzurechnen. Entsprechendes gilt für die Veranlagung nach § 51a Absatz 2d des Einkommensteuer-
+gesetzes.
+(4) Wird die Kirchensteuer als Zuschlag zur Kapitalertragsteuer oder zur nach dem gesonderten Steu-
+ertarif des § 32d des Einkommensteuergesetzes ermittelten Einkommensteuer erhoben, ist § 51a Ab-
+satz 2c des Einkommensteuergesetzes anzuwenden.
+Fußnoten
+1)
+[Gemäß § 2 der Verordnung vom 30. September 2014 (HmbGVBl. S. 433) ist § 5 erstmals für
+den Veranlagungszeitraum 2014 anzuwenden.]

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sl/p7_p8_amtlich"
+  norm: "§§ 7, 8, 8a KiStG-Saar (Konfessionsverschiedene und glaubensverschiedene Ehe, Lebenspartner)"
+  fassung: "Gesamtausgabe zum 20.10.2026, Neufassung vom 5. Mai 2015, letzte berücksichtigte Änderung durch Gesetz vom 12.02.2020 (Amtsbl. I S. 265); PDF KiStG_SL_2015.pdf sha256 a51374225bdaa01fd405c87e82388c10ae25d72de3de5267d206520179df4870; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_sl_p7_p8_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_sl_p7_p8_amtlich_2026-10-20.txt"
+  sha256: "160ffb9ff183cfb28fa36bffa1b71f426a306d7f09876487d3eb9ad044f27c18"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

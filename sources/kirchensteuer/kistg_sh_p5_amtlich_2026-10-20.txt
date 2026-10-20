@@ -1,0 +1,32 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_sh_p5_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 5 KiStG Schleswig-Holstein (glaubensverschiedene Ehe)
+Fassung: Gesamtausgabe zum 20.10.2026, mehrfach geändert (Art. 1 Ges. v. 01.07.2014, GVOBl. S. 127); PDF KiStG_SH_2009.pdf sha256 70d292c657fa53dd8292a7b677b01859216c5d8ef7ba4509ee8547d0dcb5627e; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§5
+(1) Die Kirchensteuer vom Einkommen bemisst sich, wenn nur ein Ehegatte der evangelisch-lutheri-
+schen oder der Katholischen Kirche angehört (glaubensverschiedene Ehe),
+1. bei Einzelveranlagung zur Einkommensteuer nach der festgesetzten oder nach § 3 Abs. 2 ermit-
+telten Einkommensteuer des kirchenangehörigen Ehegatten;
+2. bei Zusammenveranlagung zur Einkommensteuer nach dem Teil der festgesetzten oder nach
+§ 3 Abs. 2 ermittelten Einkommensteuer, der auf den kirchenangehörigen Ehegatten entfällt.
+Hierbei ist die gemeinsame Einkommensteuer im Verhältnis der Beträge, die sich bei Anwen-
+dung des § 32 a Abs. 1 des Einkommensteuergesetzes (Einkommensteuer-Grundtarif) auf die
+Summe der Einkünfte eines jeden Ehegatten ergäben, aufzuteilen. Bei der Ermittlung der Sum-
+me der Einkünfte eines jeden Ehegatten ist § 51 a des Einkommensteuergesetzes entsprechend
+anzuwenden. Ist in der gemeinsamen Einkommensteuer im Sinne des Satzes 2 eine nach dem
+gesonderten Steuertarif des § 32 d des Einkommensteuergesetzes ermittelte Einkommensteuer
+enthalten, sind die gesondert besteuerten Kapitalerträge und die gesondert ermittelte Einkom-
+mensteuer aus der Berechnung nach Satz 2 auszuscheiden; dem kirchenangehörigen Ehegat-
+ten ist die auf ihn entfallende gesondert ermittelte Einkommensteuer zuzurechnen;
+3. beim Steuerabzug vom Kapitalertrag nach der für den kirchenangehörigen Ehegatten einbehal-
+tenen Kapitalertragsteuer;
+4. beim Steuerabzug vom Arbeitslohn nach der für den kirchenangehörigen Ehegatten einbehalte-
+nen oder nach § 3 Abs. 2 ermittelten Lohnsteuer.
+(2) Bei der Zusammenveranlagung zur Vermögensteuer wird die Kirchensteuer von dem kirchenan-
+gehörigen Ehegatten, Elternteil oder Kind nur in Höhe des auf ihn entfallenden Teils an der gemeinsa-
+men Vermögensteuer erhoben.

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/mv/p14_amtlich"
+  norm: "§ 14 KiStG M-V (Konfessionsverschiedene Ehe)"
+  fassung: "Gesamtausgabe zum 20.10.2026, geändert durch Gesetz vom 8. Mai 2018 (GVOBl. M-V S. 171); PDF KiStG_MV_2014.pdf sha256 ccb47361852e15e1cd101b9f24a4e9974f92995a5d42c0e3a4489b3b2f0211b9; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_mv_p14_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_mv_p14_amtlich_2026-10-20.txt"
+  sha256: "bdaebd1196260f4efb4056932b76c277dc7fb07218bc77f7efdc5fec2694de3b"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

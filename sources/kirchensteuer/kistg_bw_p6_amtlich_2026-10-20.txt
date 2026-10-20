@@ -1,0 +1,32 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_bw_p6_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 6 KiStG Baden-Württemberg (Bemessungsgrundlagen)
+Fassung: Gesamtausgabe zum 20.10.2026, letzte berücksichtigte Änderung durch Artikel 6 des Gesetzes vom 27. Mai 2025 (GBl. 2025 Nr. 43); PDF KiStG_BW_1978.pdf sha256 cc936765a311d7a224d0e9055b78a657240196a5a5db4853928c189b18eee598; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§6
+Bemessungsgrundlagen
+(1) Die Steuern sind von den in der Person des Steuerpflichtigen gegebenen Bemessungsgrundlagen
+zu erheben.
+(2) Wird die Bemessungsgrundlage für eine Personengemeinschaft, eine Personengesellschaft oder
+sonst für mehrere Personen festgesetzt, so ist die Kirchensteuer für den einzelnen Steuerpflichtigen
+aus seinem Anteil an der Bemessungsgrundlage zu berechnen. Wenn ein Anteil im staatlichen Be-
+steuerungsverfahren nicht festgestellt wird, ist die Bemessungsgrundlage aufzuteilen
+1. im Fall des § 5 Abs. 1 Nr. 1 Buchst. a nach dem Verhältnis der Beträge, die sich ergeben, wenn
+die Beteiligten einzeln als Ehegatten oder Lebenspartner veranlagt würden,
+2. im Fall des § 5 Abs. 1 Nr. 2 und 3 nach den Anteilen am Einheitswert des land- oder forstwirt-
+schaftlichen Betriebs, des Grundstücks oder, soweit kein Anteil daran festgestellt wird, des ge-
+meinschaftlichen Vermögens, zu dem der Betrieb oder das Grundstück gehört.
+Wenn nichts anderes nachgewiesen oder bekannt ist, sind gleiche Anteile anzunehmen.
+(3) Werden Ehegatten oder Lebenspartner, die derselben Religionsgemeinschaft angehören, zur Maß-
+stabsteuer gemeinsam herangezogen, so wird bei der kirchlichen Besteuerung entsprechend verfah-
+ren. Die Ehegatten oder Lebenspartner sind Gesamtschuldner. Satz 1 gilt nicht für das Kirchgeld.
+(4) Gehören die Ehegatten oder die Lebenspartner verschiedenen steuererhebenden Religionsge-
+meinschaften an und werden sie zur Einkommensteuer zusammen veranlagt, so wird die Kirchensteu-
+er nach § 5 Abs. 1 Nr. 1 Buchst. a für jeden Ehegatten oder Lebenspartner von der Hälfte der Bemes-
+sungsgrundlage erhoben, wenn bei den beteiligten Religionsgemeinschaften darüber Einvernehmen
+besteht. Jeder Ehegatte oder Lebenspartner haftet als Gesamtschuldner für die Steuerschuld des an-
+deren Ehegatten oder Lebenspartners.
