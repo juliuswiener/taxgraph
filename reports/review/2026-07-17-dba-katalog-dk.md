@@ -27,7 +27,7 @@ Hyphenen wie „Vermögens-\nwerte", „Bun-\ndesrepublik", „deut-\nschen" gem
 Umbruch). **Verbotene OCR-Fehlerwörter** (`verstehenden` [statt vorstehenden, Z. 1157], `ebenfalis`
 [statt ebenfalls, Z. 1165]) sind NICHT in Ankern. Der **echte BGBl-Druckfehler `Anrechung`** (statt
 Anrechnung, Z. 1172, bildbestätigt) IST amtlich und **bleibt im b-Intro-Anker** — er ist der amtliche
-Druck. Verify-Skript `2026-07-17-dba-katalog-dk-anker-verify.py` (15 OK / 0 Fehler).
+Druck. Verify-Skript `git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-dk-anker-verify.py` (15 OK / 0 Fehler).
 
 ## Methodenartikel Art. 24 Abs. 1 (deutsche Methode)
 
@@ -128,7 +128,7 @@ Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-17-dba-katalog-dk-anker-verify.py` (`gates._normalize`): 5 Grundtext-
+Skript `git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-dk-anker-verify.py` (`gates._normalize`): 5 Grundtext-
 1995-Anker (a Freistellung, Schachtel 10 %, b-Intro mit amtl. Druckfehler `Anrechung`, aa Streubesitz,
 bb Artikel-Liste) + 1 Protokoll-2020-Anker (Prog) **voll-Länge OK**. OCR-Disziplin: kein verbotenes
 OCR-Wort (`verstehenden`/`ebenfalis`) im Anker, `Anrechung` amtlich beibehalten. **Zwei-Freeze-

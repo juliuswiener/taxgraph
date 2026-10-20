@@ -109,7 +109,7 @@ kein Rechenkern.
 BEPS-MLI-Anwendungsgesetz anzuwenden ist", Anker `Frankreich 2024 205 2025 5 01.01.2025`
 (Anwendungsgesetz BGBl 2024 I Nr. 205, `Das Gesetz zur Anwendung des Mehrseitigen Übereinkommens vom
 24. November 2016 und zu weiteren`). Beide voll-Länge im W1-Skript
-`2026-07-16-dba-katalog-estr-anker-verify.py` verifiziert. Weiterhin **keine Methoden-Änderung**, nur
+`git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-estr-anker-verify.py` verifiziert. Weiterhin **keine Methoden-Änderung**, nur
 Missbrauchs-Vorbehalt.
 
 **Nachträge / Nicht-Gegenstand:** BEPS-MLI-Overlay ab VZ 2025 (Missbrauchsklauseln/PPT — Randnotiz,
@@ -121,7 +121,7 @@ Zweifelsfragen — nur referenziert, nicht committet).
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (`gates._normalize`): alle FR-Kernanker (Art. 20 a/c/c-Enum/d,
+Skript `git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (`gates._normalize`): alle FR-Kernanker (Art. 20 a/c/c-Enum/d,
 Art. 13 Abs. 5 a Grenzgänger + Zuweisung, Art. 13a Fiskalausgleich) über `dba_fr_zusabk_2015`
 sämtlich `OK` voll-Länge. **Kein Anker am OCR-1959.** Progressionsvorbehalt bewusst ungepinnt
 (Auflage-3-Meldung oben).

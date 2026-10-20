@@ -15,7 +15,7 @@ Spalte; DK-Route). **Kern-Anker S. 1318/1319 bildverifiziert.** Alle Anker aus d
 zonen`, `Arti- kel`, `Außen- steuergesetzes`). **OCR-Artefakte gemieden**: Spalten-Bleed-Einzelzeichen
 am Zeilenende (`a`, `b`, `C)`, `d`, `si`, `P`, `W`) + **`$`/`$&` statt Paragraph-Zeichen** in der
 AStG-Passage (Bild zeigt korrektes `§`; Anker enden vor/beginnen nach dem `$`). Verify-Skript
-`2026-07-17-dba-katalog-pl-anker-verify.py` (16 OK / 0 Fehler; Negativtest: die §-korrekte Fassung
+`git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-pl-anker-verify.py` (16 OK / 0 Fehler; Negativtest: die §-korrekte Fassung
 `unter § 8 …` FEHLT, weil der Freeze das OCR-`$` trägt — mein Anker meidet die Stelle). Die 8
 Instructor-Anker aus der Freeze-meta (`erwartete_anker`) selbst voll-Länge nachgeprüft + aa/c-AStG ergänzt.
 
@@ -109,7 +109,7 @@ Gegenprobe.
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-17-dba-katalog-pl-anker-verify.py` (`gates._normalize`): 10 PL-Anker
+Skript `git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-pl-anker-verify.py` (`gates._normalize`): 10 PL-Anker
 (Titel, a Freistellung, Schachtel 10 %, **Wirtschaftszonen-Rückausnahme**, b Intro, aa Streubesitz,
 bb Artikel-Liste, c Umschalt + c-AStG, d Prog) **voll-Länge OK** aus der deutschen OCR-Spalte mit
 exakten Silbentrennungs-Hyphenen. Negativtests: `25 %`-Schachtel (statt 10 %) FEHLT, erfundenes

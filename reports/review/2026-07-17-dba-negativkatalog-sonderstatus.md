@@ -3,7 +3,7 @@
 **Datum:** 2026-07-17 · **Modus:** LLM-frei, $0, keine neuen Freezes (alles aus Bestand)
 **Quelle (Primär-Anker):** `sources/bmf/bmf_stand_dba_2026.txt` — sauberer Text-Layer,
 kein OCR-Bildscan (echtes `§`, keine `$`-Artefakte).
-**Verify:** `reports/review/2026-07-17-dba-negativkatalog-sonderstatus-anker-verify.py` — **22 OK / 0 FEHLER**
+**Verify:** `git show 6aa280ac^:reports/review/2026-07-17-dba-negativkatalog-sonderstatus-anker-verify.py` — **22 OK / 0 FEHLER**
 (13 Positiv-Anker voll-Länge · 5 Negativtests · 4 Klassen-Kontrollen).
 
 ## Zweck
