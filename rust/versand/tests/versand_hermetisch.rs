@@ -991,6 +991,9 @@ impl Lauf {
         for geheim in [PIN, ZERT_NAME, IDNR, HERSTELLER, PAKET] {
             assert!(!aus.contains(geheim), "{geheim:?} in der Ausgabe von {args:?}:\n{aus}");
         }
+        // Der Pfad des Belegs steht da, sein Inhalt nie.
+        let inhalt = String::from_utf8_lossy(KLARTEXT);
+        assert!(!aus.contains(&*inhalt), "der Beleg steht in der Ausgabe von {args:?}:\n{aus}");
         (rc, aus)
     }
 
@@ -1255,6 +1258,8 @@ fn das_programm_meldet_eine_ablehnung_mit_exit_eins_und_behaelt_das_log() {
     }
     let log = aus.lines().find_map(|z| z.strip_prefix("[abruf] eric.log: ")).unwrap_or_default();
     assert!(Path::new(log).is_file(), "eric.log fehlt: {log:?}\n{aus}");
+    // eric.log nennt Auszuege der Anfrage: sein Verzeichnis gehoert nur dem Besitzer.
+    assert_eq!(modus_von(Path::new(log).parent().unwrap()), 0o700, "Log-Verzeichnis von {log:?}");
     assert_eq!(std::fs::read_dir(&ziel).unwrap().count(), 0, "bei einem Fehler wird kein Beleg abgelegt");
     drop(l);
     // Ein Fehler aus der Antwort (kein Beleg) ist ebenfalls Exit 1.
@@ -1306,6 +1311,22 @@ fn das_programm_bricht_bei_ungueltiger_eingabe_vor_eric_ab() {
         assert!(aus.contains("Nutzung: taxgraph-abruf"), "{aus}");
     }
     assert!(l.eric_unberuehrt());
+}
+
+#[test]
+fn die_abruf_umgebung_zeigt_weder_pin_noch_zertifikat_noch_hersteller_id_im_debug() {
+    let env = AbrufUmgebung {
+        zertifikat_pfad: ZERT_NAME.to_owned(),
+        pin: PIN.to_owned(),
+        hersteller_id: HERSTELLER.to_owned(),
+        eric_lib: None,
+        heute_jahr: HEUTE,
+        temp: PathBuf::from("/nirgends"),
+    };
+    let text = format!("{env:?}");
+    for geheim in [PIN, ZERT_NAME, HERSTELLER] {
+        assert!(!text.contains(geheim), "{geheim:?} im Debug: {text}");
+    }
 }
 
 #[test]
