@@ -57,7 +57,14 @@ const fn cent(euro: i64) -> i64 {
 }
 
 /// Der Abwesenheitswert, nie der illustrative Beispielwert (wie in `rente_bmf_uebersicht_hermetisch.rs`).
+///
+/// Ausnahme seit d-46: die Versicherungsart steht auf `gesetzlich_freiwillig` (keine Krankengeld-Kuerzung), nicht auf dem Beispielwert
+/// `gesetzlich_an`. Die Handrechnungen unten gelten dem Pauschbetrag neben dem vollen Basisbeitrag; die 4-Prozent-Kuerzung von
+/// `gesetzlich_an` (120 Euro bei 3.000 Euro KV) hat ihre eigenen Tests (`api/tests/kvpv_zuschuss_hermetisch.rs`).
 fn standardwert(b: &Bindung) -> Value {
+    if b.feld_id.starts_with("versicherungsart") {
+        return json!("gesetzlich_freiwillig");
+    }
     if let Some(w) = &b.abwesenheitswert {
         return w.clone();
     }

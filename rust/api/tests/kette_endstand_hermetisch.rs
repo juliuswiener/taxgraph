@@ -1081,6 +1081,9 @@ async fn a2_vorsorge_ueber_dem_hoechstbetrag_wird_gedeckelt() {
 /// KV/PV-Beitraegen.
 /// Rust (Abweichung Nr. 78): Altersvorsorge 0, KV/PV 2.000 + 400 = 2.400, zvE 58.770 - 36 - 2.400 = 56.334, Steuer 13.009 EUR =
 /// 1.300.900 ct (Python: zvE 56.370, 13.022 EUR).
+/// Seit d-46 (4-Prozent-Kuerzung, `gesetzlich_an`): KV 2.000 · 0,96 + PV 400 = 2.320, zvE 58.770 - 36 - 2.320 = 56.414, Steuer 13.039 EUR =
+/// 1.303.900 ct (Handrechnung `rechnung_altfaelle.py`, geeicht an der alten Zahl 56.334 -> 13.009). Der negative Altersvorsorge-Abzug waere
+/// weiter sichtbar: er fraesse 2.320 statt 2.400 auf.
 #[tokio::test]
 async fn a3_ag_anteil_ueber_dem_hoechstbetrag_gibt_keinen_negativen_abzug() {
     let a = ergebnis(
@@ -1091,7 +1094,7 @@ async fn a3_ag_anteil_ueber_dem_hoechstbetrag_gibt_keinen_negativen_abzug() {
         ),
     )
     .await;
-    erwarte_zahl("a3", &a, 1_300_900);
+    erwarte_zahl("a3", &a, 1_303_900);
 }
 
 /// Zusammenveranlagung: die KV/PV-Beitraege des Ehegatten (1.800 EUR) gehen in die gemeinsamen Sonderausgaben ein.

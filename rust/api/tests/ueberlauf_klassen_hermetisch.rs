@@ -107,7 +107,10 @@ fn kegel_an_voll() -> Vec<(&'static str, Value)> {
         ("vor_an_anteil_rv", json!(0)),
         ("vor_ag_anteil_rv", json!(0)),
         ("vor_rv_ausserhalb_lstb", json!(0)),
-        ("versicherungsart", json!("gesetzlich_an")),
+        // d-46: nicht `gesetzlich_an`. Bei dieser Art kuerzt die App `basis_kv` um 4 Prozent (Krankengeld-Anspruch); der Betrag rueckt dann unter die
+        // Ueberlauf-Grenzen, die die Tests an `basis_kv` pruefen wollen (`i64::MAX`, `i64::MAX - 3.507`). `basis_pv` und die anderen Felder
+        // laufen weiter ueber, die Klasse bleibt erreichbar.
+        ("versicherungsart", json!("gesetzlich_freiwillig")),
         ("basis_kv", json!(0)),
         ("basis_pv", json!(0)),
         ("vorsorge_arbeitslosenversicherung", json!(0)),

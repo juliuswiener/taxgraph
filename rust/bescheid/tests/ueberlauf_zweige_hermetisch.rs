@@ -331,7 +331,10 @@ fn gewinn_basis() -> Vec<(&'static str, Value)> {
         ("kein_sonstige", json!(true)),
         ("basis_kv", json!(0)),
         ("basis_pv", json!(0)),
-        ("versicherungsart", json!("gesetzlich_an")),
+        // d-46: nicht `gesetzlich_an`. Bei dieser Art kuerzt die App `basis_kv` um 4 Prozent (Krankengeld-Anspruch); der Betrag rueckt dann unter die
+        // Ueberlauf-Grenzen, die dieser Test an `basis_kv` pruefen will (`i64::MAX` und die Randfaelle darunter). `basis_pv` und die anderen Felder
+        // laufen weiter ueber, die Klasse bleibt erreichbar.
+        ("versicherungsart", json!("gesetzlich_freiwillig")),
         ("vorsorge_arbeitslosenversicherung", json!(0)),
         ("vorsorge_erwerbsunfaehigkeit", json!(0)),
         ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),

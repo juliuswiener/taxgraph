@@ -267,6 +267,9 @@ fn ohne_ausland() -> Paare {
         ("realsplitting_zustimmung", json!(true)),
         ("realsplitting_unterhaltsleistungen", json!(cent(9_000))),
         ("basis_kv", json!(cent(2_500))),
+        // d-46: die Loesung nennt die Art nicht und kuerzt die 2.500 Euro nicht (zvE 178.500). Eine Art ohne Krankengeld-Kuerzung haelt den
+        // Vergleich mit der Loesung frei; mit `gesetzlich_an` (dem Beispielwert des Felds) wuerde die App 100 Euro kuerzen (zvE 178.600).
+        ("versicherungsart", json!("gesetzlich_freiwillig")),
     ]
 }
 

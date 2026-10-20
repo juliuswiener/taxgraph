@@ -543,10 +543,20 @@ fn steuerermaessigungen(
 ///
 /// Der EINE Rechenpfad fuer `an_gesamt` (`zweige/an_gesamt.rs`), `gesamt` und `rentner_gesamt` (Abweichung Nr. 92).
 ///
+/// Dazu die 4-Prozent-Kuerzung fuer den Anspruch auf Krankengeld (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4 `EStG`, Entscheidung d-46 vom 2026-10-20):
+/// bei der Versicherungsart `gesetzlich_an` (je Person: `versicherungsart` bzw. `versicherungsart_partner`) sinkt der KV-Beitrag `basis_kv` um
+/// [`krankengeld_kuerzung`], der PV-Beitrag nie. Die Kuerzung rechnet vom vollen KV-Beitrag, der Zuschuss kommt danach ab (der Vordruck
+/// Anlage Vorsorgeaufwand kennt zu den Zuschuss-Zeilen keine „davon mit Anspruch“-Zeile, zu den Erstattungen schon; `derived`). Die Erklaerung
+/// ist davon nicht beruehrt: Zeile 11 traegt den Beitrag ungekuerzt, wie die Lohnsteuerbescheinigung Nr. 25 ihn nennt.
+///
 /// ponytail: die drei Zuschuesse stehen zusammen gegen die Summe aus `basis_kv` und `basis_pv`, nicht je Art gegen ihren Beitrag. Wer die
 /// Privatversicherung (Nr. 28 des Belegs fasst KV und Pflege zusammen) in nur einem der beiden Felder eintraegt, rechnet so richtig; ein
 /// Pflegezuschuss ueber dem Pflegebeitrag mindert dafuer auch den KV-Beitrag. Upgrade: je Art getrennt, wenn der Beleg die Beitraege
 /// getrennt liefert (Nr. 90).
+///
+/// ponytail: nur `gesetzlich_an` kuerzt. Freiwillig gesetzlich Versicherte mit Wahltarif und Privatversicherte mit Krankentagegeld haben einen
+/// Anspruch auf Krankengeld und bleiben ungekuerzt (Abzug zu hoch, bis etwa 80 Euro Steuer je Fall bei Beitrag 5.500). Die Kinder-Beitraege
+/// (`kind_kv_pv`) bleiben ungekuerzt. Upgrade: ein Feld „davon ohne Krankengeld-Anspruch“ (Kz E2001405), eine Frage mehr je Fall.
 ///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei einer Summe oder Differenz jenseits von `i64`.
@@ -556,8 +566,12 @@ pub(crate) fn basisbeitrag_nach_zuschuss(
     kind_kv_pv: i64,
 ) -> Result<i64, BescheidFehler> {
     let fid = |name: &str| format!("{name}{suffix}");
+    let basis_kv = feld_int_oder_null(f, &fid("basis_kv"))?;
+    let mit_anspruch =
+        matches!(wert(f, &fid("versicherungsart")), Some(PyWert::Text(s)) if s == "gesetzlich_an");
+    let kuerzung = if mit_anspruch { krankengeld_kuerzung(basis_kv) } else { 0 };
     let beitrag = summe(&[
-        feld_int_oder_null(f, &fid("basis_kv"))?,
+        minus(basis_kv, kuerzung)?,
         feld_int_oder_null(f, &fid("basis_pv"))?,
     ])?;
     let zuschuss = summe(&[
@@ -571,6 +585,19 @@ pub(crate) fn basisbeitrag_nach_zuschuss(
         beitrag
     };
     summe(&[eigener, kind_kv_pv])
+}
+
+/// 4 Prozent des KV-Beitrags in Cent (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4 `EStG`: „um 4 Prozent zu vermindern“), ab einem halben Cent aufgerundet;
+/// bei 0 und darunter keine Kuerzung. 4 Prozent sind ein Fuenfundzwanzigstel: die Teilung kann nicht ueberlaufen (ein Malnehmen mit 4 koennte).
+///
+/// ponytail: die Rundung auf den Cent ist gewaehlt, nicht belegt. Keine gelesene Quelle nennt sie fuer die eigenen Beitraege (das Realsplitting
+/// rundet auf volle Euro auf, `engine` `sonderausgaben.rs`); die Euro-Rundung des Abzugs (`cent_zu_euro`) steht dahinter. Upgrade: die
+/// Rundung des Finanzamts, wenn ein Beleg sie nennt.
+fn krankengeld_kuerzung(kv_cent: i64) -> i64 {
+    if kv_cent <= 0 {
+        return 0;
+    }
+    kv_cent / 25 + i64::from(kv_cent % 25 >= 13)
 }
 
 /// KV/PV-Sonderausgaben einer Person; `partner` waehlt die `_partner`-Felder (ohne Kind-Beitraege).
@@ -844,6 +871,77 @@ mod tests {
                 );
             }
         }
+    }
+
+    /// Die 4-Prozent-Kuerzung fuer den Anspruch auf Krankengeld (§ 10 Abs. 1 Nr. 3 Buchst. a S. 4 `EStG`), in Cent: nur der KV-Beitrag und nur bei
+    /// der Versicherungsart `gesetzlich_an`. Beitrag KV 3.000 + PV 600 Euro. Tabelle: (Versicherungsart, Zuschuss gesetzliche KV, Soll).
+    /// Die Kuerzung (120 Euro) trifft den KV-Beitrag VOR dem Zuschuss; der Zuschuss kommt danach ab und zieht nie ueber 0. Die Versicherungsart
+    /// der anderen Person liest die Funktion nie mit (Gegenprobe: sie steht auf `gesetzlich_an`, wenn die eigene fehlt oder anders ist).
+    #[test]
+    fn basisbeitrag_kuerzt_den_kv_beitrag_nur_bei_gesetzlich_an() {
+        let tabelle: [(Option<&str>, i64, i64); 9] = [
+            (Some("gesetzlich_an"), 0, 348_000),
+            (Some("gesetzlich_an"), 170_000, 178_000),
+            (Some("gesetzlich_an"), 400_000, 0),
+            (Some("gesetzlich_freiwillig"), 0, 360_000),
+            (Some("privat"), 0, 360_000),
+            (Some("privat"), 170_000, 190_000),
+            (Some(""), 0, 360_000),
+            (Some("Gesetzlich_an"), 0, 360_000),
+            (None, 0, 360_000),
+        ];
+        for suffix in ["", "_partner"] {
+            let fremd = if suffix.is_empty() { "_partner" } else { "" };
+            for (art, gkv, soll) in tabelle {
+                let mut ev = vec![
+                    (format!("basis_kv{suffix}"), json!(300_000), true),
+                    (format!("basis_pv{suffix}"), json!(60_000), true),
+                    (format!("zuschuss_ag_kv_gesetzlich{suffix}"), json!(gkv), true),
+                    (format!("versicherungsart{fremd}"), json!("gesetzlich_an"), true),
+                ];
+                if let Some(a) = art {
+                    ev.push((format!("versicherungsart{suffix}"), json!(a), true));
+                }
+                let ev: Vec<(&str, serde_json::Value, bool)> =
+                    ev.iter().map(|(n, w, b)| (n.as_str(), w.clone(), *b)).collect();
+                let f = felder(&store(&ev));
+                assert_eq!(
+                    basisbeitrag_nach_zuschuss(&f, suffix, 0).unwrap(),
+                    soll,
+                    "{suffix:?}: Art {art:?}, Zuschuss {gkv}"
+                );
+            }
+        }
+    }
+
+    /// Die Kuerzung auf den Cent: 4 Prozent, ab einem halben Cent aufgerundet, bei 0 und darunter keine Kuerzung, kein Ueberlauf bei sehr hohem
+    /// Beitrag (die Rechnung teilt durch 25 statt mit 4 zu malnehmen). Das Kind-Beitrags-Feld wird nie gekuerzt.
+    #[test]
+    fn krankengeld_kuerzung_rundet_auf_den_cent_und_laeuft_nicht_ueber() {
+        for (kv, soll) in [
+            (300_000, 12_000),
+            (300_137, 12_005),
+            (300_138, 12_006),
+            (24, 1),
+            (12, 0),
+            (13, 1),
+            (1, 0),
+            (0, 0),
+            (-300_000, 0),
+            (i64::MAX, 368_934_881_474_191_032), // i64::MAX / 25, Rest 7: abgerundet
+        ] {
+            assert_eq!(krankengeld_kuerzung(kv), soll, "KV {kv} Cent");
+        }
+        // Der groesste Beitrag laeuft nicht ueber; die Kind-Beitraege kommen ungekuerzt dazu.
+        let f = felder(&store(&[
+            ("basis_kv", json!(i64::MAX), true),
+            ("versicherungsart", json!("gesetzlich_an"), true),
+        ]));
+        assert_eq!(
+            basisbeitrag_nach_zuschuss(&f, "", 30_000).unwrap(),
+            i64::MAX - 368_934_881_474_191_032 + 30_000,
+            "hoher Beitrag, Kind-Beitraege ungekuerzt"
+        );
     }
 
     /// Das 55. Lebensjahr im Jahr der Vollendung (Abweichung Nr. 32): VZ 2025 minus Geburtsjahr 1970 ergibt genau 55. Nur
