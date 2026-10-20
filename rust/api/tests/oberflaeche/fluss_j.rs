@@ -4,7 +4,7 @@
 //! Wie Fluss I tippen und klicken die Tests, was ein Nutzer tippt und klickt; die Schnittstelle dient nur zum LESEN. Neu ist
 //! die Beobachtung: mit `TAXGRAPH_FRAGENLOG=<datei>` haelt jeder Durchlauf die Folge der Fragen fest (`fluss_i::fragenlog`),
 //! mit `TAXGRAPH_WIRKUNGSLOG=<datei>` laeuft danach die Wirkungsprobe ([`wirkungsprobe`]). Ohne die Variablen geschieht nichts
-//! davon; die Tests pruefen dann nur Zahl, Fragenfolge-Kennzahlen und Konsole.
+//! davon; die Tests pruefen dann nur ihre Pruefpunkte (Zahl, Sperre, Befunde) und die Konsole.
 //!
 //! Die Beobachtung AENDERT NICHTS an der Fragenfolge. Was sie findet, steht im Bericht des Auftrags; eine Aenderung entscheidet
 //! Julius.
@@ -73,7 +73,7 @@ fn messe(u: &Umgebung, fall: &str) -> Messung {
     }
 }
 
-/// Die Wirkungsprobe (U2 des Auftrags): fuer jedes Feld, das der Lauf gefragt hat, setzt sie zwei bis drei andere Werte, liest
+/// Die Wirkungsprobe (U2 des Auftrags): fuer jedes Feld, das der Lauf gefragt hat, setzt sie bis zu vier andere Werte, liest
 /// Steuer, Kirchensteuer und Erklaerung und stellt den Ausgangswert wieder her. Schreibt eine Zeile je Versuch in die Datei,
 /// die `TAXGRAPH_WIRKUNGSLOG` nennt; ohne die Variable geschieht nichts.
 ///
@@ -100,7 +100,7 @@ pub(crate) fn wirkungsprobe(u: &Umgebung, lauf: &str, verlauf: &[Schritt]) {
             match s.typ.as_str() {
                 "bool" => vec![json!(!ausgang.as_bool().unwrap_or(false))],
                 "cent" => [0_i64, 100_000, 5_000_000].iter().filter(|c| ausgang != json!(**c)).map(|c| json!(c)).collect(),
-                "int" => [0_i64, 10, 200].iter().filter(|c| ausgang != json!(**c)).map(|c| json!(c)).collect(),
+                "int" => [0_i64, 1, 10, 200].iter().filter(|c| ausgang != json!(**c)).map(|c| json!(c)).collect(),
                 "enum" => s.optionen.split(',').filter(|o| ausgang != json!(o)).map(|o| json!(o)).collect(),
                 _ => Vec::new(),
             }
