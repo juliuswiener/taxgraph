@@ -1,0 +1,31 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_th_p4_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 4 ThürKiStG (Konfessionsverschiedene Ehe oder Lebenspartnerschaft)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 5. Dezember 2018 (GVBl. S. 669); PDF KiStG_TH_2000.pdf sha256 b061cc14b50ed80829b339f21ec17c121d9d4b0b55518e58b9508ce5c211cdec; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§4
+Konfessionsverschiedene Ehe oder Lebenspartnerschaft
+(1) Gehören Ehegatten oder Lebenspartner verschiedenen steuererhebenden Kirchen an (konfessions-
+verschiedene Ehe oder Lebenspartnerschaft) und liegen die Voraussetzungen für eine Zusammenver-
+anlagung bei der Einkommensteuer vor, so wird die Kirchensteuer vom Einkommen von beiden Ehe-
+gatten oder Lebenspartnern in folgender Weise erhoben:
+1. wenn die Ehegatten oder Lebenspartner zusammen zur Einkommensteuer veranlagt werden,
+von der Hälfte der Einkommensteuer,
+2. wenn ein Ehegatte oder Lebenspartner oder beide Ehegatten oder Lebenspartner lohnsteuer-
+pflichtig sind, von der Hälfte der Lohnsteuer.
+Die Ehegatten oder Lebenspartner haften als Gesamtschuldner. Im Lohnsteuerabzugsverfahren ist die
+Kirchensteuer bei jedem Ehegatten oder Lebenspartner auch für den anderen einzubehalten. Wird für
+einen oder beide Ehegatten oder Lebenspartner die Einkommensteuer durch Abzug vom Kapitalertrag
+erhoben, so wird die Kirchensteuer als Zuschlag zur Kapitalertragsteuer jedes Ehegatten oder Lebens-
+partners nach seiner Kirchenmitgliedschaft und nach der jeweils in seiner Person gegebenen Steuer-
+bemessungsgrundlage erhoben.
+(2) Liegen die Voraussetzungen für eine Zusammenveranlagung zur Einkommensteuer nicht vor oder
+werden die Ehegatten oder Lebenspartner einzeoln veranlagt, so wird die Kirchensteuer vom Einkom-
+men jedes Ehegatten oder Lebenspartners nach seiner Kirchenmitgliedschaft und nach der jeweils in
+seiner Person gegebenen Steuerbemessungsgrundlage erhoben.
+(3) Für die Erhebung der in § 3 Abs. 1 Satz 1 Nr. 2 und 4 genannten Kirchensteuerarten gilt Absatz 2
+entsprechend.

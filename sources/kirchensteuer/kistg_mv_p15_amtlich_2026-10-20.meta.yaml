@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/mv/p15_amtlich"
+  norm: "§ 15 KiStG M-V (Glaubensverschiedene Ehe)"
+  fassung: "Gesamtausgabe zum 20.10.2026, geändert durch Gesetz vom 8. Mai 2018 (GVOBl. M-V S. 171); PDF KiStG_MV_2014.pdf sha256 ccb47361852e15e1cd101b9f24a4e9974f92995a5d42c0e3a4489b3b2f0211b9; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_mv_p15_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_mv_p15_amtlich_2026-10-20.txt"
+  sha256: "24c039fab72cf8a5cd35b2d0d836a6c44e10051e42fd2bc8a6d2658013376cd1"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

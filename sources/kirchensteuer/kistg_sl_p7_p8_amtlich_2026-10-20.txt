@@ -1,0 +1,62 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_sl_p7_p8_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: §§ 7, 8, 8a KiStG-Saar (Konfessionsverschiedene und glaubensverschiedene Ehe, Lebenspartner)
+Fassung: Gesamtausgabe zum 20.10.2026, Neufassung vom 5. Mai 2015, letzte berücksichtigte Änderung durch Gesetz vom 12.02.2020 (Amtsbl. I S. 265); PDF KiStG_SL_2015.pdf sha256 a51374225bdaa01fd405c87e82388c10ae25d72de3de5267d206520179df4870; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§7
+(1) Gehören Ehegatten, die beide unbeschränkt einkommensteuerpflichtig sind und nicht dauernd ge-
+trennt leben, verschiedenen steuerberechtigten Kirchen an (konfessionsverschiedene Ehe), bemisst
+sich die Kirchensteuer in der Form des Zuschlags zur Einkommensteuer, Lohnsteuer und Kapitaler-
+tragsteuer
+1. bei der Einzelveranlagung (§ 26a des Einkommensteuergesetzes) nach der nach § 6 Abs. 2 er-
+[9]
+mittelten Steuer jedes Ehegatten,
+2. beim Steuerabzug vom Kapitalertrag nach der nach § 6 Abs. 3 ermittelten Steuer jedes Ehegat-
+ten,
+3. bei der Zusammenveranlagung und beim Steuerabzug vom Arbeitslohn für jeden Ehegatten
+nach der Hälfte der nach § 6 Abs. 2 ermittelten Steuer beider Ehegatten.
+(2) In den Fällen des Absatzes 1 Nr. 2 haften die Ehegatten als Gesamtschuldner. Im Lohnabzugsver-
+fahren ist die Kirchensteuer bei jedem Ehegatten auch für den anderen einzubehalten.
+(3) Für die Kirchensteuer vom Einkommen nach § 4 Abs. 1 Nr. 1 Buchstabe b gelten die Absätze 1 und
+2 sinngemäß.
+Fußnoten
+[9])
+§ 7 Abs. 1 Nummer 1 ist bereits mit Wirkung vom 1. Jaunar 2013 anzuwenden, siehe § 20 die-
+ses Gesetzes
+§8
+(1) Leben Ehegatten nicht dauernd getrennt und gehört nur ein Ehegatte einer steuerberechtigten
+Kirche an (glaubensverschiedene Ehe), bemisst sich die Kirchensteuer in der Form des Zuschlags zur
+Einkommensteuer, Lohnsteuer und Kapitalertragsteuer
+1. bei der Einzelveranlagung (§ 26a des Einkommensteuergesetzes) und beim Steuerabzug vom
+Arbeitslohn nach der nach § 6 Abs. 2 ermittelten Steuer des kirchensteuerpflichtigen Ehegat-
+ten,
+2. beim Steuerabzug vom Kapitalertrag nach der nach § 6 Abs. 3 ermittelten Steuer des kirchen-
+steuerpflichtigen Ehegatten,
+3. bei der Zusammenveranlagung für den kirchensteuerpflichtigen Ehegatten nach dem Teil der
+nach § 6 Abs. 2 ermittelten gemeinsamen Steuer, der auf diesen Ehegatten entfällt, wenn die
+gemeinsame Steuer im Verhältnis der Steuerbeträge, die sich bei Anwendung des § 32a Abs. 1
+des Einkommensteuergesetzes (Einkommensteuertarif) auf die Summe der Einkünfte jedes
+[10]
+Ehegatten ergeben, aufgeteilt wird . Ist in der nach § 6 Abs. 2 ermittelten gemeinsamen Steu-
+er eine nach dem gesonderten Steuertarif des § 32d des Einkommensteuergesetzes ermittel-
+te Einkommensteuer enthalten, sind die gesondert besteuerten Kapitaleinkünfte und die ge-
+sondert ermittelte Einkommensteuer aus der vorgenannten Berechnung auszuscheiden und die
+gesondert ermittelte Einkommensteuer dem kirchensteuerpflichtigen Beteiligten mit dem auf
+ihn entfallenden Anteil an den Kapitalerträgen zuzurechnen.
+(2) Für die Kirchensteuer vom Einkommen nach § 4 Abs. 1 Nr. 1 Buchstabe b gilt Absatz 1 sinngemäß.
+Fußnoten
+[10])
+§ 8 Abs. 1 Nummer 3 Satz 1 ist nur für Veranlagungszeiträume, die nach dem 31. Dezember
+2013 beginnen, anzuwenden, siehe § 20 dieses Gesetzes.
+§ 8a
+Die Regelungen dieses Gesetzes zu Ehegatten und Ehen sind auch auf Lebenspartner und Lebenspart-
+[11]
+nerschaften anzuwenden.
+Fußnoten
+[11])
+§ 8 a ist nur für Veranlagungszeiträume, die nach dem 31. Dezember 2013 beginnen, anzu-
+wenden, siehe § 20 dieses Gesetzes.

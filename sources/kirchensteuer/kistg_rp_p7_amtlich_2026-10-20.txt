@@ -1,0 +1,54 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_rp_p7_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 7 KiStG Rheinland-Pfalz (Bemessungsgrundlagen, Ehegatten)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Artikel 3 des Gesetzes vom 18.06.2019 (GVBl. S. 101, 103); PDF KiStG_RP.pdf sha256 ba54d5663ced48525064f70fdbcacfaab51024066834b5d3f994fdcd8c091f41; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§7
+(1) Vorbehaltlich des Absatzes 2 bemißt sich die Kirchensteuer nach dem Maßstab der Einkommen-
+steuer (§ 5 Abs. 1 Nr. 1)
+1. soweit eine Veranlagung zur Einkommensteuer vorzunehmen ist, nach der Einkommensteuer-
+schuld des Kirchensteuerpflichtigen,
+2. soweit ein Steuerabzug vom Arbeitslohn vorzunehmen ist, nach der Lohnsteuer des Kirchen-
+steuerpflichtigen; Entsprechendes gilt, wenn eine pauschale Einkommensteuer des Kirchen-
+steuerpflichtigen als Lohnsteuer entrichtet wird,
+3. soweit ein Steuerabzug vom Kapitalertrag vorzunehmen ist, nach der Kapitalertragsteuer des
+Kirchensteuerpflichtigen; sind an den Kapitalerträgen ausschließlich Ehegatten oder Lebens-
+partner beteiligt, wird die Kapitalertragsteuer den Ehegatten oder Lebenspartnern hälftig zuge-
+rechnet.
+Soweit für mehrere Personen eine Zusammenveranlagung zur Einkommensteuer vorzunehmen ist,
+gilt als Einkommensteuerschuld des einzelnen kirchensteuerpflichtigen Beteiligten der Teil der ge-
+meinsamen Einkommensteuerschuld, der auf ihn entfällt, wenn die gemeinsame Steuer im Verhältnis
+der Einkommensteuerbeträge aufgeteilt wird, die sich bei Anwendung des§ 32 a Abs. 1 des Einkom-
+mensteuergesetzes (Einkommensteuer- Grundtarif) auf die Summe der Einkünfte eines jeden Beteilig-
+ten ergeben. Ist in der gemeinsamen Einkommensteuerschuld im Sinne des Satzes 2 eine nach dem
+gesonderten Steuertarif des § 32 d des Einkommensteuergesetzes ermittelte Einkommensteuer ent-
+halten, sind die gesondert besteuerten Kapitaleinkünfte und die gesondert ermittelte Einkommensteu-
+er aus der Berechnung des Satzes 2 auszuscheiden und die gesondert ermittelte Einkommensteuer
+dem kirchensteuerpflichtigen Beteiligten mit dem auf ihn entfallenden Anteil an den Kapitalerträgen
+zuzurechnen. Bei der Ermittlung der Summe der Einkünfte eines jeden Beteiligten ist § 51 a des Ein-
+kommensteuergesetzes entsprechend anzuwenden.
+(2) Sind Ehegatten beide kirchensteuerpflichtig, so bemißt sich die Kirchensteuer für den einzelnen
+Ehegatten oder Lebenspartner abweichend von Absatz 1,
+1. soweit eine Zusammenveranlagung zur Einkommensteuer vorzunehmen ist, nach der Hälfte
+der gemeinsamen Einkommensteuerschuld der Ehegatten;
+2. soweit ein Steuerabzug vom Arbeitslohn nach den Grundsätzen der Zusammenveranlagung zur
+Einkommensteuer vorzunehmen ist, nach der Hälfte der Lohnsteuer beider Ehegatten.
+Die Ehegatten oder Lebenspartner sind Gesamtschuldner. Die Sätze 1 und 2 gelten nur, wenn die Kir-
+chensteuer für beide beteiligten Kirchen nach Maßgabe des § 14 Abs. 1 durch die Landesfinanzbehör-
+den verwaltet wird.
+(3) Soweit die Einkommensteuer durch den Steuerabzug vom Kapitalertrag abgegolten ist, erhöht sich
+die Einkommensteuerschuld um diesen Betrag. Dies gilt nicht, soweit auf den Steuerabzug vom Kapi-
+talertrag Kirchensteuer nach dem Maßstab der Kapitalertragsteuer zu entrichten ist.
+(4) Maßstab für die Kirchensteuer sind die für das Steuerjahr festzusetzende Einkommensteuer, die
+für das Steuerjahr zu entrichtende Lohnsteuer und die zu entrichtende Kapitalertragsteuer. Die Ein-
+kommensteuer und die Lohnsteuer im Sinne des Satzes 1 sind nach Maßgabe des § 51 a des Einkom-
+mensteuergesetzes zu ermitteln.
+Fußnoten
+*)
+Gemäß Artikel 2 Absatz 3 des Änderungsgesetzes vom 27. Mai 2014 (GVBl. S. 75) ist § 7 in der
+geltenden Fassung erstmals auf nach dem 31. Dezember 2014 zufließende Kapitalerträge an-
+zuwenden.

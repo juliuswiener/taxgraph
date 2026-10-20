@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/sh/p5_amtlich"
+  norm: "§ 5 KiStG Schleswig-Holstein (glaubensverschiedene Ehe)"
+  fassung: "Gesamtausgabe zum 20.10.2026, mehrfach geändert (Art. 1 Ges. v. 01.07.2014, GVOBl. S. 127); PDF KiStG_SH_2009.pdf sha256 70d292c657fa53dd8292a7b677b01859216c5d8ef7ba4509ee8547d0dcb5627e; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_sh_p5_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_sh_p5_amtlich_2026-10-20.txt"
+  sha256: "82c82f77303ae216047e1cdd63c496a932ebb7bc09f5263f7e47b4c422ebfc2e"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

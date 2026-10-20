@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/th/p4_amtlich"
+  norm: "§ 4 ThürKiStG (Konfessionsverschiedene Ehe oder Lebenspartnerschaft)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 5. Dezember 2018 (GVBl. S. 669); PDF KiStG_TH_2000.pdf sha256 b061cc14b50ed80829b339f21ec17c121d9d4b0b55518e58b9508ce5c211cdec; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_th_p4_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_th_p4_amtlich_2026-10-20.txt"
+  sha256: "814c66b2f4a1a25455115b9fd77fe3b78d7592fa2af6ffdccabfcfaed1b47412"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

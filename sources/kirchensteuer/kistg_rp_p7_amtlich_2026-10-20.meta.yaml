@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/rp/p7_amtlich"
+  norm: "§ 7 KiStG Rheinland-Pfalz (Bemessungsgrundlagen, Ehegatten)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Artikel 3 des Gesetzes vom 18.06.2019 (GVBl. S. 101, 103); PDF KiStG_RP.pdf sha256 ba54d5663ced48525064f70fdbcacfaab51024066834b5d3f994fdcd8c091f41; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_rp_p7_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_rp_p7_amtlich_2026-10-20.txt"
+  sha256: "a1a20e8cc964d88ffab69646f06466eac109e1e028c6e51e78a7ef5833bc05b7"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]

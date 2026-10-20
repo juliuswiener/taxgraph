@@ -1,0 +1,23 @@
+Quelle: file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_hh_p5a_amtlich_2026-10-20.txt
+Abgerufen: 2026-10-20
+Norm: § 5a HmbKiStG (Kirchensteuer vom Einkommen bei konfessionsverschiedenen Ehen)
+Fassung: Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 17. Dezember 2018 (HmbGVBl. S. 410); PDF KiStG_HA.pdf sha256 c4d068fef7b7ef6a7c1d06fb71b1cb9838eb9e7b2474caaf7313c0c6935ea20a; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+§5a
+Kirchensteuer vom Einkommen bei konfessionsverschiedenen Ehen
+und konfessionsverschiedenen Lebenspartnerschaften
+(1) Gehören die Ehegatten oder Lebenspartner verschiedenen steuererhebenden Körperschaften an
+(konfessionsverschiedene Ehe oder konfessionsverschiedene Lebenspartnerschaft) und werden sie zu-
+sammen zur Einkommensteuer veranlagt und werden die Steuern beider Körperschaften gemäß § 10
+von staatlichen Behörden verwaltet, berechnet sich die Kirchensteuer vom Einkommen für jeden Ehe-
+gatten oder Lebenspartner nach der Hälfte des Betrages, der im Falle der konfessionsgleichen Ehe
+oder konfessionsgleichen Lebenspartnerschaft gegen beide Ehegatten oder Lebenspartner festzuset-
+zen wäre.
+(2) Werden die Steuern einer der Körperschaften nicht gemäß § 10 von staatlichen Behörden verwal-
+tet, ist § 5 entsprechend anzuwenden.
+(3) Wird die Kirchensteuer als Zuschlag zur Kapitalertragsteuer erhoben, ist § 51a Absatz 2c des Ein-
+kommensteuergesetzes anzuwenden.

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "kistg/st/p4_amtlich"
+  norm: "§ 4 KiStG LSA (Erhebung der Kirchensteuer als Zuschlag zur Einkommensteuer bei Ehegatten)"
+  fassung: "Gesamtausgabe zum 20.10.2026, zuletzt geändert durch Gesetz vom 6. November 2024 (GVBl. LSA S. 316); PDF KiStG_ST_2001.pdf sha256 7e3da341d10530c9354f97a28533d3561550e6b2bf9ddb94b6fe08afb06ca4bb; Beleggrad E: wörtlicher Gesetzestext aus der PDF-Gesamtausgabe des Landesrechtsportals, vom Nutzer am 20.10.2026 im Browser geladen (Betreiber des Portals steht im PDF nicht, die Angabe stammt vom Nutzer); Textform wie im PDF (Zeilenumbrüche und Silbentrennung), Seitenfüße entfernt"
+  quelle_url: "file:///home/julius/.cache/taxgraph-tmp/kist-amtlich/schnitte/kistg_st_p4_amtlich_2026-10-20.txt"
+  abrufdatum: "2026-10-20"
+  datei: "kistg_st_p4_amtlich_2026-10-20.txt"
+  sha256: "293799189c03a6b89126e2d5c962f00a730d01f33ca00be3a3fb756e631d5277"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bescheid/src/zweige/kist_anteil.rs"]
