@@ -136,7 +136,13 @@ pub(crate) fn antworte(u: &Umgebung, q: &Value, tabelle: &[(&'static str, Gib)])
             t.to_owned()
         }
         (None, "cent" | "int") => {
-            s.tippe("#feld-input", "0");
+            // Die Lohnersatzleistungen (Nr. 97) sind ein Zeilenformular; das versteckte `#feld-input` traegt nur die Summe, tippen
+            // laesst sich dort nicht. Neutral ist ein Betrag 0 in der ersten Zeile.
+            if s.ausdruck("document.querySelector('.lersl-zeile .lersl-betrag') !== null") == json!(true) {
+                s.tippe(".lersl-zeile:nth-child(1) .lersl-betrag", "0");
+            } else {
+                s.tippe("#feld-input", "0");
+            }
             "0".to_owned()
         }
         // Ja/Nein: der neutrale Standard ist der Knopf „Nein“ (die Antwort, nicht der gespeicherte Wert; `frage_invertiert`
