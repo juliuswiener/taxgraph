@@ -13,6 +13,7 @@ pub mod einfrieren;
 pub mod entity;
 pub mod entity_tabelle;
 pub mod fehler;
+pub mod pdf;
 pub mod pruefen;
 pub mod py;
 pub mod unterprozess;

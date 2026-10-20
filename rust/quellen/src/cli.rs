@@ -9,6 +9,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::einfrieren::{self, Auftrag, Ebene, Werkzeuge};
+use crate::pdf::{self, PdfAuftrag};
 use crate::pruefen;
 
 const HILFE: &str = "Aufruf: taxgraph-quellen <befehl> [optionen]
@@ -21,6 +22,11 @@ const HILFE: &str = "Aufruf: taxgraph-quellen <befehl> [optionen]
                    [--verwendet-in <pfad>] [--out <ordner>] [--authority gesetz|verwaltung]
                    [--ebene paragraph|schreiben] [--norm-uri <text>] [--wurzel <ordner>]
                    eine Rechtsquelle abrufen (http(s) ueber curl, file:// aus einer Datei), entstrippen und einfrieren
+
+  pdf-einfrieren   --datei <pdf> --name <name> --titel <text> --url <herkunft> --abrufdatum <datum>
+                   [--unter <ordner>] [--erwarte <passage>]... [--min-laenge <n>] [--authority <text>]
+                   [--verwendet-in <pfad>] [--wurzel <ordner>]
+                   ein lokales PDF mit pdftotext -layout nach sources/<unter> einfrieren (kein Netz)
 ";
 
 /// Die Wurzel des Baums, in dem das Programm gebaut wurde (zwei Ordner über `rust/quellen`).
@@ -136,6 +142,7 @@ pub fn lauf(args: &[String]) -> i32 {
     match args.split_first() {
         Some((befehl, rest)) if befehl == "pruefe" => pruefe(rest),
         Some((befehl, rest)) if befehl == "einfrieren" => einfrieren(rest),
+        Some((befehl, rest)) if befehl == "pdf-einfrieren" => pdf_einfrieren(rest),
         Some((befehl, _)) if matches!(befehl.as_str(), "-h" | "--help" | "help") => {
             print!("{HILFE}");
             0
@@ -188,6 +195,66 @@ fn einfrieren(args: &[String]) -> i32 {
     match ergebnis {
         Ok(gefroren) => {
             println!("{}", gefroren.meldung);
+            0
+        }
+        Err(fehler) => {
+            eprintln!("{fehler}");
+            1
+        }
+    }
+}
+
+const PDF_OPTIONEN: &[&str] =
+    &["datei", "unter", "name", "titel", "url", "abrufdatum", "erwarte", "min-laenge", "authority", "verwendet-in", "wurzel"];
+
+/// Liest die Optionen von `pdf-einfrieren` wie `argparse` in `freeze_pdf_local.py`.
+///
+/// ```
+/// let args: Vec<String> = ["--datei", "a.pdf", "--name", "n", "--titel", "T", "--url", "u", "--abrufdatum", "d"]
+///     .iter().map(ToString::to_string).collect();
+/// let a = quellen::cli::pdf_auftrag(&args).unwrap();
+/// assert_eq!((a.unter.as_str(), a.min_laenge, a.authority.as_str()), ("bfinv", 500, "amtlicher_vordruck"));
+/// ```
+///
+/// # Errors
+/// Der Text für die Aufrufform: Pflichtoption fehlt, unbekannte Option, Zahl nicht lesbar.
+pub fn pdf_auftrag(args: &[String]) -> Result<PdfAuftrag, String> {
+    pdf_auftrag_aus(&Optionen::lies(args, PDF_OPTIONEN)?)
+}
+
+fn pdf_auftrag_aus(opt: &Optionen) -> Result<PdfAuftrag, String> {
+    let min_laenge = match opt.eins("min-laenge") {
+        None => 500,
+        Some(z) => z.trim().parse::<i64>().map_err(|_| format!("--min-laenge: keine ganze Zahl: {z:?}"))?,
+    };
+    Ok(PdfAuftrag {
+        datei: opt.muss("datei")?,
+        name: opt.muss("name")?,
+        titel: opt.muss("titel")?,
+        url: opt.muss("url")?,
+        abrufdatum: opt.muss("abrufdatum")?,
+        unter: opt.eins("unter").unwrap_or("bfinv").to_owned(),
+        erwarte: opt.alle("erwarte"),
+        min_laenge,
+        authority: opt.eins("authority").unwrap_or("amtlicher_vordruck").to_owned(),
+        verwendet_in: opt.eins("verwendet-in").unwrap_or("").to_owned(),
+    })
+}
+
+fn pdf_einfrieren(args: &[String]) -> i32 {
+    let opt = match Optionen::lies(args, PDF_OPTIONEN) {
+        Ok(o) => o,
+        Err(grund) => return aufruf_falsch(&grund),
+    };
+    let auftrag = match pdf_auftrag_aus(&opt) {
+        Ok(a) => a,
+        Err(grund) => return aufruf_falsch(&grund),
+    };
+    match pdf::pdf_einfrieren(&wurzel_aus(&opt), &auftrag, &Werkzeuge::default()) {
+        Ok(gefroren) => {
+            for zeile in &gefroren.meldungen {
+                println!("{zeile}");
+            }
             0
         }
         Err(fehler) => {

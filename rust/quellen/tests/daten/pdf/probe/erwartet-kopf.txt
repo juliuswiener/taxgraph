@@ -1,0 +1,6 @@
+Quelle: https://example.invalid/probe.pdf
+Abgerufen: 2026-01-01
+Titel: Probe-Vordruck 2025 (erfunden)
+Herkunft: amtlicher Vordruck (lokal eingefroren)
+--- Textextraktion (pdftotext -layout) ---
+

@@ -4,7 +4,7 @@
 //!
 //! Die Gleichheit mit Python für alle 253 Namen der Tabelle und für Zahlenreferenzen steht in den Golden-Fällen
 //! `entities_alle` und `entities_vielfalt` (`einfrieren_golden.rs`).
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic, clippy::explicit_write)]
 
 use quellen::entity::dekodiere;
 use quellen::entity_tabelle::BENANNT;

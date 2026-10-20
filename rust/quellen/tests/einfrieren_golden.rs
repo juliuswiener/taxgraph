@@ -10,7 +10,7 @@
 //! Start ohne Ende, `ende` zu nah am Start (Zeichen, nicht Bytes), Start nicht gefunden, zu kurz, `--erwarte` fehlt, rohes
 //! gzip, ungültiges UTF-8, Großbuchstaben-Tags, offene Tags, Kommentare. Weicht Rust absichtlich ab (unbekannte Entity,
 //! `&name` ohne Semikolon), steht der Test in `entity_hermetisch.rs`.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic, clippy::explicit_write)]
 
 use std::fs;
 use std::io::Write as _;

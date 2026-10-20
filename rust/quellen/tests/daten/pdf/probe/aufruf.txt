@@ -1,0 +1,20 @@
+--name
+probe
+--titel
+Probe-Vordruck 2025 (erfunden)
+--url
+https://example.invalid/probe.pdf
+--abrufdatum
+2026-01-01
+--unter
+pdfprobe
+--erwarte
+Außergewöhnliche Belastungen
+--erwarte
+Zeile 1: Betrag
+--min-laenge
+20
+--verwendet-in
+rust/x.yaml
+--authority
+verwaltung

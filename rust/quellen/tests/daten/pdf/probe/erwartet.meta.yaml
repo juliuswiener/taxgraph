@@ -1,0 +1,14 @@
+# Eingefrorener amtlicher Vordruck (lokal, Nutzer-Download). Provenance-Archiv.
+dokument:
+  titel: "Probe-Vordruck 2025 (erfunden)"
+  quelle_url: "https://example.invalid/probe.pdf"
+  abrufdatum: "2026-01-01"
+  datei: "probe.txt"
+  pdf_datei: "probe.pdf"
+  sha256: "<TXT_SHA256>"
+  pdf_sha256: "0ea9c7c65d21e44f3a399ad409bf399df9e0b2ec936f4b3f6c7dab0926fd40ee"
+  authority: verwaltung
+  redistributable: true
+  erwartete_anker: ['Außergewöhnliche Belastungen', 'Zeile 1: Betrag']
+  verwendet_in:
+    - "rust/x.yaml"

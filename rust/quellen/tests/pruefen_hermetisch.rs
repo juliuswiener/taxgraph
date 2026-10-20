@@ -4,7 +4,7 @@
 //! (`der_echte_baum_ist_ganz_ok`) liest nur. Die Mutationen des Auftrags (ein Byte geändert, Wortlaut gekürzt, `datei:`
 //! fehlt, `sha256` fehlt) laufen an einer Kopie einer echten Quelle (`mutationen_an_einer_kopie_einer_echten_quelle`);
 //! der Vergleich mit dem Python-Skript auf dem echten Baum steht im Bericht des Auftrags.
-#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing)]
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic, clippy::explicit_write)]
 
 use std::fs;
 use std::path::{Path, PathBuf};

@@ -27,9 +27,15 @@ pub enum Fehler {
     /// Der Abruf der URL ist gescheitert.
     #[error("Abruf von {url} gescheitert: {grund}")]
     Abruf { url: String, grund: String },
+    /// `gzip -dc` lehnt die Antwort ab (Magic stimmt, Inhalt nicht).
+    #[error("Die gzip-Antwort lässt sich nicht entpacken: {grund}")]
+    Entpacken { grund: String },
     /// Das lokale PDF fehlt (Python: `PDF nicht gefunden`).
     #[error("PDF nicht gefunden: {pfad} — Julius muss es zuerst lokal ablegen.")]
     PdfFehlt { pfad: String },
+    /// `pdftotext` ist nicht aufrufbar.
+    #[error("pdftotext nicht gefunden (poppler-utils installieren).")]
+    PdftotextFehlt,
     /// `pdftotext` ist gelaufen und hat einen Fehlercode gemeldet.
     #[error("pdftotext fehlgeschlagen: {stderr}")]
     PdftotextFehlgeschlagen { stderr: String },
