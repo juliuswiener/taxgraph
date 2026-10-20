@@ -77,6 +77,7 @@ mod fluss_f;
 mod fluss_g;
 mod fluss_h;
 mod fluss_i;
+mod lohnersatz_liste;
 mod seite;
 mod zuordnung;
 

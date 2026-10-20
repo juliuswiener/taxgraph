@@ -243,6 +243,18 @@ h1,h2,h3{margin:0}
 .instanz-marke{flex:0 0 5.5em;color:var(--muted);font-size:13px;font-weight:600}
 .instanz-feld{flex:1 1 12em;min-width:0;margin-bottom:0}
 
+/* Lohnersatzleistungen als Liste (d-48): Zeilen aus Art und Betrag, alle auf einer Seite. `flex-basis`
+   statt fester Breite, damit die Zeile bei 360px umbricht, statt die Seite seitwärts zu schieben
+   (dieselbe Falle wie bei .eingabe oben). */
+.lersl-liste{display:flex;flex-direction:column;gap:8px;width:100%}
+.lersl-hinweis{margin:0}
+.lersl-zeilen{display:flex;flex-direction:column;gap:8px}
+.lersl-zeile{display:flex;gap:8px;flex-wrap:wrap}
+.lersl-zeile .lersl-art{flex:1 1 12em}
+.lersl-zeile .lersl-betrag{flex:1 1 8em}
+.lersl-mehr{align-self:flex-start}
+.lersl-summe{margin:0;font-weight:600}
+
 /* Die Bilanz nach einer Rückfragen-Runde. Grün wie die belegten Werte (--solide): sie meldet, dass
    etwas ANGEKOMMEN ist — im Gegensatz zu chat-unsicher (Warnfarbe) und chat-erklaer (Fliesstext).
    Ohne sie verschwand der Wizard einfach, und zurück blieb der Verlauf von vorher. */

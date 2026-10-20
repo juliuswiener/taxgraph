@@ -668,8 +668,103 @@ function baueInstanzEingaben(q, box, id, labelId, vorbelegungen) {
   return wrap;
 }
 
+// Lohnersatzleistungen als Liste (Julius, d-48, 2026-10-20: „alles auf einer Seite“). Der Nutzer trägt
+// jede Leistung als Zeile ein (Art, Betrag), die Summe bildet die Seite. Der Fall kennt weiter NUR die
+// Summe (`p32b_progressionseinkuenfte`, Kz E0104801): Rechnung und Sperren lesen diesen einen Wert, und
+// die Art geht nicht in die Erklärung. Die Zeilen selbst bleiben deshalb in der Seite und nicht im Fall.
+//
+// Ein verstecktes Feld trägt die Id und die Summe in Euro. Darum bleiben leseWert(), bestaetigen() und
+// der Rückfragen-Schritt unverändert: sie lesen `.value` und schreiben EIN Ereignis. Eine zweite
+// Bauart daneben hieße, dass cent-Umrechnung und Stille-Null-Regel an zwei Stellen stimmen müssten.
+// Alle Beträge leer -> Summe leer -> `undefined` -> „Bitte einen gültigen Wert eingeben“, wie vorher.
+//
+// ponytail: Zeilen nicht im Fall; wer später die Art speichern will, braucht eine Instanz-Gruppe und
+// eine Summen-Ableitung (beides gibt es nicht) und dürfte die Sperren nicht anfassen.
+const LERSL_FELD = "p32b_progressionseinkuenfte";
+// Die Arten aus § 32b Abs. 1 Nr. 1 EStG; „Andere“ fängt den Rest (Zuschüsse, Entschädigungen u. a.).
+const LERSL_ARTEN = [
+  ["", "Art wählen (freiwillig)"],
+  ["arbeitslosengeld", "Arbeitslosengeld"],
+  ["kurzarbeitergeld", "Kurzarbeitergeld"],
+  ["insolvenzgeld", "Insolvenzgeld"],
+  ["krankengeld", "Krankengeld"],
+  ["mutterschaftsgeld", "Mutterschaftsgeld"],
+  ["elterngeld", "Elterngeld"],
+  ["uebergangsgeld", "Übergangsgeld"],
+  ["verletztengeld", "Verletztengeld"],
+  ["andere", "Andere Lohnersatzleistung"],
+];
+
+function baueLohnersatzListe(q, box, id, labelId, vorbelegung) {
+  box.innerHTML = "";
+  const wrap = document.createElement("div");
+  wrap.className = "lersl-liste";
+  wrap.setAttribute("role", "group");
+  wrap.setAttribute("aria-labelledby", labelId);
+  const summe = document.createElement("input");
+  summe.type = "hidden"; summe.id = id;
+  const hinweis = document.createElement("p");
+  hinweis.className = "hilfe lersl-hinweis";
+  hinweis.textContent = "Trage jede Leistung einzeln ein. Die Summe bilde ich.";
+  const zeilen = document.createElement("div");
+  zeilen.className = "lersl-zeilen";
+  const anzeige = document.createElement("p");
+  anzeige.className = "lersl-summe";
+  anzeige.setAttribute("aria-live", "polite");
+
+  const rechne = () => {
+    let cent = 0, gefuellt = false;
+    for (const b of zeilen.querySelectorAll(".lersl-betrag")) {
+      const eur = parseFloat((b.value ?? "").trim());
+      if (Number.isFinite(eur)) { cent += Math.round(eur * 100); gefuellt = true; }
+    }
+    summe.value = gefuellt ? String(cent / 100) : "";
+    anzeige.textContent = gefuellt
+      ? "Summe: " + (cent / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+      : "Summe: noch nichts eingetragen";
+  };
+  const neueZeile = (betragCent, mitSummeArt) => {
+    const nr = zeilen.children.length + 1;
+    const z = document.createElement("div");
+    z.className = "lersl-zeile";
+    const art = document.createElement("select");
+    art.className = "lersl-art";
+    art.setAttribute("aria-label", "Art der Leistung " + nr);
+    const arten = mitSummeArt ? [...LERSL_ARTEN, ["summe_bisher", "Bisherige Summe"]] : LERSL_ARTEN;
+    for (const [wert, text] of arten) {
+      const o = document.createElement("option"); o.value = wert; o.textContent = text;
+      art.appendChild(o);
+    }
+    if (mitSummeArt) art.value = "summe_bisher";
+    const betrag = document.createElement("input");
+    betrag.type = "number"; betrag.inputMode = "decimal";
+    betrag.className = "lersl-betrag";
+    betrag.placeholder = "Betrag in Euro";
+    betrag.setAttribute("aria-label", "Betrag in Euro, Leistung " + nr);
+    if (betragCent !== null) betrag.value = betragCent / 100;
+    betrag.addEventListener("input", rechne);
+    z.append(art, betrag);
+    zeilen.appendChild(z);
+  };
+  const vorhanden = vorbelegung !== null && vorbelegung !== undefined;
+  neueZeile(vorhanden ? vorbelegung : null, vorhanden);
+
+  const mehr = document.createElement("button");
+  mehr.type = "button"; mehr.className = "btn-link lersl-mehr";
+  mehr.textContent = "Weitere Leistung";
+  mehr.addEventListener("click", () => {
+    neueZeile(null, false);
+    zeilen.lastElementChild.querySelector(".lersl-betrag").focus();
+  });
+  wrap.append(hinweis, zeilen, mehr, anzeige, summe);
+  box.appendChild(wrap);
+  rechne();
+  return summe;
+}
+
 function baueEingabe(q, box, id, labelId, vorbelegung) {
   if (q.instanz_anzahl > 1) return baueInstanzEingaben(q, box, id, labelId, vorbelegung);
+  if (q.feld_id === LERSL_FELD && q.typ === "cent") return baueLohnersatzListe(q, box, id, labelId, vorbelegung);
   box.innerHTML = ""; let input;
   if (q.typ === "bool") {
     // Buttons statt Dropdown: eine Ja/Nein-Frage hinter einem Klapp-Menü zu verstecken kostet
