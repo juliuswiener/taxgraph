@@ -58,6 +58,8 @@ pub enum BindungFehler {
     EnumWerteLeer { feld_id: String },
     #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz/groesser_als")]
     FeldBedingungNichtGenauEins { feld_id: String },
+    #[error("{feld_id}: eine oder-Alternative der feld_bedingung traegt kein eigenes und (sie ist EINE Bedingung)")]
+    OderAlternativeMitUnd { feld_id: String },
     #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
     UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
     #[error("instanz_gruppen {gruppe}: max {max} liegt ausserhalb von {}..={}", MIN_INSTANZ_MAX, MAX_INSTANZ_MAX)]
@@ -317,12 +319,46 @@ pub struct FeldBedingung {
     /// Eine zweite Bedingung, die ZUSAETZLICH gelten muss: das Feld entfaellt, sobald eine Bedingung
     /// der Kette es ausschliesst. `feld_bedingung` hat nur einen Platz je Feld; `und` ist der zweite.
     pub und: Option<Box<FeldBedingung>>,
+    /// Eine Alternative zu DIESER Bedingung (Rust-eigen, Entscheidung d-43): das Feld bleibt auch dann, wenn
+    /// die Alternative gilt, obwohl diese Bedingung es ausschliesst. Fuer eine Frage, die an zwei Personen
+    /// haengt (das Bundesland, sobald Person A ODER Person B einer Kirche angehoert). Anders als bei den
+    /// uebrigen Arten gilt POSITIVER BEWEIS: die Alternative haelt die Frage nur offen, wenn ihr Feld gefragt
+    /// wird und eine BESTAETIGTE Antwort die Bedingung erfuellt; Schweigen, ein vorlaeufiger Wert und ein
+    /// Feld, das die Scheibe oder die Veranlagung nicht fragt, halten sie nicht offen. Eine Alternative
+    /// traegt keine eigene `und`-Bedingung; weitere Alternativen haengen per `oder` an ihr.
+    pub oder: Option<Box<FeldBedingung>>,
 }
 
 impl FeldBedingung {
-    /// Diese Bedingung und jede, die per `und` folgt, in Reihenfolge der Kette.
+    /// ALLE Bedingungen dieses Baums, eine je Feldverweis: jede in der `und`-Kette und jede Alternative
+    /// (`oder`) einer Bedingung. Fuer jeden, der wissen will, welche Felder die Bedingung liest. Wer sie
+    /// AUSWERTET, braucht [`Self::und_glieder`] und [`Self::alternativen`]: die Alternativen schliessen
+    /// nichts aus, sie halten die Frage offen.
     pub fn kette(&self) -> impl Iterator<Item = &FeldBedingung> {
+        let mut alle = Vec::new();
+        self.sammle(&mut alle);
+        alle.into_iter()
+    }
+
+    fn sammle<'a>(&'a self, aus: &mut Vec<&'a FeldBedingung>) {
+        aus.push(self);
+        if let Some(oder) = &self.oder {
+            oder.sammle(aus);
+        }
+        if let Some(und) = &self.und {
+            und.sammle(aus);
+        }
+    }
+
+    /// Diese Bedingung und jede, die per `und` folgt, in Reihenfolge der Kette (ohne Alternativen). Das
+    /// Feld entfaellt, sobald EIN Glied es ausschliesst und keine Alternative des Glieds es offen haelt.
+    pub fn und_glieder(&self) -> impl Iterator<Item = &FeldBedingung> {
         std::iter::successors(Some(self), |b| b.und.as_deref())
+    }
+
+    /// Die Alternativen DIESER Bedingung in Reihenfolge (`oder`, `oder.oder`, ...), ohne sie selbst.
+    pub fn alternativen(&self) -> impl Iterator<Item = &FeldBedingung> {
+        std::iter::successors(self.oder.as_deref(), |b| b.oder.as_deref())
     }
 
     /// Genau eine Art (`wert`/`wert_nicht`/`alter_im_vz`/`groesser_als`) ist gesetzt.
@@ -526,19 +562,18 @@ impl Bindung {
             }
         }
         if let Some(bedingung) = &self.feld_bedingung {
-            // Jede Bedingung der Kette (`und`) wie die erste: genau eine Art, lange Begruendung.
-            for (i, glied) in bedingung.kette().enumerate() {
-                if !glied.hat_genau_eine_art() {
-                    return Err(BindungFehler::FeldBedingungNichtGenauEins {
-                        feld_id: self.feld_id.clone(),
-                    });
-                }
-                if zu_kurz(&glied.grund, MIN_GRUND_LANG) {
-                    return Err(BindungFehler::ZuKurz {
-                        wo: format!("{}.feld_bedingung{}", self.feld_id, ".und".repeat(i)),
-                        was: "grund",
-                        min: MIN_GRUND_LANG,
-                    });
+            // Jede Bedingung der Kette (`und`) und jede Alternative (`oder`) wie die erste: genau eine Art,
+            // lange Begruendung. Eine Alternative traegt kein eigenes `und`: sie ist EINE Bedingung.
+            for (i, glied) in bedingung.und_glieder().enumerate() {
+                let pfad = format!("{}.feld_bedingung{}", self.feld_id, ".und".repeat(i));
+                self.pruefe_glied(glied, pfad.clone())?;
+                for (j, alt) in glied.alternativen().enumerate() {
+                    if alt.und.is_some() {
+                        return Err(BindungFehler::OderAlternativeMitUnd {
+                            feld_id: self.feld_id.clone(),
+                        });
+                    }
+                    self.pruefe_glied(alt, format!("{pfad}{}", ".oder".repeat(j + 1)))?;
                 }
             }
         }
@@ -550,6 +585,24 @@ impl Bindung {
                     min: MIN_GRUND_LANG,
                 });
             }
+        }
+        Ok(())
+    }
+
+    /// Eine Bedingung der `feld_bedingung` (Glied der `und`-Kette oder Alternative): genau eine Art und eine
+    /// lange Begruendung. `wo` ist ihr Pfad im Fehlertext (`<feld>.feld_bedingung.und.oder`).
+    fn pruefe_glied(&self, glied: &FeldBedingung, wo: String) -> Result<(), BindungFehler> {
+        if !glied.hat_genau_eine_art() {
+            return Err(BindungFehler::FeldBedingungNichtGenauEins {
+                feld_id: self.feld_id.clone(),
+            });
+        }
+        if zu_kurz(&glied.grund, MIN_GRUND_LANG) {
+            return Err(BindungFehler::ZuKurz {
+                wo,
+                was: "grund",
+                min: MIN_GRUND_LANG,
+            });
         }
         Ok(())
     }

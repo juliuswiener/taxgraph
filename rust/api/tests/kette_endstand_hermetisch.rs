@@ -1923,11 +1923,15 @@ type KistFall = (
     i64,
 );
 
-const KIST_FAELLE: [KistFall; 7] = [
+// Bayern, nur B Mitglied (Entscheidung d-43; die Frage nach dem Bundesland steht dafuer erst seit der ODER-Bedingung in `kist_bundesland`,
+// `bundesland_frage_ehegatte.rs`): gleiche gemeinsame ESt 13.838 EUR, Satz 8 % statt 9 %, Anteil B 1.336 / 15.274 -> 110.704 x 1.336 / 15.274 =
+// 9.683 Cent (abgerundet). Handrechnung im Skript `handrechnung_bayern_b.py` des Auftrags, geeicht an derselben Zeile mit 9 % (= 10.893 Cent).
+const KIST_FAELLE: [KistFall; 8] = [
     ("A ev, B keine: Anteil von A (91,25 %)", 2_000_000, "evangelisch", Some("keine"), "nordrhein_westfalen", 1_383_800, 113_648),
     ("A keine, B ev: Anteil von B (8,75 %), nicht 0", 2_000_000, "keine", Some("evangelisch"), "nordrhein_westfalen", 1_383_800, 10_893),
     ("A ev, B rk: die Summe bleibt Satz mal volle ESt", 2_000_000, "evangelisch", Some("roemisch-katholisch"), "nordrhein_westfalen", 1_383_800, 124_542),
     ("Bayern 8 %, A ev, B keine", 2_000_000, "evangelisch", Some("keine"), "bayern", 1_383_800, 101_020),
+    ("Bayern 8 %, A keine, B ev: Anteil von B", 2_000_000, "keine", Some("evangelisch"), "bayern", 1_383_800, 9_683),
     ("Alleinverdiener A ev, B keine: Anteil 1", 0, "evangelisch", Some("keine"), "nordrhein_westfalen", 823_800, 74_142),
     ("Alleinverdiener A keine, B ev: Anteil 0", 0, "keine", Some("evangelisch"), "nordrhein_westfalen", 823_800, 0),
     ("Konfession von B unbeantwortet: wie bisher, volle ESt", 2_000_000, "evangelisch", None, "nordrhein_westfalen", 1_383_800, 124_542),
@@ -2055,6 +2059,7 @@ async fn kist_an_gesamt_fall_3_nur_ein_mitglied_zahlt_seinen_anteil() {
         ("A ev, B keine: Anteil von A (91,25 %)", 2_000_000, "evangelisch", Some("keine"), "nordrhein_westfalen", 1_383_800, 113_648),
         ("A keine, B ev: Anteil von B (8,75 %), nicht 0", 2_000_000, "keine", Some("evangelisch"), "nordrhein_westfalen", 1_383_800, 10_893),
         ("Bayern 8 %, A ev, B keine", 2_000_000, "evangelisch", Some("keine"), "bayern", 1_383_800, 101_020),
+        ("Bayern 8 %, A keine, B ev: Anteil von B", 2_000_000, "keine", Some("evangelisch"), "bayern", 1_383_800, 9_683),
         ("Alleinverdiener A ev, B keine: Anteil 1", 0, "evangelisch", Some("keine"), "nordrhein_westfalen", 823_800, 74_142),
         ("Alleinverdiener A keine, B ev: Anteil 0", 0, "keine", Some("evangelisch"), "nordrhein_westfalen", 823_800, 0),
     ])

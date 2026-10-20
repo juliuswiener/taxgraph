@@ -374,6 +374,10 @@
             "und": {
               "$ref": "#/$defs/bindung/properties/feld_bedingung",
               "description": "Eine zweite Bedingung, die ZUSAETZLICH gelten muss (Rust-eigen): das Feld entfaellt, sobald eine Bedingung der Kette es ausschliesst. Jede Bedingung der Kette traegt genau eine Art und ihre eigene Begruendung. Es gibt nur einen Platz je Feld; `und` ist der zweite."
+            },
+            "oder": {
+              "$ref": "#/$defs/bindung/properties/feld_bedingung",
+              "description": "Eine Alternative zu DIESER Bedingung (Rust-eigen, Entscheidung d-43): das Feld bleibt auch dann, wenn die Alternative gilt, obwohl diese Bedingung es ausschliesst. Fuer eine Frage, die an zwei Personen haengt (das Bundesland, sobald Person A ODER Person B einer Kirche angehoert). Anders als bei den uebrigen Arten gilt POSITIVER BEWEIS: die Alternative haelt die Frage nur offen, wenn ihr Feld gefragt wird und eine BESTAETIGTE Antwort die Bedingung erfuellt; Schweigen, ein vorlaeufiger Wert und ein Feld, das die Scheibe oder die Veranlagung nicht fragt, halten sie nicht offen. Eine Alternative traegt kein eigenes `und`; weitere Alternativen haengen per `oder` an ihr."
             }
           },
           "required": [

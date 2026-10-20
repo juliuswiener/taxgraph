@@ -12,6 +12,8 @@ mod backup_restore_rundlauf;
 mod bereich_rand_hermetisch;
 #[path = "berufsverband_hermetisch.rs"]
 mod berufsverband_hermetisch;
+#[path = "bundesland_frage_ehegatte.rs"]
+mod bundesland_frage_ehegatte;
 #[path = "c2_satz3_fragen_hermetisch.rs"]
 mod c2_satz3_fragen_hermetisch;
 #[path = "chat_stderr_prozess_hermetisch.rs"]

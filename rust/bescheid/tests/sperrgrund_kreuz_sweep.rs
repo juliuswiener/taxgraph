@@ -894,6 +894,7 @@ fn welt_mit_kreuz(feld: &str) -> &'static Welt {
                 alter_im_vz: None,
                 groesser_als: None,
                 und: None,
+                oder: None,
             });
             gefunden = true;
         }
