@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "fall/laenge/grenze/ok"
+  norm: "N"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://example.invalid/grenze.html"
+  abrufdatum: "2026-01-01"
+  datei: "fall_laenge_grenze_ok.txt"
+  sha256: "b5533555ebe15ba3415a910b6683f1d8e585c563de1f4ba6ba0ea57fbf1b314e"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

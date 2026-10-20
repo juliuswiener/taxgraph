@@ -87,6 +87,9 @@ faelle!(
     ohne_ende,
     ende_zu_nah,
     ende_zu_nah_umlaute,
+    ende_genau_zehn,
+    laenge_grenze_ok,
+    laenge_grenze_zu_kurz,
     ende_nicht_gefunden,
     start_am_ende,
     gzip,
@@ -109,5 +112,5 @@ fn jeder_ordner_der_fixturen_hat_einen_test_und_umgekehrt() {
     im_test.sort();
     assert_eq!(im_baum, im_test);
     let ablehnungen = im_baum.iter().filter(|n| daten().join(n).join("fehler.txt").exists()).count();
-    assert_eq!((im_baum.len() - ablehnungen, ablehnungen), (13, 3), "13 Annahmen und 3 Ablehnungen");
+    assert_eq!((im_baum.len() - ablehnungen, ablehnungen), (15, 4), "15 Annahmen und 4 Ablehnungen");
 }
