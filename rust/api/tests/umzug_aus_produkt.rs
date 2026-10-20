@@ -26,14 +26,17 @@ use sha2::{Digest, Sha256};
 
 /// `rust/api/static`: Name, SHA-256.
 const OBERFLAECHE: &[(&str, &str)] = &[
-    ("app.js", "3fbecbd62932c7094249cb4045c6789f4a4dc94c4fded9804907e2c033012d8d"),
+    // app.js und style.css seit 2026-10-20 (Nr. 97, d-48) mit dem Zeilenformular fuer die Lohnersatzleistungen (`baueLohnersatzListe`);
+    // weichen bewusst vom Stand aus `produkt/haut/static/` ab (vorher app.js 3fbecbd6..., style.css f29ca855...). Wächter:
+    // `oberflaeche/lohnersatz_liste.rs`.
+    ("app.js", "8a20ec1fbd0bd451089f79495ac60645dda9859f0549b4698d43c8afbea2430e"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),
     // index.html seit 2026-10-15 (S8, Julius) mit dem Hinweis auf die Namen-Grenze des PII-Filters neben dem KI-Eingabefeld:
     // weicht bewusst von `produkt/haut/static/index.html` ab (Stand 12c0ef31...); Wächter `http.rs::die_startseite_warnt_im_chat_vor_namen`.
     ("index.html", "9d923eed2beb2fe9ad7b59ba98aa8d60c8966ac66185ca62f10ed45fc3f8f856"),
-    ("style.css", "f29ca8554f00ba97b396210c4391a497f07a3b3ba8d28848b67bcbd70d7ffd95"),
+    ("style.css", "5570eccf7a6a32ace378a716b888c9d156c53138762d2a314bbd14f75b3e6797"),
 ];
 
 /// `rust/fixtures/python_bindung_2dd056a6`: der eingefrorene Stand von `produkt/bindung` (alle 28 Dateien).
