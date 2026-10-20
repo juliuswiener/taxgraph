@@ -788,7 +788,8 @@ fn das_echte_git_trennt_vorfahre_nebenzweig_und_unbekannt() {
     sh(&["checkout", "-q", "-"]);
 
     let echt = EchtesGit(w.clone());
-    let flach = std::env::temp_dir().join(format!("belege-aufloesbar-flach-{}", std::process::id()));
+    // "klon", nicht "flach": `probebaum("flach", ..)` im selben Prozess hiesse sonst gleich, und beide Tests raeumten einander das Verzeichnis weg
+    let flach = std::env::temp_dir().join(format!("belege-aufloesbar-klon-{}", std::process::id()));
     let _ = std::fs::remove_dir_all(&flach);
     let geklont = Command::new("git")
         .args(["clone", "-q", "--depth", "1", "--branch", "neben"])
