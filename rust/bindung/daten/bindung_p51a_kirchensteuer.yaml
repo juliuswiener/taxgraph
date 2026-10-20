@@ -68,7 +68,7 @@ bindungen:
     quelle:
       regel_id: p51a_kirchensteuer
       signatur_slot: bundesland
-    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. Landes-KiStG: der Hebesatz des Bundeslandes wird nur gebraucht, um die Kirchensteuer eines Mitglieds zu berechnen. Bei kist_konfession='keine' gibt es keine Kirchensteuer und damit keinen Hebesatz anzuwenden."}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. Landes-KiStG: der Hebesatz des Bundeslandes wird nur gebraucht, um die Kirchensteuer eines Mitglieds zu berechnen. Bei kist_konfession='keine' gibt es keine Kirchensteuer und damit keinen Hebesatz anzuwenden.", oder: {feld: kist_konfession_partner, wert_nicht: keine, grund: "Bei Zusammenveranlagung zahlt auch ein Ehegatte Kirchensteuer, wenn nur er einer Kirche angehoert (Abweichung Nr. 94: je Person nach Landesrecht). Dann braucht die Software den Hebesatz seines Bundeslandes (8 % in Bayern und Baden-Wuerttemberg, sonst 9 %), obwohl kist_konfession='keine' ist. Die Alternative zaehlt nur mit bestaetigter Mitgliedschaft des Ehegatten (positiver Beweis)."}}
     typ: enum
     enum_werte: [baden_wuerttemberg, bayern, berlin, brandenburg, bremen, hamburg, hessen,
                  mecklenburg_vorpommern, niedersachsen, nordrhein_westfalen, rheinland_pfalz,

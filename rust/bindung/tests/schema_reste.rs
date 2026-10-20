@@ -19,7 +19,7 @@ use std::path::Path;
 
 use bindung::{
     lade_bindung, lade_registry, lade_registry_der_wurzel, BindungDatei, BindungFehler,
-    RegistryFehler,
+    FeldBedingung, RegistryFehler,
 };
 
 const BASIS: &str = "  - feld_id: testfeld
@@ -266,6 +266,93 @@ fn feld_bedingung_kennt_groesser_als_und_eine_zweite_bedingung() {
     assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
     let kurz = dritte(&format!("groesser_als: 0, grund: \"{GRUND_39}\"")).unwrap_err();
     assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
+}
+
+/// Entscheidung d-43: `oder` haengt eine Alternative an eine Bedingung (die Frage nach dem Bundesland bleibt, wenn Person A ODER
+/// Person B einer Kirche angehoert). Jede Alternative traegt genau eine Art und ihre eigene lange Begruendung und hat kein eigenes
+/// `und`; weitere Alternativen haengen per `oder` an ihr. Ohne die Pruefung gewaenne eine zweite Art oder eine fehlende
+/// Begruendung still.
+#[test]
+fn feld_bedingung_kennt_eine_alternative_oder() {
+    let grund = format!("grund: \"{GRUND_40}\"");
+    let bedingung = |inhalt: &str| pruefe(&format!("    feld_bedingung: {{feld: anderes, {inhalt}}}\n"));
+    let mit_oder = |innen: &str| {
+        bedingung(&format!(
+            "wert: true, {grund}, oder: {{feld: weiteres, {innen}}}"
+        ))
+    };
+    // Jede der vier Arten ist als Alternative erlaubt, genau eine, mit eigener Begruendung.
+    for gut in ["wert: true", "wert_nicht: true", "alter_im_vz: 55", "groesser_als: 0"] {
+        assert!(mit_oder(&format!("{gut}, {grund}")).is_ok(), "oder {gut}");
+    }
+    for (name, innen) in [
+        ("zwei Arten in der Alternative", format!("wert: true, groesser_als: 0, {grund}")),
+        ("keine Art in der Alternative", grund.clone()),
+    ] {
+        let fehler = mit_oder(&innen).unwrap_err();
+        assert!(
+            matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }),
+            "{name}: {fehler}"
+        );
+        assert!(fehler.to_string().contains("testfeld"), "{name}: {fehler}");
+    }
+    let kurz = mit_oder(&format!("wert: true, grund: \"{GRUND_39}\"")).unwrap_err();
+    assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
+    assert!(kurz.to_string().contains("feld_bedingung.oder"), "{kurz}");
+    // Die erste Bedingung wird auch dann geprueft, wenn die Alternative stimmt.
+    let fehler = bedingung(&format!(
+        "wert: true, wert_nicht: true, {grund}, oder: {{feld: weiteres, wert: true, {grund}}}"
+    ))
+    .unwrap_err();
+    assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
+    // Eine Alternative ist EINE Bedingung: ein eigenes `und` ist ein Fehler, auch bei guter Begruendung.
+    let fehler = mit_oder(&format!(
+        "wert: true, {grund}, und: {{feld: drittes, wert: true, {grund}}}"
+    ))
+    .unwrap_err();
+    assert!(matches!(fehler, BindungFehler::OderAlternativeMitUnd { .. }), "{fehler}");
+    assert!(fehler.to_string().contains("testfeld"), "{fehler}");
+    // Die Kette der Alternativen ist rekursiv: die dritte wird so streng geprueft wie die zweite, mit ihrem Pfad.
+    let dritte = |innen: &str| {
+        bedingung(&format!(
+            "wert: true, {grund}, oder: {{feld: b, wert: true, {grund}, oder: {{feld: c, {innen}}}}}"
+        ))
+    };
+    assert!(dritte(&format!("wert: true, {grund}")).is_ok());
+    let fehler = dritte(&format!("wert: true, wert_nicht: true, {grund}")).unwrap_err();
+    assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
+    let kurz = dritte(&format!("wert: true, grund: \"{GRUND_39}\"")).unwrap_err();
+    assert!(kurz.to_string().contains("feld_bedingung.oder.oder"), "{kurz}");
+    // Die Alternative einer `und`-Bedingung traegt den Pfad `.und.oder`.
+    let kurz = bedingung(&format!(
+        "wert: true, {grund}, und: {{feld: b, wert: true, {grund}, oder: {{feld: c, wert: true, grund: \"{GRUND_39}\"}}}}"
+    ))
+    .unwrap_err();
+    assert!(kurz.to_string().contains("feld_bedingung.und.oder"), "{kurz}");
+}
+
+/// `kette` nennt JEDE Bedingung des Baums (wer wissen will, welche Felder gelesen werden), `und_glieder` nur die `und`-Kette und
+/// `alternativen` nur die `oder`-Folge EINER Bedingung (wer auswertet). Verwechselt ein Leser die beiden, haelt eine Alternative
+/// die Frage nicht offen, oder ein Tippfehler im Feld einer Alternative bliebe unbemerkt.
+#[test]
+fn kette_nennt_jede_bedingung_und_alternative_und_glieder_nur_die_und_kette() {
+    let grund = format!("grund: \"{GRUND_40}\"");
+    let yaml = format!(
+        "version: 1\nscheibe: test\nbindungen:\n{BASIS}    feld_bedingung: {{feld: a, wert: true, {grund}, \
+         oder: {{feld: b, wert: true, {grund}, oder: {{feld: c, wert: true, {grund}}}}}, \
+         und: {{feld: d, wert: true, {grund}, oder: {{feld: e, wert: true, {grund}}}}}}}\n"
+    );
+    let datei: BindungDatei = serde_yaml_ng::from_str(&yaml).unwrap();
+    datei.validieren().unwrap();
+    let fb = datei.bindungen[0].feld_bedingung.as_ref().unwrap();
+    let felder = |glieder: Vec<&FeldBedingung>| -> Vec<String> {
+        glieder.into_iter().map(|g| g.feld.clone()).collect()
+    };
+    assert_eq!(felder(fb.kette().collect()), ["a", "b", "c", "d", "e"]);
+    assert_eq!(felder(fb.und_glieder().collect()), ["a", "d"]);
+    assert_eq!(felder(fb.alternativen().collect()), ["b", "c"]);
+    let zweites = fb.und_glieder().nth(1).unwrap();
+    assert_eq!(felder(zweites.alternativen().collect()), ["e"]);
 }
 
 #[test]

@@ -1,7 +1,7 @@
 //! Rueckwaerts, Teil 2: die geordnete Interview-Queue (`naechste_fragen`,
 //! `traverser.py:380-733`).
 use std::cmp::Reverse;
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use bindung::{Bindung, Bindungspunkt, FeldBedingung, Vorjahr};
 use domain::PyWert;
@@ -11,7 +11,7 @@ use crate::antwort::{Aktiv, Antwort};
 use crate::graph::{Graph, Sicht};
 use crate::instanz::{instanz_antworten, instanz_unvollstaendig};
 use crate::relevanz::{
-    bedingung_je_instanz, gate_gewicht, relevanz_mit, Bedingungsstand, Regelstatus,
+    bedingung_je_instanz, gate_gewicht, relevanz_mit, Bedingungsstand, RegelRelevanz, Regelstatus,
 };
 
 /// Geordnete Interview-Queue: unbeantwortete askable Felder nicht-ausgeschlossener Regeln
@@ -57,7 +57,7 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
                 && rel
                     .get(b.quelle.regel_id.as_str())
                     .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
-                && !feld_ausgeschlossen(b, &aktiv, sicht, graph, vz)
+                && !feld_ausgeschlossen(b, &aktiv, sicht, graph, vz, &rel)
         })
         .collect();
     let gw = gate_gewicht(sicht, graph);
@@ -118,18 +118,27 @@ fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
 /// Schwelle liegt. Das bricht den Satz "alle offenen Felder stehen in der Queue" mit Absicht und nur fuer Folgefragen, deren
 /// Fehlen nichts kostet (der Anteil am Schulgeld-Hoechstbetrag: keine Antwort heisst "je zur Haelfte"); die Eingangsfrage nach
 /// dem Betrag selbst steht weiter in der Queue und schaltet sie frei.
+///
+/// Rust-eigen (Entscheidung d-43): `oder` haengt eine Alternative an ein Glied. Schliesst das Glied das Feld aus, bleibt es
+/// trotzdem, sobald eine Alternative gilt ([`alternative_gilt`]). Die Frage nach dem Bundesland haengt so an Person A ODER
+/// Person B; vorher fehlte sie, wenn nur der Ehegatte einer Kirche angehoerte, und die Kirchensteuer rechnete mit 9 %.
 fn feld_ausgeschlossen(
     b: &Bindung,
     aktiv: &Aktiv<'_>,
     sicht: &Sicht<'_>,
     graph: &Graph<'_>,
     vz: i64,
+    rel: &BTreeMap<&str, RegelRelevanz<'_>>,
 ) -> bool {
     let Some(bed) = &b.feld_bedingung else {
         return false;
     };
-    bed.kette()
-        .any(|glied| bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz))
+    bed.und_glieder().any(|glied| {
+        bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz)
+            && !glied
+                .alternativen()
+                .any(|alt| alternative_gilt(alt, aktiv, sicht, graph, vz, rel))
+    })
 }
 
 /// Liegt der Betrag `w` echt ueber `schwelle`? Nur eine Ganzzahl belegt einen Betrag: `cent` und `int` sind ganzzahlig (kein
@@ -161,7 +170,19 @@ fn bedingung_schliesst_aus(
     if sicht.get(&bed.feld).is_none() {
         return false;
     }
-    let stand = if let Some(alter) = bed.alter_im_vz {
+    bedingung_stand(bed, aktiv, sicht, graph, vz) == Bedingungsstand::Ausgeschlossen
+}
+
+/// Der Stand einer Bedingung der Arten `wert`, `wert_nicht` und `alter_im_vz` ueber alle Instanzen ihres Felds: ausgeschlossen,
+/// wenn JEDE Instanz bestaetigt abweicht, erfuellt, wenn alle bestaetigt sind und eine nicht abweicht, sonst offen.
+fn bedingung_stand(
+    bed: &FeldBedingung,
+    aktiv: &Aktiv<'_>,
+    sicht: &Sicht<'_>,
+    graph: &Graph<'_>,
+    vz: i64,
+) -> Bedingungsstand {
+    if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
             matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
         })
@@ -171,8 +192,37 @@ fn bedingung_schliesst_aus(
     } else {
         let soll = bed.wert.clone().map_or(PyWert::Null, PyWert::from);
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| !w.py_eq(&soll))
+    }
+}
+
+/// Haelt DIESE Alternative (`oder`) das Feld offen, obwohl das Glied, an dem sie haengt, es ausschliesst?
+///
+/// POSITIVER BEWEIS (wie `groesser_als`, anders als `wert`): ja nur, wenn die Scheibe das Feld der Alternative fragt, seine Regel
+/// nicht ausgeschlossen ist (bei Einzelveranlagung gilt die Frage nach dem Ehegatten nicht, eine alte Antwort darauf zaehlt dort
+/// nicht) und eine BESTAETIGTE Antwort die Bedingung erfuellt. Schweigen, ein vorlaeufiger Wert und "keine" halten die Frage nicht
+/// offen. Das kostet nichts, wo die Alternative eine Folgefrage freischaltet: ohne bestaetigtes Mitglied gibt es keinen Hebesatz.
+/// Ohne diese Strenge fragte jede Scheibe ohne Ehegatten-Feld und jede Einzelveranlagung das Bundesland bei jedem Fall.
+fn alternative_gilt(
+    alt: &FeldBedingung,
+    aktiv: &Aktiv<'_>,
+    sicht: &Sicht<'_>,
+    graph: &Graph<'_>,
+    vz: i64,
+    rel: &BTreeMap<&str, RegelRelevanz<'_>>,
+) -> bool {
+    let Some(feld) = sicht.get(&alt.feld) else {
+        return false;
     };
-    stand == Bedingungsstand::Ausgeschlossen
+    if rel
+        .get(feld.quelle.regel_id.as_str())
+        .is_some_and(|r| r.status == Regelstatus::Ausgeschlossen)
+    {
+        return false;
+    }
+    if alt.groesser_als.is_some() {
+        return !bedingung_schliesst_aus(alt, aktiv, sicht, graph, vz);
+    }
+    bedingung_stand(alt, aktiv, sicht, graph, vz) == Bedingungsstand::Erfuellt
 }
 
 /// Themen mit mindestens einer BESTAETIGTEN Antwort, das zuletzt angefasste zuerst
