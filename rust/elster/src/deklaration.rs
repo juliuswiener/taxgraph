@@ -4649,4 +4649,434 @@ mod tests {
         //    den Wert (die Grenze selbst ist der Beleg, dass `checked_sub` nicht zu eng ist).
         assert!(rechne(&[("", 0, i64::MAX, 1)]).is_ok());
     }
+
+    // ---- Mutationsmessung von `deklaration.rs` (Entscheidung d-45): 18 Ueberlebende ----
+    //
+    // `cargo-mutants` (20.10.2026, Basis `7675fcc3`) liess an diesen Stellen 18 Aenderungen durch, die auch
+    // `cargo test --workspace` nicht bemerkte. Die Tests unten nennen je Mutant die Zeile bei Basis `7675fcc3` und die
+    // Aenderung; die Nummern sind die des Vault-Audits `cargo-mutants-deklaration-rs-18-ueberlebende-2026-10-20`.
+    // Die Erwartungstexte stehen als eigene Literale da, nie ueber dieselbe Funktion berechnet.
+
+    fn bindungen_der_wurzel() -> Vec<bindung::Bindung> {
+        let pfad = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        bindung::lade_registry_der_wurzel(&pfad)
+            .unwrap()
+            .dateien
+            .into_iter()
+            .flat_map(|(_, d)| d.bindungen)
+            .collect()
+    }
+
+    fn eingabe(wert: Value, zustand: Zustand) -> SnapshotFeld {
+        let a = |s: &str| Achsenwert::new(s.to_owned()).unwrap();
+        SnapshotFeld {
+            wert: wert.into(),
+            zustand,
+            herkunft: Herkunft {
+                herkunft: a("laie"),
+                pruef_tiefe: PruefTiefe::Ungeprueft,
+                haftung: a("nutzer"),
+            }
+            .into(),
+        }
+    }
+
+    fn bestaetigt(wert: Value) -> SnapshotFeld {
+        eingabe(wert, Zustand::Bestaetigt)
+    }
+
+    fn felder_aus<const N: usize>(eintraege: [(&str, SnapshotFeld); N]) -> Felder {
+        eintraege
+            .into_iter()
+            .map(|(feld_id, sfeld)| (feld_id.to_owned(), sfeld))
+            .collect()
+    }
+
+    /// Die Gruende aller Eintraege zu `feld_id`, in der Reihenfolge der Liste.
+    fn gruende<'a>(liste: &'a [super::Eintrag], feld_id: &str) -> Vec<&'a str> {
+        liste
+            .iter()
+            .filter(|e| e.feld_id == feld_id)
+            .map(|e| e.grund.as_str())
+            .collect()
+    }
+
+    const IBAN_DE: &str = "DE89370400440532013000";
+    const IBAN_GB: &str = "GB82WEST12345698765432";
+
+    /// Mutanten 1, 2, 3 (`Bau::iban`, Zeilen 1539, 1542, 1549: je ein `!` geloescht) und 7 (`Bau::bankverbindung`,
+    /// Zeile 1943: `||` zu `&&`). Eine gueltige IBAN steht ohne Leerraum und in Grossbuchstaben unter dem Kz ihres Landes
+    /// (`E0102102` fuer DE, `E0102603` sonst), und der Kontoinhaber `E0101601` folgt ihr. Vor dem Test hatte `Bau::iban` keinen
+    /// Test: `iban_muster` und `iban_pruefziffer_gueltig` einzeln waren gedeckt, ihre Verdrahtung nicht.
+    #[test]
+    fn eine_gueltige_iban_steht_ohne_leerraum_unter_dem_kz_ihres_landes() {
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        for (getippt, kz, anderes_kz, norm) in [
+            (IBAN_DE, "E0102102", "E0102603", IBAN_DE),
+            ("de89 3704 0044 0532 0130 00", "E0102102", "E0102603", IBAN_DE),
+            ("  DE89\t3704\u{a0}0044 0532 0130 00\n", "E0102102", "E0102603", IBAN_DE),
+            (IBAN_GB, "E0102603", "E0102102", IBAN_GB),
+            ("gb82 west 1234 5698 7654 32", "E0102603", "E0102102", IBAN_GB),
+        ] {
+            let felder = felder_aus([("stammdaten_iban", bestaetigt(json!(getippt)))]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert_eq!(d.deklaration.get(kz), Some(&json!(norm)), "{getippt:?}");
+            assert!(!d.deklaration.contains_key(anderes_kz), "{getippt:?}: {:?}", d.deklaration);
+            assert_eq!(d.deklaration.get("E0101601"), Some(&json!(true)), "{getippt:?}: Kontoinhaber");
+            assert!(d.unvollstaendig().is_empty(), "{getippt:?}: {:?}", d.unvollstaendig());
+        }
+    }
+
+    /// Mutanten 1, 2, 3 von der anderen Seite: eine IBAN mit falschem Muster oder falscher Pruefziffer kommt NIE in die
+    /// Erklaerung (kein `E0102102`, kein `E0102603`, kein Kontoinhaber) und sperrt mit dem Grund der Pruefung, der den Wert
+    /// nicht nennt. Die Pruefziffer-Faelle haben das richtige Muster: nur die Modulo-97-Pruefung weist sie ab.
+    #[test]
+    fn eine_ungueltige_iban_bleibt_draussen_und_sperrt_mit_dem_grund_der_pruefung() {
+        const MUSTER: &str = "IBAN entspricht nicht dem amtlichen Muster (2 Buchstaben Laendercode + 2 Pruefziffern + 1-30 alphanumerische Zeichen, String_MinL5_MaxL34_Musterm188614856_CType, E10-2025.xsd) -- Wert nicht geloggt.";
+        const PRUEFZIFFER: &str = "IBAN-Pruefziffer (ISO 13616, Modulo 97) ungueltig -- Wert nicht geloggt.";
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        for (getippt, grund) in [
+            ("DE8", MUSTER),
+            ("12345678", MUSTER),
+            ("DE89-3704-0044-0532-0130-00", MUSTER),
+            ("DE88370400440532013000", PRUEFZIFFER),
+            ("de88 3704 0044 0532 0130 00", PRUEFZIFFER),
+            ("GB83WEST12345698765432", PRUEFZIFFER),
+        ] {
+            let felder = felder_aus([("stammdaten_iban", bestaetigt(json!(getippt)))]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert_eq!(d.unvollstaendig(), [super::Eintrag::neu("stammdaten_iban", grund)], "{getippt:?}");
+            for kz in ["E0102102", "E0102603", "E0101601"] {
+                assert!(!d.deklaration.contains_key(kz), "{getippt:?}: {kz} in {:?}", d.deklaration);
+            }
+        }
+    }
+
+    /// Mutanten 7 und 8 (`Bau::bankverbindung`, Zeilen 1943 und 1944: `||` zu `&&`, `==` zu `!=`). IBAN und
+    /// "keine Bankverbindung" zugleich sind ein Widerspruch, den `checkESt` mit rc=610001002 ablehnt; die IBAN allein oder
+    /// "keine Bankverbindung" allein sind keiner. Der Kontoinhaber `E0101601` steht nur bei einer IBAN ohne Widerspruch.
+    #[test]
+    fn iban_und_keine_bankverbindung_zugleich_sind_ein_widerspruch_der_sperrt() {
+        const WIDERSPRUCH: &str = "IBAN UND 'keine Bankverbindung' gleichzeitig bestaetigt -- checkESt lehnt den Widerspruch ab (rc=610001002). Genau eines von beidem darf gelten.";
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let lauf = |iban: Option<&str>, keine: Option<bool>| {
+            let mut felder = Felder::new();
+            if let Some(i) = iban {
+                felder.insert("stammdaten_iban".to_owned(), bestaetigt(json!(i)));
+            }
+            if let Some(k) = keine {
+                felder.insert("stammdaten_keine_bankverbindung".to_owned(), bestaetigt(json!(k)));
+            }
+            deklariere(&felder, &index, 2025, None).unwrap()
+        };
+        // Nur die IBAN (beide Laender): Kontoinhaber, kein Widerspruch.
+        for iban in [IBAN_DE, IBAN_GB] {
+            for keine in [None, Some(false)] {
+                let d = lauf(Some(iban), keine);
+                assert_eq!(d.deklaration.get("E0101601"), Some(&json!(true)), "{iban} {keine:?}");
+                assert!(d.unvollstaendig().is_empty(), "{iban} {keine:?}: {:?}", d.unvollstaendig());
+            }
+        }
+        // Nur "keine Bankverbindung": das Kz steht, kein Kontoinhaber, kein Widerspruch.
+        let d = lauf(None, Some(true));
+        assert_eq!(d.deklaration.get("E0102002"), Some(&json!(true)));
+        assert!(!d.deklaration.contains_key("E0101601"));
+        assert!(d.unvollstaendig().is_empty(), "{:?}", d.unvollstaendig());
+        // Weder noch: nichts.
+        let d = lauf(None, None);
+        assert!(!d.deklaration.contains_key("E0101601"));
+        assert!(d.unvollstaendig().is_empty(), "{:?}", d.unvollstaendig());
+        // Beides: der Widerspruch sperrt unter `stammdaten_iban`, und der Kontoinhaber bleibt weg.
+        for iban in [IBAN_DE, IBAN_GB] {
+            let d = lauf(Some(iban), Some(true));
+            assert_eq!(d.unvollstaendig(), [super::Eintrag::neu("stammdaten_iban", WIDERSPRUCH)], "{iban}");
+            assert!(!d.deklaration.contains_key("E0101601"), "{iban}: {:?}", d.deklaration);
+        }
+    }
+
+    /// Mutant 4 (`Bau::feld`, Zeile 1578: `!` vor `wert.truthy()` geloescht). Ein Feld in `NEGATION` schreibt das GEGENTEIL
+    /// seiner Antwort: der Vordruck fragt nach der schaedlichen Haushaltsgemeinschaft (`E0503701`), das Feld
+    /// `fam_alleinstehend` nach dem Alleinsein. Ohne die Umkehr stuende der Haken verkehrt herum in der Erklaerung.
+    #[test]
+    fn ein_negations_feld_schreibt_das_gegenteil_seiner_antwort() {
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        for (antwort, erwartet) in [(true, false), (false, true)] {
+            let felder = felder_aus([("fam_alleinstehend", bestaetigt(json!(antwort)))]);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert_eq!(d.deklaration.get("E0503701"), Some(&json!(erwartet)), "fam_alleinstehend = {antwort}");
+        }
+    }
+
+    /// Mutanten 5 und 6 (`Bau::feld`, Zeile 1593: `==` zu `!=` bei der Suche nach dem Ziel; `Bau::dokumentiert`, Zeile
+    /// 2054: Rueckgabe durch eine leere Tabelle ersetzt). Die vier Vermietungs-Betraege ohne eigenes Kz stehen NICHT in der
+    /// Erklaerung, sondern als dokumentierte Summe unter `E0703838`, mit den Quellfeldern in sortierter Reihenfolge.
+    #[test]
+    fn vermietungs_betraege_ohne_kz_stehen_als_dokumentierte_summe_nicht_in_der_erklaerung() {
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let lauf = |betraege: &[(&str, i64)]| {
+            let felder: Felder = betraege
+                .iter()
+                .map(|(f, cent)| ((*f).to_owned(), bestaetigt(json!(cent))))
+                .collect();
+            deklariere(&felder, &index, 2025, None).unwrap()
+        };
+        let aggregat = |summe: i64, quellen: &[&str]| {
+            BTreeMap::from([(
+                "E0703838".to_owned(),
+                super::Aggregat {
+                    summe,
+                    quell_felder: quellen.iter().map(|q| (*q).to_owned()).collect(),
+                },
+            )])
+        };
+        // Alle vier, in unsortierter Reihenfolge der Eingabe: 3000 + 1200 + 500 + 400 EUR.
+        let d = lauf(&[
+            ("vv_sonstige_wk", 40_000),
+            ("vv_schuldzinsen", 120_000),
+            ("vv_gebaeude_afa", 300_000),
+            ("vv_erhaltungsaufwand", 50_000),
+        ]);
+        assert_eq!(
+            d.dokumentiert,
+            aggregat(5_100, &["vv_erhaltungsaufwand", "vv_gebaeude_afa", "vv_schuldzinsen", "vv_sonstige_wk"])
+        );
+        assert!(!d.deklaration.contains_key("E0703838"), "dokumentiert, nicht deklariert: {:?}", d.deklaration);
+        // Nur zwei: die Summe zaehlt genau die vorhandenen.
+        let d = lauf(&[("vv_schuldzinsen", 120_000), ("vv_erhaltungsaufwand", 50_000)]);
+        assert_eq!(d.dokumentiert, aggregat(1_700, &["vv_erhaltungsaufwand", "vv_schuldzinsen"]));
+        // Keiner: keine Summe, auch keine 0.
+        assert!(lauf(&[]).dokumentiert.is_empty());
+    }
+
+    /// Mutant 9 (`Bau::vorsorge_partner_feld`, Zeile 927: Rueckgabe immer `false`). Die fuenf Vorsorge-Felder des Ehegatten
+    /// uebernimmt `vorsorge_partner_feld` selbst: ohne bestaetigte Zusammenveranlagung steht der Grund "zaehlt nur bei
+    /// bestaetigter Zusammenveranlagung" in `nicht_deklariert`; mit ihr steht gar kein Eintrag da, denn der Betrag geht in die
+    /// gemeinsame Summe. Mit dem Mutanten landeten die Felder in der letzten Verzweigung von `feld` und trugen dort den Grund
+    /// "kein eigenes Kz" aus der Bindung, auch bei Zusammenveranlagung.
+    #[test]
+    fn die_vorsorge_felder_des_ehegatten_nennen_ihren_grund_nur_ohne_bestaetigte_zusammenveranlagung() {
+        const GRUND: &str = "Der Betrag des Ehegatten zaehlt nur bei bestaetigter Zusammenveranlagung; sonst steht er nicht in der Erklaerung";
+        const FELDER: [&str; 5] = [
+            "vorsorge_arbeitslosenversicherung_partner",
+            "vorsorge_erwerbsunfaehigkeit_partner",
+            "vorsorge_unfall_haftpflicht_partner",
+            "vorsorge_rv_alt_mit_ueberschuss_partner",
+            "vorsorge_rv_alt_ohne_ueberschuss_partner",
+        ];
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let lauf = |veranlagung: Option<(&str, Zustand)>| {
+            let mut felder: Felder = FELDER
+                .iter()
+                .map(|f| ((*f).to_owned(), bestaetigt(json!(30_001))))
+                .collect();
+            if let Some((wert, zustand)) = veranlagung {
+                felder.insert("veranlagung".to_owned(), eingabe(json!(wert), zustand));
+            }
+            deklariere(&felder, &index, 2025, None).unwrap()
+        };
+        let d = lauf(Some(("zusammen", Zustand::Bestaetigt)));
+        for f in FELDER {
+            assert!(
+                gruende(&d.nicht_deklariert, f).is_empty(),
+                "zusammen, {f}: {:?}",
+                gruende(&d.nicht_deklariert, f)
+            );
+        }
+        // Einzel, nur vorlaeufig zusammen und gar keine Angabe: der Ehegatte zaehlt nicht.
+        for veranlagung in [
+            Some(("einzel", Zustand::Bestaetigt)),
+            Some(("zusammen", Zustand::Vorlaeufig)),
+            None,
+        ] {
+            let d = lauf(veranlagung);
+            for f in FELDER {
+                assert_eq!(gruende(&d.nicht_deklariert, f), [GRUND], "{veranlagung:?}, {f}");
+            }
+        }
+    }
+
+    /// Mutant 10 (`deklariere`, Zeile 1777: `||` zu `&&`). Wer das Snapshot-OBJEKT statt der Felder-Ebene uebergibt, wird
+    /// abgewiesen, sobald EINER der Schluessel `felder` oder `snapshot_id` darin steht (Python: `est_mapping.py`, dieselbe
+    /// Pruefung). Ohne einen der beiden ist die Eingabe in Ordnung.
+    #[test]
+    fn ein_snapshot_objekt_wird_schon_bei_einem_der_beiden_schluessel_abgewiesen() {
+        use super::DeklarationsFehler;
+
+        let index = HashMap::new();
+        for schluessel in [&["felder"][..], &["snapshot_id"], &["felder", "snapshot_id"]] {
+            let felder: Felder = schluessel
+                .iter()
+                .map(|s| ((*s).to_owned(), bestaetigt(json!({}))))
+                .collect();
+            let e = deklariere(&felder, &index, 2025, None).unwrap_err();
+            assert_eq!(e, DeklarationsFehler::SnapshotObjekt, "{schluessel:?}");
+            assert_eq!(e.python_klasse(), "ValueError", "{schluessel:?}");
+        }
+        assert!(deklariere(&Felder::new(), &index, 2025, None).is_ok());
+    }
+
+    /// Mutant 11 (`euro_text`, Zeile 458: `<` zu `<=`). Ein Betrag von 0 bekommt kein Minuszeichen; Cent unter einem Euro
+    /// behalten die zwei Nachkommastellen, negative Betraege das Minus vor dem Betrag.
+    #[test]
+    fn euro_text_setzt_das_minus_nur_vor_negative_betraege() {
+        for (cent, text) in [
+            (0, "0,00"),
+            (5, "0,05"),
+            (-5, "-0,05"),
+            (500, "5,00"),
+            (-500, "-5,00"),
+            (123_450, "1234,50"),
+            (-123_450, "-1234,50"),
+        ] {
+            assert_eq!(super::euro_text(cent), text, "{cent} ct");
+        }
+    }
+
+    /// Mutanten 12 und 13 (`zustand_text`, Zeile 752: Rueckgabe `""` und `"xyzzy"`). Beide Werte des Zustands haben ihr Wort,
+    /// und das Wort steht im Grund der Sperre eines vorlaeufigen Felds.
+    #[test]
+    fn der_zustand_steht_mit_seinem_wort_im_grund_der_sperre_eines_vorlaeufigen_felds() {
+        assert_eq!(super::zustand_text(Zustand::Vorlaeufig), "vorlaeufig");
+        assert_eq!(super::zustand_text(Zustand::Bestaetigt), "bestaetigt");
+
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let felder = felder_aus([("stammdaten_iban", eingabe(json!(IBAN_DE), Zustand::Vorlaeufig))]);
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        assert_eq!(
+            d.unvollstaendig(),
+            [super::Eintrag::neu(
+                "stammdaten_iban",
+                "Wert vorlaeufig — Pflicht-Bestätigung (Zwei-Signal) fehlt"
+            )]
+        );
+        assert!(!d.deklaration.contains_key("E0102102"), "{:?}", d.deklaration);
+    }
+
+    /// Mutanten 14 und 15 (`Bau::verzweigung`, Zeile 1501: der Guard `partner` wird `true` und `false`). Hat die bestaetigte
+    /// Art keinen Kz-Zweig, sagen die Gruende es mit dem Wortlaut der Person: bei der Hauptperson "Art ... ohne Kz-Zweig", beim
+    /// Partner "Partner-Renten-Art ... ohne Kz-Zweig" und die laengere Rueckmeldung an "euch" statt an "dich".
+    #[test]
+    fn eine_art_ohne_kz_zweig_nennt_ihren_grund_im_wortlaut_der_person() {
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let felder = felder_aus([
+            ("rentner_renten_art", bestaetigt(json!("unbekannt"))),
+            ("rentner_jahresrente", bestaetigt(json!(1_200_000))),
+            ("rentner_renten_art_partner", bestaetigt(json!("unbekannt"))),
+            ("rentner_jahresrente_partner", bestaetigt(json!(1_200_000))),
+        ]);
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        assert_eq!(
+            gruende(&d.nicht_deklariert, "rentner_jahresrente"),
+            ["Art 'unbekannt' (rentner_renten_art) ohne Kz-Zweig"]
+        );
+        assert_eq!(
+            gruende(d.unvollstaendig(), "rentner_jahresrente"),
+            ["Für 'unbekannt' (rentner_renten_art) ist diese Einkunftsart bei uns noch nicht abgebbar — keine Eingabe von dir fehlt oder widerspricht sich."]
+        );
+        assert_eq!(
+            gruende(&d.nicht_deklariert, "rentner_jahresrente_partner"),
+            ["Partner-Renten-Art 'unbekannt' ohne Kz-Zweig"]
+        );
+        assert_eq!(
+            gruende(d.unvollstaendig(), "rentner_jahresrente_partner"),
+            ["Eure Angabe zu 'unbekannt' (rentner_renten_art_partner) ist vollständig, nichts von euch fehlt oder widerspricht sich. Diese Einkunftsart des Partners ist bei uns noch nicht abgebbar — das liegt nicht an eurer Eingabe, ihr müsst hier nichts nachtragen."]
+        );
+    }
+
+    /// Mutant 16 (`Bau::feld`, Zeile 1585: `!` im Filter des Grunds der Multiplikation geloescht). Das Zaehlfeld der Kinder
+    /// legt die Anlagen Kind an und steht mit dem Grund der Bindung in `nicht_deklariert`; fehlt der Grund oder ist er leer,
+    /// gilt der feste Text "Multiplikation -> `kind_anlagen` (Kinderzahl implizit)".
+    #[test]
+    fn das_zaehlfeld_der_kinder_nennt_den_grund_der_bindung_oder_den_festen_text() {
+        const VORGABE: &str = "Multiplikation -> kind_anlagen (Kinderzahl implizit)";
+        let bindungen = bindungen_der_wurzel();
+        let mut index = store::baue_nachschlag(&bindungen);
+        let echt = index["fam_anzahl_kinder"];
+        let grund_der_bindung = echt.elster_kz_grund.clone().unwrap();
+        assert!(!grund_der_bindung.is_empty(), "die Bindung braucht fuer diesen Test einen Grund");
+        let ohne_grund = bindung::Bindung { elster_kz_grund: None, ..echt.clone() };
+        let leerer_grund = bindung::Bindung { elster_kz_grund: Some(String::new()), ..echt.clone() };
+        let felder = felder_aus([("fam_anzahl_kinder", bestaetigt(json!(2)))]);
+
+        let d = deklariere(&felder, &index, 2025, None).unwrap();
+        assert_eq!(d.kind_anlagen.len(), 2);
+        assert_eq!(gruende(&d.nicht_deklariert, "fam_anzahl_kinder"), [grund_der_bindung.as_str()]);
+
+        for b in [&ohne_grund, &leerer_grund] {
+            index.insert("fam_anzahl_kinder".to_owned(), b);
+            let d = deklariere(&felder, &index, 2025, None).unwrap();
+            assert_eq!(
+                gruende(&d.nicht_deklariert, "fam_anzahl_kinder"),
+                [VORGABE],
+                "Grund {:?}",
+                b.elster_kz_grund
+            );
+        }
+    }
+
+    /// Mutanten 17 und 18 (`Bau::kap_nulldeklaration`, Zeilen 1969 und 1977: `!` in `is_some_and(|v| !v.is_null())`
+    /// geloescht). Sind alle zehn Kapital-Felder beider Personen bestaetigt 0, laesst die Erklaerung die Kz weg
+    /// (Option A, Julius-Entscheidung 2026-08-10), und jedes Feld MIT Kz nennt den Grund dafuer in `nicht_deklariert`.
+    /// Die zwei Felder ohne Kz (`kap_gewinn_sonstige` und sein Partnerfeld) tragen ihren eigenen Grund und keinen dieses Texts.
+    /// Ist EIN Feld ungleich 0, bleibt alles stehen und kein Feld nennt den Grund.
+    #[test]
+    fn nullen_im_kapital_fallen_weg_und_jedes_feld_mit_kz_nennt_den_grund() {
+        const OPTION_A: &str = "Option A (Julius-Entscheidung 2026-08-10): alle KAP-Felder beider Personen bestaetigt 0 -- als Kz deklariert wuerde ELSTER 'Kapitalertraege erklaert' lesen und einen Angabegrund verlangen, den wir nicht liefern.";
+        const MIT_KZ_A: [(&str, &str); 4] = [
+            ("kap_kapitalertraege", "E1900701"),
+            ("kap_gewinn_aktien", "E1900901"),
+            ("kap_verlust_aktien", "E1901301"),
+            ("kap_verlust_sonstige", "E1901201"),
+        ];
+        const MIT_KZ_B: [&str; 4] = [
+            "kap_kapitalertraege_partner",
+            "kap_gewinn_aktien_partner",
+            "kap_verlust_aktien_partner",
+            "kap_verlust_sonstige_partner",
+        ];
+        const OHNE_KZ: [&str; 2] = ["kap_gewinn_sonstige", "kap_gewinn_sonstige_partner"];
+        let bindungen = bindungen_der_wurzel();
+        let index = store::baue_nachschlag(&bindungen);
+        let lauf = |ausnahme: Option<(&str, i64)>| {
+            let mut felder = Felder::new();
+            for f in MIT_KZ_A.map(|(f, _)| f).into_iter().chain(MIT_KZ_B).chain(OHNE_KZ) {
+                felder.insert(f.to_owned(), bestaetigt(json!(0)));
+            }
+            if let Some((f, cent)) = ausnahme {
+                felder.insert(f.to_owned(), bestaetigt(json!(cent)));
+            }
+            deklariere(&felder, &index, 2025, None).unwrap()
+        };
+
+        let d = lauf(None);
+        for (f, kz) in MIT_KZ_A {
+            assert!(!d.deklaration.contains_key(kz), "{f}: {kz} in {:?}", d.deklaration);
+            assert_eq!(gruende(&d.nicht_deklariert, f), [OPTION_A], "{f}");
+        }
+        assert!(d.person_b.is_empty(), "{:?}", d.person_b);
+        for f in MIT_KZ_B {
+            assert_eq!(gruende(&d.nicht_deklariert, f), [OPTION_A], "{f}");
+        }
+        for f in OHNE_KZ {
+            assert!(!gruende(&d.nicht_deklariert, f).contains(&OPTION_A), "{f}");
+        }
+
+        // Ein Betrag bei Person A ODER bei Person B haelt die Nullen beider Personen in der Erklaerung.
+        for f in ["kap_kapitalertraege", "kap_verlust_aktien_partner"] {
+            let d = lauf(Some((f, 500)));
+            assert_eq!(d.deklaration.get("E1900901"), Some(&json!(0)), "{f}: Null von Person A bleibt");
+            assert_eq!(d.person_b.get("E1900901"), Some(&json!(0)), "{f}: Null von Person B bleibt");
+            for g in MIT_KZ_A.map(|(g, _)| g).into_iter().chain(MIT_KZ_B) {
+                assert!(!gruende(&d.nicht_deklariert, g).contains(&OPTION_A), "{f}: {g}");
+            }
+        }
+    }
 }
