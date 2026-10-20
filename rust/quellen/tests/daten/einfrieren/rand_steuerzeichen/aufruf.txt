@@ -1,0 +1,12 @@
+--url
+https://example.invalid/steuer.html
+--name
+fall_rand_steuerzeichen
+--norm
+N
+--start
+START
+--min-laenge
+20
+--abrufdatum
+2026-01-01

@@ -210,6 +210,28 @@ fn werte_mit_und_ohne_anfuehrungszeichen_und_mit_leerraum_am_rand() {
 }
 
 #[test]
+fn eine_meta_mit_nur_cr_als_zeilenende_wird_wie_in_python_gelesen() {
+    let t = tempfile::tempdir().unwrap();
+    let text = mit_kopf(&wortlaut(80));
+    quelle(t.path(), "a", "doc", &text);
+    // Python macht aus jedem alleinstehenden "\r" ein "\n"; ohne die Übersetzung stünde alles in EINER Zeile.
+    let meta = format!("dokument:\r  datei: \"doc.txt\"\r  sha256: \"{}\"\r", sha(text.as_bytes()));
+    fs::write(t.path().join("sources/a/doc.meta.yaml"), meta).unwrap();
+    assert_eq!(lauf(t.path()).zeilen, vec!["OK       sources/a/doc.txt"]);
+}
+
+#[test]
+fn ein_feld_aus_nur_leerzeichen_gilt_als_fehlend() {
+    let t = tempfile::tempdir().unwrap();
+    let text = mit_kopf(&wortlaut(80));
+    quelle(t.path(), "a", "doc", &text);
+    // `field()` liefert " " und strip() macht "" daraus: `not datei` ist wahr.
+    let meta = format!("dokument:\n  datei:   \n  sha256: \"{}\"\n", sha(text.as_bytes()));
+    fs::write(t.path().join("sources/a/doc.meta.yaml"), meta).unwrap();
+    assert_eq!(lauf(t.path()).zeilen, vec!["MISSING FIELDS: sources/a/doc.meta.yaml"]);
+}
+
+#[test]
 fn die_reihenfolge_ist_die_der_pfadtexte_nicht_der_pfadteile() {
     let t = tempfile::tempdir().unwrap();
     // "a.meta.yaml" < "a/x.meta.yaml", weil '.' (0x2E) vor '/' (0x2F) kommt; nach Pfadteilen käme "a" vor "a.meta.yaml".

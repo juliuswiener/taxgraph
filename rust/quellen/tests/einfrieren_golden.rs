@@ -8,7 +8,9 @@
 //!
 //! Randfälle (je ein Ordner): `<script>` und `</p>` darin, `&nbsp;`/`&sect;`/`&ndash;`, alle 253 Entities der Tabelle,
 //! Start ohne Ende, `ende` zu nah am Start (Zeichen, nicht Bytes), Start nicht gefunden, zu kurz, `--erwarte` fehlt, rohes
-//! gzip, ungültiges UTF-8, Großbuchstaben-Tags, offene Tags, Kommentare. Weicht Rust absichtlich ab (unbekannte Entity,
+//! gzip, ungültiges UTF-8, Großbuchstaben-Tags, offene Tags, Kommentare; die Grenzen (Ende genau 10 Zeichen hinter dem
+//! Start, Länge genau auf dem Minimum), leeres `--ende`, U+001C bis U+001F am Zeilenrand, doppelt kodierte Entities.
+//! Weicht Rust absichtlich ab (unbekannte Entity,
 //! `&name` ohne Semikolon), steht der Test in `entity_hermetisch.rs`.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::indexing_slicing, clippy::panic, clippy::explicit_write)]
 
@@ -90,6 +92,9 @@ faelle!(
     ende_genau_zehn,
     laenge_grenze_ok,
     laenge_grenze_zu_kurz,
+    ende_leer,
+    rand_steuerzeichen,
+    entities_doppelt,
     ende_nicht_gefunden,
     start_am_ende,
     gzip,
@@ -112,5 +117,5 @@ fn jeder_ordner_der_fixturen_hat_einen_test_und_umgekehrt() {
     im_test.sort();
     assert_eq!(im_baum, im_test);
     let ablehnungen = im_baum.iter().filter(|n| daten().join(n).join("fehler.txt").exists()).count();
-    assert_eq!((im_baum.len() - ablehnungen, ablehnungen), (15, 4), "15 Annahmen und 4 Ablehnungen");
+    assert_eq!((im_baum.len() - ablehnungen, ablehnungen), (18, 4), "18 Annahmen und 4 Ablehnungen");
 }
