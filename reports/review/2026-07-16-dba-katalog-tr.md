@@ -96,7 +96,7 @@ committen) — nur Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-16-dba-katalog-estr-anker-verify.py` (`gates._normalize`): alle
+Skript `git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-estr-anker-verify.py` (`gates._normalize`): alle
 TR-Kernanker (Freistellung a, Schachtel 25 %, Anrechnung b + Enum aa–gg, Umschalt c, Prog d)
 **voll-Länge OK**. Negativtest `10 Prozent … deutschen Gesellschaft` (statt 25 %) FEHLT in TR;
 MLI-Negativtest `Türkei …01.01.2025` FEHLT im bmf_stand. Gesamt 33/33.

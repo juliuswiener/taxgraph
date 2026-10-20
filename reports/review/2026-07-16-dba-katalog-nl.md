@@ -81,7 +81,7 @@ Investmentsteuer / REIT-Anpassungen (2025-Protokoll — nicht methoden-katalog-r
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (`gates._normalize`): NL-Anker über `dba_nl_abkommen_2012`
+Skript `git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (`gates._normalize`): NL-Anker über `dba_nl_abkommen_2012`
 (a-contig-Stücke, b, c, d), `dba_nl_protokoll_2021` (Enum-Tweak) und `dba_nl_protokoll_2025`
 (a-Freistellung VZ 2026 + Bagatell) sämtlich `OK` voll-Länge. Alle Anker aus zusammenhängenden
 deutschen Blöcken, nie über Spalten-/Seitengrenze (Auflage 2 erfüllt).

@@ -13,7 +13,7 @@ zusätzlich durch BGBl-Seitenköpfe (`Das Bundesgesetzblatt im Internet …`, `B
 2010 …`, Seitenzahlen) unterbrochen. **Alle Zitatanker stammen aus zusammenhängenden deutschen Blöcken**,
 voll-Länge `_normalize`-verifiziert; kein Anker über einen EN-Block, eine Kopfzeile oder eine
 hyphen-Break (z. B. „der deutschen Ge-\n[Kopf]\nsellschaft" — der Schachtel-10%-Anker endet vor dem
-Umbruch bei „unmittelbar der deutschen"). Verify-Skript `2026-07-17-dba-katalog-gb-anker-verify.py`
+Umbruch bei „unmittelbar der deutschen"). Verify-Skript `git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-gb-anker-verify.py`
 (21 OK / 0 Fehler, inkl. 3 Negativtests).
 
 ## Methodenartikel Art. 23 Abs. 1 (deutsche Methode)
@@ -134,7 +134,7 @@ tax-Details. Zweitbelege (NWB/Kommentare) NUR Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-17-dba-katalog-gb-anker-verify.py` (`gates._normalize`): alle GB-Kernanker
+Skript `git show 6aa280ac^:reports/review/2026-07-17-dba-katalog-gb-anker-verify.py` (`gates._normalize`): alle GB-Kernanker
 (Freistellung a, Schachtel 10 %, Anrechnung b + Enum aa–dd, Umschalt c, Prog d, Switch-over e aa/bb)
 **voll-Länge OK** aus zusammenhängenden deutschen Blöcken; PPT-Anker (Art. 30A, 2021) + GB-DBA-
 Fundstelle (bmf_stand) OK. Negativtests: `25 Prozent`-Schachtel (statt 10 %) FEHLT, `§ 9 AStG`

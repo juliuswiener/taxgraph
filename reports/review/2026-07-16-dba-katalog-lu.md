@@ -82,7 +82,7 @@ to-tax + Notifikation) — benannt; Protokoll-Klarstellung „keine Anrechnung a
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (importiert `gates._normalize`): LU-Anker über
+Skript `git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-frlunl-anker-verify.py` (importiert `gates._normalize`): LU-Anker über
 `dba_lu_abkommen_2012` (b/c/d, unverändert) UND `dba_lu_protokoll_2023` (a/Schachtel/f/Bagatell,
 neu gefasst) sämtlich `OK` voll-Länge. Alle deutschen Blöcke zusammenhängend (LU-Freeze nicht
 zweisprachig-interleaved, keine Spaltengrenze).

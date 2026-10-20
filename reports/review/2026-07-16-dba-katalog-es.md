@@ -97,7 +97,7 @@ Zweitbelege (NWB/Kommentar) nur Gegenprobe, nie Primäranker.
 
 ## Voll-Länge-Anker-Verifikation
 
-Skript `reports/review/2026-07-16-dba-katalog-estr-anker-verify.py` (`gates._normalize`): alle
+Skript `git show 6aa280ac^:reports/review/2026-07-16-dba-katalog-estr-anker-verify.py` (`gates._normalize`): alle
 ES-Kernanker (Freistellung a, Schachtel 10 %, Anrechnung b + Enum i–vii, Umschalt c, Prog d) + die drei
 bmf_stand-MLI-Anker (Regel, Anwendungsgesetz, Spanien-Zeile) **voll-Länge OK**. Negativtests greifen
 (z. B. „25 vom Hundert" statt „10 vom Hundert" FEHLT in ES; „Türkei …01.01.2025" FEHLT im bmf_stand).
