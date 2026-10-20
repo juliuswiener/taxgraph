@@ -23,11 +23,19 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     sperre_o!(flag_kapital_gewinn(k));
     sperre_o!(betrag_offen(k));
     // Person B (#4): bei Zusammenveranlagung der vollstaendig BESTAETIGTE Person-B-Kegel.
+    // Abweichung Nr. NN (Julius d-47): ein BESTAETIGTES `kein_kap_partner = ja` („keine Kapitalertraege beim Partner“) nimmt die
+    // fuenf Kapital-Felder aus der Frage (`feld_bedingung kein_kap_partner = false`); dann verlangt die Sperre sie auch nicht.
+    // Nur bestaetigt wahr zaehlt: fehlt das Kreuz, ist es vorlaeufig oder „nein“, gilt die Liste wie bisher (Schweigen ist kein „keine“).
+    let kap_partner: &[&str] = if bestaetigt(k.f, "kein_kap_partner") && ist_true(wert(k.f, "kein_kap_partner")) {
+        &[]
+    } else {
+        &GESAMT_PARTNER_KAP
+    };
     if cfg.partner_19
         && ist_zusammen(k.f)
         && GESAMT_PARTNER_19
             .iter()
-            .chain(&GESAMT_PARTNER_KAP)
+            .chain(kap_partner)
             .any(|pf| !bestaetigt(k.f, pf))
     {
         return Ok(Some(Sperrgrund::PartnerKegelOffen));

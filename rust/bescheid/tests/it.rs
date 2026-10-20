@@ -54,6 +54,8 @@ mod gwg_einzel_afa;
 mod gwg_grenze_hermetisch;
 #[path = "hausnummer_zusatz.rs"]
 mod hausnummer_zusatz;
+#[path = "kap_partner_kreuz_erklaerung.rs"]
+mod kap_partner_kreuz_erklaerung;
 #[path = "kapital_guenstiger_hermetisch.rs"]
 mod kapital_guenstiger_hermetisch;
 #[path = "kapital_topf_hermetisch.rs"]

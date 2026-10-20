@@ -1867,7 +1867,7 @@ async fn behinderten_pauschbetrag_des_ehegatten_wirkt_in_beiden_zweigen_gleich()
 /// Abweichung Nr. NN (Julius d-47): ein Ehepaar, das „keine Kapitalertraege des Partners“ bestaetigt und die fuenf Kapital-Felder des
 /// Ehegatten nicht beantwortet, bekommt dieselbe Zahl wie das Paar, das die Kapitalertraege ankreuzt und die fuenf Felder mit 0 beantwortet
 /// (Gegenprobe). Vor der Aenderung sperrte der erste Fall mit `partner_kegel_offen`, ohne offene Frage. Lohn A 60.000 EUR, Lohn B 20.000 EUR:
-/// gemeinsame ESt 13.838 EUR (Handrechnung der Kirchensteuer-Faelle unten, Tarif aus `params/2025/`).
+/// gemeinsame `ESt` 13.838 EUR (Handrechnung der Kirchensteuer-Faelle unten, Tarif aus `params/2025/`).
 #[tokio::test]
 async fn ehepaar_ohne_kapitalertraege_des_partners_hat_dieselbe_zahl_wie_mit_kreuz_und_fuenf_nullen() {
     let lohn = vec![("bruttoarbeitslohn", json!(6_000_000)), ("bruttoarbeitslohn_partner", json!(2_000_000))];

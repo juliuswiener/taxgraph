@@ -31,12 +31,13 @@
 //! Sperre aufloesen (kleinste solche Menge: [`Treffer::felder`]). Eine harte Sperre der geoeffneten Gruppe (ring-
 //! unfaehige Einkunftsart) bleibt ohne Wirkung: sie loest keine Antwort auf.
 //!
-//! **Bekannte Sackgassen** ([`BEKANNT`]) sind die offenen Defekte: `kein_kap_partner` (Python `BEKANNTE_TREFFER`, in
-//! `gesamt`). Zwei Klassen standen hier und sind behoben: `kein_sonstige_partner` (Python, nur ueber einen Seitenkanal, in
-//! `rentner_gesamt`) und `kein_lohn_pension_partner` (Rust-eigen seit Abweichung Nr. 46, Seitenkanal in `gesamt` und
-//! `an_gesamt`). Beide hatten eine Ursache: eine Bedingung auf ein Kreuz, das die Scheibe nicht fragt
-//! (`interview::fragen::bedingung_schliesst_aus`). Eine neue Klasse macht den Test rot; ein behobener Defekt macht
-//! `die_bekannten_sackgassen_werden_noch_gesehen` rot, der Eintrag in [`BEKANNT`] faellt dann weg.
+//! **Bekannte Sackgassen** ([`BEKANNT`]) sind die offenen Defekte; die Tabelle ist leer. Drei Klassen standen hier und sind
+//! behoben: `kein_sonstige_partner` (Python, nur ueber einen Seitenkanal, in `rentner_gesamt`) und `kein_lohn_pension_partner`
+//! (Rust-eigen seit Abweichung Nr. 46, Seitenkanal in `gesamt` und `an_gesamt`) hatten eine Ursache: eine Bedingung auf ein Kreuz,
+//! das die Scheibe nicht fragt (`interview::fragen::bedingung_schliesst_aus`). `kein_kap_partner` (Python `BEKANNTE_TREFFER`, in
+//! `gesamt`) sass im Guard: Abweichung Nr. NN (Julius d-47) laesst die Sperre `partner_kegel_offen` die fuenf Kapital-Felder des
+//! Ehegatten nicht mehr verlangen, wenn das Kreuz bestaetigt „keine“ sagt (`sperre/gesamt.rs`). Eine neue Klasse macht den Test rot;
+//! ein behobener Defekt macht `die_bekannten_sackgassen_werden_noch_gesehen` rot, der Eintrag in [`BEKANNT`] faellt dann weg.
 //!
 //! **Grenzen** (jede mit einem Mutanten gemessen, siehe `REWRITE_PLAN.md` Nr. 71). Der Guard-Zweig braucht den passenden
 //! Zustand; der Sweep setzt Beispielwerte und sieht nur, was diese Werte erreichen. Er sieht nicht: (1) Zweige, die eine
@@ -90,22 +91,7 @@ const VERANLAGUNGEN: [&str; 2] = ["einzel", "zusammen"];
 
 /// Die bekannten Sackgassen: (Scheibe, nur ueber Seitenkanal, Sperrgrund, Felder, deren Antwort die Sperre aufloest).
 /// Die Felder sind der Kern; der Sweep darf weitere nennen (die kleinste Menge ist nicht eindeutig).
-const BEKANNT: &[(&str, bool, &str, &[&str])] = &[
-    // `kein_kap_partner = ja` nimmt die fuenf KAP-Felder des Ehegatten aus der Warteschlange, `partner_kegel_offen` verlangt
-    // sie weiter. Python: `BEKANNTE_TREFFER`, gemessen 2026-08-30. Die Sperre hat einen Ausweg (Korrektur des Kreuzes).
-    (
-        "Gesamt",
-        false,
-        "partner_kegel_offen",
-        &[
-            "kap_gewinn_aktien_partner",
-            "kap_gewinn_sonstige_partner",
-            "kap_kapitalertraege_partner",
-            "kap_verlust_aktien_partner",
-            "kap_verlust_sonstige_partner",
-        ],
-    ),
-];
+const BEKANNT: &[(&str, bool, &str, &[&str])] = &[];
 
 // ---------------------------------------------------------------- die Welt: Bindung + Graph
 
@@ -817,17 +803,18 @@ fn die_bekannten_sackgassen_werden_noch_gesehen() {
     }
 }
 
-/// Die offenen Defekte als Aussage: es gibt keine Sackgasse. Rot sehen: `--ignored`.
+/// Die offenen Defekte als Aussage: es gibt keine Sackgasse.
 #[test]
-#[ignore = "offene Defekte, siehe BEKANNT: kein_kap_partner (gesamt). Rot sehen: --ignored"]
 fn es_gibt_keine_sackgasse() {
     let gesehen = klassen(&beobachtet().funde);
     assert!(gesehen.is_empty(), "DEFEKT: Sackgassen\n{}", beschreibe(&gesehen));
 }
 
 /// Der Sweep liest genug: eine Extraktion, die mangels Kontexten oder Kreuzen still leer wird, machte das Tor oben sinnlos
-/// gruen. Die Schwellen liegen unter dem Messwert (48 Steuerfelder, 143 Kontexte, davon 22 mit harter Sperre, 1.584 Szenarien,
-/// 1.362 mit Ausschluss, 116 Endstaende mit Sperre; `--nocapture` zeigt sie).
+/// gruen. Die Schwellen liegen unter dem Messwert (54 Steuerfelder, 167 Kontexte, davon 24 mit harter Sperre, 2.214 Szenarien,
+/// 1.628 mit Ausschluss, 24 Endstaende mit Sperre; `--nocapture` zeigt sie). Seit Abweichung Nr. NN (Julius d-47) hat der echte
+/// Bestand keine Sackgasse mehr: die Endstaende mit Sperre sind nur noch die der harten Kontexte, und ein Treffer ist keine
+/// Voraussetzung mehr. Dass der Sweep nicht blind ist, belegt `ein_eingeschleustes_kreuz_wird_als_sackgasse_gesehen`.
 #[test]
 fn der_sweep_liest_genug() {
     let b = beobachtet();
@@ -849,12 +836,11 @@ fn der_sweep_liest_genug() {
     assert!(b.kontexte >= 100, "Kontexte: {}", b.kontexte);
     assert!(b.szenarien >= 1_000, "Szenarien: {}", b.szenarien);
     assert!(b.mit_ausschluss >= 1_000, "Szenarien mit entfallenden Feldern: {}", b.mit_ausschluss);
-    assert!(b.mit_sperre >= 50, "Endstaende mit Sperre: {}", b.mit_sperre);
+    assert!(b.mit_sperre >= 10, "Endstaende mit Sperre: {}", b.mit_sperre);
     assert!(b.kontexte_mit_sperre >= 5, "Kontexte mit harter Sperre: {}", b.kontexte_mit_sperre);
     assert_eq!(b.abgewiesen, 0, "Szenarien, deren Vorgabe der Store abwies");
     assert_eq!(b.abgelehnt, 0, "Antworten der Warteschlange, die der Store abwies");
     assert_eq!(b.guard_fehler, 0, "Endstaende, in denen der Guard einen Fehler lieferte");
-    assert!(!b.funde.is_empty(), "kein einziger Treffer: der Sweep ist blind");
 }
 
 /// Der Grundzustand ist in jeder Scheibe und Veranlagung frei von Sperren: sonst verdeckte eine Sperre alles, was der Guard
