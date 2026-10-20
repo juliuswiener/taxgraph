@@ -1,0 +1,18 @@
+--url
+https://example.invalid/bmf.html
+--name
+bmf_2026-01-01_erfunden
+--norm
+BMF Erfunden (Beispiel)
+--start
+BMF-Schreiben vom
+--fassung
+Stand 2026-02-02
+--abrufdatum
+2026-02-03
+--authority
+verwaltung
+--ebene
+schreiben
+--norm-uri
+bmf/2026/erfunden

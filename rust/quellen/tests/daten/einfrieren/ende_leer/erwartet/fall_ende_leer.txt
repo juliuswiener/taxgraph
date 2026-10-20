@@ -1,0 +1,12 @@
+Quelle: https://example.invalid/leer.html
+Abgerufen: 2026-01-01
+Norm: N
+Fassung: geltende Fassung 2026
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+START Anfang des Textes
+Mitte bleibt erhalten, auch wenn kein Ende gesucht wird.
+Hinterer Teil bleibt ebenfalls.

@@ -1,0 +1,12 @@
+--url
+https://example.invalid/kein-ende.html
+--name
+fall_ende_nicht_gefunden
+--norm
+N
+--start
+(1) 1 Erfundene Werbungskosten sind
+--ende
+GIBT-ES-NICHT
+--abrufdatum
+2026-01-01

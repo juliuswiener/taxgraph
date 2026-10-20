@@ -1,0 +1,18 @@
+--url
+https://example.invalid/normal.html
+--name
+fall_normal
+--norm
+§ 9 Erfundenes Gesetz (Werbungskosten)
+--start
+(1) 1 Erfundene Werbungskosten sind
+--ende
+Fußnote
+--erwarte
+Rechenbeispiel: 1,5 × 2 = 3
+--erwarte
+Tom & Jerry
+--abrufdatum
+2026-01-01
+--verwendet-in
+rust/bindung/daten/x.yaml

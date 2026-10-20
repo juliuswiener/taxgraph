@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "fall/ende/zu/nah/umlaute"
+  norm: "N"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://example.invalid/umlaute.html"
+  abrufdatum: "2026-01-01"
+  datei: "fall_ende_zu_nah_umlaute.txt"
+  sha256: "34e07022a170c03e41bf4bd4166e39eab1babf59502f6e4765f2ebba42aa8926"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

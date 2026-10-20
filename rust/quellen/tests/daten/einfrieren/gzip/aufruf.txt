@@ -1,0 +1,12 @@
+--url
+https://example.invalid/archiv.html
+--name
+fall_gzip
+--norm
+N (Archivkopie)
+--start
+(1) 1 Erfundene Werbungskosten sind
+--ende
+Fußnote
+--abrufdatum
+2026-01-01

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "fall/start/am/ende"
+  norm: "N"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://example.invalid/am-ende.html"
+  abrufdatum: "2026-01-01"
+  datei: "fall_start_am_ende.txt"
+  sha256: "d652190b6a92c05eb88a3fbaf7e3c346be0eed873d434e43bad99b2b391248e7"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: []

@@ -1,0 +1,14 @@
+--url
+https://example.invalid/am-ende.html
+--name
+fall_start_am_ende
+--norm
+N
+--start
+STARTENDE
+--ende
+E
+--min-laenge
+5
+--abrufdatum
+2026-01-01

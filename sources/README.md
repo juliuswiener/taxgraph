@@ -21,8 +21,8 @@ NeuRIS historische Fassungen noch nicht vollstaendig liefert.
 
 ## Abruf ausschliesslich per Skript, nie per LLM-Zusammenfassung
 
-Ein Rechtstext wird **immer** mit `scripts/freeze_source.py` abgerufen (deterministisches
-`urllib`-Fetch + Hash), nie mit einem LLM-gestuetzten Werkzeug (z. B. WebFetch), auch nicht mit der
+Ein Rechtstext wird **immer** mit `taxgraph-quellen einfrieren` abgerufen (Rust, Crate `rust/quellen`;
+deterministischer Abruf ueber `curl` + Hash), nie mit einem LLM-gestuetzten Werkzeug (z. B. WebFetch), auch nicht mit der
 expliziten Anweisung "wörtlich, keine Zusammenfassung". Konkreter Schaden, an dem das gelernt wurde
 (2026-08-30, § 52 EStG): WebFetch lieferte zweimal in Folge eine komprimierte Fassung und liess dabei
 genau den einen Satz aus 89 138 Zeichen aus, der die gestellte Frage beantwortete (§ 52 Abs. 12 Satz 11,
@@ -31,10 +31,24 @@ Eine Zusammenfassung, die nicht sagt, was sie weggelassen hat, ist bei Gesetzest
 Fehlende faellt nicht auf, weil niemand nach etwas sucht, das nicht da ist (vgl. den § 35a-Schaden oben,
 selbes Muster, andere Ursache).
 
+Die drei Unterbefehle des Werkzeugs (ersetzen `scripts/freeze_source.py`, `scripts/freeze_pdf_local.py` und
+`scripts/verify_sources.py`; gleiche Optionen, gleiche Dateien Byte fuer Byte):
+
+```bash
+cd rust
+# Gesetz oder BMF-Schreiben aus dem Netz; http(s) ueber curl, file:///pfad liest eine lokale Datei (Tests)
+cargo run -q -p quellen -- einfrieren --url <url> --name <name> --norm "<Norm>" --start "<Start-Passage>" \
+    [--ende "<Ende-Passage>"] [--erwarte "<Passage>"]... --abrufdatum <JJJJ-MM-TT>
+# lokales PDF (amtlicher Vordruck, vom Nutzer abgelegt), pdftotext -layout
+cargo run -q -p quellen -- pdf-einfrieren --datei <pdf> --name <name> --titel "<Titel>" --url <Herkunft> --abrufdatum <JJJJ-MM-TT>
+```
+
+Eine HTML-Entity, die das Werkzeug nicht kennt, ist ein Fehler mit Namen und schreibt nichts (Python liess sie stehen).
+
 ## Integritaet pruefen
 
 ```bash
-make sources-check
+make sources-check      # = cd rust && cargo run -q -p quellen -- pruefe --wurzel ..
 ```
 
 Vergleicht jeden Wortlaut deterministisch gegen den in der Metadatei

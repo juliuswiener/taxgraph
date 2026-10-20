@@ -1,0 +1,10 @@
+--url
+https://example.invalid/ohne-ende.html
+--name
+fall_ohne_ende
+--norm
+N
+--start
+(1) 1 Erfundene Werbungskosten sind
+--abrufdatum
+2026-01-01

@@ -1,0 +1,12 @@
+dokument:
+  norm_uri: "fall/normal"
+  norm: "§ 9 Erfundenes Gesetz (Werbungskosten)"
+  fassung: "geltende Fassung 2026"
+  quelle_url: "https://example.invalid/normal.html"
+  abrufdatum: "2026-01-01"
+  datei: "fall_normal.txt"
+  sha256: "833e7b6e73d8a1022ed9b499a8cb0a89c636af8b79d24debb6dd2cac9ea81d50"
+  authority: gesetz
+  redistributable: true
+  einfrier_ebene: paragraph
+  verwendet_in: ["rust/bindung/daten/x.yaml"]

@@ -1,0 +1,24 @@
+Quelle: https://example.invalid/archiv.html
+Abgerufen: 2026-01-01
+Norm: N (Archivkopie)
+Fassung: geltende Fassung 2026
+Einfrier-Ebene: ganzer Paragraph (Konvention, siehe sources/README.md).
+Hinweis: geschuetzte Leerzeichen (U+00A0) durch normale ersetzt.
+
+--- Wortlaut (abgerufener Ausschnitt) ---
+
+(1) 1 Erfundene Werbungskosten sind
+Erfundene Aufwendungen sind abziehbar, soweit sie beruflich veranlasst waren. Der Betrag von 4 000 Euro gilt je Kalenderjahr – nicht je Monat. Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel).
+Der Betrag von 4 000 Euro gilt je Kalenderjahr – nicht je Monat. Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel). Anmerkung: Tom & Jerry zahlen "zwei" Beiträge; Müller ß König.
+Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel). Anmerkung: Tom & Jerry zahlen "zwei" Beiträge; Müller ß König. Rechenbeispiel: 1,5 × 2 = 3 und ½ von 6 ist 3.
+Zeile eins
+Zeile zwei
+Zeile drei
+Zeile vier mit Tabs und Leerraum
+Punkt fett und kursiv zweiter
+Punkt mit Umbruch
+Anmerkung: Tom & Jerry zahlen "zwei" Beiträge; Müller ß König. Rechenbeispiel: 1,5 × 2 = 3 und ½ von 6 ist 3. Erfundene Aufwendungen sind abziehbar, soweit sie beruflich veranlasst waren.
+Rechenbeispiel: 1,5 × 2 = 3 und ½ von 6 ist 3. Erfundene Aufwendungen sind abziehbar, soweit sie beruflich veranlasst waren. Der Betrag von 4 000 Euro gilt je Kalenderjahr – nicht je Monat.
+Erfundene Aufwendungen sind abziehbar, soweit sie beruflich veranlasst waren. Der Betrag von 4 000 Euro gilt je Kalenderjahr – nicht je Monat. Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel).
+Der Betrag von 4 000 Euro gilt je Kalenderjahr – nicht je Monat. Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel). Anmerkung: Tom & Jerry zahlen "zwei" Beiträge; Müller ß König.
+Siehe § 9 Absatz 1 Satz 3 Nummer 3 des erfundenen Gesetzes (Fassung – Beispiel). Anmerkung: Tom & Jerry zahlen "zwei" Beiträge; Müller ß König. Rechenbeispiel: 1,5 × 2 = 3 und ½ von 6 ist 3.

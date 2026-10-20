@@ -1,0 +1,3 @@
+Erwartete Passage(n) fehlen, nichts geschrieben:
+  'Das steht nirgends'
+  'Auch nicht "dies" und \'das\''

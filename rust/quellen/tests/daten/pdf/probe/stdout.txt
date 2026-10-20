@@ -1,0 +1,4 @@
+[freeze] <W>/sources/pdfprobe/probe.txt  (Text sha256 <TXT_SHA12>…)
+[freeze] <W>/sources/pdfprobe/probe.pdf  (PDF  sha256 0ea9c7c65d21…)
+[freeze] Anker ok: ['Außergewöhnliche Belastungen', 'Zeile 1: Betrag']
+[freeze] make sources-check sollte jetzt gruen sein.

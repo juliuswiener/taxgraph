@@ -1,0 +1,14 @@
+--url
+https://example.invalid/umlaute.html
+--name
+fall_ende_zu_nah_umlaute
+--norm
+N
+--start
+S
+--ende
+ENDE
+--min-laenge
+5
+--abrufdatum
+2026-01-01
