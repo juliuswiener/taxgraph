@@ -169,3 +169,16 @@ instanz_zaehlung_am_dienst	I7	D	rust/bindung/daten/bindung_regel_bedingungen.yam
 ~fluss_c_umkehr	D3	D	rust/api/src/anzeige.rs	Verstanden-Seite ohne frage_invertiert	UEBERLEBT	-	mut_neu	-
 ~fluss_c_umkehr	N0	F	rust/api/static/app.js	KONTROLLE: keine Aenderung (muss gruen bleiben)	UEBERLEBT	-	mut_neu	-
 ~fluss_h_chat_wartezustand	H7	F	rust/api/static/app.js	der Chat bleibt als laufend markiert	UEBERLEBT	-	mut_neu	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-N0	F	rust/api/static/app.js	KONTROLLE: keine Aenderung (muss gruen bleiben)	UEBERLEBT	-	mut_i1	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-M1	D	rust/bindung/daten/bindung_p51a_kirchensteuer.yaml	die Alternative (oder) aus kist_bundesland entfernt	ROT	I.nach_der_ki_antwort_steht_die_bundesland_frage_fuer_den_ehegatten	mut_i1	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-M1b	R	rust/interview/src/fragen.rs	die Alternative zaehlt nie (.any(|_alt| false))	ROT	I.nach_der_ki_antwort_steht_die_bundesland_frage_fuer_den_ehegatten	mut_i1	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-M7	R	rust/interview/src/fragen.rs	die Alternative zaehlt immer (.any(|_alt| true))	ROT	I.ohne_mitglied_steht_die_bundesland_frage_nicht	mut_i1	-
+fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur	I-M1	D	rust/bindung/daten/bindung_p51a_kirchensteuer.yaml	die Alternative (oder) aus kist_bundesland entfernt: der Fragebogen-Weg fragt das Bundesland vor der eigenen Konfession, die Alternative entscheidet dort nie	UEBERLEBT	-	mut_i1	-
+fluss_i_einzelnutzer_nur_lohn_mit_kirchensteuer	I-M1	D	rust/bindung/daten/bindung_p51a_kirchensteuer.yaml	die Alternative (oder) aus kist_bundesland entfernt: Einzelveranlagung kennt die Alternative nicht	UEBERLEBT	-	mut_i1	-
+fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur	I-M2	F	rust/api/static/app.js	die Oberflaeche zeigt die festzusetzende Steuer um 1 Cent zu hoch	ROT	I.die_oberflaeche_zeigt_die_zahl_des_dienstes	mut_i1	-
+fluss_i_einzelnutzer_nur_lohn_mit_kirchensteuer	I-M2	F	rust/api/static/app.js	die Oberflaeche zeigt die festzusetzende Steuer um 1 Cent zu hoch	ROT	I.die_oberflaeche_zeigt_die_zahl_des_dienstes	mut_i1	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-M2	F	rust/api/static/app.js	die Oberflaeche zeigt die festzusetzende Steuer um 1 Cent zu hoch	ROT	I.die_oberflaeche_zeigt_die_zahl_des_dienstes	mut_i1	-
+fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur	I-M3	T	rust/api/tests/oberflaeche/fluss_i.rs	Erwartungswert der Kirchensteuer von B um 1 Cent verschoben (9.684 statt 9.683)	ROT	I.die_kirchensteuer_stimmt_mit_der_handrechnung	mut_i1	-
+fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur	I-M4	T	rust/api/tests/oberflaeche/fluss_i.rs	Selektor des Bestaetigen-Knopfs kaputt (Zeitlimit mit Selektor, die Frage steht in der Zeile DER DURCHLAUF STAND BEI DER FRAGE)	ROT	-	mut_i1	-
+fluss_i_einzelnutzer_nur_lohn_mit_kirchensteuer	I-M4	T	rust/api/tests/oberflaeche/fluss_i.rs	Selektor des Bestaetigen-Knopfs kaputt	ROT	-	mut_i1	-
+fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_frage	I-M4	T	rust/api/tests/oberflaeche/fluss_i.rs	Selektor des Bestaetigen-Knopfs kaputt	ROT	-	mut_i1	-

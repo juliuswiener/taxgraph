@@ -395,6 +395,23 @@ impl Sitzung {
         );
     }
 
+    /// Tippt `text` wie ein Nutzer: Fokus, Feld leeren, Tasten senden (WebDriver `clear` und `value`), nicht `.value` setzen.
+    /// Die `input`-Ereignisse kommen vom Browser selbst.
+    pub fn tippe(&self, css: &str, text: &str) {
+        self.warte_sichtbar(css, 10);
+        let id = self.finde(css).unwrap_or_else(|| panic!("Element {css} fehlt"));
+        self.befehl("POST", &format!("/element/{id}/clear"), None);
+        self.befehl("POST", &format!("/element/{id}/value"), Some(&json!({"text": text})));
+    }
+
+    /// Waehlt in einem Dropdown (`<select>`) die Option mit `wert`: Klick auf das `<option>`, wie ihn WebDriver kennt.
+    pub fn waehle_option(&self, select_css: &str, wert: &str) {
+        self.warte_sichtbar(select_css, 10);
+        let css = format!("{select_css} option[value=\"{wert}\"]");
+        let id = self.finde(&css).unwrap_or_else(|| panic!("Option {css} fehlt"));
+        self.befehl("POST", &format!("/element/{id}/click"), None);
+    }
+
     /// Text, wie ihn der Nutzer sieht (`innerText`); leer, wenn das Element fehlt.
     pub fn text(&self, css: &str) -> String {
         let sel = serde_json::to_string(css).unwrap();
