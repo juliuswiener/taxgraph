@@ -31,8 +31,8 @@ Eine Zusammenfassung, die nicht sagt, was sie weggelassen hat, ist bei Gesetzest
 Fehlende faellt nicht auf, weil niemand nach etwas sucht, das nicht da ist (vgl. den § 35a-Schaden oben,
 selbes Muster, andere Ursache).
 
-Die drei Unterbefehle des Werkzeugs (ersetzen `scripts/freeze_source.py`, `scripts/freeze_pdf_local.py` und
-`scripts/verify_sources.py`; gleiche Optionen, gleiche Dateien Byte fuer Byte):
+Die drei Unterbefehle des Werkzeugs (sie ersetzen drei Python-Skripte unter `scripts/`, gelöscht am 2026-10-20; gleiche
+Optionen, gleiche Dateien Byte fuer Byte):
 
 ```bash
 cd rust

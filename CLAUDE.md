@@ -14,7 +14,7 @@ make serve              Rust-Dienst (das Produkt seit dem Cutover 2026-10-04), s
 `rust/api/tests/ueberlauf_profil_waechter.rs` hält `overflow-checks = true` im `[profile.dev]` fest). Das Ziel läuft gegen den echten Bestand
 `~/.local/share/taxgraph`: Tests und Messungen setzen `TAXGRAPH_DATEN` auf eine Kopie oder nutzen
 `scripts/starte-api.sh`, nie `make serve`. Einen Rückfall auf Python gibt es seit L3 nicht mehr; der letzte Stand mit
-Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). `rust/parity` ist seit L1, `tests/` und `tools/ui_rust` sind seit L2, `produkt/` ist seit L3 gelöscht; `pipeline/`, `oracle/` und die Python-Skripte außer `scripts/freeze_source.py`, `scripts/freeze_pdf_local.py`, `scripts/verify_sources.py` fielen mit L4 (2026-10-19).
+Python als Standard-Start ist der Tag `python-standard-letzter` (`904f6215`, auf origin). `rust/parity` ist seit L1, `tests/` und `tools/ui_rust` sind seit L2, `produkt/` ist seit L3 gelöscht; `pipeline/`, `oracle/` und die Python-Skripte außer den drei Quellen-Skripten fielen mit L4 (2026-10-19); die drei Quellen-Skripte fielen am 2026-10-20, ihre Arbeit tut `taxgraph-quellen` (`rust/quellen`: `pruefe`, `einfrieren`, `pdf-einfrieren`).
 Die Löschung ist seit 2026-10-06 beschlossen (nach bestandener Abnahme) und vollzogen bis L5 (nur lokale Reste, L6, stehen aus); Reihenfolge und Vorbedingungen stehen im Vault
 (`audits/python-loeschplan-2026-10-06.md`) und im `REWRITE_PLAN.md` (Nachtrag 2026-10-06). Neue Arbeit entsteht nur in Rust, in Python wird nichts mehr
 gepflegt. Der echte ELSTER-Versand läuft in Rust (`rust/versand`, noch nie echt gesendet; Einreichen löst nur Julius aus). Nach einem erfolgreichen Backup bleiben in `BACKUP_DIR`

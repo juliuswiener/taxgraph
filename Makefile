@@ -152,7 +152,7 @@ params-check:
 	. $(VENV312); python params/derive_coefficients.py
 
 ## Verify the frozen source archive against the recorded SHA256 hashes. Rust seit 2026-10-20 (rust/quellen, Programm
-## taxgraph-quellen); dieselben Zeilen und dasselbe Urteil wie scripts/verify_sources.py, das bleibt, bis die Python-Skripte gehen.
+## taxgraph-quellen); dieselben Zeilen und dasselbe Urteil wie das Python-Skript davor (207 Quellen, Ausgabe byte-gleich).
 sources-check:
 	cd rust && cargo run -q -p quellen -- pruefe --wurzel ..
 
