@@ -40,7 +40,7 @@ mod rollen;
 
 pub use antwort::{Antwort, Eintrag, InstanzAnzahl};
 pub use beweis::{justification, trace_ergebnis, AnkerRefSicht, Justification, Trace};
-pub use fragen::naechste_fragen;
+pub use fragen::{naechste_fragen, naechste_fragen_mit_pflicht};
 pub use graph::{Graph, Sicht, UnbekanntesFeld};
 pub use instanz::{fehlende_instanzen, instanz_anzahl, instanz_feld_id, FehlendeInstanz};
 pub use relevanz::{gate_gewicht, relevanz, Bedingungsstand, RegelRelevanz, Regelstatus};

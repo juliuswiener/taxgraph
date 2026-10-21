@@ -28,8 +28,9 @@ use sha2::{Digest, Sha256};
 const OBERFLAECHE: &[(&str, &str)] = &[
     // app.js und style.css seit 2026-10-20 (Nr. 97, d-48) mit dem Zeilenformular fuer die Lohnersatzleistungen (`baueLohnersatzListe`);
     // weichen bewusst vom Stand aus `produkt/haut/static/` ab (vorher app.js 3fbecbd6..., style.css f29ca855...). Wächter:
-    // `oberflaeche/lohnersatz_liste.rs`.
-    ("app.js", "8a20ec1fbd0bd451089f79495ac60645dda9859f0549b4698d43c8afbea2430e"),
+    // `oberflaeche/lohnersatz_liste.rs`. app.js seit 2026-10-21 (Fluss J F1) zusaetzlich mit `zeigeOffeneFelder` (die Sperre
+    // `ring_betrag_vorlaeufig` nennt ihr offenes Feld); Waechter: `oberflaeche/fluss_j.rs`.
+    ("app.js", "a86718e8be56f26af2f752be1f06f4ae1e75ab393e49a1d7cfb0b2fbfa0c7c60"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),

@@ -238,7 +238,11 @@ pub fn fragen(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, A
         None
     };
     let beitrag = gesamt_beitrag(z, &sb, store, &felder, &sid)?;
-    let queue = interview::naechste_fragen(store, &sb.sicht, &sb.graph, beitrag.as_ref());
+    // Die Felder, deren BESTAETIGTE Antwort `ergebnis` verlangt: der Pflicht-Kegel (`input_kegel_nicht_bestaetigt`) und die
+    // Ring-Betraege (`ring_betrag_vorlaeufig`). Ein Vorjahreswert dort bleibt eine Frage.
+    let mut pflicht = crate::ergebnis::pflicht_kegel(&sb);
+    pflicht.extend(bescheid::deklaration::ring_kandidaten(&sb.cfg));
+    let queue = interview::naechste_fragen_mit_pflicht(store, &sb.sicht, &sb.graph, beitrag.as_ref(), &pflicht);
     let out: Vec<Value> = queue
         .iter()
         .map(|fid| frage_metadaten(fid, &sb, store))

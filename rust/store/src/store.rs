@@ -782,7 +782,8 @@ impl Store {
 
     /// `store.py:503-572`, `_rechne_ab`: Felder mit `ableitung`-Regel, deren Quelle ODER
     /// `und_feld` gerade bestaetigt wurde, werden berechnet (ZWEI Ausloeser). Liest `aktiv`
-    /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette").
+    /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette"). Steht das Ziel nur als `vorlaeufig` da, ersetzt das abgeleitete
+    /// Event es (`ersetzt`); ein bestaetigtes Ziel bleibt (Rust-eigen, Fluss J F1).
     /// # Errors
     /// [`Abweisung::WertNichtDarstellbar`], wenn ein abgeleiteter `wert` nicht nach JSON geht.
     fn rechne_ab(
@@ -822,9 +823,15 @@ impl Store {
             if feld_id != aus_i && Some(feld_id) != und_i.as_deref() {
                 continue;
             }
-            if aktiv_snapshot.contains_key(&ziel_i) {
-                continue;
-            }
+            // Rust-eigen (Fluss J F1, 2026-10-21): Ein Ziel, das nur als Vorschlag dasteht (Vorjahres-Uebernahme, KI), weicht dem
+            // abgeleiteten Wert. Python liess jedes Ziel mit aktivem Event aus; ein vorlaeufiges `geburtsjahr` aus dem Vorjahr blieb
+            // dann vorlaeufig, auch nachdem der Nutzer das Geburtsdatum bestaetigt hatte, und die Sperre `ring_betrag_vorlaeufig`
+            // hielt die Steuerzahl zurueck. Ein BESTAETIGTES Ziel bleibt wie bisher unberuehrt.
+            let ersetzt = match aktiv_snapshot.get(&ziel_i).and_then(|&i| self.datei.events.get(i)) {
+                None => None,
+                Some(ev) if ev.zustand == Zustand::Vorlaeufig => Some(ev.event_id),
+                Some(_) => continue,
+            };
             let quellwert = if aus_i == feld_id {
                 wert
             } else {
@@ -890,7 +897,7 @@ impl Store {
                     signal_2: Some(format!("ableitung@{aus_i}")),
                     signal_2_fehlt: false,
                 }),
-                ersetzt: None,
+                ersetzt,
             });
         }
         for event in neue_events {

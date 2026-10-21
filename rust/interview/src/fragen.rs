@@ -44,16 +44,33 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
     graph: &Graph<'r>,
     beitrag: Option<&HashMap<String, i64, S>>,
 ) -> Vec<&'r str> {
+    naechste_fragen_mit_pflicht(store, sicht, graph, beitrag, &[])
+}
+
+/// [`naechste_fragen`] mit den Pflichtfeldern der Scheibe: den Feldern, deren BESTAETIGTE Antwort die Steuerzahl verlangt (der
+/// Pflicht-Kegel `cfg["kegel"]` und die Ring-Betraege, ohne sie `input_kegel_nicht_bestaetigt` und `ring_betrag_vorlaeufig`).
+///
+/// Die Pflichtfelder entscheiden nur, welche Felder aus der Vorjahres-Uebernahme eine Frage bleiben ([`vorjahr_uebernommen`]).
+/// Ohne Vorjahres-Werte im Fall aendert sich die Queue nicht; `&[]` ist [`naechste_fragen`].
+#[must_use]
+pub fn naechste_fragen_mit_pflicht<'r, S: std::hash::BuildHasher>(
+    store: &Store,
+    sicht: &Sicht<'r>,
+    graph: &Graph<'r>,
+    beitrag: Option<&HashMap<String, i64, S>>,
+    pflicht: &[&str],
+) -> Vec<&'r str> {
     let aktiv = Aktiv::aus(store);
     let rel = relevanz_mit(&aktiv, sicht, graph);
     let vz = store.datei().veranlagungszeitraum.als_i64_saettigend();
+    let braucht_bestaetigung = braucht_bestaetigung(sicht, graph, pflicht);
     let kand: Vec<&'r Bindung> = sicht
         .iter()
         .filter(|b| {
             b.askable
                 && (aktiv.antwort(&b.feld_id).ist_offen()
                     || instanz_unvollstaendig(&aktiv, sicht, graph, &b.feld_id))
-                && !vorjahr_uebernommen(b, aktiv.get(&b.feld_id))
+                && !vorjahr_uebernommen(b, aktiv.get(&b.feld_id), &braucht_bestaetigung)
                 && rel
                     .get(b.quelle.regel_id.as_str())
                     .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
@@ -93,9 +110,44 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 
 /// `vorjahr: uebernehmbar` mit Vorjahres-Wert faellt aus der Queue, bleibt aber korrigierbar
 /// (`_vorjahr_uebernommen`, `traverser.py:380-392`). `vorschlag` bleibt eine Frage.
-fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
+///
+/// Rust-eigen (Fluss J F1, 2026-10-21; weicht vom Entscheid 2026-09-05 `vorjahr-kategorie-ohne-verhalten` ab): Ein Feld, an dessen
+/// BESTAETIGTER Antwort etwas haengt, bleibt eine Frage, vorbelegt mit dem Wert des Vorjahres ([`braucht_bestaetigung`]). Der Wert
+/// aus dem Vorjahr ist nur `vorlaeufig`: ohne Bestaetigung blieben die Fragen hinter einem Gate offen (der Einzelnutzer wurde
+/// nach dem Ehegatten gefragt), und eine Ableitung rechnete nicht (das Geburtsjahr blieb vorlaeufig, die Sperre
+/// `ring_betrag_vorlaeufig` hielt die Steuerzahl zurueck).
+fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>, braucht_bestaetigung: &HashSet<&str>) -> bool {
     b.vorjahr == Some(Vorjahr::Uebernehmbar)
         && ev.is_some_and(|e| e.herkunft.herkunft_achse().as_str() == "vorjahr")
+        && !braucht_bestaetigung.contains(b.feld_id.as_str())
+}
+
+/// Die Felder, an deren BESTAETIGTER Antwort etwas haengt, das ein Wert aus dem Vorjahr nicht ersetzt. Keine feste Liste:
+/// - Ein Gate ueber `regel_bedingungen` (`veranlagung`): erst eine bestaetigte Antwort schliesst die Regeln des Ehegatten aus.
+/// - Der Ausloeser einer `ableitung` (`aus`, `und_feld`; `stammdaten_geburtsdatum`): die Ableitung rechnet nur aus einem
+///   bestaetigten Wert.
+/// - Ein Pflichtfeld der Scheibe (`pflicht`): die Steuerzahl kommt erst, wenn jedes relevante Kegel-Feld und jeder Ring-Betrag
+///   bestaetigt ist. Ein Vorjahreswert ist nur `vorlaeufig`; ohne Frage blieb die Sperre `input_kegel_nicht_bestaetigt`
+///   (Fluss J: `versicherungsart`, `mit_anspruch_auf_zuschuss`, `ep_eigenes_kfz`, `ep_entfernung_km`) oder
+///   `ring_betrag_vorlaeufig` (`versorgung_beginn_jahr_partner`).
+///
+/// Ein Gate, dessen Folgefragen auch ohne Bestaetigung gestellt werden (Eingangsfrage einer Regel, `feld_bedingung`), gehoert
+/// nicht dazu: seine Folgefragen bleiben offen, und nichts wartet auf die Bestaetigung.
+fn braucht_bestaetigung<'r>(sicht: &Sicht<'r>, graph: &Graph<'r>, pflicht: &[&str]) -> HashSet<&'r str> {
+    let gate = sicht
+        .iter()
+        .filter(|b| !graph.bedingte_regeln(&b.feld_id).is_empty())
+        .map(|b| b.feld_id.as_str());
+    let ausloeser = sicht
+        .iter()
+        .filter_map(|b| b.ableitung.as_ref())
+        .flat_map(|a| [Some(a.aus.as_str()), a.und_feld.as_deref()])
+        .flatten();
+    let pflichtfeld = sicht
+        .iter()
+        .filter(|b| pflicht.contains(&b.feld_id.as_str()))
+        .map(|b| b.feld_id.as_str());
+    gate.chain(ausloeser).chain(pflichtfeld).collect()
 }
 
 /// Faellt DIESES Feld weg, obwohl seine Regel gilt (`_feld_ausgeschlossen`,
@@ -511,6 +563,39 @@ mod tests {
 
     fn ids(v: &[&Bindung]) -> Vec<String> {
         v.iter().map(|b| b.feld_id.clone()).collect()
+    }
+
+    /// Fluss J F1 (2026-10-21): Welche `uebernehmbar`-Felder des Bestands nach der Vorjahres-Uebernahme eine Frage bleiben, folgt
+    /// der Bindung und steht in keiner Liste von Hand. Der Test haelt den Bestand fest, OHNE den Pflicht-Kegel einer Scheibe
+    /// (den prueft `rust/api/tests/oberflaeche/fluss_j.rs` am Browser): Faengt eine neue Bindung ein Gate oder einen Ausloeser
+    /// ein, faellt er rot, und die Liste im Bericht von Fluss J ist zu ergaenzen. `steuerklasse` und `versicherungsart` gehoeren
+    /// nicht dazu: an ihrer bestaetigten Antwort haengt weder eine Regel noch eine Ableitung.
+    #[test]
+    fn diese_uebernehmbaren_felder_bleiben_im_bestand_eine_frage() {
+        let reg = crate::doctest_registry().expect("registry");
+        let g = Graph::aus_registry(&reg);
+        let sicht = g.alle();
+        let noetig = braucht_bestaetigung(sicht, &g, &[]);
+        let mut liste: Vec<&str> = sicht
+            .iter()
+            .filter(|b| b.askable && b.vorjahr == Some(Vorjahr::Uebernehmbar) && noetig.contains(b.feld_id.as_str()))
+            .map(|b| b.feld_id.as_str())
+            .collect();
+        liste.sort_unstable();
+        assert_eq!(
+            liste,
+            [
+                "kind_geburtsdatum",
+                "rentner_hinterbliebenenbezuege",
+                "stammdaten_geburtsdatum",
+                "stammdaten_geburtsdatum_partner",
+                "veranlagung",
+                "vpf_auswaertige_taetigkeit",
+            ]
+        );
+        for hat_nichts_festzuhalten in ["steuerklasse", "versicherungsart"] {
+            assert!(!noetig.contains(hat_nichts_festzuhalten), "{hat_nichts_festzuhalten}");
+        }
     }
 
     /// Gegenstueck zu `test_nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren`.

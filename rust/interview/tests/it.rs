@@ -8,3 +8,5 @@ mod eigenschaften;
 mod gate_polaritaet;
 #[path = "p24a_rueckfall.rs"]
 mod p24a_rueckfall;
+#[path = "vorjahr_fragen.rs"]
+mod vorjahr_fragen;

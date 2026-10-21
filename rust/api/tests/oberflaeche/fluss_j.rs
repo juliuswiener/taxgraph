@@ -316,7 +316,7 @@ fn fluss_j_vorjahr_uebernahme_beantwortet_fragen_vor() {
     bis_zur_ersten_frage(&u, "gesamt", &[]);
     let quelle = durchlauf(&u, "vorjahr_quelle", &t, &[]);
     let fall1 = u.fall();
-    pruefe_zahl_gezeigt(&u, "Quelle des Vorjahres");
+    let quelle_api = pruefe_zahl_gezeigt(&u, "Quelle des Vorjahres");
 
     bis_zur_ersten_frage(&u, "gesamt", &[]);
     u.s.klick("#vorjahr-toggle");
@@ -335,45 +335,161 @@ fn fluss_j_vorjahr_uebernahme_beantwortet_fragen_vor() {
     let _p = PlatzhalterErlaubt::neu();
     let ziel = durchlauf(&u, "vorjahr_ziel", &t2, &[]);
     eprintln!("KENNZAHL vorjahr: Fragen im ersten Fall {}, im zweiten nach der Uebernahme {}", quelle.len(), ziel.len());
-    // BEFUND (gemessen 2026-10-20): die Uebernahme legt `veranlagung` als Vorschlag ab („vorlaeufig“) und nimmt die Frage aus der
-    // Warteschlange; die Fragen zum Ehegatten verlangen aber eine BESTAETIGTE Antwort, bleiben also offen. Der Einzelnutzer wird
-    // nach dem Ehegatten gefragt, und der zweite Fall stellt mehr Fragen als der erste. Wer die Uebernahme aendert, dreht diesen
-    // Pruefpunkt um.
+    // Fluss J F1 (behoben 2026-10-21, d-51): vorher legte die Uebernahme `veranlagung` als Vorschlag ab und nahm die Frage aus der
+    // Warteschlange; die Fragen zum Ehegatten verlangen aber eine BESTAETIGTE Antwort, blieben also offen (64 statt 51 Fragen, 26
+    // zum Ehegatten). Jetzt bleiben ein Gate (`veranlagung`) und der Ausloeser einer Ableitung (`stammdaten_geburtsdatum`) eine
+    // Frage, vorbelegt; alles andere gilt ohne Rueckfrage.
     pp!(
-        "J.nach_der_vorjahr_uebernahme_fragt_die_oberflaeche_den_einzelnutzer_nach_dem_ehegatten",
-        felder["veranlagung"]["zustand"] == json!("vorlaeufig") && wie_oft(&ziel, "veranlagung") == 0 && wie_oft(&ziel, "stammdaten_vorname_partner") == 1,
-        "veranlagung {} / {}, Frage veranlagung {}-mal, Frage nach dem Vornamen des Ehegatten {}-mal",
-        felder["veranlagung"]["wert"],
-        felder["veranlagung"]["zustand"],
+        "J.nach_der_vorjahr_uebernahme_fragt_die_oberflaeche_den_einzelnutzer_nicht_nach_dem_ehegatten",
+        wie_oft(&ziel, "veranlagung") == 1 && wie_oft(&ziel, "stammdaten_vorname_partner") == 0 && ziel.len() < quelle.len(),
+        "Frage veranlagung {}-mal, Frage nach dem Vornamen des Ehegatten {}-mal, Fragen {} gegen {} im Vorjahresfall",
         wie_oft(&ziel, "veranlagung"),
-        wie_oft(&ziel, "stammdaten_vorname_partner")
+        wie_oft(&ziel, "stammdaten_vorname_partner"),
+        ziel.len(),
+        quelle.len()
     );
-    // BEFUND: alle 64 Fragen sind beantwortet, trotzdem steht keine Zahl da. Das Geburtsdatum aus dem Vorjahr ist „vorlaeufig“, die
-    // Frage danach fehlt in der Warteschlange (uebernehmbar), und die Sperre nennt als offen nur `geburtsjahr`.
+    // Eine Frage bleiben: das Gate (`veranlagung`), der Ausloeser der Ableitung (`stammdaten_geburtsdatum`) und die Felder des
+    // Pflicht-Kegels, die der Vorjahresfall mitbrachte (`versicherungsart`, `mit_anspruch_auf_zuschuss`, `ep_eigenes_kfz`,
+    // `ep_entfernung_km`): ohne ihre bestaetigte Antwort kommt keine Zahl (`input_kegel_nicht_bestaetigt`). Ohne Rueckfrage
+    // gelten Name, Anschrift und Steuerklasse.
+    pp!(
+        "J.nach_der_vorjahr_uebernahme_bleiben_gate_ausloeser_und_kegel_eine_frage_alles_andere_gilt_ohne_rueckfrage",
+        ["stammdaten_geburtsdatum", "versicherungsart", "mit_anspruch_auf_zuschuss", "ep_eigenes_kfz", "ep_entfernung_km"].iter().all(|f| wie_oft(&ziel, f) == 1)
+            && ["stammdaten_nachname", "stammdaten_vorname", "stammdaten_plz", "stammdaten_steuernummer", "steuerklasse"].iter().all(|f| wie_oft(&ziel, f) == 0),
+        "Geburtsdatum {}-mal gefragt, Versicherungsart {}-mal, Entfernung {}-mal, Nachname {}-mal, Steuerklasse {}-mal",
+        wie_oft(&ziel, "stammdaten_geburtsdatum"),
+        wie_oft(&ziel, "versicherungsart"),
+        wie_oft(&ziel, "ep_entfernung_km"),
+        wie_oft(&ziel, "stammdaten_nachname"),
+        wie_oft(&ziel, "steuerklasse")
+    );
+    // Vorher (2026-10-20): alle 64 Fragen waren beantwortet und keine Zahl stand da. Das Geburtsjahr aus dem Vorjahr blieb
+    // „vorlaeufig“, auch nach dem bestaetigten Geburtsdatum, und die Sperre nannte als offen nur `geburtsjahr`.
     let (_, _, api) = ergebnis(&u);
     pp!(
-        "J.nach_der_vorjahr_uebernahme_endet_der_fragebogen_ohne_zahl",
-        api["grund"] == json!("ring_betrag_vorlaeufig") && api["offen"] == json!(["geburtsjahr"]) && api["zahl_cent"].is_null(),
+        "J.nach_der_vorjahr_uebernahme_endet_der_fragebogen_mit_einer_zahl",
+        api["grund"] == json!("bestaetigt") && api["zahl_cent"].is_i64(),
         "Grund {}, offen {}, Zahl {}",
         api["grund"],
         api["offen"],
         api["zahl_cent"]
     );
-    eprintln!("MESSUNG Ergebnisseite ohne Zahl: {:?}", u.s.text("#ergebnis"));
-    let zeile = "#belegt-liste li:has(.z-name[title='stammdaten_geburtsdatum'])";
-    let da = u.s.finde(zeile).is_some();
-    pp!("J.die_korrektur_des_geburtsdatums_oeffnet_die_sperre_nicht", da, "die Zeile des Geburtsdatums fehlt in „Schon beantwortet“");
-    crate::fluss_i::korrigiere(&u, "stammdaten_geburtsdatum", Gib::Text("15.03.1985"));
-    let (gezeigt, _, api) = ergebnis(&u);
-    eprintln!("MESSUNG nach der Korrektur des Geburtsdatums: Grund {}, offen {}, Zahl {}, gezeigt {gezeigt:?}", api["grund"], api["offen"], api["zahl_cent"]);
-    let vorlaeufig: Vec<String> = u.stand_felder(&u.fall()).as_object().unwrap().iter().filter(|(_, f)| f["zustand"] == json!("vorlaeufig")).map(|(k, _)| k.clone()).collect();
-    eprintln!("MESSUNG noch vorlaeufig: {} Felder: {vorlaeufig:?}", vorlaeufig.len());
+    // Dieselben Antworten, dieselbe Steuer: die Uebernahme aendert keine Zahl (Euro-Wirkung 0).
     pp!(
-        "J.die_korrektur_des_geburtsdatums_oeffnet_die_sperre_nicht",
-        api["grund"] == json!("ring_betrag_vorlaeufig") && api["offen"] == json!(["geburtsjahr"]) && vorlaeufig.iter().any(|f| f == "geburtsjahr"),
-        "Grund {}, offen {}, vorlaeufig {vorlaeufig:?}",
-        api["grund"],
-        api["offen"]
+        "J.die_zahl_nach_der_vorjahr_uebernahme_ist_die_zahl_des_vorjahresfalls",
+        api["zahl_cent"] == quelle_api["zahl_cent"] && api["kist_cent"] == quelle_api["kist_cent"],
+        "Steuer {} gegen {}, Kirchensteuer {} gegen {}",
+        api["zahl_cent"],
+        quelle_api["zahl_cent"],
+        api["kist_cent"],
+        quelle_api["kist_cent"]
     );
+    let felder = u.stand_felder(&u.fall());
+    pp!(
+        "J.das_bestaetigte_geburtsdatum_macht_das_geburtsjahr_aus_dem_vorjahr_zur_berechneten_antwort",
+        felder["geburtsjahr"]["zustand"] == json!("bestaetigt") && felder["geburtsjahr"]["herkunft_badge"] == json!("berechnet"),
+        "geburtsjahr {} / {} / {}",
+        felder["geburtsjahr"]["wert"],
+        felder["geburtsjahr"]["zustand"],
+        felder["geburtsjahr"]["herkunft_badge"]
+    );
+    let vorlaeufig: Vec<String> = felder.as_object().unwrap().iter().filter(|(_, f)| f["zustand"] == json!("vorlaeufig")).map(|(k, _)| k.clone()).collect();
+    eprintln!("MESSUNG noch vorlaeufig: {} Felder: {vorlaeufig:?}", vorlaeufig.len());
     pruefe_konsole(&u, "Vorjahr");
+}
+
+/// Fluss J F1 (2026-10-21), nicht geprueft im Audit vom 2026-10-20: Ein Ehepaar als Quelle des Vorjahres. Beide Geburtsdaten
+/// bleiben eine Frage (Ausloeser der Ableitungen `geburtsjahr` und `geburtsjahr_partner`), `veranlagung` auch; Name, Anschrift und
+/// Steuerklasse beider gelten ohne Rueckfrage. Dieselben Antworten ergeben dieselbe Steuer wie im Vorjahresfall.
+#[test]
+fn fluss_j_vorjahr_uebernahme_mit_einem_ehepaar_als_quelle() {
+    let _sperre = crate::browser::seriell();
+    let _p = PlatzhalterErlaubt::neu();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let t = ehepaar("keine", "keine", "bayern");
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    let quelle = durchlauf(&u, "vorjahr_ehepaar_quelle", &t, &[]);
+    let fall1 = u.fall();
+    let quelle_api = pruefe_zahl_gezeigt(&u, "Ehepaar als Quelle des Vorjahres");
+
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    u.s.klick("#vorjahr-toggle");
+    u.s.fuelle("#vorjahr-fid", &fall1);
+    u.s.klick("#vorjahr-go");
+    u.s.warte_bis("document.getElementById('vorjahr-status').textContent.includes('übernommen')", 15, "die Uebernahme meldet ihr Ergebnis");
+    eprintln!("MESSUNG Vorjahr Ehepaar: {}", u.s.text("#vorjahr-status"));
+    let ziel = durchlauf(&u, "vorjahr_ehepaar_ziel", &t, &[]);
+    eprintln!("KENNZAHL vorjahr_ehepaar: Fragen im ersten Fall {}, im zweiten nach der Uebernahme {}", quelle.len(), ziel.len());
+    let api = pruefe_zahl_gezeigt(&u, "Ehepaar nach der Vorjahr-Uebernahme");
+    pp!(
+        "J.nach_der_vorjahr_uebernahme_eines_ehepaars_fragt_die_oberflaeche_gate_und_beide_geburtsdaten",
+        wie_oft(&ziel, "veranlagung") == 1 && wie_oft(&ziel, "stammdaten_geburtsdatum") == 1 && wie_oft(&ziel, "stammdaten_geburtsdatum_partner") == 1 && ziel.len() < quelle.len(),
+        "veranlagung {}-mal, Geburtsdatum {}-mal, Geburtsdatum des Partners {}-mal, Fragen {} gegen {}",
+        wie_oft(&ziel, "veranlagung"),
+        wie_oft(&ziel, "stammdaten_geburtsdatum"),
+        wie_oft(&ziel, "stammdaten_geburtsdatum_partner"),
+        ziel.len(),
+        quelle.len()
+    );
+    pp!(
+        "J.die_zahl_nach_der_vorjahr_uebernahme_eines_ehepaars_ist_die_zahl_des_vorjahresfalls",
+        api["zahl_cent"] == quelle_api["zahl_cent"] && api["kist_cent"] == quelle_api["kist_cent"],
+        "Steuer {} gegen {}, Kirchensteuer {} gegen {}",
+        api["zahl_cent"],
+        quelle_api["zahl_cent"],
+        api["kist_cent"],
+        quelle_api["kist_cent"]
+    );
+    let felder = u.stand_felder(&u.fall());
+    pp!(
+        "J.beide_geburtsjahre_sind_nach_der_vorjahr_uebernahme_berechnet_und_bestaetigt",
+        ["geburtsjahr", "geburtsjahr_partner"].iter().all(|f| felder[*f]["zustand"] == json!("bestaetigt") && felder[*f]["herkunft_badge"] == json!("berechnet")),
+        "geburtsjahr {} / {}, geburtsjahr_partner {} / {}",
+        felder["geburtsjahr"]["zustand"],
+        felder["geburtsjahr"]["herkunft_badge"],
+        felder["geburtsjahr_partner"]["zustand"],
+        felder["geburtsjahr_partner"]["herkunft_badge"]
+    );
+    pruefe_konsole(&u, "Vorjahr Ehepaar");
+}
+
+/// Fluss J F1 (2026-10-21): Die Sperre `ring_betrag_vorlaeufig` sagte nur „Ein Betrag, den du genannt hast, ist noch nicht
+/// bestaetigt“, ohne das Feld zu nennen; der Dienst liefert es in `offen`. Die Oberflaeche macht jetzt aus jedem offenen Feld eine
+/// Schaltflaeche mit seiner Frage (`zeigeOffeneFelder`). Der Test ruft die Funktion mit der Antwort einer solchen Sperre; der Dienst
+/// kann sie in der Oberflaeche nicht mehr erzeugen, weil die Vorjahres-Uebernahme das Geburtsjahr jetzt ableitet.
+#[test]
+fn fluss_j_die_sperre_ring_betrag_vorlaeufig_nennt_das_offene_feld() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    let t = einzel_tabelle("keine");
+    durchlauf(&u, "sperre_nennt_feld", &t, &[]);
+    pruefe_zahl_gezeigt(&u, "Einzelnutzer");
+    let baue = |r: Value| -> Value {
+        u.s.skript_async(
+            "const fertig = arguments[arguments.length - 1]; const el = document.createElement('div');
+             zeigeOffeneFelder(el, arguments[0]).then(() => fertig(
+               Array.from(el.querySelectorAll('[data-sperr-feld]')).map(b => [b.dataset.sperrFeld, b.textContent])));",
+            &[r],
+        )
+    };
+    let wege = baue(json!({"grund": "ring_betrag_vorlaeufig", "offen": ["geburtsjahr"], "sperr_felder": []}));
+    eprintln!("MESSUNG Schaltflaechen der Sperre: {wege}");
+    pp!(
+        "J.die_sperre_nennt_das_offene_feld_mit_seiner_frage",
+        wege == json!([["geburtsjahr", "In welchem Jahr bist du geboren?"]]),
+        "Schaltflaechen: {wege}"
+    );
+    // Die Konsole vorher pruefen: die Kontrolle unten fragt ein Feld ab, das es nicht gibt (404 im Konsolenprotokoll).
+    pruefe_konsole(&u, "Sperre nennt das Feld");
+    // KONTROLLEN: ein Feld ohne Frage bekommt keine erfundene Schaltflaeche; ein anderer Grund und die Auslöser des Servers
+    // (`sperr_felder`) bleiben bei `zeigeSperrFelder`.
+    let ohne_frage = baue(json!({"grund": "ring_betrag_vorlaeufig", "offen": ["gibt_es_nicht"], "sperr_felder": []}));
+    let anderer_grund = baue(json!({"grund": "input_kegel_nicht_bestaetigt", "offen": ["geburtsjahr"], "sperr_felder": []}));
+    let mit_ausloesern = baue(json!({"grund": "ring_betrag_vorlaeufig", "offen": ["geburtsjahr"], "sperr_felder": [{"feld_id": "x", "grund": "y"}]}));
+    pp!(
+        "J.die_sperre_erfindet_keine_schaltflaeche",
+        ohne_frage == json!([]) && anderer_grund == json!([]) && mit_ausloesern == json!([]),
+        "ohne Frage {ohne_frage}, anderer Grund {anderer_grund}, mit Ausloesern {mit_ausloesern}"
+    );
 }

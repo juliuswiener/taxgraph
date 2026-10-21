@@ -1212,6 +1212,36 @@ function zeigeSperrFelder(el, r) {
   }
 }
 
+// Die offenen Felder eines Sperrgrunds, den der Server nur mit Feldkennungen benennt: bei `ring_betrag_vorlaeufig` ist ein
+// genannter Betrag noch nicht bestaetigt, und `offen` sagt welcher. Der Satz des Servers nennt das Feld nicht (Fluss J F1: der Nutzer
+// sah „Ein Betrag, den du genannt hast“ und wusste nicht, welchen). Jedes Feld wird eine Schaltflaeche mit seiner Frage und oeffnet
+// dieselbe Einzel-Feld-Frage wie `sperreOeffnetFrage`. Gibt der Server zu einem Feld keine Frage her, bleibt es ohne Schaltflaeche
+// (keine erfundene). Benennt der Server die Ausloeser selbst (`sperr_felder`), zeigt `zeigeSperrFelder` sie, nicht diese Funktion.
+async function zeigeOffeneFelder(el, r) {
+  if (r.grund !== "ring_betrag_vorlaeufig" || (r.sperr_felder || []).length) return;
+  const wege = [];
+  for (const fid of r.offen || []) {
+    const q = await jget(`/fall/${FALL}/feld/${fid}/frage`);
+    if (q.status === 200 && q.body.frage) wege.push({ feld_id: fid, text: q.body.frage.fragetext_laie || fid });
+  }
+  if (!wege.length) return;
+  const hinweis = document.createElement("p");
+  hinweis.className = "ergebnis-sperr-hinweis";
+  hinweis.textContent = wege.length === 1
+    ? "Diese Angabe ist noch nicht bestätigt — tippe sie an und bestätige sie:"
+    : "Diese Angaben sind noch nicht bestätigt — tippe eine an und bestätige sie:";
+  el.appendChild(hinweis);
+  for (const w of wege) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "btn-link ergebnis-sperr-feld";
+    b.dataset.sperrFeld = w.feld_id;
+    b.textContent = w.text;
+    b.addEventListener("click", () => sperreOeffnetFrage(w.feld_id));
+    el.appendChild(b);
+  }
+}
+
 // --- Bestätigen: Zwei-Signal über den EINZIGEN Schreibpfad. kiFeld gesetzt -> ersetzt das vorläufige KI-Event. ---
 async function bestaetigen(kiFeld) {
   if (!AKTUELL) return;
@@ -2494,6 +2524,7 @@ async function zeigeErgebnis() {
     // Der Nutzer sieht hier keine Zahl, sondern nur den Sperrgrund — der Ausweg gehoert also
     // hierhin, nicht in die Belegt-Liste (deren Klick ist in diesem Zustand tot, s.o.).
     zeigeSperrFelder(el, r);
+    await zeigeOffeneFelder(el, r);
   } else {
     el.className = "ergebnis";
     // Auch hier ohne innerHTML-Interpolation — nicht weil euro() gefaehrlich waere (es

@@ -606,6 +606,52 @@ fn ableitung_alter_am_jahresbeginn_haengt_am_veranlagungsjahr() {
     }
 }
 
+/// Rust-eigen (Fluss J F1, 2026-10-21): Eine bestaetigte Quelle leitet auch dann ab, wenn das Ziel nur als Vorschlag dasteht.
+/// Die Vorjahres-Uebernahme legt `geburtsjahr` als vorlaeufiges Event ab (`vorjahr: uebernehmbar`, die Frage entfaellt). Python
+/// und die erste Rust-Fassung liessen jedes Ziel mit aktivem Event aus; das Geburtsjahr blieb vorlaeufig, auch nachdem der Nutzer
+/// das Geburtsdatum bestaetigt hatte, und die Sperre `ring_betrag_vorlaeufig` hielt die Steuerzahl zurueck (Sackgasse).
+/// Jedes Ziel einer Ableitung, das die Uebernahme mitnimmt, steht in der Tabelle; ein neues ohne Zeile macht den Test rot.
+#[test]
+fn eine_bestaetigte_quelle_ersetzt_ein_vorlaeufiges_ziel_der_ableitung() {
+    let tabelle = [
+        // (Ziel, Quelle, Quellwert, Vorschlag aus dem Vorjahr, abgeleiteter Wert)
+        ("geburtsjahr", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
+        ("geburtsjahr_partner", "stammdaten_geburtsdatum_partner", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
+        ("rentner_alter_64_erfuellt", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(false), PyWert::Bool(true)),
+    ];
+    let mut erwartet: Vec<&str> = bindungen()
+        .iter()
+        .filter(|b| b.ableitung.is_some() && b.vorjahr == Some(bindung::Vorjahr::Uebernehmbar))
+        .map(|b| b.feld_id.as_str())
+        .collect();
+    erwartet.sort_unstable();
+    let mut gedeckt: Vec<&str> = tabelle.iter().map(|z| z.0).collect();
+    gedeckt.sort_unstable();
+    assert_eq!(gedeckt, erwartet, "jedes uebernehmbare Ziel einer Ableitung braucht eine Zeile");
+    for (ziel, quelle, quellwert, vorschlag, soll) in tabelle {
+        let mut s = leerer_store(2025);
+        let alt = anhaengen(&mut s, &vorlaeufig(ziel, &vorschlag, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        anhaengen(&mut s, &bestaetigt(quelle, &quellwert)).unwrap();
+        let e = s.aktives(ziel).unwrap();
+        assert_eq!(e.wert, soll, "{ziel}: der abgeleitete Wert gilt");
+        assert_eq!(e.zustand, Zustand::Bestaetigt, "{ziel}: der abgeleitete Wert ist bestaetigt");
+        assert_eq!(e.ersetzt, Some(alt), "{ziel}: er ersetzt den Vorschlag, statt ein zweites aktives Event zu werden");
+        assert_eq!(e.schreiber, Schreiber::Abgeleitet("ableitung".to_owned()), "{ziel}");
+
+        // KONTROLLE 1: Ein vom Nutzer bestaetigtes Ziel bleibt, die Ableitung ueberschreibt nichts Bestaetigtes.
+        let mut s = leerer_store(2025);
+        let eigen = anhaengen(&mut s, &bestaetigt(ziel, &vorschlag)).unwrap();
+        anhaengen(&mut s, &bestaetigt(quelle, &quellwert)).unwrap();
+        assert_eq!(s.aktives(ziel).unwrap().event_id, eigen, "{ziel}: die Antwort des Nutzers bleibt");
+
+        // KONTROLLE 2: Eine nur vorlaeufige Quelle (Vorjahr) leitet nichts ab, das Ziel bleibt der Vorschlag.
+        let mut s = leerer_store(2025);
+        let alt = anhaengen(&mut s, &vorlaeufig(ziel, &vorschlag, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        anhaengen(&mut s, &vorlaeufig(quelle, &quellwert, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        assert_eq!(s.aktives(ziel).unwrap().event_id, alt, "{ziel}: ohne bestaetigte Quelle bleibt der Vorschlag");
+    }
+}
+
 // ---------------------------------------------------------------------------------------------
 // append_roh
 // ---------------------------------------------------------------------------------------------
