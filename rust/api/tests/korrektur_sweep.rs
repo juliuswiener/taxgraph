@@ -26,6 +26,7 @@
     clippy::indexing_slicing,
     clippy::panic,
     clippy::too_many_lines,
+    clippy::many_single_char_names,
     clippy::print_stderr
 )]
 
@@ -53,12 +54,22 @@ enum Gib {
 
 type Tabelle = Vec<(&'static str, Gib)>;
 
-/// Ein geschriebenes Ereignis des Ausgangsfalls.
+/// Wie ein Wert in den Fall kam: als Antwort des Nutzers, als Bestaetigung eines Vorschlags (die Ableitung hatte schon einen Wert
+/// vorlaeufig gesetzt, der Nutzer ersetzt ihn) oder gar nicht (der Dienst hat ihn selbst abgeleitet und bestaetigt).
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Art {
+    Antwort,
+    Vorschlag,
+    Abgeleitet,
+}
+
+/// Ein Ereignis des Ausgangsfalls.
 #[derive(Clone)]
 struct Ereignis {
     feld: String,
     wert: Value,
     signal_2: String,
+    art: Art,
 }
 
 /// Ein Ausgangsfall: Scheibe, Veranlagungsjahr und die Antworten in Schreibreihenfolge.
@@ -150,6 +161,29 @@ impl Dienst {
         Messung { ergebnis, felder }
     }
 
+    /// Schreibt eine Antwort. Hat das Feld schon ein Ereignis, hat der Dienst es entweder abgeleitet und bestaetigt (dann bleibt es,
+    /// `Art::Abgeleitet`) oder als Vorschlag gesetzt (dann bestaetigt der Nutzer ihn: ersetzt mit `e.wert`, bei `uebernimm_vorschlag` mit
+    /// dem vorgeschlagenen Wert, `Art::Vorschlag`). So macht es die Oberflaeche.
+    async fn schreibe_robust(&self, fall: &str, e: &mut Ereignis, uebernimm_vorschlag: bool) -> (u16, Value) {
+        let (s, a) = self.schreibe(fall, e).await;
+        if !(s == 422 && a["fehler"].as_str().is_some_and(|t| t.contains("aktives Event"))) {
+            return (s, a);
+        }
+        let (_, stand) = self.sende("GET", &format!("/fall/{fall}/stand"), None).await;
+        let f = &stand["felder"][&e.feld];
+        if f["zustand"] == json!("bestaetigt") {
+            e.art = Art::Abgeleitet;
+            e.wert = f["wert"].clone();
+            return (201, Value::Null);
+        }
+        e.art = Art::Vorschlag;
+        if uebernimm_vorschlag && !f["wert"].is_null() {
+            e.wert = f["wert"].clone();
+        }
+        let (s, a) = self.korrigiere(fall, &e.feld, &e.wert).await;
+        (if s == 200 { 201 } else { s }, a)
+    }
+
     /// Ein Fall aus den Ereignissen; `ersetze` tauscht den Wert eines Feldes (Art 1), `haenge_an` schreibt am Ende (Art 2).
     async fn baue(&self, b: &Basis, ersetze: Option<(&str, &Value)>) -> String {
         let fall = self.neuer_fall(b.scheibe, b.vz).await;
@@ -160,8 +194,11 @@ impl Dienst {
                     e.wert = w.clone();
                 }
             }
-            let (status, antwort) = self.schreibe(&fall, &e).await;
-            assert_eq!(status, 201, "{}: {} = {} wurde abgewiesen: {antwort}", b.name, e.feld, e.wert);
+            if e.art == Art::Abgeleitet {
+                continue;
+            }
+            let (status, antwort) = self.schreibe_robust(&fall, &mut e, false).await;
+            assert!(status == 201, "{}: {} = {} wurde abgewiesen: {status} {antwort}", b.name, e.feld, e.wert);
         }
         fall
     }
@@ -302,7 +339,16 @@ fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'sta
     rentner_paar.extend(kirche("keine", Some("keine")));
     rentner_paar.extend(rente(false, "2015", "18000"));
     rentner_paar.extend(rente(true, "2018", "12000"));
+    // Zwei Kinder (unter 14): der Zaehler und je Kind das Geburtsdatum; die uebrigen Kind-Felder beantwortet der neutrale Standard.
+    let kinder = |mut t: Tabelle| {
+        t.push(("fam_anzahl_kinder", Gib::Euro("2")));
+        t.push(("kind_geburtsdatum", Gib::Text("15.03.2018")));
+        t.push(("kind_geburtsdatum__2", Gib::Text("20.06.2021")));
+        t
+    };
     vec![
+        ("einzel_zwei_kinder", "gesamt", kinder(einzel("15.03.1985", "keine")), &["kein_kind"]),
+        ("ehepaar_zwei_kinder", "gesamt", kinder(paar("keine", "keine")), &["kein_kind"]),
         ("einzel_1955", "gesamt", einzel("15.03.1955", "keine"), &[]),
         ("einzel_1985", "gesamt", einzel("15.03.1985", "keine"), &[]),
         ("einzel_evangelisch", "gesamt", einzel("15.03.1985", "evangelisch"), &[]),
@@ -326,11 +372,14 @@ fn euro_wert(t: &str, typ: &str) -> Value {
 
 /// Der Wert zu einer Frage: Tabelle, sonst der neutrale Standard der Oberflaeche (Geld und Zahl 0, Ja/Nein „Nein“, bei
 /// `frage_invertiert` und der Ankreuzliste das Gegenteil davon).
-fn antwort(q: &Value, tabelle: &Tabelle, kreuze: &[&str], ueberschreibe: &[(&str, Value)]) -> Value {
-    let feld = q["feld_id"].as_str().unwrap();
+fn antwort(q: &Value, instanz: &str, tabelle: &Tabelle, kreuze: &[&str], ueberschreibe: &[(&str, Value)]) -> Value {
+    let basis = q["feld_id"].as_str().unwrap();
+    // Die Tabelle darf eine Instanz (`feld__2`) eigens belegen; sonst gilt der Eintrag des Basisfeldes.
+    let feld = if tabelle.iter().any(|(f, _)| *f == instanz) { instanz } else { basis };
     let typ = q["typ"].as_str().unwrap();
     let invertiert = q["frage_invertiert"] == json!(true);
-    if let Some((_, w)) = ueberschreibe.iter().find(|(f, _)| *f == feld) {
+    // Der Endwert einer Korrektur gilt nur fuer genau die Instanz, die korrigiert wurde.
+    if let Some((_, w)) = ueberschreibe.iter().find(|(f, _)| *f == instanz) {
         return w.clone();
     }
     if typ == "bool" {
@@ -381,10 +430,10 @@ async fn fragenlauf_ab(
             if ereignisse.iter().any(|e| e.feld == feld) {
                 continue;
             }
-            let wert = antwort(&q, tabelle, kreuze, ueberschreibe);
+            let wert = antwort(&q, &feld, tabelle, kreuze, ueberschreibe);
             let signal_2 = if q["screening"] == json!(true) { format!("screening@{feld}") } else { format!("ok@{feld}") };
-            let e = Ereignis { feld: feld.clone(), wert, signal_2 };
-            let (s, a) = d.schreibe(fall, &e).await;
+            let mut e = Ereignis { feld: feld.clone(), wert, signal_2, art: Art::Antwort };
+            let (s, a) = d.schreibe_robust(fall, &mut e, true).await;
             assert!(s == 201, "{name}: Schritt {schritt}: {feld} = {} abgewiesen: {s} {a}", e.wert);
             ereignisse.push(e);
             neu = true;
@@ -477,18 +526,15 @@ struct Kontext<'a> {
 async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, z: &mut Zaehler, log: &mut Log) {
     z.versuche += 1;
     // K: Ausgangsfall mit dem alten Wert (Art 1/3: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
-    let k_fall = if art != 2 {
-        d.baue(b, None).await
-    } else {
-        let fall = d.baue(b, None).await;
-        let e = Ereignis { feld: feld.to_owned(), wert: alt.clone(), signal_2: format!("ok@{feld}") };
-        let (s, _) = d.schreibe(&fall, &e).await;
+    let k_fall = d.baue(b, None).await;
+    if art == 2 {
+        let e = Ereignis { feld: feld.to_owned(), wert: alt.clone(), signal_2: format!("ok@{feld}"), art: Art::Antwort };
+        let (s, _) = d.schreibe(&k_fall, &e).await;
         if s != 201 {
             z.abgewiesen += 1;
             return;
         }
-        fall
-    };
+    }
     let (s, a) = d.korrigiere(&k_fall, feld, neu).await;
     if s != 200 && s != 201 {
         z.abgewiesen += 1;
@@ -509,7 +555,7 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         d.baue(b, Some((feld, neu))).await
     } else {
         let fall = d.baue(b, None).await;
-        let e = Ereignis { feld: feld.to_owned(), wert: neu.clone(), signal_2: format!("ok@{feld}") };
+        let e = Ereignis { feld: feld.to_owned(), wert: neu.clone(), signal_2: format!("ok@{feld}"), art: Art::Antwort };
         let (s, _) = d.schreibe(&fall, &e).await;
         assert_eq!(s, 201, "F-Fall: {feld} = {neu} abgewiesen, K hat es angenommen");
         fall
@@ -581,7 +627,7 @@ async fn sweep_basis(
         }
         let mut n = 0;
         for e in &b.ereignisse {
-            if nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) || (art == 3 && !gates.contains(basisname(&e.feld))) {
+            if e.art == Art::Abgeleitet || nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) || (art == 3 && !gates.contains(basisname(&e.feld))) {
                 continue;
             }
             let Some(bd) = bindungen.get(basisname(&e.feld)) else {
