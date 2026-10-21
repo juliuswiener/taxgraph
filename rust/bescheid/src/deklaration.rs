@@ -416,7 +416,7 @@ pub fn vorlaeufige_ring_betraege(
     cfg: &Cfg,
     bindung: &BindungIndex<'_>,
 ) -> Vec<&'static str> {
-    konstanten::ring_kandidaten(cfg.scheibe)
+    ring_kandidaten(cfg)
         .iter()
         .copied()
         .filter(|fid| {
@@ -428,6 +428,14 @@ pub fn vorlaeufige_ring_betraege(
                     .is_some_and(|ev| ev.zustand != Zustand::Bestaetigt)
         })
         .collect()
+}
+
+/// Die Betragsfelder DIESER Scheibe, die der Ring liest und die nicht im Kegel stehen (Klasse C): steht eines davon als Vorschlag
+/// im Fall, sperrt [`vorlaeufige_ring_betraege`] die Zahl, bis es bestaetigt ist. Die Fragenliste liest dieselbe Menge, damit sie
+/// jedes solche Feld fragt (Fluss J F1: ein Vorjahreswert ohne Frage endete in einer Sackgasse).
+#[must_use]
+pub fn ring_kandidaten(cfg: &Cfg) -> &'static [&'static str] {
+    konstanten::ring_kandidaten(cfg.scheibe)
 }
 
 /// Test- und Doctest-Hilfe der Deklaration, `pub` und versteckt wie `bescheid::testhilfe`. Ein

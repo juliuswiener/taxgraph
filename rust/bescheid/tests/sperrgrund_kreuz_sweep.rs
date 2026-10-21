@@ -58,8 +58,9 @@
 //!
 //! **Abweichung Nr. 74 an allen Eintraegen.** Die Regel in `bedingung_schliesst_aus` (eine Bedingung auf ein Feld, das die Scheibe
 //! nicht fragt, schliesst nichts aus) steht allgemein im Code und wirkt an jedem solchen Eintrag der Bindung, nicht nur an den
-//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (48:
-//! 18 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 25 in `rentner_gesamt`), haelt sie gegen die Liste [`GEPRUEFT`] und misst
+//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (37:
+//! 18 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 14 in `rentner_gesamt`; vorher 48 und 25, bis `rentner_gesamt` am
+//! 2026-10-21 `kein_gewinn_partner` fragte), haelt sie gegen die Liste [`GEPRUEFT`] und misst
 //! an jedem: die Frage bleibt stehen, auch wenn die Akte das Bedingungsfeld mit einem schliessenden Wert tragen wuerde.
 #![allow(
     clippy::unwrap_used,
@@ -878,6 +879,7 @@ fn welt_mit_kreuz(feld: &str) -> &'static Welt {
                 grund: "Kontrolle des Sweeps".into(),
                 wert_nicht: None,
                 alter_im_vz: None,
+                praefix_nicht: None,
                 groesser_als: None,
                 und: None,
                 oder: None,
@@ -1247,23 +1249,8 @@ const GEPRUEFT: &[(&str, &str, &[&str])] = &[
             "vor_an_anteil_rv_partner",
         ],
     ),
-    (
-        "RentnerGesamt",
-        "kein_gewinn_partner",
-        &[
-            "einkuenfte_gewinn_partner",
-            "gewinn_betriebsart_partner",
-            "gewinn_bezeichnung_partner",
-            "gewinnanteil_partner",
-            "gewst_hebesatz_partner",
-            "gewst_messbetrag_partner",
-            "rentner_veraeusserungs_betriebsart_partner",
-            "rentner_veraeusserungsgewinn_partner",
-            "verguetung_darlehen_partner",
-            "verguetung_taetigkeit_partner",
-            "verguetung_ueberlassung_partner",
-        ],
-    ),
+    // Fluss J F2/F3/F8: `kein_gewinn_partner` (11 Felder) steht seit 2026-10-21 in `rentner_gesamt`, sein Eintrag hier ist weggefallen
+    // (das Kreuz wird gefragt, die Bedingung schliesst dort aus); er steht in [`KONTROLLE`].
     (
         "RentnerGesamt",
         "kein_kap_partner",
@@ -1298,6 +1285,8 @@ const KONTROLLE: &[(&str, &str, &str)] = &[
     ("Gesamt", "kein_gewinn_partner", "einkuenfte_gewinn_partner"),
     ("Gesamt", "kein_kap_partner", "kap_kapitalertraege_partner"),
     ("RentnerGesamt", "kein_gewinn", "gewinn_betriebsart"),
+    // Fluss J F2/F3/F8: das Kreuz des Ehegatten, das `rentner_gesamt` seit 2026-10-21 fragt (vorher ein Eintrag der Regel).
+    ("RentnerGesamt", "kein_gewinn_partner", "einkuenfte_gewinn_partner"),
 ];
 
 fn als_menge(liste: &[(&str, &str, &[&str])], art: Art) -> BTreeSet<Eintrag> {

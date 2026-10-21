@@ -606,6 +606,192 @@ fn ableitung_alter_am_jahresbeginn_haengt_am_veranlagungsjahr() {
     }
 }
 
+/// Rust-eigen (Fluss J F1, 2026-10-21): Eine bestaetigte Quelle leitet auch dann ab, wenn das Ziel nur als Vorschlag dasteht.
+/// Die Vorjahres-Uebernahme legt `geburtsjahr` als vorlaeufiges Event ab (`vorjahr: uebernehmbar`, die Frage entfaellt). Python
+/// und die erste Rust-Fassung liessen jedes Ziel mit aktivem Event aus; das Geburtsjahr blieb vorlaeufig, auch nachdem der Nutzer
+/// das Geburtsdatum bestaetigt hatte, und die Sperre `ring_betrag_vorlaeufig` hielt die Steuerzahl zurueck (Sackgasse).
+/// Jedes Ziel einer Ableitung, das die Uebernahme mitnimmt, steht in der Tabelle; ein neues ohne Zeile macht den Test rot.
+#[test]
+fn eine_bestaetigte_quelle_ersetzt_ein_vorlaeufiges_ziel_der_ableitung() {
+    let tabelle = [
+        // (Ziel, Quelle, Quellwert, Vorschlag aus dem Vorjahr, abgeleiteter Wert)
+        ("geburtsjahr", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
+        ("geburtsjahr_partner", "stammdaten_geburtsdatum_partner", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
+        ("rentner_alter_64_erfuellt", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(false), PyWert::Bool(true)),
+    ];
+    let mut erwartet: Vec<&str> = bindungen()
+        .iter()
+        .filter(|b| b.ableitung.is_some() && b.vorjahr == Some(bindung::Vorjahr::Uebernehmbar))
+        .map(|b| b.feld_id.as_str())
+        .collect();
+    erwartet.sort_unstable();
+    let mut gedeckt: Vec<&str> = tabelle.iter().map(|z| z.0).collect();
+    gedeckt.sort_unstable();
+    assert_eq!(gedeckt, erwartet, "jedes uebernehmbare Ziel einer Ableitung braucht eine Zeile");
+    for (ziel, quelle, quellwert, vorschlag, soll) in tabelle {
+        let mut s = leerer_store(2025);
+        let alt = anhaengen(&mut s, &vorlaeufig(ziel, &vorschlag, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        anhaengen(&mut s, &bestaetigt(quelle, &quellwert)).unwrap();
+        let e = s.aktives(ziel).unwrap();
+        assert_eq!(e.wert, soll, "{ziel}: der abgeleitete Wert gilt");
+        assert_eq!(e.zustand, Zustand::Bestaetigt, "{ziel}: der abgeleitete Wert ist bestaetigt");
+        assert_eq!(e.ersetzt, Some(alt), "{ziel}: er ersetzt den Vorschlag, statt ein zweites aktives Event zu werden");
+        assert_eq!(e.schreiber, Schreiber::Abgeleitet("ableitung".to_owned()), "{ziel}");
+
+        // KONTROLLE 1: Ein vom Nutzer bestaetigtes Ziel bleibt, die Ableitung ueberschreibt nichts Bestaetigtes.
+        let mut s = leerer_store(2025);
+        let eigen = anhaengen(&mut s, &bestaetigt(ziel, &vorschlag)).unwrap();
+        anhaengen(&mut s, &bestaetigt(quelle, &quellwert)).unwrap();
+        assert_eq!(s.aktives(ziel).unwrap().event_id, eigen, "{ziel}: die Antwort des Nutzers bleibt");
+
+        // KONTROLLE 2: Eine nur vorlaeufige Quelle (Vorjahr) leitet nichts ab, das Ziel bleibt der Vorschlag.
+        let mut s = leerer_store(2025);
+        let alt = anhaengen(&mut s, &vorlaeufig(ziel, &vorschlag, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        anhaengen(&mut s, &vorlaeufig(quelle, &quellwert, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+        assert_eq!(s.aktives(ziel).unwrap().event_id, alt, "{ziel}: ohne bestaetigte Quelle bleibt der Vorschlag");
+    }
+}
+
+/// Das Ziel, das gilt: der bestaetigte Wert. `None`, wenn kein Event oder nur ein Vorschlag dasteht (dann kommt die Frage).
+fn gilt(s: &Store, feld: &str) -> Option<PyWert> {
+    s.aktives(feld).filter(|e| e.zustand == Zustand::Bestaetigt).map(|e| e.wert.clone())
+}
+
+/// Der Nutzer korrigiert eine bestaetigte Antwort: das neue Event ersetzt das aktive (wie `korrigiereBestaetigt` der Oberflaeche).
+fn korrigiere(s: &mut Store, feld: &str, wert: &Value) {
+    let mut neu = bestaetigt(feld, wert);
+    neu.ersetzt = Some(s.aktives(feld).unwrap().event_id);
+    anhaengen(s, &neu).unwrap();
+}
+
+struct Korrektur {
+    ziel: &'static str,
+    /// Die Angaben, bevor der Nutzer eine davon korrigiert.
+    vorher: Vec<(&'static str, Value)>,
+    korrigiert: (&'static str, Value),
+    /// Der abgeleitete Wert vor der Korrektur und danach; `None` = kein gueltiger Wert mehr (die Frage kommt).
+    alt: PyWert,
+    neu: Option<PyWert>,
+}
+
+/// Rust-eigen (Fluss J F1, Nachtrag 2026-10-21): Eine korrigierte Quelle erneuert den abgeleiteten Wert oder zieht ihn zurueck.
+/// Python und die erste Rust-Fassung liessen jedes Ziel mit aktivem Event aus. Wer das Geburtsdatum nach der Eingabe korrigierte,
+/// behielt das Geburtsjahr und das Alter 64 des ersten Datums: der Altersentlastungsbetrag (§ 24a `EStG`) rechnete mit dem falschen
+/// Wert, die Steuer war falsch. Liegt der neue Wert ausserhalb des Bereichs oder beweist er nichts mehr (Kind nicht mehr unter 14),
+/// darf der alte abgeleitete Wert auch nicht weitergelten (Entscheid 2026-10-03 Punkt 1: die Frage bleibt stehen).
+/// Jedes Ziel einer Ableitung steht in der Tabelle; ein neues ohne Zeile macht den Test rot.
+#[test]
+fn eine_korrigierte_quelle_erneuert_oder_zieht_den_abgeleiteten_wert_zurueck() {
+    let (geb, geb_p) = ("stammdaten_geburtsdatum", "stammdaten_geburtsdatum_partner");
+    let kind = |suffix: &str| {
+        vec![
+            (if suffix.is_empty() { KIND_ZEITRAUM } else { "kind_betreuung_haushaltszugehoerigkeit_zeitraum__2" }, json!("01.03-31.10")),
+            (if suffix.is_empty() { KIND_GEB } else { "kind_geburtsdatum__2" }, json!("15.06.2012")),
+        ]
+    };
+    let tabelle = vec![
+        Korrektur { ziel: "geburtsjahr", vorher: vec![(geb, json!("01.01.1961"))], korrigiert: (geb, json!("01.01.1980")), alt: PyWert::Ganz(1961), neu: Some(PyWert::Ganz(1980)) },
+        Korrektur { ziel: "geburtsjahr_partner", vorher: vec![(geb_p, json!("01.01.1961"))], korrigiert: (geb_p, json!("01.01.1980")), alt: PyWert::Ganz(1961), neu: Some(PyWert::Ganz(1980)) },
+        Korrektur { ziel: "rentner_alter_64_erfuellt", vorher: vec![(geb, json!("01.01.1961"))], korrigiert: (geb, json!("01.01.1980")), alt: PyWert::Bool(true), neu: Some(PyWert::Bool(false)) },
+        // Das Kind war am Jahresende unter 14 (2012), nach der Korrektur nicht mehr (2011): die Ableitung beweist nur "ja".
+        Korrektur { ziel: KIND_UNTER_14, vorher: kind(""), korrigiert: (KIND_GEB, json!("15.06.2011")), alt: PyWert::Bool(true), neu: None },
+        // Dasselbe je Instanz (`__2`).
+        Korrektur { ziel: "kind_unter_14_haushaltszugehoerig__2", vorher: kind("__2"), korrigiert: ("kind_geburtsdatum__2", json!("15.06.2011")), alt: PyWert::Bool(true), neu: None },
+        // Ausserhalb von `bereich` (1900 bis 2010): der alte Wert darf nicht weitergelten.
+        Korrektur { ziel: "geburtsjahr", vorher: vec![(geb, json!("01.01.1961"))], korrigiert: (geb, json!("15.06.2015")), alt: PyWert::Ganz(1961), neu: None },
+        Korrektur { ziel: "geburtsjahr_partner", vorher: vec![(geb_p, json!("01.01.1961"))], korrigiert: (geb_p, json!("01.01.1850")), alt: PyWert::Ganz(1961), neu: None },
+    ];
+    let mut gedeckt: Vec<&str> = tabelle.iter().map(|z| z.ziel.trim_end_matches("__2")).collect();
+    gedeckt.sort_unstable();
+    gedeckt.dedup();
+    let mut erwartet: Vec<&str> = bindungen().iter().filter(|b| b.ableitung.is_some()).map(|b| b.feld_id.as_str()).collect();
+    erwartet.sort_unstable();
+    assert_eq!(gedeckt, erwartet, "jedes Ziel einer Ableitung braucht eine Zeile");
+    for z in tabelle {
+        let mut s = leerer_store(2025);
+        for (feld, wert) in &z.vorher {
+            anhaengen(&mut s, &bestaetigt(feld, wert)).unwrap();
+        }
+        assert_eq!(gilt(&s, z.ziel), Some(z.alt.clone()), "{}: vor der Korrektur", z.ziel);
+        korrigiere(&mut s, z.korrigiert.0, &z.korrigiert.1);
+        assert_eq!(gilt(&s, z.ziel), z.neu, "{} nach der Korrektur von {} auf {}", z.ziel, z.korrigiert.0, z.korrigiert.1);
+        if z.neu.is_some() {
+            let e = s.aktives(z.ziel).unwrap();
+            assert_eq!(e.schreiber, Schreiber::Abgeleitet("ableitung".to_owned()), "{}", z.ziel);
+            assert_eq!(herkunft_json(&s, z.ziel), berechnet_json(), "{}", z.ziel);
+        }
+    }
+
+    // Je Instanz: die Korrektur von `kind_geburtsdatum__2` laesst das Kind ohne Suffix in Ruhe.
+    let mut s = leerer_store(2025);
+    for (feld, wert) in kind("").into_iter().chain(kind("__2")) {
+        anhaengen(&mut s, &bestaetigt(feld, &wert)).unwrap();
+    }
+    korrigiere(&mut s, "kind_geburtsdatum__2", &json!("15.06.2011"));
+    assert_eq!(gilt(&s, KIND_UNTER_14), Some(PyWert::Bool(true)), "Kind 1 bleibt unter 14");
+    assert_eq!(gilt(&s, "kind_unter_14_haushaltszugehoerig__2"), None, "Kind 2 ist es nicht mehr");
+}
+
+/// KONTROLLEN zur Erneuerung: Eine Korrektur mit gleichem abgeleiteten Wert schreibt kein neues Event; die Antwort des Nutzers am
+/// Ziel bleibt, auch wenn die Quelle sich aendert; ein erster Wert ausserhalb des Bereichs schreibt nichts (Entscheid 2026-10-03
+/// Punkt 1), die naechste Korrektur im Bereich rechnet.
+#[test]
+fn die_erneuerung_laesst_gleiches_und_menschliches_in_ruhe() {
+    let geb = "stammdaten_geburtsdatum";
+    // Gleicher Wert: 1961 bleibt 1961, das Kind bleibt unter 14.
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &bestaetigt(geb, &json!("01.01.1961"))).unwrap();
+    let vorher = s.aktives("geburtsjahr").unwrap().event_id;
+    korrigiere(&mut s, geb, &json!("31.12.1961"));
+    assert_eq!(s.aktives("geburtsjahr").unwrap().event_id, vorher, "kein neues Event bei gleichem Wert");
+    let mut s = leerer_store(2025);
+    for (feld, wert) in [(KIND_ZEITRAUM, json!("01.03-31.10")), (KIND_GEB, json!("15.06.2012"))] {
+        anhaengen(&mut s, &bestaetigt(feld, &wert)).unwrap();
+    }
+    let vorher = s.aktives(KIND_UNTER_14).unwrap().event_id;
+    korrigiere(&mut s, KIND_GEB, &json!("15.07.2013"));
+    assert_eq!(s.aktives(KIND_UNTER_14).unwrap().event_id, vorher, "kein neues Event bei gleichem Wert");
+
+    // Die Antwort des Nutzers am Ziel bleibt.
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &bestaetigt(geb, &json!("01.01.1961"))).unwrap();
+    korrigiere(&mut s, "geburtsjahr", &json!(1970));
+    let eigen = s.aktives("geburtsjahr").unwrap().event_id;
+    korrigiere(&mut s, geb, &json!("01.01.1980"));
+    assert_eq!(s.aktives("geburtsjahr").unwrap().event_id, eigen, "die Antwort des Nutzers bleibt");
+    assert_eq!(gilt(&s, "geburtsjahr"), Some(PyWert::Ganz(1970)));
+
+    // Ein erster Wert ausserhalb des Bereichs schreibt nichts; die naechste Korrektur im Bereich rechnet.
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &bestaetigt(geb, &json!("15.06.2015"))).unwrap();
+    assert!(!hat(&s, "geburtsjahr"), "kein Wert ausserhalb des Bereichs");
+    korrigiere(&mut s, geb, &json!("01.01.1975"));
+    assert_eq!(gilt(&s, "geburtsjahr"), Some(PyWert::Ganz(1975)));
+    // Auch nach einem zurueckgezogenen Wert rechnet die naechste Korrektur im Bereich.
+    korrigiere(&mut s, geb, &json!("15.06.2015"));
+    assert_eq!(gilt(&s, "geburtsjahr"), None);
+    korrigiere(&mut s, geb, &json!("01.01.1962"));
+    assert_eq!(gilt(&s, "geburtsjahr"), Some(PyWert::Ganz(1962)));
+}
+
+/// Das `und_feld` einer Ableitung gehoert zu den Ausloesern: wird es leer, gilt der abgeleitete Wert nicht mehr. Wie in
+/// `ableitung_ignoriert_ein_leeres_und_feld` fehlt der Eintrag der Karte, damit ein leerer Wert das Feld erreicht.
+#[test]
+fn ein_leer_gewordenes_und_feld_zieht_den_abgeleiteten_wert_zurueck() {
+    let mut karte = echte_karte();
+    karte.remove(KIND_ZEITRAUM);
+    let mut s = leerer_store(2025);
+    for (feld, wert) in [(KIND_ZEITRAUM, json!("01.03-31.10")), (KIND_GEB, json!("15.06.2012"))] {
+        s.append(&bestaetigt(feld, &wert), None, BindungNachschlag::neu(&karte)).unwrap();
+    }
+    assert_eq!(gilt(&s, KIND_UNTER_14), Some(PyWert::Bool(true)));
+    let mut leer = bestaetigt(KIND_ZEITRAUM, &json!(0));
+    leer.wert = PyWert::Null;
+    leer.ersetzt = Some(s.aktives(KIND_ZEITRAUM).unwrap().event_id);
+    s.append(&leer, None, BindungNachschlag::neu(&karte)).unwrap();
+    assert_eq!(gilt(&s, KIND_UNTER_14), None, "ohne Haushaltszeitraum steht das Kind nicht fest");
+}
+
 // ---------------------------------------------------------------------------------------------
 // append_roh
 // ---------------------------------------------------------------------------------------------

@@ -102,12 +102,16 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// Kegel bleiben, `rentner_gesamt` bleibt 328;
 /// danach am 2026-10-19 die zwei Felder `berufsverband_beitraege` und `berufsverband_beitraege_partner` in `an_gesamt` und `gesamt`
 /// (Abweichung Nr. 93), 100 -> 102 und 422 -> 424, die Kegel bleiben, `rentner_gesamt` bleibt 328 (dort steht kein Werbungskosten-Feld);
+/// danach am 2026-10-21 die vier Kreuze `kein_kind`, `kein_unterhalt`, `keine_auslandseinkuenfte` und `kein_gewinn_partner` nur in
+/// `rentner_gesamt` (Fluss J F2/F3/F8, Vault `julius-entscheidet-vorjahr-sackgasse-rentner-eingangsfragen-und-bic-werden-behoben-
+/// 2026-10-21`), 328 -> 332, der Kegel bleibt 28, `an_gesamt` 102 und `gesamt` 424 bleiben (sie fragen die Kreuze schon);
+/// `kein_sonstige_partner` und `kein_kap_partner` fehlen mit Absicht (Sackgasse in `rente_instanz_offen`, Flag-Sperre aus `FLAG_NEGIERT`);
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 102, 33),
     (Scheibe::Gesamt, 424, 35),
-    (Scheibe::RentnerGesamt, 328, 28),
+    (Scheibe::RentnerGesamt, 332, 28),
 ];
 
 fn registry() -> &'static Registry {

@@ -368,7 +368,6 @@ pub(crate) fn person_a() -> Tabelle {
         ("stammdaten_strasse", Gib::Text("Marienplatz")),
         ("stammdaten_hausnummer", Gib::Text("1")),
         ("stammdaten_hausnummerzusatz", Gib::Text("a")),
-        ("stammdaten_bic", Gib::Text("PBNKDEFF370")),
         ("stammdaten_iban", Gib::Text("DE02120300000000202051")),
         ("stammdaten_steuernummer", Gib::Text("9181081508155")),
         ("steuerklasse", Gib::Wahl("4")),

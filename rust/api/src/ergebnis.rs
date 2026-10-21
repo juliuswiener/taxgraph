@@ -151,6 +151,16 @@ fn gesperrt(
     Ok(obj)
 }
 
+/// Pflicht-Kegel: die Einzel-Basis (`cfg["kegel"]`); Partner-Pflichtfelder gehoeren nur bei `zusammen` dazu, und die prueft der
+/// Guard. Fehlt der Kegel, gilt der volle Satz der Scheibe. `ergebnis` und `fragen` lesen denselben Kegel (Fluss J F1: die Fragen
+/// muessen jedes Feld stellen, ohne dessen bestaetigte Antwort `ergebnis` keine Zahl liefert).
+pub(crate) fn pflicht_kegel<'a>(sb: &'a ScheibenBindung<'_>) -> Vec<&'a str> {
+    match sb.cfg.kegel_roh() {
+        Some(k) if !k.is_empty() => k.to_vec(),
+        _ => sb.felder.iter().map(String::as_str).collect(),
+    }
+}
+
 /// Der Grund, warum `feste_zahl` keine Zahl liefert, und die offenen Felder dazu.
 ///
 /// Python reicht dort nur `None` weiter und baut den Grund neu (`api.py:595-616`): dieselbe
@@ -212,12 +222,7 @@ pub fn ergebnis(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort,
         .materialisiere(None)
         .map_err(|e| ApiFehler::unerwartet("ValueError", e.to_string()))?;
     let sid = sid.to_string();
-    // Pflicht-Kegel: die Einzel-Basis (`cfg["kegel"]`); Partner-Pflichtfelder gehoeren nur bei
-    // `zusammen` dazu, und die prueft der Guard.
-    let scheibe_felder: Vec<&str> = match sb.cfg.kegel_roh() {
-        Some(k) if !k.is_empty() => k.to_vec(),
-        _ => sb.felder.iter().map(String::as_str).collect(),
-    };
+    let scheibe_felder = pflicht_kegel(&sb);
     let vz_opt: Option<Vz> = u16::try_from(store.veranlagungszeitraum())
         .ok()
         .and_then(|j| Vz::try_from(j).ok());

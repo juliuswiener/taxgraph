@@ -161,7 +161,7 @@ pub(crate) fn frage_metadaten(
         .copied()
         .ok_or_else(|| ApiFehler::unerwartet("KeyError", repr(&json!(fid))))?;
     let (anzahl, etikett) = interview::instanz_anzahl(store, &sb.sicht, &sb.graph, fid);
-    Ok(json!({
+    let mut frage = json!({
         "feld_id": fid,
         "fragetext_laie": b.fragetext_laie,
         "hilfe_kurz": b.hilfe_kurz,
@@ -183,7 +183,12 @@ pub(crate) fn frage_metadaten(
             Vorjahr::Uebernehmbar => "uebernehmbar",
             Vorjahr::Vorschlag => "vorschlag",
         }),
-    }))
+    });
+    // Rust-eigen (Fluss J F4): der Schluessel steht nur dort, wo die leere Antwort gilt; jede andere Frage behaelt Pythons Form.
+    if let (true, Some(m)) = (b.leer_erlaubt, frage.as_object_mut()) {
+        m.insert("leer_erlaubt".into(), json!(true));
+    }
+    Ok(frage)
 }
 
 /// `api.frage_einzeln(fall_id, feld_id)` (`api.py:361`) nach dem Owner-Check: die Frage zu EINEM
@@ -238,7 +243,11 @@ pub fn fragen(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, A
         None
     };
     let beitrag = gesamt_beitrag(z, &sb, store, &felder, &sid)?;
-    let queue = interview::naechste_fragen(store, &sb.sicht, &sb.graph, beitrag.as_ref());
+    // Die Felder, deren BESTAETIGTE Antwort `ergebnis` verlangt: der Pflicht-Kegel (`input_kegel_nicht_bestaetigt`) und die
+    // Ring-Betraege (`ring_betrag_vorlaeufig`). Ein Vorjahreswert dort bleibt eine Frage.
+    let mut pflicht = crate::ergebnis::pflicht_kegel(&sb);
+    pflicht.extend(bescheid::deklaration::ring_kandidaten(&sb.cfg));
+    let queue = interview::naechste_fragen_mit_pflicht(store, &sb.sicht, &sb.graph, beitrag.as_ref(), &pflicht);
     let out: Vec<Value> = queue
         .iter()
         .map(|fid| frage_metadaten(fid, &sb, store))

@@ -44,16 +44,33 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
     graph: &Graph<'r>,
     beitrag: Option<&HashMap<String, i64, S>>,
 ) -> Vec<&'r str> {
+    naechste_fragen_mit_pflicht(store, sicht, graph, beitrag, &[])
+}
+
+/// [`naechste_fragen`] mit den Pflichtfeldern der Scheibe: den Feldern, deren BESTAETIGTE Antwort die Steuerzahl verlangt (der
+/// Pflicht-Kegel `cfg["kegel"]` und die Ring-Betraege, ohne sie `input_kegel_nicht_bestaetigt` und `ring_betrag_vorlaeufig`).
+///
+/// Die Pflichtfelder entscheiden nur, welche Felder aus der Vorjahres-Uebernahme eine Frage bleiben ([`vorjahr_uebernommen`]).
+/// Ohne Vorjahres-Werte im Fall aendert sich die Queue nicht; `&[]` ist [`naechste_fragen`].
+#[must_use]
+pub fn naechste_fragen_mit_pflicht<'r, S: std::hash::BuildHasher>(
+    store: &Store,
+    sicht: &Sicht<'r>,
+    graph: &Graph<'r>,
+    beitrag: Option<&HashMap<String, i64, S>>,
+    pflicht: &[&str],
+) -> Vec<&'r str> {
     let aktiv = Aktiv::aus(store);
     let rel = relevanz_mit(&aktiv, sicht, graph);
     let vz = store.datei().veranlagungszeitraum.als_i64_saettigend();
+    let braucht_bestaetigung = braucht_bestaetigung(sicht, graph, pflicht);
     let kand: Vec<&'r Bindung> = sicht
         .iter()
         .filter(|b| {
             b.askable
                 && (aktiv.antwort(&b.feld_id).ist_offen()
                     || instanz_unvollstaendig(&aktiv, sicht, graph, &b.feld_id))
-                && !vorjahr_uebernommen(b, aktiv.get(&b.feld_id))
+                && !vorjahr_uebernommen(b, aktiv.get(&b.feld_id), &braucht_bestaetigung)
                 && rel
                     .get(b.quelle.regel_id.as_str())
                     .is_none_or(|r| r.status != Regelstatus::Ausgeschlossen)
@@ -93,9 +110,44 @@ pub fn naechste_fragen<'r, S: std::hash::BuildHasher>(
 
 /// `vorjahr: uebernehmbar` mit Vorjahres-Wert faellt aus der Queue, bleibt aber korrigierbar
 /// (`_vorjahr_uebernommen`, `traverser.py:380-392`). `vorschlag` bleibt eine Frage.
-fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>) -> bool {
+///
+/// Rust-eigen (Fluss J F1, 2026-10-21; weicht vom Entscheid 2026-09-05 `vorjahr-kategorie-ohne-verhalten` ab): Ein Feld, an dessen
+/// BESTAETIGTER Antwort etwas haengt, bleibt eine Frage, vorbelegt mit dem Wert des Vorjahres ([`braucht_bestaetigung`]). Der Wert
+/// aus dem Vorjahr ist nur `vorlaeufig`: ohne Bestaetigung blieben die Fragen hinter einem Gate offen (der Einzelnutzer wurde
+/// nach dem Ehegatten gefragt), und eine Ableitung rechnete nicht (das Geburtsjahr blieb vorlaeufig, die Sperre
+/// `ring_betrag_vorlaeufig` hielt die Steuerzahl zurueck).
+fn vorjahr_uebernommen(b: &Bindung, ev: Option<&Event>, braucht_bestaetigung: &HashSet<&str>) -> bool {
     b.vorjahr == Some(Vorjahr::Uebernehmbar)
         && ev.is_some_and(|e| e.herkunft.herkunft_achse().as_str() == "vorjahr")
+        && !braucht_bestaetigung.contains(b.feld_id.as_str())
+}
+
+/// Die Felder, an deren BESTAETIGTER Antwort etwas haengt, das ein Wert aus dem Vorjahr nicht ersetzt. Keine feste Liste:
+/// - Ein Gate ueber `regel_bedingungen` (`veranlagung`): erst eine bestaetigte Antwort schliesst die Regeln des Ehegatten aus.
+/// - Der Ausloeser einer `ableitung` (`aus`, `und_feld`; `stammdaten_geburtsdatum`): die Ableitung rechnet nur aus einem
+///   bestaetigten Wert.
+/// - Ein Pflichtfeld der Scheibe (`pflicht`): die Steuerzahl kommt erst, wenn jedes relevante Kegel-Feld und jeder Ring-Betrag
+///   bestaetigt ist. Ein Vorjahreswert ist nur `vorlaeufig`; ohne Frage blieb die Sperre `input_kegel_nicht_bestaetigt`
+///   (Fluss J: `versicherungsart`, `mit_anspruch_auf_zuschuss`, `ep_eigenes_kfz`, `ep_entfernung_km`) oder
+///   `ring_betrag_vorlaeufig` (`versorgung_beginn_jahr_partner`).
+///
+/// Ein Gate, dessen Folgefragen auch ohne Bestaetigung gestellt werden (Eingangsfrage einer Regel, `feld_bedingung`), gehoert
+/// nicht dazu: seine Folgefragen bleiben offen, und nichts wartet auf die Bestaetigung.
+fn braucht_bestaetigung<'r>(sicht: &Sicht<'r>, graph: &Graph<'r>, pflicht: &[&str]) -> HashSet<&'r str> {
+    let gate = sicht
+        .iter()
+        .filter(|b| !graph.bedingte_regeln(&b.feld_id).is_empty())
+        .map(|b| b.feld_id.as_str());
+    let ausloeser = sicht
+        .iter()
+        .filter_map(|b| b.ableitung.as_ref())
+        .flat_map(|a| [Some(a.aus.as_str()), a.und_feld.as_deref()])
+        .flatten();
+    let pflichtfeld = sicht
+        .iter()
+        .filter(|b| pflicht.contains(&b.feld_id.as_str()))
+        .map(|b| b.feld_id.as_str());
+    gate.chain(ausloeser).chain(pflichtfeld).collect()
 }
 
 /// Faellt DIESES Feld weg, obwohl seine Regel gilt (`_feld_ausgeschlossen`,
@@ -173,7 +225,14 @@ fn bedingung_schliesst_aus(
     bedingung_stand(bed, aktiv, sicht, graph, vz) == Bedingungsstand::Ausgeschlossen
 }
 
-/// Der Stand einer Bedingung der Arten `wert`, `wert_nicht` und `alter_im_vz` ueber alle Instanzen ihres Felds: ausgeschlossen,
+/// Beginnt der Text mit dem Praefix, ohne Leerzeichen und ohne Gross-/Kleinschreibung? Die IBAN steht so im Store, wie der
+/// Nutzer sie getippt hat ("de89 3704 ..."); die Erklaerung normalisiert sie genauso (`Bau::iban`).
+fn beginnt_mit_praefix(text: &str, praefix: &str) -> bool {
+    let norm: String = text.chars().filter(|c| !c.is_whitespace()).flat_map(char::to_uppercase).collect();
+    norm.starts_with(&praefix.to_uppercase())
+}
+
+/// Der Stand einer Bedingung der Arten `wert`, `wert_nicht`, `alter_im_vz` und `praefix_nicht` ueber alle Instanzen ihres Felds: ausgeschlossen,
 /// wenn JEDE Instanz bestaetigt abweicht, erfuellt, wenn alle bestaetigt sind und eine nicht abweicht, sonst offen.
 fn bedingung_stand(
     bed: &FeldBedingung,
@@ -185,6 +244,10 @@ fn bedingung_stand(
     if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
             matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
+        })
+    } else if let Some(praefix) = &bed.praefix_nicht {
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
+            matches!(w, PyWert::Text(t) if beginnt_mit_praefix(t, praefix))
         })
     } else if let Some(nicht) = &bed.wert_nicht {
         let nicht = PyWert::from(nicht.clone());
@@ -312,12 +375,25 @@ fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
     // Index des Ausloesers -> Indizes seiner Nachzuegler, in Gruppenordnung.
     let mut hinter: HashMap<usize, Vec<usize>> = HashMap::new();
     for (i, b) in gruppe.iter().enumerate() {
-        let Some(regel) = &b.ableitung else {
-            continue;
-        };
-        let weiter_hinten = [Some(regel.aus.as_str()), regel.und_feld.as_deref()]
-            .into_iter()
+        // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`-Bedingung: die Antwort auf die IBAN
+        // entscheidet, ob der BIC noch gefragt wird, also steht er dahinter.
+        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland steht vor der
+        // Konfession, an der seine Bedingung haengt, Fluss I Befund B); wer sie auch ordnen will, entscheidet das je Feld.
+        let mut ausloeser: Vec<&str> = b
+            .ableitung
+            .iter()
+            .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
             .flatten()
+            .collect();
+        ausloeser.extend(
+            b.feld_bedingung
+                .iter()
+                .flat_map(FeldBedingung::und_glieder)
+                .filter(|g| g.praefix_nicht.is_some())
+                .map(|g| g.feld.as_str()),
+        );
+        let weiter_hinten = ausloeser
+            .into_iter()
             .filter_map(|x| ort.get(x).copied())
             .filter(|&j| j > i && gruppe.get(j).is_some_and(|a| a.ableitung.is_none()))
             .max();
@@ -513,6 +589,39 @@ mod tests {
         v.iter().map(|b| b.feld_id.clone()).collect()
     }
 
+    /// Fluss J F1 (2026-10-21): Welche `uebernehmbar`-Felder des Bestands nach der Vorjahres-Uebernahme eine Frage bleiben, folgt
+    /// der Bindung und steht in keiner Liste von Hand. Der Test haelt den Bestand fest, OHNE den Pflicht-Kegel einer Scheibe
+    /// (den prueft `rust/api/tests/oberflaeche/fluss_j.rs` am Browser): Faengt eine neue Bindung ein Gate oder einen Ausloeser
+    /// ein, faellt er rot, und die Liste im Bericht von Fluss J ist zu ergaenzen. `steuerklasse` und `versicherungsart` gehoeren
+    /// nicht dazu: an ihrer bestaetigten Antwort haengt weder eine Regel noch eine Ableitung.
+    #[test]
+    fn diese_uebernehmbaren_felder_bleiben_im_bestand_eine_frage() {
+        let reg = crate::doctest_registry().expect("registry");
+        let g = Graph::aus_registry(&reg);
+        let sicht = g.alle();
+        let noetig = braucht_bestaetigung(sicht, &g, &[]);
+        let mut liste: Vec<&str> = sicht
+            .iter()
+            .filter(|b| b.askable && b.vorjahr == Some(Vorjahr::Uebernehmbar) && noetig.contains(b.feld_id.as_str()))
+            .map(|b| b.feld_id.as_str())
+            .collect();
+        liste.sort_unstable();
+        assert_eq!(
+            liste,
+            [
+                "kind_geburtsdatum",
+                "rentner_hinterbliebenenbezuege",
+                "stammdaten_geburtsdatum",
+                "stammdaten_geburtsdatum_partner",
+                "veranlagung",
+                "vpf_auswaertige_taetigkeit",
+            ]
+        );
+        for hat_nichts_festzuhalten in ["steuerklasse", "versicherungsart"] {
+            assert!(!noetig.contains(hat_nichts_festzuhalten), "{hat_nichts_festzuhalten}");
+        }
+    }
+
     /// Gegenstueck zu `test_nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren`.
     #[test]
     fn nachzuegler_behalten_ihre_reihenfolge_und_gehen_nicht_verloren() {
@@ -544,6 +653,39 @@ mod tests {
     fn ausloeser_mit_eigener_ableitung_zaehlt_nicht() {
         let (a, b) = (feld("a", Some(("b", None))), feld("b", Some(("a", None))));
         assert_eq!(ids(&nach_ausloesern(vec![&a, &b])), ["a", "b"]);
+    }
+
+    /// Eine `feld_bedingung` mit `feld` und dieser einen Art (die uebrigen Arten `None`).
+    fn bedingung(feld: &str, praefix_nicht: Option<&str>, wert: Option<serde_json::Value>) -> FeldBedingung {
+        FeldBedingung {
+            feld: feld.to_owned(),
+            wert,
+            grund: "Begruendung fuer den Test mit mehr als vierzig Zeichen.".to_owned(),
+            wert_nicht: None,
+            alter_im_vz: None,
+            praefix_nicht: praefix_nicht.map(str::to_owned),
+            groesser_als: None,
+            und: None,
+            oder: None,
+        }
+    }
+
+    /// Fluss J F4: Das Feld einer `praefix_nicht`-Bedingung steht vor dem Feld, das an ihr haengt (die IBAN vor dem BIC). In der
+    /// Vordruck-Ordnung stand der BIC (Kz `E0102201`) vor der IBAN (kein Kz), und die Frage nach ihm kam, bevor die IBAN sie
+    /// erledigen konnte. KONTROLLE: jede andere Art von `feld_bedingung` ordnet nichts um (das Bundesland steht vor der Konfession,
+    /// an der seine Bedingung haengt, Fluss I Befund B).
+    #[test]
+    fn das_feld_einer_praefix_bedingung_steht_vor_dem_feld_das_an_ihr_haengt() {
+        let mut bic = feld("bic", None);
+        bic.feld_bedingung = Some(bedingung("iban", Some("DE"), None));
+        let (iban, v) = (feld("iban", None), feld("v", None));
+        assert_eq!(ids(&nach_ausloesern(vec![&bic, &v, &iban])), ["v", "iban", "bic"]);
+        // Steht schon alles richtig, aendert sich nichts. Fehlt das Feld der Bedingung in der Gruppe, bleibt der BIC stehen.
+        assert_eq!(ids(&nach_ausloesern(vec![&iban, &bic, &v])), ["iban", "bic", "v"]);
+        assert_eq!(ids(&nach_ausloesern(vec![&bic, &v])), ["bic", "v"]);
+        let mut land = feld("land", None);
+        land.feld_bedingung = Some(bedingung("iban", None, Some(serde_json::json!("x"))));
+        assert_eq!(ids(&nach_ausloesern(vec![&land, &v, &iban])), ["land", "v", "iban"]);
     }
 
     /// Ein Ereignis fuer `feld_id` mit dem rohen Wert `wert`, am Store vorbei geschrieben (die Bindung prueft hier nichts).

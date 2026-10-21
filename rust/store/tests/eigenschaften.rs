@@ -440,8 +440,10 @@ fn ableitung_ohne_bereich_am_ziel_laeuft_weiter() {
 }
 
 #[test]
-fn bestaetigte_null_und_vorjahreswert_am_ziel_sperren_die_ableitung_weiter() {
-    // Entscheidung Punkt 4: `ziel in aktiv` bleibt, auch bei einer bestaetigten 0.
+fn bestaetigte_null_am_ziel_sperrt_die_ableitung_ein_vorjahreswert_nicht() {
+    // Entscheidung Punkt 4 (2026-10-03): `ziel in aktiv` bleibt bei einer bestaetigten 0. Der zweite Teil von Punkt 4 (auch ein
+    // vorlaeufiger Vorjahreswert sperrt) ist seit Fluss J F1 (2026-10-21) ueberholt: "0 Commits, bis ein echter Fall auftaucht" -
+    // der Fall ist da, die Vorjahres-Uebernahme endete ohne Steuerzahl.
     let s = store_mit(&[
         ("geburtsjahr", json!(0)),
         ("stammdaten_geburtsdatum", json!("15.07.1960")),
@@ -477,7 +479,7 @@ fn bestaetigte_null_und_vorjahreswert_am_ziel_sperren_die_ableitung_weiter() {
         "2026-01-01T00:00:01+00:00".to_string(),
     );
     s.append(&datum, None, nachschlag()).unwrap();
-    assert_eq!(s.aktives("geburtsjahr").unwrap().wert, PyWert::Ganz(1950));
+    assert_eq!(s.aktives("geburtsjahr").unwrap().wert, PyWert::Ganz(1960));
 }
 
 proptest! {

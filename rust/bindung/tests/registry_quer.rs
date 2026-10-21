@@ -105,6 +105,21 @@ fn feld_bedingung_zeigt_auf_ein_feld_das_es_gibt() {
     pruefe_verweise("feld_bedingung", &verweise, 50);
 }
 
+/// Fluss J F4: `leer_erlaubt` laesst die leere Antwort eines Textfelds durch ("keine Angabe": im Schema `minOccurs="0"`). Jedes
+/// weitere Feld damit nimmt der Typpruefung ihre Wirkung, darum steht die Menge fest: genau der Hausnummernzusatz und der BIC, beide
+/// Text, beide mit Muster (nicht leerer Wert bleibt streng) und beide mit eigenem Kz (das Element fehlt im XML, wenn leer).
+#[test]
+fn leer_erlaubt_steht_nur_am_hausnummernzusatz_und_am_bic() {
+    let mit: BTreeSet<&str> = bindungen().into_iter().filter(|b| b.leer_erlaubt).map(|b| b.feld_id.as_str()).collect();
+    assert_eq!(mit, BTreeSet::from(["stammdaten_bic", "stammdaten_hausnummerzusatz"]));
+    for feld in &mit {
+        let b = felder()[feld];
+        assert_eq!(b.typ, Feldtyp::Text, "{feld}");
+        assert!(b.muster.is_some(), "{feld}: ohne Muster haette ein nicht leerer Wert keine Grenze");
+        assert!(b.elster_kz.is_some(), "{feld}: ohne Kz stuende die leere Antwort als Element im XML");
+    }
+}
+
 /// Eine Ableitung mit einem Tippfehler im Quellfeld laeuft nie; das Ziel bleibt fuer immer leer.
 #[test]
 fn ableitung_zeigt_auf_felder_die_es_gibt() {

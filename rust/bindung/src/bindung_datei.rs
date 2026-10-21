@@ -56,7 +56,7 @@ pub enum BindungFehler {
     },
     #[error("{feld_id}: enum_werte darf nicht leer sein")]
     EnumWerteLeer { feld_id: String },
-    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz/groesser_als")]
+    #[error("{feld_id}: feld_bedingung braucht genau eines von wert/wert_nicht/alter_im_vz/praefix_nicht/groesser_als")]
     FeldBedingungNichtGenauEins { feld_id: String },
     #[error("{feld_id}: eine oder-Alternative der feld_bedingung traegt kein eigenes und (sie ist EINE Bedingung)")]
     OderAlternativeMitUnd { feld_id: String },
@@ -309,6 +309,10 @@ pub struct FeldBedingung {
     /// GENAU diese Zahl ergibt (die Person wird in diesem Jahr so alt). Ein Altersvergleich, den
     /// `wert`/`wert_nicht` nicht ausdruecken (nur Gleichheit gegen den Wert eines anderen Felds).
     pub alter_im_vz: Option<i64>,
+    /// `feld` ist ein Text (die IBAN); das Feld entfaellt, wenn `feld` einen BESTAETIGTEN Text traegt, der mit diesem Praefix
+    /// beginnt (Rust-eigen, Fluss J F4): der BIC entfaellt bei einer IBAN mit `DE`. Leerzeichen und Kleinbuchstaben der Antwort
+    /// zaehlen nicht. Wie `wert_nicht`: ein fehlender oder vorlaeufiger Text schliesst nicht aus (fail-closed).
+    pub praefix_nicht: Option<String>,
     /// `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig); das Feld bleibt nur, wenn mindestens
     /// eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt (Abweichung
     /// Nr. 34, Rust-eigen). Anders als die uebrigen Arten gilt POSITIVER BEWEIS: Schweigen und ein
@@ -361,12 +365,13 @@ impl FeldBedingung {
         std::iter::successors(self.oder.as_deref(), |b| b.oder.as_deref())
     }
 
-    /// Genau eine Art (`wert`/`wert_nicht`/`alter_im_vz`/`groesser_als`) ist gesetzt.
+    /// Genau eine Art (`wert`/`wert_nicht`/`alter_im_vz`/`praefix_nicht`/`groesser_als`) ist gesetzt.
     fn hat_genau_eine_art(&self) -> bool {
         [
             self.wert.is_some(),
             self.wert_nicht.is_some(),
             self.alter_im_vz.is_some(),
+            self.praefix_nicht.is_some(),
             self.groesser_als.is_some(),
         ]
         .into_iter()
@@ -439,6 +444,11 @@ pub struct Bindung {
     /// eine negative Zahl beim Schreiben ab.
     #[serde(default)]
     pub nicht_negativ: bool,
+    /// Eine leere Antwort ist gueltig und heisst "keine Angabe" (Rust-eigen, Fluss J F4): der Store nimmt den leeren Text an,
+    /// die Erklaerung traegt dann kein Element. Nur fuer ein Text-Feld, das im Schema optional ist (`minOccurs="0"`): der
+    /// Hausnummernzusatz und der BIC. Ein nicht leerer Wert gilt weiter nach `muster`.
+    #[serde(default)]
+    pub leer_erlaubt: bool,
     pub screening: Option<bool>,
     pub beweist: Option<Beweist>,
     pub feld_bedingung: Option<FeldBedingung>,
