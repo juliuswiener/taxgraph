@@ -161,7 +161,7 @@ pub(crate) fn frage_metadaten(
         .copied()
         .ok_or_else(|| ApiFehler::unerwartet("KeyError", repr(&json!(fid))))?;
     let (anzahl, etikett) = interview::instanz_anzahl(store, &sb.sicht, &sb.graph, fid);
-    Ok(json!({
+    let mut frage = json!({
         "feld_id": fid,
         "fragetext_laie": b.fragetext_laie,
         "hilfe_kurz": b.hilfe_kurz,
@@ -183,7 +183,12 @@ pub(crate) fn frage_metadaten(
             Vorjahr::Uebernehmbar => "uebernehmbar",
             Vorjahr::Vorschlag => "vorschlag",
         }),
-    }))
+    });
+    // Rust-eigen (Fluss J F4): der Schluessel steht nur dort, wo die leere Antwort gilt; jede andere Frage behaelt Pythons Form.
+    if let (true, Some(m)) = (b.leer_erlaubt, frage.as_object_mut()) {
+        m.insert("leer_erlaubt".into(), json!(true));
+    }
+    Ok(frage)
 }
 
 /// `api.frage_einzeln(fall_id, feld_id)` (`api.py:361`) nach dem Owner-Check: die Frage zu EINEM

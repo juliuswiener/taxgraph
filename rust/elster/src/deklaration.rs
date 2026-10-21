@@ -1813,6 +1813,14 @@ pub fn deklariere(
             continue;
         };
         getroffen += 1;
+        // Fluss J F4: "keine Angabe" (Hausnummernzusatz, BIC) gibt kein Element, ein leeres verletzte das Schema (`minOccurs="0"`
+        // erlaubt das Weglassen, nicht den leeren Text). Ein Vorschlag (`vorlaeufig`) geht weiter in `feld` und bleibt offen.
+        if b.leer_erlaubt
+            && sfeld.zustand == Zustand::Bestaetigt
+            && matches!(&sfeld.wert, PyWert::Text(t) if t.is_empty())
+        {
+            continue;
+        }
         bau.feld(feld_id, sfeld, b)?;
     }
     if !snapshot.is_empty() && getroffen == 0 {

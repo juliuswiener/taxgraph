@@ -280,28 +280,62 @@ fn versuche_antwort(u: &Umgebung, feld: &str, text: &str) -> (bool, String) {
     (weiter, u.s.textinhalt("#netz-banner"))
 }
 
-/// Eine leere Antwort auf den Hausnummernzusatz und den BIC kommt nicht durch: die Fragen haben keinen Ausweg „keine“, und die
-/// meisten Nutzer haben weder einen Zusatz noch eine ausländische Bank (Beobachtung U4). Was der Nutzer stattdessen tippt, steht
-/// im Bericht (Messung „Strich“ unten).
+/// Fluss J F4 (behoben 2026-10-21, d-51). Vorher kam eine leere Antwort auf den Hausnummernzusatz und auf den BIC nicht durch: die
+/// Fragen hatten keinen Ausweg „keine“, und die meisten Nutzer haben weder einen Zusatz noch eine ausländische Bank (Beobachtung
+/// U4). Jetzt geht die leere Antwort auf den Zusatz durch („kein Zusatz“), der BIC wird nur nach einer IBAN ohne DE gefragt und
+/// darf dort leer bleiben; ein Strich statt eines BIC kommt weiter nicht durch.
 #[test]
-fn fluss_j_leerer_hausnummernzusatz_und_leerer_bic_kommen_nicht_durch() {
+fn fluss_j_kein_hausnummernzusatz_und_kein_bic_kommen_durch() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    // Ein deutsches Konto: der Zusatz bleibt leer, nach dem BIC fragt die Oberflaeche nicht.
     bis_zur_ersten_frage(&u, "gesamt", &[]);
     let t = einzel_tabelle("keine");
-    durchlauf(&u, "einzel_leere_antworten", &t, &["stammdaten_hausnummerzusatz"]);
+    durchlauf(&u, "einzel_ohne_zusatz", &t, &["stammdaten_hausnummerzusatz"]);
     let (weiter, banner) = versuche_antwort(&u, "stammdaten_hausnummerzusatz", "");
     eprintln!("MESSUNG Zusatz leer: weiter {weiter}, Banner {banner:?}");
-    pp!("J.ein_leerer_hausnummernzusatz_kommt_nicht_durch", !weiter, "die leere Antwort auf den Zusatz ging durch; Banner {banner:?}");
-    let (weiter, banner) = versuche_antwort(&u, "stammdaten_hausnummerzusatz", "-");
-    eprintln!("MESSUNG Zusatz Strich: weiter {weiter}, Banner {banner:?}");
-    durchlauf(&u, "einzel_leere_antworten", &t, &["stammdaten_bic"]);
-    let (weiter, banner) = versuche_antwort(&u, "stammdaten_bic", "");
-    eprintln!("MESSUNG BIC leer: weiter {weiter}, Banner {banner:?}");
-    pp!("J.ein_leerer_bic_kommt_nicht_durch", !weiter, "die leere Antwort auf den BIC ging durch; Banner {banner:?}");
+    pp!("J.ein_leerer_hausnummernzusatz_geht_durch", weiter, "die leere Antwort auf den Zusatz kam nicht durch; Banner {banner:?}");
+    let stand = u.stand_felder(&u.fall());
+    let zusatz = &stand["stammdaten_hausnummerzusatz"];
+    pp!(
+        "J.ein_leerer_hausnummernzusatz_geht_durch",
+        zusatz["wert"] == json!("") && zusatz["zustand"] == json!("bestaetigt"),
+        "gespeichert ist {}, Zustand {}",
+        zusatz["wert"],
+        zusatz["zustand"]
+    );
+    let rest = durchlauf(&u, "einzel_ohne_zusatz", &t, &[]);
+    pp!(
+        "J.ein_deutsches_konto_fragt_nicht_nach_dem_bic",
+        wie_oft(&rest, "stammdaten_iban") == 1 && wie_oft(&rest, "stammdaten_bic") == 0,
+        "IBAN {}-mal, BIC {}-mal gefragt",
+        wie_oft(&rest, "stammdaten_iban"),
+        wie_oft(&rest, "stammdaten_bic")
+    );
+    let api = pruefe_zahl_gezeigt(&u, "Einzelnutzer ohne Zusatz, deutsches Konto");
+    pp!("J.kein_zusatz_und_kein_bic_aendern_die_steuer_nicht", api["zahl_cent"] == json!(1_392_400), "Steuer {} (Fluss I: 1392400)", api["zahl_cent"]);
+    // Ein auslaendisches Konto: der BIC kommt nach der IBAN; leer geht durch, ein Strich nicht.
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    let mut t = einzel_tabelle("keine");
+    t.retain(|(f, _)| *f != "stammdaten_iban");
+    t.push(("stammdaten_iban", Gib::Text("GB82WEST12345698765432")));
+    let davor = durchlauf(&u, "einzel_auslands_iban", &t, &["stammdaten_bic"]);
+    pp!(
+        "J.ein_auslaendisches_konto_fragt_den_bic_nach_der_iban",
+        pos(&davor, "stammdaten_iban").is_some() && aktuell(&u)["feld_id"] == json!("stammdaten_bic"),
+        "IBAN an Stelle {:?}, aktuelle Frage {}",
+        pos(&davor, "stammdaten_iban"),
+        aktuell(&u)["feld_id"]
+    );
     let (weiter, banner) = versuche_antwort(&u, "stammdaten_bic", "-");
     eprintln!("MESSUNG BIC Strich: weiter {weiter}, Banner {banner:?}");
-    pruefe_konsole(&u, "leere Antworten");
+    pp!("J.ein_strich_statt_eines_bic_kommt_nicht_durch", !weiter, "ein Strich statt des BIC ging durch; Banner {banner:?}");
+    let (weiter, banner) = versuche_antwort(&u, "stammdaten_bic", "");
+    eprintln!("MESSUNG BIC leer: weiter {weiter}, Banner {banner:?}");
+    pp!("J.ein_leerer_bic_geht_durch", weiter, "die leere Antwort auf den BIC kam nicht durch; Banner {banner:?}");
+    durchlauf(&u, "einzel_auslands_iban", &t, &[]);
+    pruefe_zahl_gezeigt(&u, "Einzelnutzer, ausländisches Konto ohne BIC");
+    pruefe_konsole(&u, "kein Zusatz, kein BIC");
 }
 
 /// Die Uebernahme aus dem Vorjahr: ein zweiter Fall bekommt die Antworten des ersten ueber „Vorjahr-Daten uebernehmen“. Beobachtet,

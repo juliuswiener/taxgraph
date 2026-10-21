@@ -1188,6 +1188,12 @@ fn pruefe_bindung(
     let Some(eintrag) = bindung.basis_eintrag(feld_id) else {
         return Ok(());
     };
+    // Rust-eigen (Fluss J F4): Bei `leer_erlaubt` (Hausnummernzusatz, BIC: im Schema optional) heisst der leere Text "keine
+    // Angabe" und ist gueltig. Jeder andere Text-Kz-Typ verlangt mindestens ein Zeichen und weist ihn weiter ab; ein nicht leerer
+    // Wert geht unten durch dieselben Pruefungen wie sonst (Muster, Zeichensatz).
+    if eintrag.leer_erlaubt && matches!(wert, PyWert::Text(s) if s.is_empty()) {
+        return Ok(());
+    }
     let text = match wert {
         PyWert::Text(s) => Some(s.as_str()),
         _ => None,

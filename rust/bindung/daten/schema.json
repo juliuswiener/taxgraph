@@ -317,6 +317,10 @@
           "type": "boolean",
           "description": "Optional (nur cent/int). Das Feld kennt im amtlichen ELSTER-Schema kein Minus (Schematyp NichtNeg/Pos). Der Schreibweg (store.append_event, Rust store::Store::append) weist eine negative Zahl ab (422, Feldname und Wert); die 0 und positive Werte gehen durch, Laden prueft nie. Ein Feld, das ein Minus verlangt (Verlust, Differenz), traegt das Attribut nicht. Ein Pruefer haelt die Bindung gegen das lokale Schema zusammen (tests/test_bindung_nicht_negativ.py)."
         },
+        "leer_erlaubt": {
+          "type": "boolean",
+          "description": "Optional (nur text; Rust-eigen, Fluss J F4). Eine leere Antwort ist gueltig und heisst 'keine Angabe': der Schreibweg nimmt den leeren Text an, die Erklaerung traegt dann kein Element. Nur fuer ein Feld, das im amtlichen Schema optional ist (minOccurs=0): der Hausnummernzusatz (E0101207) und der BIC (E0102201). Ein nicht leerer Wert gilt weiter nach `muster`; ohne das Attribut weist der Store den leeren Text ab (jeder Text-Kz-Typ verlangt mindestens ein Zeichen)."
+        },
         "screening": {
           "type": "boolean",
           "description": "Optional. Diese Frage erhebt die EXISTENZ eines ganzen Themas (Kinder, Vermietung, Kapitalertraege, Behinderung ...) und schaltet bei Verneinung einen ganzen Block ab. Die Oberflaeche stellt alle screening-Fragen GEMEINSAM als Ankreuzliste an den Anfang, statt sie einzeln durch den Fragebogen zu verteilen — gemessen 2026-08-25: zehn Kreuze nehmen 147 Einzelfragen weg. Deklariert und nicht am Feldnamen abgelesen: eine Heuristik ueber 'kein_' ist genau der Fehler, den frage_invertiert hier schon einmal ersetzt hat."
@@ -367,6 +371,11 @@
               "minimum": 1,
               "description": "Alternative zu `wert`, wo ein ALTER entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Geburtsjahr, und das Feld bleibt nur, wenn Veranlagungsjahr minus Geburtsjahr GENAU diese Zahl ergibt. Es entfaellt bei einer BESTAETIGTEN Antwort mit anderem Ergebnis; ein fehlendes oder vorlaeufiges Geburtsjahr schliesst nicht aus (fail-closed). Fuer die Frage nach dem 55. Geburtstag im Jahr der Vollendung."
             },
+            "praefix_nicht": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Alternative zu `wert`, wo der ANFANG eines Textes entscheidet (Rust-eigen, Fluss J F4): `feld` ist die IBAN, und das Feld entfaellt, wenn `feld` einen BESTAETIGTEN Text traegt, der mit diesem Praefix beginnt (Leerzeichen und Kleinbuchstaben der Antwort zaehlen nicht). Ein fehlender oder vorlaeufiger Text schliesst nicht aus (fail-closed). Fuer den BIC: er gehoert nur zu einem auslaendischen Geldinstitut (E0102201), bei `DE` entfaellt die Frage."
+            },
             "groesser_als": {
               "type": "integer",
               "description": "Alternative zu `wert`, wo ein BETRAG entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig), und das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt. Anders als alle uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen ebenfalls aus. Nur fuer eine Folgefrage, deren Fehlen nichts kostet (keine Antwort heisst: Normalfall). Fuer den Anteil am Schulgeld-Hoechstbetrag: nur bei Schulgeld ueber 0."
@@ -394,6 +403,7 @@
                 "anyOf": [
                   {"required": ["wert_nicht"]},
                   {"required": ["alter_im_vz"]},
+                  {"required": ["praefix_nicht"]},
                   {"required": ["groesser_als"]}
                 ]
               }
@@ -406,6 +416,7 @@
                 "anyOf": [
                   {"required": ["wert"]},
                   {"required": ["alter_im_vz"]},
+                  {"required": ["praefix_nicht"]},
                   {"required": ["groesser_als"]}
                 ]
               }
@@ -418,6 +429,20 @@
                 "anyOf": [
                   {"required": ["wert"]},
                   {"required": ["wert_nicht"]},
+                  {"required": ["praefix_nicht"]},
+                  {"required": ["groesser_als"]}
+                ]
+              }
+            },
+            {
+              "required": [
+                "praefix_nicht"
+              ],
+              "not": {
+                "anyOf": [
+                  {"required": ["wert"]},
+                  {"required": ["wert_nicht"]},
+                  {"required": ["alter_im_vz"]},
                   {"required": ["groesser_als"]}
                 ]
               }
@@ -430,7 +455,8 @@
                 "anyOf": [
                   {"required": ["wert"]},
                   {"required": ["wert_nicht"]},
-                  {"required": ["alter_im_vz"]}
+                  {"required": ["alter_im_vz"]},
+                  {"required": ["praefix_nicht"]}
                 ]
               }
             }

@@ -1542,8 +1542,9 @@ bindungen:
     einheit: null
     askable: true
     vorjahr: uebernehmbar
+    leer_erlaubt: true   # Fluss J F4: E0101207 ist im Schema optional (minOccurs=0); die leere Antwort heisst "kein Zusatz"
     fragetext_laie: "Hat deine Hausnummer einen Zusatz, zum Beispiel a oder b?"
-    hilfe_kurz: "Nur der Zusatz hinter der Hausnummer, höchstens sechs Zeichen. Ohne Zusatz lässt du die Frage aus."
+    hilfe_kurz: "Nur der Zusatz hinter der Hausnummer, höchstens sechs Zeichen. Ohne Zusatz lässt du das Feld leer und klickst auf Weiter."
     beispielwert: "a"
     herkunft_slots: null
     elster_kz: E0101207
@@ -1637,10 +1638,15 @@ bindungen:
     quelle: {regel_id: p2_festzusetzung_einzel, signatur_slot: stammdaten_bic}
     typ: text
     muster: '^(?:[a-zA-Z]{4}([a-zA-Z]{2})[0-9a-zA-Z]{2}([0-9a-zA-Z]{3})?)$'
+    # Fluss J F4: der BIC gehoert im Schema nur zur IBAN eines AUSLAENDISCHEN Geldinstituts (E0102201, minOccurs=0); das deutsche
+    # Konto (E0102102) hat keinen. Gefragt wird er darum erst nach der IBAN und nur, wenn sie nicht mit DE beginnt, und die
+    # leere Antwort heisst "keine Angabe".
+    feld_bedingung: {feld: stammdaten_iban, praefix_nicht: DE, grund: "Der BIC gehört im ERiC-Schema nur zur IBAN eines ausländischen Geldinstituts (E0102201); zum deutschen Konto (E0102102) kennt das Schema keinen BIC. Fail-closed: solange die IBAN unbeantwortet ist, bleibt die Frage stehen."}
+    leer_erlaubt: true
     einheit: null
     askable: true
     fragetext_laie: "Wie lautet der BIC deiner Bank (nur bei einer ausländischen Bankverbindung)?"
-    hilfe_kurz: "Nur nötig, wenn deine IBAN NICHT mit 'DE' beginnt (ausländisches Geldinstitut). Bei einer deutschen IBAN leer lassen. Der BIC hat 8 oder 11 Zeichen, ohne Leerzeichen."
+    hilfe_kurz: "Der BIC hat 8 oder 11 Zeichen, ohne Leerzeichen. Kennst du ihn nicht, lässt du das Feld leer und klickst auf Weiter."
     beispielwert: "PBNKDEFF370"
     herkunft_slots: null
     elster_kz: E0102201

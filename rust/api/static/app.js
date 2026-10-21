@@ -1051,7 +1051,9 @@ function leseWert(q, el) {
   if (q.typ === "enum") return el.value;
   if (q.typ === "bool") return boolAntwort(q, el.value === "true");
   const roh = (el.value ?? "").trim();
-  if (roh === "") return undefined;
+  // Fluss J F4: ein Feld, das im Schema optional ist (Hausnummernzusatz, BIC), nimmt die leere Antwort als „keine Angabe“.
+  // Jedes andere Feld lehnt sie weiter ab (Stille-Null-Fix oben).
+  if (roh === "") return (q.typ === "text" && q.leer_erlaubt) ? "" : undefined;
   if (q.typ === "text") {
     // Passt der Wert nicht zum zugesagten Format, wird NICHTS geschrieben — dieselbe Regel wie
     // bei leer/ungültig sonst. Der Aufrufer meldet es dem Nutzer; ohne das nähme der Store ihn an
@@ -1413,6 +1415,7 @@ function verstandenWertText(v) {
   if (v.typ === "bool") return boolAntwort(v, v.wert) ? "Ja" : "Nein";
   if (v.typ === "enum") return (v.enum_labels && v.enum_labels[v.wert]) || String(v.wert);
   if (v.typ === "cent") return euro(v.wert);
+  if (v.typ === "text" && v.wert === "") return "keine Angabe";
   return String(v.wert) + (v.einheit ? " " + v.einheit : "");
 }
 

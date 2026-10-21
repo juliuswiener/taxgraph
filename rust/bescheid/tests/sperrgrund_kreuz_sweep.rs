@@ -878,6 +878,7 @@ fn welt_mit_kreuz(feld: &str) -> &'static Welt {
                 grund: "Kontrolle des Sweeps".into(),
                 wert_nicht: None,
                 alter_im_vz: None,
+                praefix_nicht: None,
                 groesser_als: None,
                 und: None,
                 oder: None,

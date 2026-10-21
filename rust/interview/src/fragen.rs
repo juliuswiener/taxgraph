@@ -225,7 +225,14 @@ fn bedingung_schliesst_aus(
     bedingung_stand(bed, aktiv, sicht, graph, vz) == Bedingungsstand::Ausgeschlossen
 }
 
-/// Der Stand einer Bedingung der Arten `wert`, `wert_nicht` und `alter_im_vz` ueber alle Instanzen ihres Felds: ausgeschlossen,
+/// Beginnt der Text mit dem Praefix, ohne Leerzeichen und ohne Gross-/Kleinschreibung? Die IBAN steht so im Store, wie der
+/// Nutzer sie getippt hat ("de89 3704 ..."); die Erklaerung normalisiert sie genauso (`Bau::iban`).
+fn beginnt_mit_praefix(text: &str, praefix: &str) -> bool {
+    let norm: String = text.chars().filter(|c| !c.is_whitespace()).flat_map(char::to_uppercase).collect();
+    norm.starts_with(&praefix.to_uppercase())
+}
+
+/// Der Stand einer Bedingung der Arten `wert`, `wert_nicht`, `alter_im_vz` und `praefix_nicht` ueber alle Instanzen ihres Felds: ausgeschlossen,
 /// wenn JEDE Instanz bestaetigt abweicht, erfuellt, wenn alle bestaetigt sind und eine nicht abweicht, sonst offen.
 fn bedingung_stand(
     bed: &FeldBedingung,
@@ -237,6 +244,10 @@ fn bedingung_stand(
     if let Some(alter) = bed.alter_im_vz {
         bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
             matches!(w, PyWert::Ganz(gj) if vz.checked_sub(*gj) != Some(alter))
+        })
+    } else if let Some(praefix) = &bed.praefix_nicht {
+        bedingung_je_instanz(aktiv, sicht, graph, &bed.feld, |w| {
+            matches!(w, PyWert::Text(t) if beginnt_mit_praefix(t, praefix))
         })
     } else if let Some(nicht) = &bed.wert_nicht {
         let nicht = PyWert::from(nicht.clone());
@@ -364,12 +375,25 @@ fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
     // Index des Ausloesers -> Indizes seiner Nachzuegler, in Gruppenordnung.
     let mut hinter: HashMap<usize, Vec<usize>> = HashMap::new();
     for (i, b) in gruppe.iter().enumerate() {
-        let Some(regel) = &b.ableitung else {
-            continue;
-        };
-        let weiter_hinten = [Some(regel.aus.as_str()), regel.und_feld.as_deref()]
-            .into_iter()
+        // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`-Bedingung: die Antwort auf die IBAN
+        // entscheidet, ob der BIC noch gefragt wird, also steht er dahinter.
+        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland steht vor der
+        // Konfession, an der seine Bedingung haengt, Fluss I Befund B); wer sie auch ordnen will, entscheidet das je Feld.
+        let mut ausloeser: Vec<&str> = b
+            .ableitung
+            .iter()
+            .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
             .flatten()
+            .collect();
+        ausloeser.extend(
+            b.feld_bedingung
+                .iter()
+                .flat_map(FeldBedingung::und_glieder)
+                .filter(|g| g.praefix_nicht.is_some())
+                .map(|g| g.feld.as_str()),
+        );
+        let weiter_hinten = ausloeser
+            .into_iter()
             .filter_map(|x| ort.get(x).copied())
             .filter(|&j| j > i && gruppe.get(j).is_some_and(|a| a.ableitung.is_none()))
             .max();
@@ -629,6 +653,39 @@ mod tests {
     fn ausloeser_mit_eigener_ableitung_zaehlt_nicht() {
         let (a, b) = (feld("a", Some(("b", None))), feld("b", Some(("a", None))));
         assert_eq!(ids(&nach_ausloesern(vec![&a, &b])), ["a", "b"]);
+    }
+
+    /// Eine `feld_bedingung` mit `feld` und dieser einen Art (die uebrigen Arten `None`).
+    fn bedingung(feld: &str, praefix_nicht: Option<&str>, wert: Option<serde_json::Value>) -> FeldBedingung {
+        FeldBedingung {
+            feld: feld.to_owned(),
+            wert,
+            grund: "Begruendung fuer den Test mit mehr als vierzig Zeichen.".to_owned(),
+            wert_nicht: None,
+            alter_im_vz: None,
+            praefix_nicht: praefix_nicht.map(str::to_owned),
+            groesser_als: None,
+            und: None,
+            oder: None,
+        }
+    }
+
+    /// Fluss J F4: Das Feld einer `praefix_nicht`-Bedingung steht vor dem Feld, das an ihr haengt (die IBAN vor dem BIC). In der
+    /// Vordruck-Ordnung stand der BIC (Kz `E0102201`) vor der IBAN (kein Kz), und die Frage nach ihm kam, bevor die IBAN sie
+    /// erledigen konnte. KONTROLLE: jede andere Art von `feld_bedingung` ordnet nichts um (das Bundesland steht vor der Konfession,
+    /// an der seine Bedingung haengt, Fluss I Befund B).
+    #[test]
+    fn das_feld_einer_praefix_bedingung_steht_vor_dem_feld_das_an_ihr_haengt() {
+        let mut bic = feld("bic", None);
+        bic.feld_bedingung = Some(bedingung("iban", Some("DE"), None));
+        let (iban, v) = (feld("iban", None), feld("v", None));
+        assert_eq!(ids(&nach_ausloesern(vec![&bic, &v, &iban])), ["v", "iban", "bic"]);
+        // Steht schon alles richtig, aendert sich nichts. Fehlt das Feld der Bedingung in der Gruppe, bleibt der BIC stehen.
+        assert_eq!(ids(&nach_ausloesern(vec![&iban, &bic, &v])), ["iban", "bic", "v"]);
+        assert_eq!(ids(&nach_ausloesern(vec![&bic, &v])), ["bic", "v"]);
+        let mut land = feld("land", None);
+        land.feld_bedingung = Some(bedingung("iban", None, Some(serde_json::json!("x"))));
+        assert_eq!(ids(&nach_ausloesern(vec![&land, &v, &iban])), ["land", "v", "iban"]);
     }
 
     /// Ein Ereignis fuer `feld_id` mit dem rohen Wert `wert`, am Store vorbei geschrieben (die Bindung prueft hier nichts).

@@ -268,6 +268,32 @@ fn feld_bedingung_kennt_groesser_als_und_eine_zweite_bedingung() {
     assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
 }
 
+/// Fluss J F4: `praefix_nicht` ist die fuenfte Art (die Frage faellt weg, wenn der Text der Antwort mit dem Praefix beginnt; der BIC
+/// zur deutschen IBAN). Sie steht allein, wie die anderen, und traegt die lange Begruendung.
+#[test]
+fn feld_bedingung_kennt_praefix_nicht_als_fuenfte_art() {
+    let grund = format!("grund: \"{GRUND_40}\"");
+    let bedingung = |inhalt: &str| pruefe(&format!("    feld_bedingung: {{feld: anderes, {inhalt}}}\n"));
+    assert!(bedingung(&format!("praefix_nicht: DE, {grund}")).is_ok());
+    for (name, wert) in [
+        ("wert und praefix_nicht", "wert: true, praefix_nicht: DE"),
+        ("wert_nicht und praefix_nicht", "wert_nicht: true, praefix_nicht: DE"),
+        ("Alter und praefix_nicht", "alter_im_vz: 55, praefix_nicht: DE"),
+        ("groesser_als und praefix_nicht", "groesser_als: 0, praefix_nicht: DE"),
+    ] {
+        let fehler = bedingung(&format!("{wert}, {grund}")).unwrap_err();
+        assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{name}: {fehler}");
+        assert!(fehler.to_string().contains("testfeld"), "{name}: {fehler}");
+    }
+    // Als zweite Bedingung (`und`) ist sie erlaubt, mit eigener Begruendung.
+    assert!(bedingung(&format!(
+        "wert: true, {grund}, und: {{feld: weiteres, praefix_nicht: DE, {grund}}}"
+    ))
+    .is_ok());
+    let kurz = bedingung(&format!("praefix_nicht: DE, grund: \"{GRUND_39}\"")).unwrap_err();
+    assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
+}
+
 /// Entscheidung d-43: `oder` haengt eine Alternative an eine Bedingung (die Frage nach dem Bundesland bleibt, wenn Person A ODER
 /// Person B einer Kirche angehoert). Jede Alternative traegt genau eine Art und ihre eigene lange Begruendung und hat kein eigenes
 /// `und`; weitere Alternativen haengen per `oder` an ihr. Ohne die Pruefung gewaenne eine zweite Art oder eine fehlende
