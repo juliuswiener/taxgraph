@@ -12,11 +12,12 @@
 //! Browser-Fluesse I/J). K = `B` mit `f = v0`, dann `f` auf `v2` korrigiert. F = frischer Fall mit `B`, aber `f = v2`. Jede Abweichung
 //! zwischen K und F (Ergebnis, Steuer, Sperre, Feldwerte und -zustaende) ist ein Fund. Art 2: `f` steht nicht in `B`; K schreibt
 //! erst `v1`, korrigiert auf `v2`, F schreibt gleich `v2`. Art 3 (Nutzerpfad, nur an Gate-Feldern): K wird nach der Korrektur zu Ende
-//! befragt, F ist ein frischer Fragenlauf mit dem Endwert; so zeigt sich, ob ein verborgener Block weiter zaehlt (Klasse K2).
+//! befragt, F ist ein frischer Fragenlauf mit dem Endwert; so zeigt sich, ob ein verborgener Block weiter zaehlt (Klasse K2). Art 4
+//! (nur an Gate-Feldern): zweimal korrigiert (`v0 -> v1 -> v2`) gegen frischen Fall mit `v2`.
 //!
 //! **Aufruf** (nie im Gate, darum `#[ignore]`): `TAXGRAPH_KORREKTUR_LOG=<datei> cargo test -p api --test it korrektur_sweep:: -- --ignored
 //! --nocapture`. Weitere Schalter: `TAXGRAPH_KORREKTUR_BASEN=a,b` (Namen der Ausgangsfaelle), `TAXGRAPH_KORREKTUR_FELDER=f1,f2`,
-//! `TAXGRAPH_KORREKTUR_ART=1|2|3|12|123|…` (Standard 123), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
+//! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|123|…` (Standard 1234), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
 //! mit fuenf Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
@@ -521,9 +522,11 @@ struct Kontext<'a> {
 ///
 /// Art 1: F schreibt die Antworten des Ausgangsfalls mit dem Endwert. Art 2: das Feld fehlt im Ausgangsfall. Art 3 (Nutzerpfad): K
 /// wird nach der Korrektur zu Ende befragt (neutrale Antworten auf alles, was neu gefragt wird), F ist ein frischer Fragenlauf mit
-/// dem Endwert; Antworten in einem Block, den die Korrektur verborgen hat, stehen nur in K.
+/// dem Endwert; Antworten in einem Block, den die Korrektur verborgen hat, stehen nur in K. Art 4 (zweimal korrigiert): K wird auf
+/// `neu` und danach auf `dritte` korrigiert, F ist der frische Fall mit `dritte`; so zeigt sich, ob eine zweite Korrektur den Wert der
+/// ersten zurueckholt.
 #[allow(clippy::too_many_arguments)]
-async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, z: &mut Zaehler, log: &mut Log) {
+async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, dritte: Option<&Value>, z: &mut Zaehler, log: &mut Log) {
     z.versuche += 1;
     // K: Ausgangsfall mit dem alten Wert (Art 1/3: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
     let k_fall = d.baue(b, None).await;
@@ -541,6 +544,15 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         let _ = a;
         return;
     }
+    // Art 4: eine zweite Korrektur. Der Endwert ist dann `dritte`.
+    let endwert = dritte.unwrap_or(neu);
+    if let Some(w) = dritte {
+        let (s, _) = d.korrigiere(&k_fall, feld, w).await;
+        if s != 200 && s != 201 {
+            z.abgewiesen += 1;
+            return;
+        }
+    }
     // Art 3: K zu Ende befragen, F frisch befragen.
     let f_fall = if art == 3 {
         let mut ev = b.ereignisse.clone();
@@ -551,8 +563,8 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         let fall = d.neuer_fall(b.scheibe, b.vz).await;
         fragenlauf_ab(d, &fall, b.name, ctx.tabelle, ctx.kreuze, &[(feld, neu.clone())], Vec::new()).await;
         fall
-    } else if art == 1 {
-        d.baue(b, Some((feld, neu))).await
+    } else if art == 1 || art == 4 {
+        d.baue(b, Some((feld, endwert))).await
     } else {
         let fall = d.baue(b, None).await;
         let e = Ereignis { feld: feld.to_owned(), wert: neu.clone(), signal_2: format!("ok@{feld}"), art: Art::Antwort };
@@ -574,8 +586,9 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         "STAND"
     };
     log.zeile(&format!(
-        "FUND\t{}\t{art}\t{feld}\t{alt}\t{neu}\t{klasse}\tK {:?}\tF {:?}\tdelta {}\tKist K {:?} F {:?}\tgrund {} / {}\tErgebnis: {}\tFelder: {}",
+        "FUND\t{}\t{art}\t{feld}\t{alt}\t{neu}{}\t{klasse}\tK {:?}\tF {:?}\tdelta {}\tKist K {:?} F {:?}\tgrund {} / {}\tErgebnis: {}\tFelder: {}",
         b.name,
+        dritte.map_or_else(String::new, |w| format!(" > {w}")),
         mk.zahl(),
         mf.zahl(),
         euro_delta(mk.zahl(), mf.zahl()),
@@ -613,21 +626,22 @@ async fn sweep_basis(
         basis_messung.grund(),
         basis_messung.ergebnis.as_object().map_or_else(String::new, |o| o.keys().cloned().collect::<Vec<_>>().join(","))
     ));
-    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "123".to_owned());
+    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "1234".to_owned());
     let nur = liste_aus_env("TAXGRAPH_KORREKTUR_FELDER");
     let grenze: usize = std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX);
     let mut z = Zaehler::default();
     let mut nicht_variiert: Vec<String> = Vec::new();
     let ctx = Kontext { tabelle: &tabelle, kreuze };
     let gates = gate_felder(bindungen);
-    // Art 1 und 3: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert. Art 3 nur an Feldern, an denen andere Fragen haengen.
-    for art in [1_u8, 3] {
+    // Art 1, 3 und 4: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert. Art 3 und 4 nur an Feldern, an denen andere Fragen
+    // haengen oder aus denen etwas abgeleitet wird.
+    for art in [1_u8, 3, 4] {
         if !arten.contains(char::from(b'0' + art)) {
             continue;
         }
         let mut n = 0;
         for e in &b.ereignisse {
-            if e.art == Art::Abgeleitet || nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) || (art == 3 && !gates.contains(basisname(&e.feld))) {
+            if e.art == Art::Abgeleitet || nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) || (art >= 3 && !gates.contains(basisname(&e.feld))) {
                 continue;
             }
             let Some(bd) = bindungen.get(basisname(&e.feld)) else {
@@ -648,7 +662,12 @@ async fn sweep_basis(
                 break;
             }
             for w in &werte {
-                versuche(&d, &b, &ctx, art, &e.feld, &e.wert, w, &mut z, &mut log).await;
+                // Art 4 braucht einen dritten Wert, der weder der alte noch der zweite ist.
+                let dritte = if art == 4 { werte.iter().find(|x| *x != w && **x != e.wert) } else { None };
+                if art == 4 && dritte.is_none() {
+                    continue;
+                }
+                versuche(&d, &b, &ctx, art, &e.feld, &e.wert, w, dritte, &mut z, &mut log).await;
             }
         }
     }
@@ -672,8 +691,8 @@ async fn sweep_basis(
                 break;
             }
             // Zwei Paare: erster -> zweiter Wert und zurueck.
-            versuche(&d, &b, &ctx, 2, fid, &werte[0], &werte[1], &mut z, &mut log).await;
-            versuche(&d, &b, &ctx, 2, fid, &werte[1], &werte[0], &mut z, &mut log).await;
+            versuche(&d, &b, &ctx, 2, fid, &werte[0], &werte[1], None, &mut z, &mut log).await;
+            versuche(&d, &b, &ctx, 2, fid, &werte[1], &werte[0], None, &mut z, &mut log).await;
         }
     }
     log.zeile(&format!(
