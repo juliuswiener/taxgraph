@@ -249,23 +249,26 @@ fn fluss_j_alleinverdiener_ehepaar_ohne_lohn_des_partners_erreicht_die_steuerzah
     pruefe_konsole(&u, "Alleinverdiener");
 }
 
-/// Ein Einzelnutzer ohne Konfession wird trotzdem nach dem Bundesland gefragt: die Frage kommt vor der Konfession (Befund B,
-/// Fluss I), und die Antwort „keine“ nimmt sie nicht zurueck. Die Zahl ist die von Fluss I (Handrechnung dort), die Kirchensteuer 0.
+/// Ein Einzelnutzer ohne Konfession wird nicht nach dem Bundesland gefragt (Fragen-Reduktion Teil 2, B1; vorher kam die Frage vor der
+/// Konfession, Befund B, Fluss I). Die Konfession kommt zuerst, und die Antwort „keine“ nimmt das Bundesland und die Kirchensteuer des
+/// Arbeitgebers aus der Liste. Die Zahl ist die von Fluss I (Handrechnung dort), die Kirchensteuer 0.
 #[test]
-fn fluss_j_einzelnutzer_ohne_konfession_wird_trotzdem_nach_dem_bundesland_gefragt() {
+fn fluss_j_einzelnutzer_ohne_konfession_wird_nicht_nach_dem_bundesland_gefragt() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
     bis_zur_ersten_frage(&u, "gesamt", &[]);
     let verlauf = durchlauf(&u, "einzel_keine_konfession", &einzel_tabelle("keine"), &[]);
-    let (land, konf) = (pos(&verlauf, "kist_bundesland"), pos(&verlauf, "kist_konfession"));
+    let konf = pos(&verlauf, "kist_konfession");
     pp!(
-        "J.ohne_konfession_wird_das_bundesland_trotzdem_vor_der_konfession_gefragt",
-        wie_oft(&verlauf, "kist_bundesland") == 1 && land.is_some() && konf.is_some() && land < konf,
-        "Bundesland {}-mal, Position {land:?}, Konfession {konf:?}",
-        wie_oft(&verlauf, "kist_bundesland")
+        "J.ohne_konfession_wird_das_bundesland_nicht_gefragt",
+        wie_oft(&verlauf, "kist_bundesland") == 0 && wie_oft(&verlauf, "kirchensteuer_arbeitgeber") == 0 && wie_oft(&verlauf, "kist_konfession") == 1,
+        "Bundesland {}-mal, Arbeitgeber-Kirchensteuer {}-mal, Konfession {}-mal an Position {konf:?}",
+        wie_oft(&verlauf, "kist_bundesland"),
+        wie_oft(&verlauf, "kirchensteuer_arbeitgeber"),
+        wie_oft(&verlauf, "kist_konfession")
     );
     let api = pruefe_zahl_gezeigt(&u, "Einzelnutzer ohne Konfession");
-    pp!("J.ohne_konfession_wird_das_bundesland_trotzdem_vor_der_konfession_gefragt", api["zahl_cent"] == json!(1_392_400) && api["kist_cent"] == json!(0), "Steuer {} (Handrechnung Fluss I: 1392400), Kirchensteuer {}", api["zahl_cent"], api["kist_cent"]);
+    pp!("J.ohne_konfession_wird_das_bundesland_nicht_gefragt", api["zahl_cent"] == json!(1_392_400) && api["kist_cent"] == json!(0), "Steuer {} (Handrechnung Fluss I: 1392400), Kirchensteuer {}", api["zahl_cent"], api["kist_cent"]);
     eprintln!("KENNZAHL einzel_keine_konfession: Fragen {}", verlauf.len());
     wirkungsprobe(&u, "einzel_keine_konfession", &verlauf);
     pruefe_konsole(&u, "Einzelnutzer ohne Konfession");

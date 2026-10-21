@@ -121,6 +121,44 @@ fn basis_fall() -> Value {
     json!({"version": 1, "veranlagungszeitraum": 2025, "scheibe": "gesamt", "events": events, "snapshots": []})
 }
 
+/// Der Arbeitnehmer des e2e-Satzes (`rust/fixtures/e2e/arbeitnehmer.json`): Konfession "keine", keine Haushaltsangaben, vollständig.
+fn arbeitnehmer() -> Value {
+    let p = wurzel().join("rust/fixtures/e2e/arbeitnehmer.json");
+    serde_json::from_slice(&std::fs::read(p).unwrap()).unwrap()
+}
+
+/// Die Antworten, die eine Person mit Konfession "keine" und "nein" auf die Haushaltsfrage früher gab und heute nicht mehr gefragt
+/// wird: die Kirchensteuer des Arbeitgebers, das Bundesland und die drei Zähler der Haushaltshilfen (jeweils der neutrale Wert 0).
+const WEGFALLENDE_ANTWORTEN: [(&str, Value); 6] = [
+    ("hh_hat_aufwendungen", Value::Bool(false)),
+    ("kirchensteuer_arbeitgeber", Value::Null),
+    ("kist_bundesland", Value::Null),
+    ("hh_anzahl_dienstleistungen", Value::Null),
+    ("hh_anzahl_handwerker", Value::Null),
+    ("hh_anzahl_minijobs", Value::Null),
+];
+
+/// Der Fall `d` mit weiteren bestätigten Antworten. `Value::Null` heißt: der neutrale Wert des Felds (0 EUR, 0 Stück, Bayern).
+fn mit_antworten(mut d: Value, antworten: &[(&str, Value)]) -> Value {
+    let events = d["events"].as_array_mut().unwrap();
+    for (feld, wert) in antworten {
+        let wert = match *feld {
+            "kist_bundesland" => json!("bayern"),
+            _ if wert.is_null() => json!(0),
+            _ => wert.clone(),
+        };
+        let i = events.len();
+        events.push(json!({
+            "event_id": format!("ff{i:062x}"), "ts": "2026-01-01T00:00:00+00:00",
+            "feld_id": feld, "wert": wert, "zustand": "bestaetigt",
+            "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+            "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+            "ersetzt": null,
+        }));
+    }
+    d
+}
+
 /// Die Fälle wie in `einreichen_attrappe_hermetisch.rs`: der vollständige `gesamt` und die Abwandlungen,
 /// an denen `POST /einreichen` vor `ERiC` abbricht.
 fn faelle() -> Vec<(&'static str, Value)> {
@@ -145,6 +183,13 @@ fn faelle() -> Vec<(&'static str, Value)> {
         .retain(|e| e["feld_id"] != "stammdaten_geburtsdatum");
     v.push(("e_ohnegeb", d));
     v.push(("e_basis", basis_fall()));
+    // Fragen-Reduktion Teil 2 (B1): derselbe Fall mit und ohne die Antworten, nach denen eine Person ohne Kirche und ohne
+    // Haushaltshilfe nicht mehr gefragt wird (`beleg_konfession_haushaltshilfen.rs`).
+    v.push(("e_keine_neu", mit_antworten(arbeitnehmer(), &[("hh_hat_aufwendungen", json!(false))])));
+    v.push(("e_keine_alt", mit_antworten(arbeitnehmer(), &WEGFALLENDE_ANTWORTEN)));
+    let mut kontrolle = mit_antworten(arbeitnehmer(), &WEGFALLENDE_ANTWORTEN);
+    setze(&mut kontrolle, "kirchensteuer_arbeitgeber", &json!(5_000));
+    v.push(("e_keine_kontrolle", kontrolle));
     for (name, d) in &mut v {
         d["fall_id"] = json!(name);
         d["user_id"] = json!("alice");
@@ -271,6 +316,53 @@ fn die_datei_hat_die_bytes_von_einreichen_und_den_testmerker() {
         a.body
     );
     assert!(!ziel2.exists());
+}
+
+/// Fragen-Reduktion Teil 2 (B1), AK5: Wer "keine" Konfession angibt und "nein" auf die Haushaltsfrage, wird nicht mehr nach der
+/// Kirchensteuer des Arbeitgebers, dem Bundesland und den drei Zählern gefragt. Seine Akte trägt dann keine Antwort darauf; früher
+/// trug sie dort 0 und Bayern. Das XML ist dasselbe bis auf EIN Element: die Zeile `E0200501` (Kirchensteuer vom Arbeitslohn, Anlage N)
+/// mit `0,00` fehlt. Das Bundesland und die Zähler stehen nicht im XML. `E0200501` ist bei Konfession "keine" (Code 11) nicht gefordert
+/// (Paar-Zwang mit `E0200301` gilt nur ab Konfession ungleich "keine"); die e2e-Dateien mit "keine" tragen es nie
+/// (`rust/fixtures/e2e/arbeitnehmer.xml`). KONTROLLE: Eine Kirchensteuer des Arbeitgebers über 0 ändert das XML.
+#[test]
+fn die_xml_ohne_die_wegfallenden_antworten_unterscheidet_sich_nur_um_die_null_kirchensteuer() {
+    if !elster::testhilfe::schemas_da(2025) {
+        return;
+    }
+    let _nacheinander = nacheinander();
+    let mut env = Env(Vec::new());
+    env.setze("ELSTER_HERSTELLER_ID", "74931");
+    let tmp = tempfile::tempdir().unwrap();
+    let z = dienst(tmp.path());
+    let aus = tmp.path().join("aus");
+    std::fs::create_dir_all(&aus).unwrap();
+    let schreibe = |fall: &str| -> Vec<u8> {
+        let ziel = aus.join(format!("{fall}.xml"));
+        xml_exportieren(&z, fall, "BY", &ziel)
+            .unwrap()
+            .unwrap_or_else(|a| panic!("{fall}: {}", a.body));
+        std::fs::read(&ziel).unwrap()
+    };
+    let (neu, alt) = (schreibe("e_keine_neu"), schreibe("e_keine_alt"));
+    // Kein `assert_eq!` auf den Bytes: es druckte beide Dateien.
+    let (neu_text, alt_text) = (String::from_utf8(neu).unwrap(), String::from_utf8(alt).unwrap());
+    assert_ne!(neu_text.len(), 0, "die neue Akte schreibt kein XML");
+    let element = "<E0200501>0,00</E0200501>";
+    assert_eq!(alt_text.matches(element).count(), 1, "die alte Akte schreibt die Null-Kirchensteuer genau einmal");
+    assert!(!neu_text.contains("E0200501"), "die neue Akte schreibt keine Kirchensteuer des Arbeitgebers");
+    let alt_ohne_element: Vec<&str> = alt_text.lines().filter(|z| !z.contains(element)).collect();
+    let neu_zeilen: Vec<&str> = neu_text.lines().collect();
+    assert!(
+        alt_ohne_element == neu_zeilen,
+        "das XML unterscheidet sich um mehr als das Element {element} ({} / {} Zeilen)",
+        neu_zeilen.len(),
+        alt_ohne_element.len()
+    );
+
+    // KONTROLLE: derselbe Fall mit 50,00 EUR Kirchensteuer des Arbeitgebers gibt ein anderes XML (Konfession "keine" bleibt).
+    let kontrolle = String::from_utf8(schreibe("e_keine_kontrolle")).unwrap();
+    assert!(kontrolle.contains("<E0200501>50,00</E0200501>"), "KONTROLLE: das XML reagiert nicht auf die Kirchensteuer des Arbeitgebers");
+    assert!(kontrolle != neu_text, "KONTROLLE: die Kontrollakte gibt dasselbe XML wie die neue Akte");
 }
 
 /// Das `checkESt`-Urteil über die geschriebene Datei. Die Meldung eines Rots nennt die Antwort von `ERiC`,

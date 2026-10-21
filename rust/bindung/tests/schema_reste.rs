@@ -294,6 +294,49 @@ fn feld_bedingung_kennt_praefix_nicht_als_fuenfte_art() {
     assert!(matches!(kurz, BindungFehler::ZuKurz { min: 40, .. }), "{kurz}");
 }
 
+/// Fragen-Reduktion Teil 2: `beleg: true` ist ein Modifikator, keine sechste Art. Er macht `wert`/`wert_nicht`/`alter_im_vz`/
+/// `praefix_nicht` eines Glieds der `und`-Kette zum positiven Beweis. An `groesser_als` (schon ein Beleg) und an einer `oder`-
+/// Alternative (auch einer) ist er sinnlos und wird abgewiesen; sonst glaubte ein Autor, er habe etwas verschaerft. `beleg: false`
+/// und kein `beleg` sind dasselbe. Die Art bleibt genau eine: `beleg` allein ist keine Bedingung.
+#[test]
+fn feld_bedingung_kennt_beleg_als_modifikator() {
+    let grund = format!("grund: \"{GRUND_40}\"");
+    let bedingung = |inhalt: &str| pruefe(&format!("    feld_bedingung: {{feld: anderes, {inhalt}}}\n"));
+    for gut in ["wert: true", "wert_nicht: keine", "alter_im_vz: 55", "praefix_nicht: DE"] {
+        assert!(bedingung(&format!("{gut}, beleg: true, {grund}")).is_ok(), "{gut} mit beleg");
+        assert!(bedingung(&format!("{gut}, beleg: false, {grund}")).is_ok(), "{gut} mit beleg: false");
+    }
+    // `beleg` zaehlt nicht als Art: allein ist es keine Bedingung.
+    let fehler = bedingung(&format!("beleg: true, {grund}")).unwrap_err();
+    assert!(matches!(fehler, BindungFehler::FeldBedingungNichtGenauEins { .. }), "{fehler}");
+    // An `groesser_als` ist er sinnlos (dort gilt der Beleg ohnehin), auch in der `und`-Kette.
+    let fehler = bedingung(&format!("groesser_als: 0, beleg: true, {grund}")).unwrap_err();
+    assert!(matches!(fehler, BindungFehler::BelegOhneSinn { .. }), "{fehler}");
+    assert!(fehler.to_string().contains("testfeld.feld_bedingung"), "{fehler}");
+    let in_und = bedingung(&format!(
+        "wert: true, {grund}, und: {{feld: weiteres, groesser_als: 0, beleg: true, {grund}}}"
+    ))
+    .unwrap_err();
+    assert!(matches!(in_und, BindungFehler::BelegOhneSinn { .. }), "{in_und}");
+    assert!(in_und.to_string().contains("feld_bedingung.und"), "{in_und}");
+    // Ein Glied der `und`-Kette darf ihn tragen.
+    assert!(bedingung(&format!(
+        "wert: true, {grund}, und: {{feld: weiteres, wert_nicht: keine, beleg: true, {grund}}}"
+    ))
+    .is_ok());
+    // An einer `oder`-Alternative ist er sinnlos, auch an der zweiten.
+    let alt = |innen: &str| bedingung(&format!("wert: true, {grund}, oder: {{feld: weiteres, {innen}}}"));
+    let fehler = alt(&format!("wert: true, beleg: true, {grund}")).unwrap_err();
+    assert!(matches!(fehler, BindungFehler::BelegOhneSinn { .. }), "{fehler}");
+    assert!(fehler.to_string().contains("feld_bedingung.oder"), "{fehler}");
+    assert!(alt(&format!("wert: true, beleg: false, {grund}")).is_ok());
+    let zweite = bedingung(&format!(
+        "wert: true, {grund}, oder: {{feld: b, wert: true, {grund}, oder: {{feld: c, wert: true, beleg: true, {grund}}}}}"
+    ))
+    .unwrap_err();
+    assert!(zweite.to_string().contains("feld_bedingung.oder.oder"), "{zweite}");
+}
+
 /// Entscheidung d-43: `oder` haengt eine Alternative an eine Bedingung (die Frage nach dem Bundesland bleibt, wenn Person A ODER
 /// Person B einer Kirche angehoert). Jede Alternative traegt genau eine Art und ihre eigene lange Begruendung und hat kein eigenes
 /// `und`; weitere Alternativen haengen per `oder` an ihr. Ohne die Pruefung gewaenne eine zweite Art oder eine fehlende

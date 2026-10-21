@@ -2210,7 +2210,7 @@ bindungen:
 
   - feld_id: kirchensteuer_arbeitgeber_partner
     quelle: {regel_id: p2_festzusetzung_zusammen, geltungsbedingung: beide_ehegatten_zusammen_veranlagt}
-    feld_bedingung: {feld: kist_konfession_partner, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    feld_bedingung: {feld: kist_konfession_partner, wert_nicht: keine, beleg: true, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg. Positiver Beleg (`beleg`): die Frage steht erst, wenn eine BESTAETIGTE Konfession des Ehegatten ungleich 'keine' vorliegt; Schweigen und ein vorlaeufiger Wert halten sie zurueck."}
     typ: cent
     nicht_negativ: true
     einheit: EUR

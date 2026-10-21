@@ -799,3 +799,75 @@ fn kontrolle_geburtsdatum_1955_auf_1985() {
         assert_eq!(mf.zahl(), Some(1_392_400), "der frische Fall 1985 ist die Handrechnung aus Fluss I");
     });
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------
+// Messung `fragen-reduktion-2` (Fragen-Reduktion Teil 2, 2026-10-21): wie viele Fragen stellt der Dienst, und rechnet er danach
+// dieselben Cent? Aufruf: `TAXGRAPH_OHNE_XSD=1 cargo test -p api --test it korrektur_sweep::messung_fragenzahl_und_steuer -- --ignored
+// --nocapture`. Eine Zeile `P0` je Fall: Zahl der beantworteten Fragen (ohne Ankreuzliste), Steuer, Kirchensteuer, `grund`. Zwei Staende
+// vergleicht man, indem man den Test auf beiden aufruft und die `P0`-Zeilen gegeneinander liest.
+// GRENZE: Der Fragenlauf beantwortet jede Frage, die der Dienst stellt, mit der Tabelle oder dem neutralen Standard. Eine Frage, die der
+// Dienst nicht stellt, bleibt unbeantwortet; ob das Ergebnis dann gleich ist, zeigt die Zeile. Die Messung trifft nur diese Faelle.
+// ---------------------------------------------------------------------------------------------------------------------------
+
+/// Einzelnutzer wie in `ausgangsfaelle` (Geburtsdatum 1985), mit der gewaehlten Konfession; `ersetze` tauscht Zeilen der Tabelle, `plus`
+/// haengt Antworten an.
+fn einzel_mit(konfession: &'static str, ersetze: &[(&'static str, Gib)], plus: &[(&'static str, Gib)]) -> Tabelle {
+    let mut t = person_a("15.03.1985");
+    t.push(("veranlagung", Gib::Wahl("einzel")));
+    t.extend(kirche(konfession, None));
+    t.retain(|(f, _)| !ersetze.iter().any(|(g, _)| g == f));
+    t.extend(ersetze.iter().copied());
+    t.extend(plus.iter().copied());
+    t
+}
+
+/// Fragenlauf, Basismessung, Zeile `P0`. Gibt die Zahl der beantworteten Fragen und die Steuer zurueck. `ohne` nennt Antworten, die ein
+/// Nutzer nicht gegeben haette, weil die Frage entfaellt: ihre Ereignisse werden nicht geschrieben.
+async fn p0_lauf(name: &'static str, scheibe: &'static str, tabelle: &Tabelle, kreuze: &[&str], ohne: &[&str]) -> (usize, Option<i64>) {
+    let d = Dienst::neu();
+    let mut b = fragenlauf(&d, name, scheibe, 2025, tabelle, kreuze).await;
+    let folge: Vec<String> = b.ereignisse.iter().filter(|e| e.signal_2.starts_with("ok@")).map(|e| e.feld.clone()).collect();
+    b.ereignisse.retain(|e| !ohne.contains(&e.feld.as_str()));
+    let m = d.messe(&d.baue(&b, None).await).await;
+    eprintln!("P0\t{name}\tfragen {}\tSteuer {:?}\tKist {:?}\tgrund {}\tohne {ohne:?}", folge.len(), m.zahl(), m.kist(), m.grund());
+    eprintln!("P0FOLGE\t{name}\t{}", folge.join(" "));
+    (folge.len(), m.zahl())
+}
+
+#[test]
+#[ignore = "Messung: mit --ignored --nocapture aufrufen, die Zeilen P0 nennen die Zahlen"]
+fn messung_fragenzahl_und_steuer() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        // Die zehn Ausgangsfaelle der Korrektur-Sweeps.
+        for (name, scheibe, tabelle, kreuze) in ausgangsfaelle() {
+            p0_lauf(name, scheibe, &tabelle, kreuze, &[]).await;
+        }
+        // F7: Konfession „keine“. Ein Wert fuer die Kirchensteuer des Arbeitgebers und ein anderes Bundesland aendern die Steuer nicht?
+        let (_, a0) = p0_lauf("keine_ag0", "gesamt", &einzel_mit("keine", &[], &[]), &[], &[]).await;
+        let (_, a1) = p0_lauf("keine_ag1000", "gesamt", &einzel_mit("keine", &[], &[("kirchensteuer_arbeitgeber", Gib::Euro("1000"))]), &[], &[]).await;
+        let (_, a2) = p0_lauf("keine_nrw", "gesamt", &einzel_mit("keine", &[("kist_bundesland", Gib::Wahl("nordrhein_westfalen"))], &[]), &[], &[]).await;
+        eprintln!("P0VERGLEICH F7 keine: ag0 {a0:?} ag1000 {a1:?} nrw {a2:?} gleich {}", a0 == a1 && a0 == a2);
+        // F6 Haushaltshilfen: die Zaehler gehen nicht in die Rechnung ein, solange „hat Aufwendungen“ nein ist.
+        let zaehler = [("hh_anzahl_dienstleistungen", Gib::Euro("3")), ("hh_anzahl_handwerker", Gib::Euro("3")), ("hh_anzahl_minijobs", Gib::Euro("3"))];
+        let (_, h1) = p0_lauf("keine_hh_zaehler3", "gesamt", &einzel_mit("keine", &[], &zaehler), &[], &[]).await;
+        eprintln!("P0VERGLEICH F6 hh: zaehler0 {a0:?} zaehler3 {h1:?} gleich {}", a0 == h1);
+        // Der Ja-Weg: wer Haushaltshilfen hatte, bekommt die Zaehler und danach die Einzelfragen; nur die Stelle der Zaehler darf sich aendern.
+        let ja = [("hh_hat_aufwendungen", Gib::Wahl("true")), ("hh_anzahl_dienstleistungen", Gib::Euro("1")), ("hh_anzahl_handwerker", Gib::Euro("1")), ("hh_anzahl_minijobs", Gib::Euro("1"))];
+        p0_lauf("hh_ja", "gesamt", &einzel_mit("keine", &[], &ja), &[], &[]).await;
+        // Das Ehepaar, dessen Ehegatte einer Kirche angehoert (Entscheidung d-43: das Bundesland bleibt eine Frage).
+        let mut paar_b = person_a("15.03.1985");
+        paar_b.push(("veranlagung", Gib::Wahl("zusammen")));
+        paar_b.extend(person_b());
+        paar_b.extend(kirche("keine", Some("evangelisch")));
+        p0_lauf("ehepaar_b_evangelisch", "gesamt", &paar_b, &[], &[]).await;
+        // F6 Arbeitsweg: Wirkung der Wegfelder bei 0 Tagen, und was der Dienst sagt, wenn der Nutzer sie nicht beantwortet.
+        let (_, e1) = p0_lauf("ep_km30_tage0", "gesamt", &einzel_mit("keine", &[], &[("ep_entfernung_km", Gib::Euro("30"))]), &[], &[]).await;
+        eprintln!("P0VERGLEICH F6 ep: km0 {a0:?} km30(tage0) {e1:?} gleich {}", a0 == e1);
+        let weg = ["ep_eigenes_kfz", "ep_entfernung_km", "ep_oepnv_kosten", "ep_ziel_des_weges", "ep_ziel_adresse"];
+        p0_lauf("ep_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &weg).await;
+        p0_lauf("ep_nur_km_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &weg[..3]).await;
+        // Aussergewoehnliche Belastungen: die Ja/Nein-Frage nach der Angemessenheit steht hinter dem Betrag 0.
+        p0_lauf("agb_angemessen_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &["agb_notwendig_angemessen"]).await;
+    });
+}

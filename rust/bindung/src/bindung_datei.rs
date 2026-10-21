@@ -60,6 +60,8 @@ pub enum BindungFehler {
     FeldBedingungNichtGenauEins { feld_id: String },
     #[error("{feld_id}: eine oder-Alternative der feld_bedingung traegt kein eigenes und (sie ist EINE Bedingung)")]
     OderAlternativeMitUnd { feld_id: String },
+    #[error("{wo}: beleg gilt nur an wert/wert_nicht/alter_im_vz/praefix_nicht eines Glieds der und-Kette (groesser_als und jede oder-Alternative sind schon ein Beleg)")]
+    BelegOhneSinn { wo: String },
     #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
     UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
     #[error("instanz_gruppen {gruppe}: max {max} liegt ausserhalb von {}..={}", MIN_INSTANZ_MAX, MAX_INSTANZ_MAX)]
@@ -320,6 +322,15 @@ pub struct FeldBedingung {
     /// gegenstandslos ist (der Anteil am Schulgeld-Hoechstbetrag), und deren Fehlen nichts kostet
     /// (keine Antwort heisst hier: Normalfall).
     pub groesser_als: Option<i64>,
+    /// Modifikator, keine sechste Art (Rust-eigen, Fragen-Reduktion Teil 2): die Bedingung gilt als POSITIVER BEWEIS. Das Feld
+    /// bleibt nur, wenn `feld` eine BESTAETIGTE Antwort traegt, die die Bedingung erfuellt; Schweigen und ein vorlaeufiger Wert
+    /// (Vorjahr, KI) schliessen es ebenfalls aus. Fuer ein Feld, das ohne die Antwort auf seine Eingangsfrage gegenstandslos ist
+    /// (die Zaehler der Haushaltshilfen nach "ja", die Kirchensteuer des Arbeitgebers nach der Konfession). Gilt nur, wenn die
+    /// Scheibe `feld` fragt (sonst gibt es nie einen Beleg, und die Frage fiele fuer immer weg: Nr. 74). Erlaubt an den Arten
+    /// `wert`/`wert_nicht`/`alter_im_vz`/`praefix_nicht` eines Glieds der `und`-Kette; `groesser_als` ist schon ein Beleg, und eine
+    /// `oder`-Alternative ist es ebenfalls.
+    #[serde(default)]
+    pub beleg: bool,
     /// Eine zweite Bedingung, die ZUSAETZLICH gelten muss: das Feld entfaellt, sobald eine Bedingung
     /// der Kette es ausschliesst. `feld_bedingung` hat nur einen Platz je Feld; `und` ist der zweite.
     pub und: Option<Box<FeldBedingung>>,
@@ -577,13 +588,20 @@ impl Bindung {
             for (i, glied) in bedingung.und_glieder().enumerate() {
                 let pfad = format!("{}.feld_bedingung{}", self.feld_id, ".und".repeat(i));
                 self.pruefe_glied(glied, pfad.clone())?;
+                if glied.beleg && glied.groesser_als.is_some() {
+                    return Err(BindungFehler::BelegOhneSinn { wo: pfad.clone() });
+                }
                 for (j, alt) in glied.alternativen().enumerate() {
                     if alt.und.is_some() {
                         return Err(BindungFehler::OderAlternativeMitUnd {
                             feld_id: self.feld_id.clone(),
                         });
                     }
-                    self.pruefe_glied(alt, format!("{pfad}{}", ".oder".repeat(j + 1)))?;
+                    let alt_pfad = format!("{pfad}{}", ".oder".repeat(j + 1));
+                    if alt.beleg {
+                        return Err(BindungFehler::BelegOhneSinn { wo: alt_pfad });
+                    }
+                    self.pruefe_glied(alt, alt_pfad)?;
                 }
             }
         }
