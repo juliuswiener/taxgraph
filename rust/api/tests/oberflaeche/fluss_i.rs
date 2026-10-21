@@ -476,9 +476,11 @@ fn fluss_i_ehepaar_vom_start_bis_zur_steuerzahl_mit_korrektur() {
     let verlauf = durchlauf(&u, "ehepaar_mit_kreuz", &ehepaar("keine", "evangelisch", "bayern"), &[]);
     let fall = u.fall();
 
-    // Die Reihenfolge, wie die Oberflaeche sie stellt: die Konfession des Ehegatten, spaeter das Bundesland, danach die eigene
-    // Konfession. Das Bundesland steht VOR der eigenen Konfession (gemessen); die ODER-Bedingung entscheidet in diesem Weg
-    // nicht, weil die eigene Antwort beim Bundesland noch offen ist (eine offene Antwort schliesst nicht aus).
+    // Die Reihenfolge, wie die Oberflaeche sie stellt: die Konfession des Ehegatten, spaeter die eigene Konfession, danach das
+    // Bundesland. Seit Fragen-Reduktion Teil 2 (B1) ist die eigene Konfession eine Eingangsfrage und steht VOR dem Bundesland
+    // (gemessen: Stelle 76 und 77); die eigene Antwort "keine" ist beim Bundesland also schon bestaetigt, und nur die
+    // ODER-Bedingung (d-43) haelt die Frage wegen des Ehegatten offen. Frueher stand das Bundesland davor, und die ODER-Bedingung
+    // entschied in diesem Weg nicht.
     let (b, land, a) = (pos(&verlauf, "kist_konfession_partner"), pos(&verlauf, "kist_bundesland"), pos(&verlauf, "kist_konfession"));
     pp!("I.das_bundesland_wird_einmal_gefragt_nach_der_konfession_des_ehegatten", wie_oft(&verlauf, "kist_bundesland") == 1, "das Bundesland wurde {}-mal gefragt", wie_oft(&verlauf, "kist_bundesland"));
     pp!("I.das_bundesland_wird_einmal_gefragt_nach_der_konfession_des_ehegatten", b.is_some() && land.is_some() && b < land, "Reihenfolge: Ehegatte {b:?}, Bundesland {land:?}, eigene Konfession {a:?}");
@@ -524,7 +526,8 @@ fn fluss_i_ki_weg_beantwortet_die_konfession_zuerst_dann_steht_die_bundesland_fr
     let satz = "Wir sind verheiratet, ich gehöre keiner Kirche an, mein Ehepartner ist evangelisch.";
 
     // Hier ist die Konfession von A schon beantwortet, wenn die Warteschlange zum Bundesland kommt: nur die ODER-Bedingung
-    // (d-43) haelt die Frage dann noch offen. Der Weg durch den Fragebogen allein erreicht diesen Fall nie (siehe oben).
+    // (d-43) haelt die Frage dann noch offen. Der Weg durch den Fragebogen allein erreichte diesen Fall frueher nie; seit B1
+    // steht die eigene Konfession dort vor dem Bundesland (siehe oben), die KI-Sitzung bleibt der Weg mit beiden Antworten vorab.
     ki_sitzung(
         &u,
         &modell,

@@ -16,6 +16,9 @@ bindungen:
     quelle:
       regel_id: p51a_kirchensteuer
       signatur_slot: konfession
+    # Eingangsfrage (Fragen-Reduktion Teil 2): die Konfession steht vor dem Bundesland und vor `kist_gezahlt`/`kist_erstattet`
+    # und schaltet `kirchensteuer_arbeitgeber` frei (`beleg`). Ohne sie rutschte das Thema hinter `p10_1_4_kirchensteuer`.
+    eingangsfrage: true
     typ: enum
     enum_werte: [keine, evangelisch, roemisch-katholisch, andere]
     askable: true
@@ -40,7 +43,7 @@ bindungen:
     quelle:
       regel_id: p2_festzusetzung_einzel
       signatur_slot: kirchensteuer_arbeitgeber
-    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg."}
+    feld_bedingung: {feld: kist_konfession, wert_nicht: keine, beleg: true, grund: "§ 51a EStG i.V.m. den Landes-Kirchensteuergesetzen erhebt die Kirchensteuer als Zuschlag NUR von Mitgliedern steuererhebender Religionsgemeinschaften. `kist_konfession` erhebt die Mitgliedschaft; bei 'keine' faellt jede Frage nach gezahlter, erstatteter oder vom Arbeitgeber einbehaltener Kirchensteuer weg. Positiver Beleg (`beleg`): die Frage steht erst, wenn eine BESTAETIGTE Konfession ungleich 'keine' vorliegt; Schweigen und ein vorlaeufiger Wert halten sie zurueck, die Konfession steht als Eingangsfrage vorn und schaltet sie frei."}
     typ: cent
     nicht_negativ: true
     einheit: EUR

@@ -174,6 +174,10 @@ fn braucht_bestaetigung<'r>(sicht: &Sicht<'r>, graph: &Graph<'r>, pflicht: &[&st
 /// Rust-eigen (Entscheidung d-43): `oder` haengt eine Alternative an ein Glied. Schliesst das Glied das Feld aus, bleibt es
 /// trotzdem, sobald eine Alternative gilt ([`alternative_gilt`]). Die Frage nach dem Bundesland haengt so an Person A ODER
 /// Person B; vorher fehlte sie, wenn nur der Ehegatte einer Kirche angehoerte, und die Kirchensteuer rechnete mit 9 %.
+///
+/// Rust-eigen (Fragen-Reduktion Teil 2): `beleg: true` macht ein Glied der Kette zum POSITIVEN BEWEIS ([`beleg_fehlt`]). Das Feld
+/// bleibt nur, wenn `feld` bestaetigt beantwortet ist und die Bedingung erfuellt; Schweigen und ein vorlaeufiger Wert schliessen
+/// aus. Eine `oder`-Alternative, die gilt, haelt es weiter offen.
 fn feld_ausgeschlossen(
     b: &Bindung,
     aktiv: &Aktiv<'_>,
@@ -186,11 +190,20 @@ fn feld_ausgeschlossen(
         return false;
     };
     bed.und_glieder().any(|glied| {
-        bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz)
+        (bedingung_schliesst_aus(glied, aktiv, sicht, graph, vz) || beleg_fehlt(glied, aktiv, sicht, graph, vz))
             && !glied
                 .alternativen()
                 .any(|alt| alternative_gilt(alt, aktiv, sicht, graph, vz, rel))
     })
+}
+
+/// Fehlt dem Glied mit `beleg: true` der Beleg? Ja, solange `feld` nicht in jeder Instanz bestaetigt beantwortet ist und eine
+/// Instanz die Bedingung erfuellt ([`Bedingungsstand::Erfuellt`]). Das Feld der Bedingung muss die Scheibe fragen: sonst gaebe es
+/// nie einen Beleg, und die Frage fiele fuer immer weg (Abweichung Nr. 74, wie bei [`bedingung_schliesst_aus`]).
+fn beleg_fehlt(bed: &FeldBedingung, aktiv: &Aktiv<'_>, sicht: &Sicht<'_>, graph: &Graph<'_>, vz: i64) -> bool {
+    bed.beleg
+        && sicht.get(&bed.feld).is_some()
+        && bedingung_stand(bed, aktiv, sicht, graph, vz) != Bedingungsstand::Erfuellt
 }
 
 /// Liegt der Betrag `w` echt ueber `schwelle`? Nur eine Ganzzahl belegt einen Betrag: `cent` und `int` sind ganzzahlig (kein
@@ -377,8 +390,9 @@ fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
     for (i, b) in gruppe.iter().enumerate() {
         // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`-Bedingung: die Antwort auf die IBAN
         // entscheidet, ob der BIC noch gefragt wird, also steht er dahinter.
-        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland steht vor der
-        // Konfession, an der seine Bedingung haengt, Fluss I Befund B); wer sie auch ordnen will, entscheidet das je Feld.
+        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland stand vor der
+        // Konfession, an der seine Bedingung haengt, Fluss I Befund B; seit B1 ordnet die Eingangsfrage die Konfession davor, nicht
+        // die Bedingung); wer sie auch ordnen will, entscheidet das je Feld.
         let mut ausloeser: Vec<&str> = b
             .ableitung
             .iter()
@@ -665,6 +679,7 @@ mod tests {
             alter_im_vz: None,
             praefix_nicht: praefix_nicht.map(str::to_owned),
             groesser_als: None,
+            beleg: false,
             und: None,
             oder: None,
         }
@@ -672,8 +687,8 @@ mod tests {
 
     /// Fluss J F4: Das Feld einer `praefix_nicht`-Bedingung steht vor dem Feld, das an ihr haengt (die IBAN vor dem BIC). In der
     /// Vordruck-Ordnung stand der BIC (Kz `E0102201`) vor der IBAN (kein Kz), und die Frage nach ihm kam, bevor die IBAN sie
-    /// erledigen konnte. KONTROLLE: jede andere Art von `feld_bedingung` ordnet nichts um (das Bundesland steht vor der Konfession,
-    /// an der seine Bedingung haengt, Fluss I Befund B).
+    /// erledigen konnte. KONTROLLE: jede andere Art von `feld_bedingung` ordnet nichts um (das Bundesland stand vor der Konfession,
+    /// an der seine Bedingung haengt, Fluss I Befund B; seit B1 steht die Konfession als Eingangsfrage davor).
     #[test]
     fn das_feld_einer_praefix_bedingung_steht_vor_dem_feld_das_an_ihr_haengt() {
         let mut bic = feld("bic", None);
@@ -864,6 +879,42 @@ mod tests {
         assert!(
             !frage_steht_in_sicht(ANTEIL, Some("schulgeld"), basis()),
             "ohne das Feld in der Scheibe und ohne Beleg steht die Folgefrage nicht"
+        );
+    }
+
+    /// `beleg: true` (Fragen-Reduktion Teil 2): Die Frage steht nur bei BESTAETIGTER Antwort, die die Bedingung erfuellt. Schweigen,
+    /// ein vorlaeufiger Wert und der ausschliessende Wert lassen sie weg, bei `wert_nicht` (Konfession) wie bei `wert` ("ja"). Fragt
+    /// die Scheibe das Feld der Bedingung nicht, gibt es nie einen Beleg: die Frage bleibt (Abweichung Nr. 74), auch gegen eine
+    /// Antwort darauf im Store.
+    #[test]
+    fn beleg_verlangt_eine_bestaetigte_erfuellte_antwort_und_ein_gefragtes_feld() {
+        const ARBEITGEBER: &str = "kirchensteuer_arbeitgeber";
+        const ZAEHLER: &str = "hh_anzahl_handwerker";
+        const KONFESSION: &str = "kist_konfession";
+        const JA_NEIN: &str = "hh_hat_aufwendungen";
+        let konfession = |w: &str, bestaetigt: bool| vec![(KONFESSION, PyWert::Text(w.to_owned()), bestaetigt)];
+        let ja_nein = |w: bool, bestaetigt: bool| vec![(JA_NEIN, PyWert::Bool(w), bestaetigt)];
+
+        // wert_nicht: keine
+        assert!(!frage_steht_bei(ARBEITGEBER, vec![]), "Schweigen");
+        assert!(!frage_steht_bei(ARBEITGEBER, konfession("evangelisch", false)), "vorlaeufige Konfession");
+        assert!(!frage_steht_bei(ARBEITGEBER, konfession("keine", true)), "keine");
+        assert!(frage_steht_bei(ARBEITGEBER, konfession("evangelisch", true)), "bestaetigt evangelisch");
+        assert!(frage_steht_bei(ARBEITGEBER, konfession("roemisch-katholisch", true)), "bestaetigt katholisch");
+        // wert: true
+        assert!(!frage_steht_bei(ZAEHLER, vec![]), "Schweigen");
+        assert!(!frage_steht_bei(ZAEHLER, ja_nein(true, false)), "vorlaeufiges ja");
+        assert!(!frage_steht_bei(ZAEHLER, ja_nein(false, true)), "nein");
+        assert!(frage_steht_bei(ZAEHLER, ja_nein(true, true)), "bestaetigtes ja");
+        // Die Eingangsfragen selbst bleiben in der Queue und schalten die Folgefrage frei.
+        assert!(frage_steht_bei(KONFESSION, vec![]), "die Konfession ist eine Frage");
+        assert!(frage_steht_bei(JA_NEIN, vec![]), "die Ja/Nein-Frage ist eine Frage");
+        // Das Feld der Bedingung gehoert nicht zur Scheibe: kein Beleg moeglich, die Frage bleibt.
+        assert!(frage_steht_in_sicht(ARBEITGEBER, Some(KONFESSION), vec![]), "Konfession nicht in der Scheibe");
+        assert!(frage_steht_in_sicht(ZAEHLER, Some(JA_NEIN), vec![]), "Ja/Nein nicht in der Scheibe");
+        assert!(
+            frage_steht_in_sicht(ARBEITGEBER, Some(KONFESSION), konfession("keine", true)),
+            "eine Antwort auf ein Feld ausserhalb der Scheibe schliesst nichts aus"
         );
     }
 }

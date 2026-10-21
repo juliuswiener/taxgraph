@@ -8,6 +8,8 @@ mod abhaengigkeiten;
 mod arbeitsmittel_satzfrage_bedingung;
 #[path = "backup_restore_rundlauf.rs"]
 mod backup_restore_rundlauf;
+#[path = "beleg_konfession_haushaltshilfen.rs"]
+mod beleg_konfession_haushaltshilfen;
 #[path = "bereich_rand_hermetisch.rs"]
 mod bereich_rand_hermetisch;
 #[path = "berufsverband_hermetisch.rs"]

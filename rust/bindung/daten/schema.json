@@ -380,6 +380,10 @@
               "type": "integer",
               "description": "Alternative zu `wert`, wo ein BETRAG entscheidet (Rust-eigen, Python kennt sie nicht): `feld` ist ein Betrag (`cent` oder `int`, ganzzahlig), und das Feld bleibt nur, wenn mindestens eine Instanz von `feld` einen BESTAETIGTEN Wert ueber dieser Schwelle traegt. Anders als alle uebrigen Arten gilt hier POSITIVER BEWEIS: Schweigen und ein vorlaeufiger Wert schliessen ebenfalls aus. Nur fuer eine Folgefrage, deren Fehlen nichts kostet (keine Antwort heisst: Normalfall). Fuer den Anteil am Schulgeld-Hoechstbetrag: nur bei Schulgeld ueber 0."
             },
+            "beleg": {
+              "type": "boolean",
+              "description": "Modifikator, keine sechste Art (Rust-eigen, Fragen-Reduktion Teil 2): `true` macht diese Bedingung zum POSITIVEN BEWEIS. Das Feld bleibt nur, wenn `feld` eine BESTAETIGTE Antwort traegt, die die Bedingung erfuellt; Schweigen und ein vorlaeufiger Wert (Vorjahr, KI) schliessen es ebenfalls aus. Fuer ein Feld, das ohne die Antwort auf seine Eingangsfrage gegenstandslos ist (die Zaehler der Haushaltshilfen nach 'ja', die Kirchensteuer des Arbeitgebers nach der Konfession). Gilt nur, wenn die Scheibe `feld` fragt. Erlaubt an wert, wert_nicht, alter_im_vz und praefix_nicht eines Glieds der `und`-Kette; nicht an groesser_als (schon ein Beleg) und nicht an einer `oder`-Alternative (auch schon ein Beleg). Nicht an Pflichtfeldern des Kegels (Arbeitsweg, agb_notwendig_angemessen): fehlten sie in der Liste, bliebe die Steuerzahl bei `input_kegel_nicht_bestaetigt` gesperrt."
+            },
             "und": {
               "$ref": "#/$defs/bindung/properties/feld_bedingung",
               "description": "Eine zweite Bedingung, die ZUSAETZLICH gelten muss (Rust-eigen): das Feld entfaellt, sobald eine Bedingung der Kette es ausschliesst. Jede Bedingung der Kette traegt genau eine Art und ihre eigene Begruendung. Es gibt nur einen Platz je Feld; `und` ist der zweite."

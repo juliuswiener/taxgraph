@@ -881,6 +881,7 @@ fn welt_mit_kreuz(feld: &str) -> &'static Welt {
                 alter_im_vz: None,
                 praefix_nicht: None,
                 groesser_als: None,
+                beleg: false,
                 und: None,
                 oder: None,
             });
