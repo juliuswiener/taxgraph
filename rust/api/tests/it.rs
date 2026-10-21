@@ -50,6 +50,8 @@ mod kind_idnr_schreibweg_hermetisch;
 mod kontoauszug_naht;
 #[path = "kopfnamen.rs"]
 mod kopfnamen;
+#[path = "korrektur_sweep.rs"]
+mod korrektur_sweep;
 #[path = "kvpv_zuschuss_hermetisch.rs"]
 mod kvpv_zuschuss_hermetisch;
 #[path = "lesen_naht.rs"]
