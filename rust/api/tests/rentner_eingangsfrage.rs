@@ -515,18 +515,21 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// `rente_av_bav` dazu: neun Fragen mehr in jedem Fall (die Frage nach der Rente mit Leistungsmitteilung ist noch offen).
 /// Seit Abweichung Nr. 92 stehen die drei Zuschussfragen des Ehegatten in der Liste, solange `mit_anspruch_auf_zuschuss_partner` offen
 /// ist: drei Fragen mehr bei Zusammenveranlagung (204 -> 207 und so fort). Die eigenen drei fehlen, weil `rentner()` den Anspruch verneint.
+/// Seit Fluss J F2/F3/F8 (2026-10-21) stehen die Kreuze `kein_kind`, `kein_unterhalt` und `keine_auslandseinkuenfte` in der Liste, bis sie
+/// beantwortet sind (drei Fragen mehr in jedem Fall), bei Zusammenveranlagung dazu `kein_gewinn_partner` (vier mehr; 207 -> 211, 154 -> 157).
+/// Ihre Bloecke ("nein") stehen in `nein_verbirgt_den_block_eines_kreuzes_und_nur_ihn`.
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
-        ("einzel offen", "einzel", None, None, 154),
-        ("einzel nein", "einzel", Some(true), None, 145),
-        ("einzel ja", "einzel", Some(false), None, 153),
-        ("zusammen offen", "zusammen", None, None, 207),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 187),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 197),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 195),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 205),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 206),
+        ("einzel offen", "einzel", None, None, 157),
+        ("einzel nein", "einzel", Some(true), None, 148),
+        ("einzel ja", "einzel", Some(false), None, 156),
+        ("zusammen offen", "zusammen", None, None, 211),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 191),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 201),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 199),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 209),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 210),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {
@@ -543,4 +546,260 @@ async fn die_fragenzahl_vor_und_nach_den_antworten() {
         }
     }
     assert!(abweichungen.is_empty(), "Fragenzahl weicht ab: {abweichungen:?}");
+}
+
+// ---------------------------------------------------------------- Ankreuzliste: Kinder, Unterhalt, Ausland, Gewinn des Ehegatten -------------
+
+// Fluss J F2/F3/F8 (2026-10-21, Vault `julius-entscheidet-vorjahr-sackgasse-rentner-eingangsfragen-und-bic-werden-behoben-2026-10-21`):
+// Die Rentner-Scheibe fragt vier Kreuze, die `gesamt` schon fragt: `kein_kind`, `kein_unterhalt`, `keine_auslandseinkuenfte` (Person A) und
+// `kein_gewinn_partner` (Ehegatte). "Nein" (Wert `true`) verbirgt den Block dahinter. Wie bei `kein_lohn_pension` aendert das Kreuz nur die
+// Liste, nie die Rechnung. Mit Absicht fehlen `kein_sonstige_partner` und `kein_kap_partner`: der Grund steht in `scheiben_tabellen.rs`.
+
+/// Die Felder hinter `kein_kind` (die Bindung gibt sie her; dieser Test haelt sie einzeln fest, damit eine entfernte Bedingung am
+/// Feldnamen auffaellt): Familie, Kinder, Betreuung, Schulgeld, Kranken- und Pflegeversicherung der Kinder.
+const KIND_BLOCK: [&str; 36] = [
+    "fam_alleinstehend",
+    "fam_anzahl_kinder",
+    "fam_monate_ohne_voraussetzung",
+    "p33a_ausbildung_anzahl_kinder",
+    "kind_vorname",
+    "kind_idnr",
+    "kind_kindschaftsverh_zeitraum_a",
+    "kind_geburtsdatum",
+    "kind_wohnsitz_inland_zeitraum",
+    "kind_familienkasse",
+    "kind_kindschaftsverh_zeitraum_b",
+    "kind_kindschaftsverhaeltnis_a",
+    "kind_kindschaftsverhaeltnis_b",
+    "kind_anderer_elternteil_tod_am",
+    "kind_anderer_elternteil_name",
+    "kind_anderer_elternteil_geburtsdatum",
+    "kind_anderer_elternteil_kindschaftsverhaeltnis",
+    "kind_anderer_elternteil_zeitraum",
+    "kind_anderer_elternteil_ausland_zeitraum",
+    "kind_behinderten_pb_antrag",
+    "kind_pb_nicht_selbst_genutzt",
+    "kind_kv",
+    "kind_pv",
+    "schulgeld",
+    "kinderbetreuungskosten",
+    "kind_betreuung_rechnung_ueberweisung",
+    "kind_betreuung_reine_betreuung",
+    "kind_betreuung_kein_gemeinsamer_haushalt_zeitraum",
+    "kind_betreuung_haushaltszugehoerigkeit_zeitraum",
+    "kind_unter_14_haushaltszugehoerig",
+    "kind_betreuung_dienstleister",
+    "kind_betreuung_zeitraum",
+    "kind_betreuung_einzelbetrag",
+    "kind_betreuung_eigenanteil",
+    "kind_betreuung_eigenanteil_betrag",
+    "kind_betreuung_eigenanteil_zeitraum",
+];
+
+/// Die 17 Felder hinter `kein_unterhalt`: Name, Anschrift, Vermoegen und Einkuenfte der unterstuetzten Person (§ 33a Abs. 1 `EStG`).
+const UNTERHALT_BLOCK: [&str; 17] = [
+    "p33a_andere_einkuenfte_bezuege",
+    "p33a_haushalt_anschrift",
+    "p33a_unterhalt_aufwendungen",
+    "p33a_zahlungszeitraum",
+    "p33a_haushalt_personenzahl",
+    "p33a_unterstuetzungszeitraum",
+    "p33a_person_name",
+    "p33a_person_beruf_familienstand",
+    "p33a_person_geburtsdatum",
+    "p33a_person_idnr",
+    "p33a_verwandtschaftsverhaeltnis",
+    "p33a_person_im_inlaendischen_haushalt",
+    "p33a_kindergeld_anspruch",
+    "p33a_person_hat_vermoegen",
+    "p33a_person_hat_einkuenfte",
+    "p33a_unterhalt_kv_pv",
+    "p33a_weitere_person_beteiligt",
+];
+
+/// Die acht Felder hinter `keine_auslandseinkuenfte` (§ 34c `EStG`).
+const AUSLAND_BLOCK: [&str; 8] = [
+    "dba_abzug_statt_anrechnung",
+    "dba_einkunftsart",
+    "dba_methode",
+    "dba_staat",
+    "dba_auslaendische_einkuenfte",
+    "dba_gezahlte_auslaendische_steuer",
+    "dba_mehrere_staaten",
+    "dba_staat_sonstiger",
+];
+
+/// Die elf Gewinnfelder des Ehegatten hinter `kein_gewinn_partner`.
+const GEWINN_PARTNER_BLOCK: [&str; 11] = [
+    "gewinn_betriebsart_partner",
+    "rentner_veraeusserungs_betriebsart_partner",
+    "einkuenfte_gewinn_partner",
+    "gewinn_bezeichnung_partner",
+    "gewinnanteil_partner",
+    "gewst_hebesatz_partner",
+    "gewst_messbetrag_partner",
+    "rentner_veraeusserungsgewinn_partner",
+    "verguetung_darlehen_partner",
+    "verguetung_taetigkeit_partner",
+    "verguetung_ueberlassung_partner",
+];
+
+/// Kreuz, Veranlagung des Falls und Block: die vier neuen Kreuze.
+const NEUE_KREUZE: [(&str, &str, &[&str]); 4] = [
+    ("kein_kind", "einzel", &KIND_BLOCK),
+    ("kein_unterhalt", "einzel", &UNTERHALT_BLOCK),
+    ("keine_auslandseinkuenfte", "einzel", &AUSLAND_BLOCK),
+    ("kein_gewinn_partner", "zusammen", &GEWINN_PARTNER_BLOCK),
+];
+
+fn menge(ids: &[String]) -> std::collections::BTreeSet<&str> {
+    ids.iter().map(String::as_str).collect()
+}
+
+/// Die vier Kreuze stehen in der Fragenliste, so wie sie `gesamt` zeigt: Ja/Nein-Frage, `frage_invertiert` (das Feld nennt die
+/// Abwesenheit, die Frage fragt nach der Anwesenheit) und `screening` (die Ankreuzliste am Anfang zeigt sie; wer nichts ankreuzt,
+/// antwortet "nein"). Die Polaritaet steht an der Frage, die der Dienst liefert, nicht am Feldnamen.
+#[tokio::test]
+async fn die_neuen_kreuze_sind_invertierte_ankreuzfragen_der_liste() {
+    let liste = fragen(&neuer_fall().await).await;
+    for (kreuz, _, _) in NEUE_KREUZE {
+        let q = liste
+            .iter()
+            .find(|q| q["feld_id"] == json!(kreuz))
+            .unwrap_or_else(|| panic!("{kreuz} fehlt in der Fragenliste der Rentner-Scheibe"));
+        assert_eq!(q["typ"], json!("bool"), "{kreuz}");
+        assert_eq!(q["frage_invertiert"], json!(true), "{kreuz}: das Feld nennt die Abwesenheit");
+        assert_eq!(q["screening"], json!(true), "{kreuz}: die Ankreuzliste zeigt es");
+        assert!(q["fragetext_laie"].as_str().is_some_and(|t| !t.is_empty()), "{kreuz}: ohne Fragetext");
+    }
+}
+
+/// Die Zeile des Ehegatten steht bei Zusammenveranlagung und solange `veranlagung` offen ist (fail-closed, wie in `gesamt`: die
+/// Ankreuzliste erscheint vor der Frage nach der Veranlagung), und fehlt bei Einzelveranlagung. Die drei Kreuze von Person A stehen immer.
+#[tokio::test]
+async fn die_zeile_des_ehegatten_fehlt_bei_einzelveranlagung() {
+    let einzel = fragen_ids(&fall_mit(&rentner(2_000_000, "einzel")).await).await;
+    let zusammen = fragen_ids(&fall_mit(&rentner(2_000_000, "zusammen")).await).await;
+    let offen = fragen_ids(&neuer_fall().await).await;
+    assert!(pos(&einzel, "kein_gewinn_partner").is_none(), "Zeile des Ehegatten bei Einzelveranlagung");
+    assert!(pos(&zusammen, "kein_gewinn_partner").is_some(), "Zeile des Ehegatten fehlt bei Zusammenveranlagung");
+    assert!(pos(&offen, "kein_gewinn_partner").is_some(), "Zeile des Ehegatten fehlt, solange die Veranlagung offen ist");
+    for kreuz in ["kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte"] {
+        for (name, ids) in [("einzel", &einzel), ("zusammen", &zusammen), ("offen", &offen)] {
+            assert!(pos(ids, kreuz).is_some(), "{kreuz} fehlt bei {name}");
+        }
+    }
+}
+
+/// Die beiden Kreuze, die mit Absicht NICHT in der Rentner-Scheibe stehen (Sackgasse und Flag-Sperre, Grund in `scheiben_tabellen.rs`):
+/// sie stehen nicht in der Liste, und der Dienst weist sie ab.
+#[tokio::test]
+async fn kein_sonstige_partner_und_kein_kap_partner_bleiben_draussen() {
+    let d = fall_mit(&rentner(2_000_000, "zusammen")).await;
+    let ids = fragen_ids(&d).await;
+    for kreuz in ["kein_sonstige_partner", "kein_kap_partner"] {
+        assert!(pos(&ids, kreuz).is_none(), "{kreuz} steht in der Rentner-Scheibe");
+        let (status, _) = event_post(&d, kreuz, &json!(true)).await;
+        assert_eq!(status, 400, "{kreuz} wurde angenommen");
+    }
+}
+
+/// "Nein" verbirgt genau den Block des Kreuzes und das Kreuz selbst, sonst nichts. Vorher stehen alle Felder des Blocks in der Liste.
+#[tokio::test]
+async fn nein_verbirgt_den_block_eines_kreuzes_und_nur_ihn() {
+    for (kreuz, veranlagung, block) in NEUE_KREUZE {
+        let d = fall_mit(&rentner(2_000_000, veranlagung)).await;
+        let vorher = fragen_ids(&d).await;
+        assert!(fehlende(&vorher, block).is_empty(), "{kreuz}: vor der Antwort fehlen {:?}", fehlende(&vorher, block));
+        assert!(pos(&vorher, kreuz).is_some(), "{kreuz} fehlt vor der Antwort");
+        antworte(&d, kreuz, json!(true)).await;
+        let nachher = fragen_ids(&d).await;
+        assert_eq!(vorhandene(&nachher, block), Vec::<&str>::new(), "{kreuz}: trotz 'nein' gefragt");
+        let weg: std::collections::BTreeSet<&str> = menge(&vorher).difference(&menge(&nachher)).copied().collect();
+        let soll: std::collections::BTreeSet<&str> = block.iter().copied().chain([kreuz]).collect();
+        assert_eq!(weg, soll, "{kreuz}: es verschwindet mehr oder weniger als der Block und das Kreuz");
+    }
+}
+
+/// "Ja" (`false`) laesst den Block stehen; der Wechsel von "nein" auf "ja" zeigt ihn wieder.
+#[tokio::test]
+async fn ja_laesst_den_block_stehen_und_der_wechsel_von_nein_auf_ja_zeigt_ihn_wieder() {
+    for (kreuz, veranlagung, block) in NEUE_KREUZE {
+        let d = fall_mit(&rentner(2_000_000, veranlagung)).await;
+        antworte(&d, kreuz, json!(false)).await;
+        let ja = fragen_ids(&d).await;
+        assert!(fehlende(&ja, block).is_empty(), "{kreuz}: nach 'ja' fehlen {:?}", fehlende(&ja, block));
+        let d = fall_mit(&rentner(2_000_000, veranlagung)).await;
+        antworte(&d, kreuz, json!(true)).await;
+        assert!(vorhandene(&fragen_ids(&d).await, block).is_empty(), "{kreuz}: 'nein' wirkt nicht");
+        aendere(&d, kreuz, json!(false)).await;
+        let wieder = fragen_ids(&d).await;
+        assert!(fehlende(&wieder, block).is_empty(), "{kreuz}: nach dem Wechsel fehlen {:?}", fehlende(&wieder, block));
+    }
+}
+
+/// Jedes Kreuz steht vor den Feldern, die es abschaltet (sonst beantwortet der Nutzer die Details, bevor er das Kreuz sieht).
+#[tokio::test]
+async fn jedes_neue_kreuz_steht_vor_den_feldern_die_es_abschaltet() {
+    for (kreuz, veranlagung, block) in NEUE_KREUZE {
+        let ids = fragen_ids(&fall_mit(&rentner(2_000_000, veranlagung)).await).await;
+        let k = pos(&ids, kreuz).unwrap_or_else(|| panic!("{kreuz} fehlt in der Liste"));
+        for f in block {
+            let p = pos(&ids, f).unwrap_or_else(|| panic!("{f} fehlt ohne Antwort auf {kreuz}"));
+            assert!(k < p, "{kreuz}@{k} steht nicht vor {f}@{p}");
+        }
+    }
+}
+
+/// Keine Sperre durch die neuen Kreuze: mit "nein" auf alle gibt es eine bestaetigte Zahl, ohne Zusatzfrage und ohne neuen Sperrgrund
+/// (die Kreuze stehen in keiner Sperre des Bescheids; `sperrgrund_kreuz_sweep` misst das ueber alle Kontexte).
+#[tokio::test]
+async fn nein_auf_alle_neuen_kreuze_gibt_eine_bestaetigte_zahl() {
+    for veranlagung in ["einzel", "zusammen"] {
+        let ohne_kreuze = ergebnis(&fall_mit(&rentner(4_000_000, veranlagung)).await).await;
+        let d = fall_mit(&rentner(4_000_000, veranlagung)).await;
+        for (kreuz, v, _) in NEUE_KREUZE {
+            if v == veranlagung || veranlagung == "zusammen" {
+                antworte(&d, kreuz, json!(true)).await;
+            }
+        }
+        let e = ergebnis(&d).await;
+        assert!(e["zahl_cent"].is_i64(), "{veranlagung}: keine Zahl nach 'nein': {e}");
+        assert_eq!(e["grund"], json!("bestaetigt"), "{veranlagung}: {e}");
+        assert_eq!(e["zahl_cent"], ohne_kreuze["zahl_cent"], "{veranlagung}: das Kreuz hat die Rechnung geaendert");
+    }
+}
+
+/// Ein gespeicherter Wert zaehlt weiter, auch wenn das Kreuz auf "nein" steht (wie bei `kein_lohn_pension`): das Kreuz aendert nur die
+/// Liste, nie die Rechnung. Je Block ein Wert, der die Steuer bewegt; das Kreuz laesst die Zahl, wie sie ist; ohne den Wert ist sie
+/// eine andere (sonst belegte die Gleichheit nichts).
+#[tokio::test]
+async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter_in_jedem_neuen_block() {
+    let ausland: Paare = vec![
+        ("dba_staat", json!("Frankreich")),
+        ("dba_einkunftsart", json!("dividenden")),
+        ("dba_methode", json!("kein_dba")),
+        ("dba_auslaendische_einkuenfte", json!(500_000)),
+        ("dba_gezahlte_auslaendische_steuer", json!(100_000)),
+        ("dba_mehrere_staaten", json!(false)),
+    ];
+    let faelle: [(&str, &str, i64, Paare); 4] = [
+        ("kein_kind", "einzel", 2_000_000, vec![("schulgeld", json!(600_000))]),
+        ("kein_unterhalt", "einzel", 2_000_000, vec![("p33a_unterhalt_aufwendungen", json!(300_000))]),
+        ("keine_auslandseinkuenfte", "einzel", 2_000_000, ausland),
+        ("kein_gewinn_partner", "zusammen", 4_000_000, vec![("einkuenfte_gewinn_partner", json!(3_000_000))]),
+    ];
+    for (kreuz, veranlagung, rente, wert) in faelle {
+        let ohne = zahl(&fall_mit(&rentner(rente, veranlagung)).await).await;
+        let mit_wert = mit(rentner(rente, veranlagung), wert.clone());
+        let offen = zahl(&fall_mit(&mit_wert).await).await;
+        assert_ne!(ohne, offen, "{kreuz}: der Wert bewegt die Steuer nicht ({ohne} gegen {offen}), der Test belegt nichts");
+        let d = fall_mit(&mit_wert).await;
+        antworte(&d, kreuz, json!(true)).await;
+        assert_eq!(zahl(&d).await, offen, "{kreuz}: das Kreuz hat die Rechnung geaendert");
+        let (_, stand) = sende(&d, "GET", "/fall/reh/stand", None).await;
+        for (feld, w) in &wert {
+            assert_eq!(stand["felder"][*feld]["wert"], *w, "{kreuz}: {feld} ist nach dem Kreuz nicht mehr im Store");
+        }
+    }
 }

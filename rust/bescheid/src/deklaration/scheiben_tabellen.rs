@@ -280,8 +280,17 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// pension-wird-gebaut`): `kein_lohn_pension` (Person A) und `kein_lohn_pension_partner` (Ehegatte, nur bei
 /// Zusammenveranlagung). "Nein" verbirgt acht und zehn Felder dieser Liste; der Ring liest gespeicherte Werte wie bisher.
 /// Der Kegel bleibt bei 28.
+/// Und die vier Kreuze danach, ebenfalls nur in Rust (2026-10-21, Fluss J F2/F3/F8, Vault `julius-entscheidet-vorjahr-sackgasse-
+/// rentner-eingangsfragen-und-bic-werden-behoben-2026-10-21`): `kein_kind`, `kein_unterhalt` und `keine_auslandseinkuenfte`
+/// (Person A) sowie `kein_gewinn_partner` (Ehegatte; die Zeile steht nur bei Zusammenveranlagung oder solange `veranlagung` offen
+/// ist, ihre `feld_bedingung` gilt wie in `gesamt`). Sie stehen in der Ankreuzliste wie dort; "nein" verbirgt die Bloecke zu Kindern
+/// (36 Felder), Unterhalt (17), Ausland (8) und die Gewinnfelder des Ehegatten (11), der Ring liest gespeicherte Werte wie bisher.
+/// Mit Absicht fehlen zwei Kreuze des Ehegatten, beide aus `FLAG_NEGIERT`: `kein_sonstige_partner` (`rente_instanz_offen` in `sperre/`
+/// verlangte die vier Rentenfelder des Ehegatten weiter, die das Kreuz verbirgt: Sackgasse im Kreuz-Sweep) und `kein_kap_partner`
+/// (ein gespeicherter Kapitalbetrag des Ehegatten neben dem unbeantworteten Kreuz sperrte mit `flag_konsistenz_offen`, bisher rechnete
+/// die Scheibe ihn mit). Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 328] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 332] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -353,6 +362,8 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 328] = [
     "versorgung_beginn_jahr_partner", "versorgung_art_partner", "versorgung_alter_bei_beginn_partner",
     "p36_lohnsteuer_partner", "geburtsjahr_partner",
     "kein_lohn_pension", "kein_lohn_pension_partner",
+    "kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte",
+    "kein_gewinn_partner",
     // Nur in Rust (2026-10-09, Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" (der Guard haelt den Abzug hier
     // ab, aber `mit_ring_werten` laeuft vor dem Guard und die Bindung der Scheibe muss das Feld kennen).
     "dba_abzug_zeile_cent",
