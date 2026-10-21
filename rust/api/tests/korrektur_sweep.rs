@@ -11,11 +11,12 @@
 //! **Aufbau eines Versuchs.** Ausgangsfall `B` (Antworten in Schreibreihenfolge, aus einem Fragenlauf mit den Antworttabellen der
 //! Browser-Fluesse I/J). K = `B` mit `f = v0`, dann `f` auf `v2` korrigiert. F = frischer Fall mit `B`, aber `f = v2`. Jede Abweichung
 //! zwischen K und F (Ergebnis, Steuer, Sperre, Feldwerte und -zustaende) ist ein Fund. Art 2: `f` steht nicht in `B`; K schreibt
-//! erst `v1`, korrigiert auf `v2`, F schreibt gleich `v2`.
+//! erst `v1`, korrigiert auf `v2`, F schreibt gleich `v2`. Art 3 (Nutzerpfad, nur an Gate-Feldern): K wird nach der Korrektur zu Ende
+//! befragt, F ist ein frischer Fragenlauf mit dem Endwert; so zeigt sich, ob ein verborgener Block weiter zaehlt (Klasse K2).
 //!
 //! **Aufruf** (nie im Gate, darum `#[ignore]`): `TAXGRAPH_KORREKTUR_LOG=<datei> cargo test -p api --test it korrektur_sweep:: -- --ignored
 //! --nocapture`. Weitere Schalter: `TAXGRAPH_KORREKTUR_BASEN=a,b` (Namen der Ausgangsfaelle), `TAXGRAPH_KORREKTUR_FELDER=f1,f2`,
-//! `TAXGRAPH_KORREKTUR_ART=1|2|12` (Standard 12), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall).
+//! `TAXGRAPH_KORREKTUR_ART=1|2|3|12|123|…` (Standard 123), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
 //! mit fuenf Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
@@ -325,10 +326,13 @@ fn euro_wert(t: &str, typ: &str) -> Value {
 
 /// Der Wert zu einer Frage: Tabelle, sonst der neutrale Standard der Oberflaeche (Geld und Zahl 0, Ja/Nein „Nein“, bei
 /// `frage_invertiert` und der Ankreuzliste das Gegenteil davon).
-fn antwort(q: &Value, tabelle: &Tabelle, kreuze: &[&str]) -> Value {
+fn antwort(q: &Value, tabelle: &Tabelle, kreuze: &[&str], ueberschreibe: &[(&str, Value)]) -> Value {
     let feld = q["feld_id"].as_str().unwrap();
     let typ = q["typ"].as_str().unwrap();
     let invertiert = q["frage_invertiert"] == json!(true);
+    if let Some((_, w)) = ueberschreibe.iter().find(|(f, _)| *f == feld) {
+        return w.clone();
+    }
     if typ == "bool" {
         let ja = kreuze.contains(&feld);
         return json!(if invertiert { !ja } else { ja });
@@ -348,12 +352,26 @@ fn antwort(q: &Value, tabelle: &Tabelle, kreuze: &[&str]) -> Value {
 /// Beantwortet Frage fuer Frage, wie es die Oberflaeche tut, und gibt die Antworten in Schreibreihenfolge zurueck.
 async fn fragenlauf(d: &Dienst, name: &'static str, scheibe: &'static str, vz: i64, tabelle: &Tabelle, kreuze: &[&str]) -> Basis {
     let fall = d.neuer_fall(scheibe, vz).await;
-    let mut ereignisse: Vec<Ereignis> = Vec::new();
+    let ereignisse = fragenlauf_ab(d, &fall, name, tabelle, kreuze, &[], Vec::new()).await;
+    Basis { name, scheibe, vz, ereignisse }
+}
+
+/// Beantwortet die offenen Fragen eines Falls, der schon `ereignisse` traegt, bis `/fragen` leer ist. `ueberschreibe` setzt Werte
+/// vor die Tabelle (der Endwert einer Korrektur).
+async fn fragenlauf_ab(
+    d: &Dienst,
+    fall: &str,
+    name: &str,
+    tabelle: &Tabelle,
+    kreuze: &[&str],
+    ueberschreibe: &[(&str, Value)],
+    mut ereignisse: Vec<Ereignis>,
+) -> Vec<Ereignis> {
     for schritt in 0..700 {
         let (status, fr) = d.sende("GET", &format!("/fall/{fall}/fragen"), None).await;
         assert_eq!(status, 200, "{name}: fragen: {fr}");
         let Some(q) = fr["fragen"].as_array().and_then(|a| a.first()).cloned() else {
-            return Basis { name, scheibe, vz, ereignisse };
+            return ereignisse;
         };
         let fid = q["feld_id"].as_str().unwrap().to_owned();
         let anzahl = q["instanz_anzahl"].as_u64().unwrap_or(1).max(1);
@@ -363,10 +381,10 @@ async fn fragenlauf(d: &Dienst, name: &'static str, scheibe: &'static str, vz: i
             if ereignisse.iter().any(|e| e.feld == feld) {
                 continue;
             }
-            let wert = antwort(&q, tabelle, kreuze);
+            let wert = antwort(&q, tabelle, kreuze, ueberschreibe);
             let signal_2 = if q["screening"] == json!(true) { format!("screening@{feld}") } else { format!("ok@{feld}") };
             let e = Ereignis { feld: feld.clone(), wert, signal_2 };
-            let (s, a) = d.schreibe(&fall, &e).await;
+            let (s, a) = d.schreibe(fall, &e).await;
             assert!(s == 201, "{name}: Schritt {schritt}: {feld} = {} abgewiesen: {s} {a}", e.wert);
             ereignisse.push(e);
             neu = true;
@@ -444,12 +462,22 @@ fn euro_delta(k: Option<i64>, f: Option<i64>) -> String {
     }
 }
 
+/// Was Art 3 braucht, um die offenen Fragen wie der Nutzer zu beantworten.
+struct Kontext<'a> {
+    tabelle: &'a Tabelle,
+    kreuze: &'a [&'a str],
+}
+
 /// Ein Versuch: K gegen F. Schreibt eine Zeile ins Log, wenn sie abweichen; zaehlt in jedem Fall.
+///
+/// Art 1: F schreibt die Antworten des Ausgangsfalls mit dem Endwert. Art 2: das Feld fehlt im Ausgangsfall. Art 3 (Nutzerpfad): K
+/// wird nach der Korrektur zu Ende befragt (neutrale Antworten auf alles, was neu gefragt wird), F ist ein frischer Fragenlauf mit
+/// dem Endwert; Antworten in einem Block, den die Korrektur verborgen hat, stehen nur in K.
 #[allow(clippy::too_many_arguments)]
-async fn versuche(d: &Dienst, b: &Basis, art: u8, feld: &str, alt: &Value, neu: &Value, z: &mut Zaehler, log: &mut Log) {
+async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, z: &mut Zaehler, log: &mut Log) {
     z.versuche += 1;
-    // K: Ausgangsfall mit dem alten Wert (Art 1: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
-    let k_fall = if art == 1 {
+    // K: Ausgangsfall mit dem alten Wert (Art 1/3: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
+    let k_fall = if art != 2 {
         d.baue(b, None).await
     } else {
         let fall = d.baue(b, None).await;
@@ -467,8 +495,17 @@ async fn versuche(d: &Dienst, b: &Basis, art: u8, feld: &str, alt: &Value, neu: 
         let _ = a;
         return;
     }
-    // F: frischer Fall mit dem Endwert.
-    let f_fall = if art == 1 {
+    // Art 3: K zu Ende befragen, F frisch befragen.
+    let f_fall = if art == 3 {
+        let mut ev = b.ereignisse.clone();
+        if let Some(e) = ev.iter_mut().find(|e| e.feld == feld) {
+            e.wert = neu.clone();
+        }
+        fragenlauf_ab(d, &k_fall, b.name, ctx.tabelle, ctx.kreuze, &[], ev).await;
+        let fall = d.neuer_fall(b.scheibe, b.vz).await;
+        fragenlauf_ab(d, &fall, b.name, ctx.tabelle, ctx.kreuze, &[(feld, neu.clone())], Vec::new()).await;
+        fall
+    } else if art == 1 {
         d.baue(b, Some((feld, neu))).await
     } else {
         let fall = d.baue(b, None).await;
@@ -530,25 +567,34 @@ async fn sweep_basis(
         basis_messung.grund(),
         basis_messung.ergebnis.as_object().map_or_else(String::new, |o| o.keys().cloned().collect::<Vec<_>>().join(","))
     ));
-    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "12".to_owned());
+    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "123".to_owned());
     let nur = liste_aus_env("TAXGRAPH_KORREKTUR_FELDER");
     let grenze: usize = std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX);
     let mut z = Zaehler::default();
     let mut nicht_variiert: Vec<String> = Vec::new();
-    // Art 1: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert.
-    if arten.contains('1') {
+    let ctx = Kontext { tabelle: &tabelle, kreuze };
+    let gates = gate_felder(bindungen);
+    // Art 1 und 3: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert. Art 3 nur an Feldern, an denen andere Fragen haengen.
+    for art in [1_u8, 3] {
+        if !arten.contains(char::from(b'0' + art)) {
+            continue;
+        }
         let mut n = 0;
         for e in &b.ereignisse {
-            if nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) {
+            if nur.as_ref().is_some_and(|l| !l.contains(&e.feld)) || (art == 3 && !gates.contains(basisname(&e.feld))) {
                 continue;
             }
             let Some(bd) = bindungen.get(basisname(&e.feld)) else {
-                nicht_variiert.push(format!("{} (keine Bindung)", e.feld));
+                if art == 1 {
+                    nicht_variiert.push(format!("{} (keine Bindung)", e.feld));
+                }
                 continue;
             };
             let werte = kandidaten(bd, &e.wert, vz);
             if werte.is_empty() || !bd.askable {
-                nicht_variiert.push(format!("{} ({})", e.feld, if bd.askable { "Text" } else { "nicht beantwortbar" }));
+                if art == 1 {
+                    nicht_variiert.push(format!("{} ({})", e.feld, if bd.askable { "Text" } else { "nicht beantwortbar" }));
+                }
                 continue;
             }
             n += 1;
@@ -556,7 +602,7 @@ async fn sweep_basis(
                 break;
             }
             for w in &werte {
-                versuche(&d, &b, 1, &e.feld, &e.wert, w, &mut z, &mut log).await;
+                versuche(&d, &b, &ctx, art, &e.feld, &e.wert, w, &mut z, &mut log).await;
             }
         }
     }
@@ -580,8 +626,8 @@ async fn sweep_basis(
                 break;
             }
             // Zwei Paare: erster -> zweiter Wert und zurueck.
-            versuche(&d, &b, 2, fid, &werte[0], &werte[1], &mut z, &mut log).await;
-            versuche(&d, &b, 2, fid, &werte[1], &werte[0], &mut z, &mut log).await;
+            versuche(&d, &b, &ctx, 2, fid, &werte[0], &werte[1], &mut z, &mut log).await;
+            versuche(&d, &b, &ctx, 2, fid, &werte[1], &werte[0], &mut z, &mut log).await;
         }
     }
     log.zeile(&format!(
@@ -597,6 +643,25 @@ async fn sweep_basis(
         log.zeile(&format!("NICHT_VARIIERT\t{name}\t{f}"));
     }
     z
+}
+
+/// Felder, an denen andere Fragen haengen: Gates, Kreuze der Ankreuzliste, Quellen einer Ableitung und jedes Feld, das eine
+/// `feld_bedingung` liest.
+fn gate_felder(bindungen: &BTreeMap<String, bindung::Bindung>) -> std::collections::BTreeSet<String> {
+    let mut g = std::collections::BTreeSet::new();
+    for b in bindungen.values() {
+        if b.gate == Some(true) || b.screening == Some(true) {
+            g.insert(b.feld_id.clone());
+        }
+        if let Some(a) = &b.ableitung {
+            g.insert(a.aus.clone());
+            g.extend(a.und_feld.clone());
+        }
+        if let Some(fb) = &b.feld_bedingung {
+            g.extend(fb.kette().map(|k| k.feld.clone()));
+        }
+    }
+    g
 }
 
 fn lade_bindungen() -> BTreeMap<String, bindung::Bindung> {
