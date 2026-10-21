@@ -20,7 +20,7 @@
 //! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|123|…` (Standard 1234), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
-//! mit fuenf Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
+//! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -345,6 +345,12 @@ fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'sta
         t.push(("fam_anzahl_kinder", Gib::Euro("2")));
         t.push(("kind_geburtsdatum", Gib::Text("15.03.2018")));
         t.push(("kind_geburtsdatum__2", Gib::Text("20.06.2021")));
+        // Betreuungskosten (§ 10 Abs. 1 Nr. 5 EStG): nur dann wirkt das Alter des Kindes (unter 14) auf die Steuer.
+        t.push(("kinderbetreuungskosten", Gib::Euro("4000")));
+        t.push(("kinderbetreuungskosten__2", Gib::Euro("3000")));
+        for f in ["kind_betreuung_reine_betreuung", "kind_betreuung_reine_betreuung__2", "kind_betreuung_rechnung_ueberweisung", "kind_betreuung_rechnung_ueberweisung__2"] {
+            t.push((f, Gib::Wahl("true")));
+        }
         t
     };
     vec![
@@ -384,6 +390,10 @@ fn antwort(q: &Value, instanz: &str, tabelle: &Tabelle, kreuze: &[&str], uebersc
         return w.clone();
     }
     if typ == "bool" {
+        // Eine Tabelle darf einen Ja/Nein-Wert vorgeben (Wahl „true“/„false“, der gespeicherte Wert); sonst gilt der neutrale Standard.
+        if let Some((_, Gib::Wahl(w))) = tabelle.iter().find(|(f, _)| *f == feld) {
+            return json!(*w == "true");
+        }
         let ja = kreuze.contains(&feld);
         return json!(if invertiert { !ja } else { ja });
     }
@@ -471,7 +481,7 @@ fn kandidaten(b: &bindung::Bindung, v0: &Value, vz: i64) -> Vec<Value> {
             roh.into_iter().filter(|x| !b.nicht_negativ || *x >= 0).map(|x| json!(x)).collect()
         }
         Feldtyp::Datum if b.feld_id.contains("geburt") => {
-            ["15.03.1955", "31.12.1960", "01.01.1961", "15.03.1985", "15.03.2018"].iter().map(|d| json!(d)).collect()
+            ["15.03.1955", "31.12.1960", "01.01.1961", "15.03.1985", "15.03.2008", "15.03.2012", "15.03.2018"].iter().map(|d| json!(d)).collect()
         }
         Feldtyp::Datum => vec![json!(format!("01.03.{vz}")), json!(format!("01.09.{vz}"))],
         Feldtyp::Text => Vec::new(),
