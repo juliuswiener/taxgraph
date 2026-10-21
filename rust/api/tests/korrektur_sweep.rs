@@ -867,5 +867,7 @@ fn messung_fragenzahl_und_steuer() {
         let weg = ["ep_eigenes_kfz", "ep_entfernung_km", "ep_oepnv_kosten", "ep_ziel_des_weges", "ep_ziel_adresse"];
         p0_lauf("ep_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &weg).await;
         p0_lauf("ep_nur_km_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &weg[..3]).await;
+        // Aussergewoehnliche Belastungen: die Ja/Nein-Frage nach der Angemessenheit steht hinter dem Betrag 0.
+        p0_lauf("agb_angemessen_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &["agb_notwendig_angemessen"]).await;
     });
 }
