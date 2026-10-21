@@ -782,8 +782,9 @@ impl Store {
 
     /// `store.py:503-572`, `_rechne_ab`: Felder mit `ableitung`-Regel, deren Quelle ODER
     /// `und_feld` gerade bestaetigt wurde, werden berechnet (ZWEI Ausloeser). Liest `aktiv`
-    /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette"). Steht das Ziel nur als `vorlaeufig` da, ersetzt das abgeleitete
-    /// Event es (`ersetzt`); ein bestaetigtes Ziel bleibt (Rust-eigen, Fluss J F1).
+    /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette"). Rust-eigen (Fluss J F1): Steht das Ziel nur als `vorlaeufig` da
+    /// oder hat diese Ableitung es berechnet, ersetzt das neue abgeleitete Event es (`ersetzt`); ergibt die Ableitung keinen
+    /// sicheren Wert mehr, zieht ein vorlaeufiges Event ohne Wert das berechnete Ziel zurueck. Eine Antwort des Nutzers bleibt.
     /// # Errors
     /// [`Abweisung::WertNichtDarstellbar`], wenn ein abgeleiteter `wert` nicht nach JSON geht.
     fn rechne_ab(
@@ -823,78 +824,90 @@ impl Store {
             if feld_id != aus_i && Some(feld_id) != und_i.as_deref() {
                 continue;
             }
-            // Rust-eigen (Fluss J F1, 2026-10-21): Ein Ziel, das nur als Vorschlag dasteht (Vorjahres-Uebernahme, KI), weicht dem
-            // abgeleiteten Wert. Python liess jedes Ziel mit aktivem Event aus; ein vorlaeufiges `geburtsjahr` aus dem Vorjahr blieb
-            // dann vorlaeufig, auch nachdem der Nutzer das Geburtsdatum bestaetigt hatte, und die Sperre `ring_betrag_vorlaeufig`
-            // hielt die Steuerzahl zurueck. Ein BESTAETIGTES Ziel bleibt wie bisher unberuehrt.
-            let ersetzt = match aktiv_snapshot.get(&ziel_i).and_then(|&i| self.datei.events.get(i)) {
+            // Rust-eigen (Fluss J F1, 2026-10-21): Python liess jedes Ziel mit aktivem Event aus. Ersetzbar ist jetzt ein Vorschlag
+            // (Vorjahres-Uebernahme, KI: ein vorlaeufiges `geburtsjahr` blieb vorlaeufig, auch nachdem der Nutzer das Geburtsdatum
+            // bestaetigt hatte, und die Sperre `ring_betrag_vorlaeufig` hielt die Steuerzahl zurueck) und ein Wert, den diese
+            // Ableitung selbst berechnet hat (wer das Geburtsdatum korrigierte, behielt das Geburtsjahr des ersten Datums, und der
+            // Altersentlastungsbetrag rechnete falsch). Jedes andere BESTAETIGTE Event, auch die Antwort des Nutzers, bleibt.
+            let alt = aktiv_snapshot.get(&ziel_i).and_then(|&i| self.datei.events.get(i));
+            let alt_berechnet = alt.is_some_and(|ev| {
+                ev.zustand == Zustand::Bestaetigt && ev.schreiber == Schreiber::Abgeleitet("ableitung".to_string())
+            });
+            let ersetzt = match alt {
                 None => None,
-                Some(ev) if ev.zustand == Zustand::Vorlaeufig => Some(ev.event_id),
+                Some(ev) if ev.zustand == Zustand::Vorlaeufig || alt_berechnet => Some(ev.event_id),
                 Some(_) => continue,
             };
-            let quellwert = if aus_i == feld_id {
-                wert
-            } else {
-                let Some(qev) = aktiv_snapshot
-                    .get(&aus_i)
-                    .and_then(|&i| self.datei.events.get(i))
-                else {
-                    continue;
+            // Der Wert, den die Ableitung JETZT ergibt; `None`, wenn sie keinen sicheren Wert ergibt.
+            let soll: Option<PyWert> = 'soll: {
+                let quellwert = if aus_i == feld_id {
+                    wert
+                } else {
+                    match aktiv_snapshot.get(&aus_i).and_then(|&i| self.datei.events.get(i)) {
+                        Some(qev) if qev.zustand == Zustand::Bestaetigt => &qev.wert,
+                        _ => break 'soll None,
+                    }
                 };
-                if qev.zustand != Zustand::Bestaetigt {
-                    continue;
+                if let Some(und_feld) = &und_i {
+                    let Some(ev) = aktiv_snapshot
+                        .get(und_feld)
+                        .and_then(|&i| self.datei.events.get(i))
+                    else {
+                        break 'soll None;
+                    };
+                    // ponytail: `store.py::_rechne_ab` prueft `wert in (None, "", False)` mit Pythons
+                    // `==` — dort zaehlen auch `0` und `0.0` als leer, hier nicht. Die Divergenz
+                    // ist aelter als K2 (sie stand schon auf `Value`) und wird im heutigen Bestand
+                    // nicht ausgeloest; `tests/test_bindungstabelle.py::test_kein_und_feld_ziel_ist_ein_zahlfeld`
+                    // haelt das fest. Upgrade: `PyWert::py_eq` gegen `Null`/`Text("")`/`Bool(false)`,
+                    // nach einer Messung ueber die Nullwerte des Bestands (s. Risikokarte).
+                    //
+                    // ponytail: strukturelle Gleichheit auf `PyWert` ist Wire-Roundtrip, KEIN
+                    // Wertvergleich — jede Wertpruefung gehoert ueber `py_eq`. Der strukturelle
+                    // Match hier ist die bewusste, auftragsgemaesse Wahl (Divergenz nicht
+                    // reparieren), kein Vorbild fuer neue Vergleiche.
+                    let leer = match &ev.wert {
+                        domain::PyWert::Null | domain::PyWert::Bool(false) => true,
+                        domain::PyWert::Text(s) => s.is_empty(),
+                        _ => false,
+                    };
+                    if ev.zustand != Zustand::Bestaetigt || leer {
+                        break 'soll None;
+                    }
                 }
-                &qev.wert
-            };
-            if let Some(und_feld) = &und_i {
-                let Some(ev) = aktiv_snapshot
-                    .get(und_feld)
-                    .and_then(|&i| self.datei.events.get(i))
-                else {
-                    continue;
+                let Some(neuer_wert) = ableitung::berechne(regel, quellwert, vz) else {
+                    break 'soll None;
                 };
-                // ponytail: `store.py::_rechne_ab` prueft `wert in (None, "", False)` mit Pythons
-                // `==` — dort zaehlen auch `0` und `0.0` als leer, hier nicht. Die Divergenz
-                // ist aelter als K2 (sie stand schon auf `Value`) und wird im heutigen Bestand
-                // nicht ausgeloest; `tests/test_bindungstabelle.py::test_kein_und_feld_ziel_ist_ein_zahlfeld`
-                // haelt das fest. Upgrade: `PyWert::py_eq` gegen `Null`/`Text("")`/`Bool(false)`,
-                // nach einer Messung ueber die Nullwerte des Bestands (s. Risikokarte).
-                //
-                // ponytail: strukturelle Gleichheit auf `PyWert` ist Wire-Roundtrip, KEIN
-                // Wertvergleich — jede Wertpruefung gehoert ueber `py_eq`. Der strukturelle
-                // Match hier ist die bewusste, auftragsgemaesse Wahl (Divergenz nicht
-                // reparieren), kein Vorbild fuer neue Vergleiche.
-                let leer = match &ev.wert {
-                    domain::PyWert::Null | domain::PyWert::Bool(false) => true,
-                    domain::PyWert::Text(s) => s.is_empty(),
-                    _ => false,
-                };
-                if ev.zustand != Zustand::Bestaetigt || leer {
-                    continue;
+                // Dieselbe Bereichsregel wie beim Speichern (`bereich_verletzt`): ein gerechneter Wert
+                // ausserhalb `bereich` laesst sich nicht SICHER bestimmen, die Frage bleibt stehen
+                // (`store.py::_rechne_ab`).
+                let neuer_wert: PyWert = neuer_wert.into();
+                if ableitung_ausserhalb_bereich(eintrag, &neuer_wert) {
+                    break 'soll None;
                 }
-            }
-            let Some(neuer_wert) = ableitung::berechne(regel, quellwert, vz) else {
-                continue;
+                Some(neuer_wert)
             };
-            // Dieselbe Bereichsregel wie beim Speichern (`bereich_verletzt`): ein gerechneter Wert
-            // ausserhalb `bereich` laesst sich nicht SICHER bestimmen, die Frage bleibt stehen
-            // (`store.py::_rechne_ab`).
-            let neuer_wert: PyWert = neuer_wert.into();
-            if ableitung_ausserhalb_bereich(eintrag, &neuer_wert) {
-                continue;
-            }
+            // Kein Wert und nichts Berechnetes davor: nichts zu tun (die Frage bleibt, wie in Python). Ein berechneter Wert, der
+            // nicht mehr folgt, wird zurueckgezogen: ein vorlaeufiges Event ohne Wert ersetzt ihn, die Frage kommt. Gleicher
+            // Wert wie der berechnete davor: kein neues Event (beide kommen aus `berechne`, derselbe Aufbau).
+            let (neuer_wert, neuer_zustand, signal_2) = match soll {
+                Some(w) if alt.is_some_and(|ev| alt_berechnet && ev.wert == w) => continue,
+                Some(w) => (w, Zustand::Bestaetigt, Some(format!("ableitung@{aus_i}"))),
+                None if alt_berechnet => (PyWert::Null, Zustand::Vorlaeufig, None),
+                None => continue,
+            };
             neue_events.push(Event {
                 event_id: EventId::aus_bytes([0; 32]),
                 ts: jetzt_iso(),
                 feld_id: ziel_i,
                 wert: neuer_wert,
-                zustand: Zustand::Bestaetigt,
+                zustand: neuer_zustand,
                 herkunft: berechnet_herkunft().into(),
                 schreiber: Schreiber::Abgeleitet("ableitung".to_string()),
                 signal: Some(Signal {
                     signal_1: Some(None),
                     // Bei Instanz 2 ist das Quellfeld das der Instanz (`kind_geburtsdatum__2`).
-                    signal_2: Some(format!("ableitung@{aus_i}")),
+                    signal_2,
                     signal_2_fehlt: false,
                 }),
                 ersetzt,

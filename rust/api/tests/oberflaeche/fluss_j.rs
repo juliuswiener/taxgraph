@@ -453,6 +453,54 @@ fn fluss_j_vorjahr_uebernahme_mit_einem_ehepaar_als_quelle() {
     pruefe_konsole(&u, "Vorjahr Ehepaar");
 }
 
+/// Fluss J F1, Nachtrag (2026-10-21), Euro-Wirkung: Wer sein Geburtsdatum nach der Eingabe korrigiert, bekommt den
+/// Altersentlastungsbetrag (§ 24a EStG) des neuen Datums. Vorher blieb das Geburtsjahr des ersten Datums bestaetigt in Kraft (die
+/// Ableitung liess jedes Ziel mit aktivem Event aus), und der Dienst rechnete einen Fall, der 1985 geboren ist, mit dem
+/// Altersentlastungsbetrag eines 1955 Geborenen. Gemessen am Dienst: Lohn 60.000 EUR, ein Nutzer, einmal 1955 (Kohorte 2020: 16,0 %,
+/// Hoechstbetrag 760 EUR), korrigiert auf 1985 (kein Altersentlastungsbetrag), und ein frischer Fall mit 1985 als Gegenprobe.
+#[test]
+fn fluss_j_ein_korrigiertes_geburtsdatum_gibt_die_steuer_eines_frischen_falls() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let mit_datum = |datum: &'static str| -> Tabelle { einzel_tabelle("keine").into_iter().map(|(f, g)| if f == "stammdaten_geburtsdatum" { (f, Gib::Text(datum)) } else { (f, g) }).collect() };
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    durchlauf(&u, "geboren_1955", &mit_datum("15.03.1955"), &[]);
+    let fall = u.fall();
+    let alt = messe(&u, &fall);
+    let (status, antwort) = schreibe_ersetzt(&u, &fall, "stammdaten_geburtsdatum", &json!("15.03.1985"));
+    assert!(status == 200 || status == 201, "die Korrektur des Geburtsdatums ging nicht durch: {status} {antwort}");
+    let korrigiert = messe(&u, &fall);
+    let felder = u.stand_felder(&fall);
+    bis_zur_ersten_frage(&u, "gesamt", &[]);
+    durchlauf(&u, "geboren_1985", &mit_datum("15.03.1985"), &[]);
+    let frisch = messe(&u, &u.fall());
+    eprintln!(
+        "MESSUNG Euro § 24a: Steuer {:?} Cent bei Geburtsdatum 1955, {:?} Cent nach der Korrektur auf 1985, {:?} Cent im frischen Fall 1985; geburtsjahr nach der Korrektur {} / {}",
+        alt.zahl, korrigiert.zahl, frisch.zahl, felder["geburtsjahr"]["wert"], felder["geburtsjahr"]["zustand"]
+    );
+    pp!(
+        "J.das_korrigierte_geburtsdatum_erneuert_das_geburtsjahr",
+        felder["geburtsjahr"]["wert"] == json!(1985) && felder["geburtsjahr"]["zustand"] == json!("bestaetigt") && felder["geburtsjahr"]["herkunft_badge"] == json!("berechnet"),
+        "geburtsjahr {} / {} / {}",
+        felder["geburtsjahr"]["wert"],
+        felder["geburtsjahr"]["zustand"],
+        felder["geburtsjahr"]["herkunft_badge"]
+    );
+    // Der Altersentlastungsbetrag mindert die Einkuenfte um bis zu 760 EUR: die Steuer des 1955 Geborenen ist niedriger als die des
+    // 1985 Geborenen, und die Korrektur gibt genau die Steuer des frischen Falls (nicht die alte).
+    pp!(
+        "J.das_korrigierte_geburtsdatum_gibt_die_steuer_eines_frischen_falls",
+        alt.zahl.is_some() && alt.zahl < frisch.zahl && korrigiert.zahl == frisch.zahl && korrigiert.kist == frisch.kist,
+        "Steuer {:?} (1955), {:?} (korrigiert), {:?} (frisch 1985); Kirchensteuer {:?} gegen {:?}",
+        alt.zahl,
+        korrigiert.zahl,
+        frisch.zahl,
+        korrigiert.kist,
+        frisch.kist
+    );
+    pruefe_konsole(&u, "Geburtsdatum korrigiert");
+}
+
 /// Fluss J F1 (2026-10-21): Die Sperre `ring_betrag_vorlaeufig` sagte nur „Ein Betrag, den du genannt hast, ist noch nicht
 /// bestaetigt“, ohne das Feld zu nennen; der Dienst liefert es in `offen`. Die Oberflaeche macht jetzt aus jedem offenen Feld eine
 /// Schaltflaeche mit seiner Frage (`zeigeOffeneFelder`). Der Test ruft die Funktion mit der Antwort einer solchen Sperre; der Dienst
