@@ -168,7 +168,10 @@ fn volksbank_alt_liest_den_zweck_und_zaehlt_keine_ausgabe() {
 /// `\u{feff}"buchungsdatum"` und das Datum bliebe leer.
 #[test]
 fn ein_bom_am_anfang_stoert_die_erste_spalte_nicht() {
-    let tx = lies("DKB neu mit BOM", &format!("\u{feff}{}", dkb_neu_ohne_vorspann()));
+    let tx = lies(
+        "DKB neu mit BOM",
+        &format!("\u{feff}{}", dkb_neu_ohne_vorspann()),
+    );
     assert_eq!(tx.len(), 2);
     assert_eq!(tx[0].datum.as_str(), Some("15.03.25"));
 }
@@ -181,7 +184,9 @@ fn der_trenner_tab_wird_erkannt() {
         "Buchungstag\tBetrag\tVerwendungszweck\n15.03.2025\t-480,00\tMaler Huber\n",
     );
     assert_eq!(
-        tx.iter().map(|t| (t.betrag, t.verwendungszweck.as_str())).collect::<Vec<_>>(),
+        tx.iter()
+            .map(|t| (t.betrag, t.verwendungszweck.as_str()))
+            .collect::<Vec<_>>(),
         [(-48_000, "Maler Huber")]
     );
 }

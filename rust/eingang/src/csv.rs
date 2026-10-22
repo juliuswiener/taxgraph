@@ -172,6 +172,20 @@ impl Leser {
 /// ```
 #[must_use]
 pub fn lies_datensaetze(text: &str, trenner: char) -> (Vec<Vec<String>>, Option<CsvFehler>) {
+    lies_anfang(text, trenner, usize::MAX)
+}
+
+/// Wie [`lies_datensaetze`], hoechstens die ersten `max` (>= 1) Datensaetze: wer nur den Anfang einer
+/// grossen Datei braucht (die Kopfzeile eines Bankauszugs), liest sie nicht ganz. Die Datensaetze sind
+/// dieselben wie im ganzen Lauf; ein Fehler HINTER dem `max`-ten Datensatz bleibt ungesehen.
+///
+/// ```
+/// let (r, f) = eingang::csv::lies_anfang("a;b\n\n1;2\nx\ry\n", ';', 2);
+/// assert_eq!(r, vec![vec!["a", "b"], vec![]]);
+/// assert!(f.is_none());
+/// ```
+#[must_use]
+pub fn lies_anfang(text: &str, trenner: char, max: usize) -> (Vec<Vec<String>>, Option<CsvFehler>) {
     let mut l = Leser {
         trenner,
         zustand: Zustand::StartDatensatz,
@@ -190,6 +204,9 @@ pub fn lies_datensaetze(text: &str, trenner: char) -> (Vec<Vec<String>>, Option<
         }
         if l.zustand == Zustand::StartDatensatz {
             out.push(std::mem::take(&mut l.felder));
+            if out.len() >= max {
+                return (out, None);
+            }
         }
     }
     if l.feld_laenge != 0 || l.zustand == Zustand::ImQuotedFeld {
@@ -218,9 +235,25 @@ pub type Zeile = HashMap<String, Option<String>>;
 #[must_use]
 pub fn dict_reader(text: &str, trenner: char) -> (Vec<String>, Vec<Zeile>, Option<CsvFehler>) {
     let (saetze, fehler) = lies_datensaetze(text, trenner);
-    let mut saetze = saetze.into_iter();
+    let (kopf, zeilen) = dict_aus_saetzen(saetze, 0);
+    (kopf, zeilen, fehler)
+}
+
+/// Der Teil von [`dict_reader`] nach dem Lesen: der Datensatz Nr. `kopf_nr` (ab 0) ist die Kopfzeile,
+/// die Datensaetze davor fallen weg (der Vorspann eines Bankauszugs). Gibt es ihn nicht, sind Kopf und
+/// Zeilen leer.
+///
+/// ```
+/// let (saetze, _) = eingang::csv::lies_datensaetze("Konto;123\na;b\n1;2\n", ';');
+/// let (kopf, zeilen) = eingang::csv::dict_aus_saetzen(saetze, 1);
+/// assert_eq!(kopf, vec!["a", "b"]);
+/// assert_eq!(zeilen[0]["b"], Some("2".to_owned()));
+/// ```
+#[must_use]
+pub fn dict_aus_saetzen(saetze: Vec<Vec<String>>, kopf_nr: usize) -> (Vec<String>, Vec<Zeile>) {
+    let mut saetze = saetze.into_iter().skip(kopf_nr);
     let Some(kopf) = saetze.next() else {
-        return (Vec::new(), Vec::new(), fehler);
+        return (Vec::new(), Vec::new());
     };
     let zeilen = saetze
         .filter(|s| !s.is_empty())
@@ -235,7 +268,7 @@ pub fn dict_reader(text: &str, trenner: char) -> (Vec<String>, Vec<Zeile>, Optio
             z
         })
         .collect();
-    (kopf, zeilen, fehler)
+    (kopf, zeilen)
 }
 
 #[cfg(test)]

@@ -580,9 +580,9 @@ async fn zweck_datum_und_csv_randfaelle() {
         "{a}"
     );
     assert!(
-        a["hinweis"]
-            .as_str()
-            .is_some_and(|h| h.starts_with("Keine Buchung gelesen") && h.contains("keine Kopfzeile erkannt")),
+        a["hinweis"].as_str().is_some_and(
+            |h| h.starts_with("Keine Buchung gelesen") && h.contains("keine Kopfzeile erkannt")
+        ),
         "{a}"
     );
     for (i, (betrag, gebucht)) in [
@@ -788,7 +788,11 @@ async fn csv_ohne_buchung_nennt_den_grund() {
         let (status, antwort) = auszug(d, id, json!({"format": "csv", "inhalt": inhalt})).await;
         assert_eq!(status, 200, "{id}: {antwort}");
         assert_eq!(
-            (&antwort["uebernommen"], &antwort["transaktionen"], &antwort["verworfen"]),
+            (
+                &antwort["uebernommen"],
+                &antwort["transaktionen"],
+                &antwort["verworfen"]
+            ),
             (&json!(0), &json!(0), &json!(0)),
             "{id}: {antwort}"
         );
@@ -796,20 +800,45 @@ async fn csv_ohne_buchung_nennt_den_grund() {
     }
     let d = dienst();
     // Keine Betragsspalte: die erwarteten Namen und die gefundenen Spalten, aber nicht der Inhalt der Zeile.
-    let h = lauf(&d, "kg1", "Buchungstag;Wert;Verwendungszweck\n01.03.2025;5;Geheimer Zweck\n").await;
+    let h = lauf(
+        &d,
+        "kg1",
+        "Buchungstag;Wert;Verwendungszweck\n01.03.2025;5;Geheimer Zweck\n",
+    )
+    .await;
     assert!(h.starts_with("Keine Buchung gelesen: In den ersten 30 Zeilen steht keine Kopfzeile mit Betragsspalte"), "{h}");
-    assert!(h.contains("erwartet: betrag, umsatz, amount, betrag (eur), betrag (€), umsatz in eur"), "{h}");
-    assert!(h.ends_with("gefundene Spalten: Buchungstag, Wert, Verwendungszweck."), "{h}");
-    assert!(!h.contains("Geheimer Zweck") && !h.contains("01.03.2025"), "{h}");
+    assert!(
+        h.contains("erwartet: betrag, umsatz, amount, betrag (eur), betrag (€), umsatz in eur"),
+        "{h}"
+    );
+    assert!(
+        h.ends_with("gefundene Spalten: Buchungstag, Wert, Verwendungszweck."),
+        "{h}"
+    );
+    assert!(
+        !h.contains("Geheimer Zweck") && !h.contains("01.03.2025"),
+        "{h}"
+    );
     // Nichts, das nach einer Kopfzeile aussieht: keine Namen.
     let h = lauf(&d, "kg2", "x;y\n1;2\n").await;
     assert!(h.ends_with("keine Kopfzeile erkannt."), "{h}");
     // Kopfzeile, aber keine Datenzeile.
     let h = lauf(&d, "kg3", "datum;betrag;verwendungszweck\n").await;
-    assert_eq!(h, "Keine Buchung gelesen: Unter der Kopfzeile folgt keine Datenzeile.");
+    assert_eq!(
+        h,
+        "Keine Buchung gelesen: Unter der Kopfzeile folgt keine Datenzeile."
+    );
     // Kopfzeile, Datenzeilen ohne Betrag.
-    let h = lauf(&d, "kg4", "datum;betrag;verwendungszweck\n01.03.2025;;Maler\n02.03.2025; ;Maler\n").await;
-    assert_eq!(h, "Keine Buchung gelesen: 2 Zeile(n) unter der Kopfzeile haben keinen Betrag.");
+    let h = lauf(
+        &d,
+        "kg4",
+        "datum;betrag;verwendungszweck\n01.03.2025;;Maler\n02.03.2025; ;Maler\n",
+    )
+    .await;
+    assert_eq!(
+        h,
+        "Keine Buchung gelesen: 2 Zeile(n) unter der Kopfzeile haben keinen Betrag."
+    );
 }
 
 /// Bankimport S0: Wurde gelesen, aber nichts vorgeschlagen, nennt die Antwort die Zahl je Grund.
@@ -848,9 +877,15 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das dieser Fall nicht führt."
     );
     // Zwei Maler in einem Auszug: ein Vorschlag, die zweite trifft das belegte Feld -- kein Hinweis.
-    let zwei = csv(&["01.03.2025;-100,00;Maler Huber", "02.03.2025;-200,00;Maler Meier"]);
+    let zwei = csv(&[
+        "01.03.2025;-100,00;Maler Huber",
+        "02.03.2025;-200,00;Maler Meier",
+    ]);
     let (_, a) = auszug(&d, "kh3", zwei.clone()).await;
-    assert_eq!(a, json!({"uebernommen": 1, "transaktionen": 2, "verworfen": 0}));
+    assert_eq!(
+        a,
+        json!({"uebernommen": 1, "transaktionen": 2, "verworfen": 0})
+    );
     // Derselbe Auszug noch einmal: das Feld hat schon einen Wert.
     let (_, a) = sende(&d, "/fall/kh3/kontoauszug", &zwei).await;
     assert_eq!(
