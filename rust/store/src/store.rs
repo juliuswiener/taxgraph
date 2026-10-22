@@ -514,7 +514,7 @@ impl Store {
         katalog: Option<&Katalog>,
         bindung: BindungNachschlag<'_>,
     ) -> Result<EventId, Abweisung> {
-        Self::pruefe_auflage_a(neu)?;
+        self.pruefe_auflage_a(neu)?;
         Self::pruefe_wert(&neu.feld_id, &neu.wert, &neu.schreiber, katalog, bindung)?;
         let ersetzt = self.ersetzt_oder_abgeleitetes(&neu.feld_id, neu.ersetzt, neu.zustand(), bindung);
         self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
@@ -610,7 +610,15 @@ impl Store {
 
     /// Auflage A (`store.py:262-324`): ein Vorschlags-Schreiber deklariert sich ehrlich
     /// (`herkunft`/`zustand`/`signal_2`) und darf (ausser `berechnet:`) nie `ersetzt` tragen.
-    fn pruefe_auflage_a(neu: &NeuesEvent) -> Result<(), Abweisung> {
+    /// Einzige Ausnahme am typisierten `append` (Bankimport S1b, d-63): [`abweisung::ersetzt_ausnahme`]
+    /// auf das aktive Ereignis des Felds. `append_roh` kennt sie nicht (Pythons Form bleibt dort).
+    fn pruefe_auflage_a(&self, neu: &NeuesEvent) -> Result<(), Abweisung> {
+        let ersetzt_gesetzt = neu.ersetzt.is_some_and(|ziel| {
+            !self
+                .aktives(&neu.feld_id)
+                .filter(|aktiv| aktiv.event_id == ziel)
+                .is_some_and(|aktiv| abweisung::ersetzt_ausnahme(&neu.schreiber, aktiv))
+        });
         // `zustand != vorlaeufig` UND `signal_2 is_some()` sind in Python zwei getrennte Checks;
         // in Rust sind sie durch `Feldzustand` strukturell gekoppelt (nur `Vorlaeufig` traegt kein
         // `Signal2`) -- ein Check deckt beide ab.
@@ -618,7 +626,7 @@ impl Store {
             &neu.schreiber,
             neu.herkunft.herkunft.as_str(),
             matches!(neu.feldzustand, Feldzustand::Vorlaeufig),
-            neu.ersetzt.is_some(),
+            ersetzt_gesetzt,
         )
     }
 

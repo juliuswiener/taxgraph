@@ -11,9 +11,10 @@
 //!
 //! EBENFALLS OHNE ENTSPRECHUNG: [`Abweisung::WertNichtDarstellbar`] (K2-Auflage 3, s. dort).
 //! `store.py` kennt keine solche Pruefung — sie ist eine Verschaerfung, keine Nachbildung.
-use domain::Schreiber;
+use domain::{Schreiber, Zustand};
 
 use crate::canonical::EventId;
+use crate::event::Event;
 
 /// Was in der Typ-Meldung hinter dem Feld steht, wenn der Text ein Steuerzeichen enthielt (`store.py::_pruefe_typ_konformitaet`).
 pub(crate) const STEUERZEICHEN_ANZEIGE: &str = "=[Steuerzeichen im Text, Wert nicht geloggt]";
@@ -35,7 +36,8 @@ pub enum Abweisung {
     },
 
     /// Auflage A (Ersetzt-Guard, `store.py:321-324`): `llm:`/`import:beleg`/`import:kontoauszug`
-    /// duerfen nie `ersetzt` tragen.
+    /// duerfen nie `ersetzt` tragen; der Kontoauszug darf sein eigenes vorlaeufiges aktives Ereignis
+    /// ersetzen ([`ersetzt_ausnahme`], Bankimport S1b).
     #[error(
         "fail-closed (A): {schreiber} darf kein ersetzt tragen — ein Vorschlag ersetzt nie einen \
          bestätigten Wert; die Übernahme läuft über /event mit menschlichem signal_2."
@@ -227,6 +229,19 @@ pub fn ersetzt_gesperrt(schreiber: &Schreiber) -> bool {
         schreiber,
         Schreiber::Llm(_) | Schreiber::ImportBeleg | Schreiber::ImportKontoauszug
     )
+}
+
+/// Die eine Ausnahme vom Ersetzt-Guard (Bankimport S1b, Entscheidung d-63): `import:kontoauszug`
+/// darf ein Ereignis ersetzen, das er selbst schrieb, das noch vorlaeufig ist und kein `signal_2`
+/// traegt. `ziel` ist das AKTIVE Ereignis des Felds; ob `ersetzt` darauf zeigt, prueft der Aufrufer.
+/// Ein bestaetigtes Ereignis, eines eines anderen Schreibers und jedes `ersetzt` von `llm:` und
+/// `import:beleg` bleiben gesperrt. Pythons Guard (`store.py:321`) kennt die Ausnahme nicht: Abweichung.
+#[must_use]
+pub fn ersetzt_ausnahme(schreiber: &Schreiber, ziel: &Event) -> bool {
+    *schreiber == Schreiber::ImportKontoauszug
+        && ziel.schreiber == Schreiber::ImportKontoauszug
+        && ziel.zustand == Zustand::Vorlaeufig
+        && ziel.signal.as_ref().is_none_or(|s| s.signal_2.is_none())
 }
 
 #[cfg(test)]

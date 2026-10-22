@@ -384,6 +384,9 @@ fn ersetzt_kontoauszug_nicht_auf_geladene_ereignisse_mit_bestaetigung_oder_signa
     };
     let (mut s, id) = geladen(&|_| {});
     assert!(anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).is_ok());
+    // Ein Ereignis ganz ohne `signal` (aeltere Akte) traegt kein `signal_2` und ist ein gueltiges Ziel.
+    let (mut s, id) = geladen(&|e| e.signal = None);
+    assert!(anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).is_ok());
     let (mut s, id) = geladen(&|e| e.zustand = Zustand::Bestaetigt);
     let fehler = anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).unwrap_err();
     assert!(ersetzt_guard(&fehler), "bestaetigt: {fehler:?}");
@@ -433,6 +436,17 @@ fn ersetzt_llm_und_beleg_bleiben_auch_auf_das_eigene_vorlaeufige_ereignis_gesper
         assert!(
             matches!(&fehler, Abweisung::AuflageAErsetztGuard { schreiber: n } if *n == schreiber.to_string()),
             "{schreiber}: {fehler:?}"
+        );
+        // Auch das eigene vorlaeufige Ereignis des KONTOAUSZUGS ist fuer sie kein Ziel: die Ausnahme
+        // gilt dem Schreiber, nicht dem Ziel allein.
+        let mut s = leerer_store(2025);
+        let ziel = anhaengen(&mut s, &kontoauszug("spenden_betrag", 10_000, None)).unwrap();
+        let mut neu = vorlaeufig("spenden_betrag", &json!(150), schreiber.clone(), achse);
+        neu.ersetzt = Some(ziel);
+        let fehler = anhaengen(&mut s, &neu).unwrap_err();
+        assert!(
+            matches!(&fehler, Abweisung::AuflageAErsetztGuard { schreiber: n } if *n == schreiber.to_string()),
+            "{schreiber} auf Kontoauszug-Ziel: {fehler:?}"
         );
     }
 }
