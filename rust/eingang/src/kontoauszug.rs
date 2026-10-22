@@ -719,6 +719,9 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
         ),
         (u.feld_fehlt, "für ein Feld, das dieser Fall nicht führt"),
         (u.feld_belegt, "für ein Feld, das schon einen Wert hat"),
+        (u.anderes_jahr, GRUND_ANDERES_JAHR),
+        (u.datum_unlesbar, GRUND_DATUM_UNLESBAR),
+        (u.saldo_nicht_positiv, GRUND_SALDO),
     ];
     let teile: Vec<String> = gruende
         .iter()
@@ -731,6 +734,39 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
             teile.join("; ")
         )
     })
+}
+
+const GRUND_ANDERES_JAHR: &str = "außerhalb des Veranlagungsjahrs";
+const GRUND_DATUM_UNLESBAR: &str =
+    "mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)";
+const GRUND_SALDO: &str = "deren Rückbuchungen die Ausgaben ausgleichen oder übersteigen";
+
+/// Der Satz neben einem Vorschlag: so viele Buchungen zaehlten wegen Jahr, Datum oder Saldo nicht
+/// mit. Nur Zahlen, nie ein Zweck oder eine Gegenpartei. `None`, wenn keine Buchung aus diesen
+/// drei Gruenden wegfiel. Die Route haengt ihn an, wenn Vorschlaege entstanden; ohne Vorschlag
+/// nennt [`hinweis_nichts_uebernommen`] dieselben Gruende.
+///
+/// ```
+/// use eingang::kontoauszug::{hinweis_nicht_gezaehlt, Uebernahme};
+/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0 };
+/// assert_eq!(
+///     hinweis_nicht_gezaehlt(&u).as_deref(),
+///     Some("Nicht gezählt: 2 Buchung(en) außerhalb des Veranlagungsjahrs.")
+/// );
+/// assert_eq!(hinweis_nicht_gezaehlt(&Uebernahme { anderes_jahr: 0, ..u }), None);
+/// ```
+#[must_use]
+pub fn hinweis_nicht_gezaehlt(u: &Uebernahme) -> Option<String> {
+    let teile: Vec<String> = [
+        (u.anderes_jahr, GRUND_ANDERES_JAHR),
+        (u.datum_unlesbar, GRUND_DATUM_UNLESBAR),
+        (u.saldo_nicht_positiv, GRUND_SALDO),
+    ]
+    .iter()
+    .filter(|(n, _)| *n > 0)
+    .map(|(n, text)| format!("{n} Buchung(en) {text}"))
+    .collect();
+    (!teile.is_empty()).then(|| format!("Nicht gezählt: {}.", teile.join("; ")))
 }
 
 static SALDO: LazyLock<PyRegex> =

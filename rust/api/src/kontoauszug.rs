@@ -8,8 +8,8 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use domain::py_strip;
 use eingang::kontoauszug::{
-    aus_json, hinweis_nichts_gelesen, hinweis_nichts_uebernommen, hinweis_verworfen,
-    parse_csv_befund, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
+    aus_json, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen, hinweis_nichts_uebernommen,
+    hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
     verwirf_unlesbare_betraege, verwirf_unlesbare_betraege_json, Klassifikator, KontoauszugFehler,
     Transaktion, LLM_AUFRUFE_HOECHSTZAHL,
 };
@@ -358,6 +358,11 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
         } else if erg.uebernommen == 0 {
             hinweise.extend(hinweis_nichts_uebernommen(tx.len(), &erg));
         }
+    }
+    // Neben einem Vorschlag: Buchungen, die wegen Jahr, Datum oder Saldo nicht mitzaehlten, in
+    // jedem Format. Ohne Vorschlag nennt `hinweis_nichts_uebernommen` (nur CSV) dieselben Gruende.
+    if erg.uebernommen > 0 {
+        hinweise.extend(hinweis_nicht_gezaehlt(&erg));
     }
     if erg.llm_uebersprungen > 0 {
         // Ohne diesen Hinweis wäre der Deckel eine stille Kürzung.
