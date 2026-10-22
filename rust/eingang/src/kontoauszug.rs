@@ -739,12 +739,12 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
 const GRUND_ANDERES_JAHR: &str = "außerhalb des Veranlagungsjahrs";
 const GRUND_DATUM_UNLESBAR: &str =
     "mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)";
-const GRUND_SALDO: &str = "deren Rückbuchungen die Ausgaben ausgleichen oder übersteigen";
+const GRUND_SALDO: &str = "in einem Feld, dessen Saldo nach Rückbuchungen null oder negativ ist";
 
-/// Der Satz neben einem Vorschlag: so viele Buchungen zaehlten wegen Jahr, Datum oder Saldo nicht
-/// mit. Nur Zahlen, nie ein Zweck oder eine Gegenpartei. `None`, wenn keine Buchung aus diesen
-/// drei Gruenden wegfiel. Die Route haengt ihn an, wenn Vorschlaege entstanden; ohne Vorschlag
-/// nennt [`hinweis_nichts_uebernommen`] dieselben Gruende.
+/// Der Satz neben einem Vorschlag oder bei JSON und PDF: so viele Buchungen zaehlten wegen Jahr,
+/// Datum oder Saldo nicht mit. Nur Zahlen, nie ein Zweck oder eine Gegenpartei. `None`, wenn keine
+/// Buchung aus diesen drei Gruenden wegfiel. Bei CSV ohne Vorschlag nennt
+/// [`hinweis_nichts_uebernommen`] dieselben Gruende; die Route haengt beide nie zugleich an.
 ///
 /// ```
 /// use eingang::kontoauszug::{hinweis_nicht_gezaehlt, Uebernahme};

@@ -133,11 +133,19 @@ async fn csv_kategorien_werden_vorlaeufige_vorschlaege() {
             "hh_dienstleistung_betrag"
         ]
     );
-    // Der Betrag steht ohne Vorzeichen im Feld und mit Vorzeichen im Beleg (`signal_1`).
+    // Der Saldo steht ohne Vorzeichen im Feld; die Posten stehen mit Vorzeichen und ISO-Datum im
+    // Beleg (`signal_1`, Bankimport S1). Die alten Schluessel `betrag`/`datum` gibt es nicht mehr.
     assert_eq!(ev[0]["wert"], 48_000);
-    assert_eq!(ev[0]["signal"]["signal_1"]["betrag"], -48_000);
-    assert_eq!(ev[0]["signal"]["signal_1"]["datum"], "01.03.2025");
-    assert_eq!(ev[0]["signal"]["signal_1"]["quelle"], "heuristik");
+    let s1 = &ev[0]["signal"]["signal_1"];
+    assert_eq!(s1["typ"], "kontoauszug");
+    assert_eq!(s1["jahr"], 2025);
+    assert_eq!(s1["summe_cent"], 48_000);
+    assert_eq!(s1["quelle"], "heuristik");
+    assert_eq!(s1["posten"].as_array().unwrap().len(), 1);
+    assert_eq!(s1["posten"][0]["betrag_cent"], -48_000);
+    assert_eq!(s1["posten"][0]["datum"], "2025-03-01");
+    assert_eq!(s1["posten"][0]["zweck_maskiert"], "Maler Huber");
+    assert!(s1.get("betrag").is_none() && s1.get("datum").is_none(), "{s1}");
 }
 
 #[tokio::test]
@@ -317,10 +325,10 @@ async fn json_text_wie_json_loads() {
 async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
     let d = dienst();
     let mut tx: Vec<Value> = (0..56)
-        .map(|i| json!({"datum": "d", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
+        .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
         .collect();
-    tx.push(json!({"datum": "d", "betrag": -5000, "verwendungszweck": "Spende"}));
-    tx.push(json!({"datum": "d", "betrag": "x", "verwendungszweck": "Maler"}));
+    tx.push(json!({"datum": "01.03.2025", "betrag": -5000, "verwendungszweck": "Spende"}));
+    tx.push(json!({"datum": "01.03.2025", "betrag": "x", "verwendungszweck": "Maler"}));
     let (status, antwort) = auszug(&d, "kd", json!({"format": "json", "inhalt": tx})).await;
     assert_eq!(status, 200, "{antwort}");
     assert_eq!(
@@ -330,7 +338,7 @@ async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
     );
     // Genau am Deckel: nichts wird übersprungen, und der Schlüssel fehlt.
     let genau: Vec<Value> = (0..50)
-        .map(|i| json!({"datum": "d", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
+        .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
         .collect();
     let (status, antwort) = auszug(&d, "kd2", json!({"format": "json", "inhalt": genau})).await;
     assert_eq!(
@@ -343,7 +351,7 @@ async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
     // Auftrag k9-2 (Mutant K40): EINE übersprungene Buchung ist schon ein Hinweis wert (Python: `> 0`). Die
     // Antwort stammt aus `api.kontoauszug` (CPython 3.14), 51 Buchungen ohne Stichwort, kein Schlüssel.
     let eine: Vec<Value> = (0..51)
-        .map(|i| json!({"datum": "d", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
+        .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
         .collect();
     let (status, antwort) = auszug(&d, "kd3", json!({"format": "json", "inhalt": eine})).await;
     assert_eq!(
@@ -383,7 +391,7 @@ async fn zielfeld_gilt_je_scheibe_und_wird_nicht_ueberschrieben() {
     let (status, antwort) = sende(
         &d,
         "/fall/kz1/kontoauszug",
-        &json!({"format": "json", "inhalt": [{"betrag": -5000, "verwendungszweck": "Spende"}]}),
+        &json!({"format": "json", "inhalt": [{"datum": "2025-03-01", "betrag": -5000, "verwendungszweck": "Spende"}]}),
     )
     .await;
     assert_eq!(
@@ -393,14 +401,18 @@ async fn zielfeld_gilt_je_scheibe_und_wird_nicht_ueberschrieben() {
             json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0})
         )
     );
-    // Zwei Buchungen derselben Kategorie: nur die erste; ein zweiter Auszug ändert nichts mehr.
+    // Zwei Buchungen derselben Kategorie ergeben EINEN Vorschlag mit der Summe (Bankimport S1; Python nahm die
+    // erste). Ein zweiter Auszug schreibt nichts mehr: Auflage A verbietet dem Kontoauszug `ersetzt`, d-63.
     let rumpf = json!({"format": "json", "inhalt": [
-        {"betrag": -100, "verwendungszweck": "Maler"}, {"betrag": -200, "verwendungszweck": "Klempner"}]});
+        {"datum": "2025-03-01", "betrag": -100, "verwendungszweck": "Maler"},
+        {"datum": "2025-03-02", "betrag": -200, "verwendungszweck": "Klempner"}]});
     let (_, antwort) = auszug(&d, "kz2", rumpf.clone()).await;
-    assert_eq!(antwort["uebernommen"], 1);
+    assert_eq!(antwort["uebernommen"], 2);
+    assert_eq!(events(&d, "kz2")[0]["wert"], 300);
     let (_, antwort) = sende(&d, "/fall/kz2/kontoauszug", &rumpf).await;
     assert_eq!(antwort["uebernommen"], 0);
     assert_eq!(events(&d, "kz2").len(), 1);
+    assert_eq!(events(&d, "kz2")[0]["wert"], 300, "der alte Wert bleibt");
 }
 
 #[tokio::test]
@@ -513,7 +525,7 @@ async fn pdf_eingabe_wird_vor_dem_lesen_geprueft() {
 #[tokio::test]
 async fn zweck_datum_und_csv_randfaelle() {
     let d = dienst();
-    let tx = |betrag: Value, zweck: Value| json!({"format": "json", "inhalt": [{"datum": "d", "betrag": betrag, "verwendungszweck": zweck}]});
+    let tx = |betrag: Value, zweck: Value| json!({"format": "json", "inhalt": [{"datum": "2025-03-01", "betrag": betrag, "verwendungszweck": zweck}]});
     // Ein Zweck, der kein Text ist: bei einer Ausgabe 422 (vorher `AttributeError` aus `.lower()`, 500),
     // bei einer Einnahme nie gelesen; falsch heisst leer.
     for (i, (zweck, klasse)) in [
@@ -558,18 +570,26 @@ async fn zweck_datum_und_csv_randfaelle() {
             json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0})
         )
     );
-    // Ein fehlendes Datum steht als leerer Text im Beleg, ein vorhandenes unverändert.
+    // Ein fehlendes oder falsches Datum wird nicht geraten (Bankimport S1; vorher stand es unverändert im Beleg):
+    // die Buchung zählt nicht, und die Antwort sagt es, auch ohne CSV.
+    let hinweis_datum = "Nicht gezählt: 1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT).";
     let (_, a) = auszug(
         &d,
         "kw30",
         json!({"format": "json", "inhalt": [{"betrag": -5000, "verwendungszweck": "Spende"}]}),
     )
     .await;
-    assert_eq!(a["uebernommen"], 1);
-    assert_eq!(events(&d, "kw30")[0]["signal"]["signal_1"]["datum"], "");
+    assert_eq!(a["uebernommen"], 0);
+    assert_eq!(a["hinweis"], hinweis_datum);
+    assert!(events(&d, "kw30").is_empty());
     let (_, a) = auszug(&d, "kw31", json!({"format": "json", "inhalt": [{"datum": 5.5, "betrag": -5000, "verwendungszweck": "Spende"}]})).await;
+    assert_eq!(a["uebernommen"], 0);
+    assert_eq!(a["hinweis"], hinweis_datum);
+    assert!(events(&d, "kw31").is_empty());
+    let (_, a) = auszug(&d, "kw32", json!({"format": "json", "inhalt": [{"datum": "2025-03-15", "betrag": -5000, "verwendungszweck": "Spende"}]})).await;
     assert_eq!(a["uebernommen"], 1);
-    assert_eq!(events(&d, "kw31")[0]["signal"]["signal_1"]["datum"], 5.5);
+    assert!(a.get("hinweis").is_none(), "{a}");
+    assert_eq!(events(&d, "kw32")[0]["signal"]["signal_1"]["posten"][0]["datum"], "2025-03-15");
     // CSV: der Inhalt, der kein Text ist, ist leer; Vorzeichen wie `lstrip("+-")`.
     // Seit Bankimport S0 sagt die Antwort, dass nichts gelesen wurde (vorher: kein Hinweis, „0 von 0“).
     let (s, a) = auszug(&d, "kc0", json!({"format": "csv", "inhalt": 5})).await;
@@ -653,7 +673,8 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
         assert_eq!((s, a), (422, datum_meldung(typ)), "{datum}");
         assert!(events(&d, &id).is_empty(), "{datum}: die Akte bleibt leer");
     }
-    // Kontrolle: tragbare Daten werden wie vorher übernommen, auch die Grenzen von i64 und Text "NaN".
+    // Kontrolle: die Tür nimmt tragbare Daten an, auch die Grenzen von i64 und Text "NaN" (200). Der Leser liest
+    // keines davon als Datum (Bankimport S1): die Buchung zählt nicht und die Antwort sagt es.
     for (i, datum) in [
         "9223372036854775807",
         "-9223372036854775808",
@@ -673,11 +694,15 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
             (s, a),
             (
                 200,
-                json!({"uebernommen": 1, "transaktionen": 1, "verworfen": 0})
+                json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0,
+                    "hinweis": "Nicht gezählt: 1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)."})
             ),
             "{datum}"
         );
     }
+    // Gegenprobe: ein lesbares Datum mit demselben Zweck und Betrag wird übernommen.
+    let (s, a) = auszug(&d, "bg_ok", auszug_text(r#""2025-03-15""#, ruerup, "-120000")).await;
+    assert_eq!((s, a), (200, json!({"uebernommen": 1, "transaktionen": 1, "verworfen": 0})));
     // Kontrolle: nur gültiges JSON kann eine Zahl ausserhalb von `i64` sein; führende Null, `-` und `+5` sind es nicht.
     for (i, zahl) in [
         "0123456789012345678901234",
@@ -701,7 +726,7 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
     assert_eq!((s, a), (422, datum_meldung("float")));
     // `verworfen` kommt zuerst: ein unlesbarer Betrag nimmt die Buchung allein heraus, auch mit NaN im Datum.
     let inhalt = format!(
-        r#"[{{"datum": NaN, "betrag": NaN, "verwendungszweck": {ruerup}}}, {{"datum": "d", "betrag": -120000, "verwendungszweck": {ruerup}}}]"#
+        r#"[{{"datum": NaN, "betrag": NaN, "verwendungszweck": {ruerup}}}, {{"datum": "2025-03-15", "betrag": -120000, "verwendungszweck": {ruerup}}}]"#
     );
     let (s, a) = auszug(&d, "bv0", json!({"format": "json", "inhalt": inhalt})).await;
     assert_eq!(
@@ -742,7 +767,7 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
     .iter()
     .enumerate()
     {
-        let (s, a) = auszug(&d, &format!("bl{i}"), auszug_text(r#""d""#, zweck, betrag)).await;
+        let (s, a) = auszug(&d, &format!("bl{i}"), auszug_text(r#""2025-03-15""#, zweck, betrag)).await;
         assert_eq!(
             (s, a),
             (
@@ -778,7 +803,7 @@ async fn eine_csv_datei_mit_vorspann_ergibt_vorschlaege() {
     let felder: Vec<_> = ev.iter().map(|e| e["feld_id"].as_str().unwrap()).collect();
     assert_eq!(felder, ["hh_handwerker_betrag", "spenden_betrag"]);
     assert_eq!(ev[0]["wert"], 48_000);
-    assert_eq!(ev[0]["signal"]["signal_1"]["datum"], "15.03.25");
+    assert_eq!(ev[0]["signal"]["signal_1"]["posten"][0]["datum"], "2025-03-15", "15.03.25 wird 2025");
 }
 
 /// Bankimport S0: Liefert eine CSV-Datei keine Buchung, nennt die Antwort den Grund, nie eine Datenzeile.
@@ -896,7 +921,7 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         a["hinweis"],
         "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das dieser Fall nicht führt."
     );
-    // Zwei Maler in einem Auszug: ein Vorschlag, die zweite trifft das belegte Feld -- kein Hinweis.
+    // Zwei Maler in einem Auszug: EIN Vorschlag mit der Summe, beide Buchungen zählen (Bankimport S1) -- kein Hinweis.
     let zwei = csv(&[
         "01.03.2025;-100,00;Maler Huber",
         "02.03.2025;-200,00;Maler Meier",
@@ -904,8 +929,9 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
     let (_, a) = auszug(&d, "kh3", zwei.clone()).await;
     assert_eq!(
         a,
-        json!({"uebernommen": 1, "transaktionen": 2, "verworfen": 0})
+        json!({"uebernommen": 2, "transaktionen": 2, "verworfen": 0})
     );
+    assert_eq!(events(&d, "kh3")[0]["wert"], 300_00);
     // Derselbe Auszug noch einmal: das Feld hat schon einen Wert.
     let (_, a) = sende(&d, "/fall/kh3/kontoauszug", &zwei).await;
     assert_eq!(
@@ -913,4 +939,54 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, das schon einen Wert hat."
     );
     assert_eq!(events(&d, "kh3").len(), 1);
+}
+
+/// Bankimport S1: Buchungen, die wegen Jahr, Datum oder Saldo nicht zählten, nennt die Antwort mit Zahlen,
+/// auch neben einem Vorschlag, in jedem Format. Nie ein Zweck, nie eine Gegenpartei.
+#[tokio::test]
+async fn die_antwort_nennt_jahr_datum_und_saldo_auch_neben_einem_vorschlag() {
+    let d = dienst();
+    // Ein Vorschlag (Maler), dazu eine Buchung aus 2024, eine ohne Jahr, und eine Spende, die zurückgebucht wurde.
+    let (s, a) = auszug(
+        &d,
+        "kj1",
+        csv(&[
+            "01.03.2025;-100,00;Maler Huber",
+            "30.12.2024;-50,00;Spende Rotes Kreuz",
+            "15.03;-20,00;Maler ohne Jahr",
+            "01.02.2025;-80,00;Spende Tierheim",
+            "10.02.2025;80,00;Rueckbuchung Spende Tierheim",
+        ]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a,
+        json!({"uebernommen": 1, "transaktionen": 5, "verworfen": 0,
+            "hinweis": "Nicht gezählt: 1 Buchung(en) außerhalb des Veranlagungsjahrs; 1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT); 2 Buchung(en) in einem Feld, dessen Saldo nach Rückbuchungen null oder negativ ist."})
+    );
+    let ev = events(&d, "kj1");
+    assert_eq!(ev.len(), 1, "nur der Maler; die ausgeglichene Spende schreibt nichts");
+    assert_eq!(ev[0]["feld_id"], "hh_handwerker_betrag");
+    // Weder Zweck noch Gegenpartei der nicht gezählten Buchungen steht in der Antwort.
+    let text = a.to_string();
+    assert!(!text.contains("Tierheim") && !text.contains("Rotes Kreuz") && !text.contains("ohne Jahr"), "{text}");
+    // Ohne einen Vorschlag nennt die CSV-Antwort dieselben Gründe im Satz „gelesen, aber kein Vorschlag“.
+    let (_, a) = auszug(&d, "kj2", csv(&["30.12.2024;-50,00;Spende Rotes Kreuz"])).await;
+    assert_eq!(
+        a["hinweis"],
+        "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) außerhalb des Veranlagungsjahrs."
+    );
+    // JSON ohne Vorschlag: derselbe Zusatz wie neben einem Vorschlag.
+    let (_, a) = auszug(
+        &d,
+        "kj3",
+        json!({"format": "json", "inhalt": [{"datum": "2024-12-30", "betrag": -5000, "verwendungszweck": "Spende"}]}),
+    )
+    .await;
+    assert_eq!(
+        a,
+        json!({"uebernommen": 0, "transaktionen": 1, "verworfen": 0,
+            "hinweis": "Nicht gezählt: 1 Buchung(en) außerhalb des Veranlagungsjahrs."})
+    );
 }
