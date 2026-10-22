@@ -2569,6 +2569,47 @@ mod tests {
         assert_eq!(summe, buchungen.len());
     }
 
+    /// Drei Auszuege nacheinander in einem anderen Veranlagungsjahr und auf einem anderen Feld: jeder
+    /// ersetzt das AKTIVE Ereignis des Felds (nicht das erste), und Jahr und Kategorie stammen aus
+    /// diesem Aufruf, nicht aus einem festen Wert.
+    #[test]
+    fn s1b_kette_aus_drei_auszuegen_in_einem_anderen_jahr_und_feld() {
+        let mut store = store::Store::leer(2024, None);
+        let feld = "hh_handwerker_betrag";
+        let mut mit = |ja: &[(&str, i64, &str)]| {
+            uebernehme_mit(
+                &mut store,
+                &s1_tx(ja),
+                s1b_bindung(),
+                None,
+                Some("2024-12-01T00:00:00+00:00"),
+                None,
+                true,
+            )
+            .unwrap()
+        };
+        mit(&[("2024-03-01", -100_00, "Maler Huber")]);
+        let (_, liste) = mit(&[("2024-03-02", -200_00, "Maler Meier")]);
+        assert_eq!(liste.len(), 1);
+        let (u, liste) = mit(&[("2024-03-03", -50_00, "Klempner Schulz")]);
+        assert_eq!((u.uebernommen, liste.len()), (1, 1), "{u:?}");
+        assert_eq!(
+            (liste[0].bisher_cent, liste[0].neu_cent, liste[0].neu_posten),
+            (300_00, 350_00, 3)
+        );
+        let ids: Vec<_> = store.events().iter().map(|e| e.event_id).collect();
+        assert_eq!(ids.len(), 3);
+        assert_eq!(store.aktives(feld).unwrap().event_id, ids[2]);
+        let ersetzt: Vec<_> = store.events().iter().map(|e| e.ersetzt).collect();
+        assert_eq!(ersetzt, vec![None, Some(ids[0]), Some(ids[1])]);
+        let s1 = s1b_signal(&store, feld);
+        assert_eq!(
+            (&s1["jahr"], &s1["kategorie"], &s1["summe_cent"]),
+            (&json!(2024), &json!("handwerker"), &json!(350_00))
+        );
+        assert_eq!(s1["posten"].as_array().unwrap().len(), 3);
+    }
+
     /// Der Ueberlauf der VEREINIGTEN Summe ist ein Fehler, kein Panic, und ersetzt nichts.
     #[test]
     fn s1b_ueberlauf_der_vereinigten_summe_bricht_ab_bevor_etwas_ersetzt_wird() {
