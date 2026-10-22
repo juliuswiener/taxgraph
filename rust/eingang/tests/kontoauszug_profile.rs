@@ -9,7 +9,7 @@
 //! Gegenprobe: Sparkasse, Commerzbank und Volksbank neu lasen schon vor S0 2 von 2 und tun es weiter.
 #![allow(clippy::unwrap_used, clippy::indexing_slicing, clippy::panic)]
 
-use eingang::kontoauszug::{parse_csv, Transaktion};
+use eingang::kontoauszug::{parse_csv, parse_csv_befund, Transaktion};
 
 const MALER: &str = "Maler Müller GmbH Rechnung 123 Malerarbeiten";
 const SPENDE: &str = "Spende Rotes Kreuz";
@@ -211,4 +211,18 @@ fn ohne_betragsspalte_bleibt_es_bei_null_buchungen() {
         "Buchungstag;Wert;Verwendungszweck\n15.03.2025;5;Maler Huber\n",
     );
     assert!(tx.is_empty(), "{tx:?}");
+}
+
+/// Der Trenner `;` hat Vorrang vor `,`: Eine Vorspannzeile mit Komma und dem Wort `Betrag` ist unter `,` eine
+/// Kopfzeile, unter `;` ein einziges Feld. Die echte Kopfzeile steht darunter; mit `,` zuerst gaelte Zeile 1.
+#[test]
+fn ein_komma_im_vorspann_verdraengt_den_trenner_semikolon_nicht() {
+    let text = "Info,Betrag\nDatum;Betrag;Zweck\n01.03.2025;-1,00;Maler\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!(
+        (befund.trenner, befund.kopf_nr, tx.len(), verworfen),
+        (';', Some(1), 1, 0),
+        "{befund:?}"
+    );
+    assert_eq!(tx[0].betrag, -100);
 }

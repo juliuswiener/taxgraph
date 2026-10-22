@@ -841,6 +841,26 @@ async fn csv_ohne_buchung_nennt_den_grund() {
     );
 }
 
+/// Bankimport S0: Gibt es eine Kopfzeile, aber jeder Betrag ist unlesbar, zaehlt die Zeile in `verworfen`, und der
+/// Hinweis nennt nur das. „Keine Buchung gelesen“ stuende daneben als Widerspruch („Betrag unlesbar“ und zugleich
+/// „keine Kopfzeile“ oder „keine Datenzeile“).
+#[tokio::test]
+async fn csv_mit_nur_unlesbaren_betraegen_nennt_nur_das_verwerfen() {
+    let d = dienst();
+    let (status, antwort) = auszug(
+        &d,
+        "kv2",
+        json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n01.03.2025;abc;Maler\n"}),
+    )
+    .await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(
+        antwort,
+        json!({"uebernommen": 0, "transaktionen": 0, "verworfen": 1,
+            "hinweis": "1 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."})
+    );
+}
+
 /// Bankimport S0: Wurde gelesen, aber nichts vorgeschlagen, nennt die Antwort die Zahl je Grund.
 /// Mit mindestens einem Vorschlag bleibt sie ohne Hinweis (auch wenn eine zweite Buchung dasselbe Feld traf).
 #[tokio::test]
