@@ -683,7 +683,18 @@ pub fn hinweis_nichts_gelesen(befund: &CsvBefund) -> String {
 ///
 /// ```
 /// use eingang::kontoauszug::{hinweis_nichts_uebernommen, Uebernahme};
-/// let u = Uebernahme { uebernommen: 0, llm_uebersprungen: 0, einnahmen: 1, ohne_stichwort: 2, partei: 0, feld_fehlt: 0, feld_belegt: 0 };
+/// let u = Uebernahme {
+///     uebernommen: 0,
+///     llm_uebersprungen: 0,
+///     einnahmen: 1,
+///     ohne_stichwort: 2,
+///     partei: 0,
+///     feld_fehlt: 0,
+///     feld_belegt: 0,
+///     anderes_jahr: 0,
+///     datum_unlesbar: 0,
+///     saldo_nicht_positiv: 0,
+/// };
 /// assert_eq!(
 ///     hinweis_nichts_uebernommen(3, &u).as_deref(),
 ///     Some("3 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) ohne Minuszeichen (nur Beträge mit Minus gelten als Ausgabe); 2 Buchung(en) ohne erkanntes Stichwort.")
@@ -818,7 +829,7 @@ pub struct Uebernahme {
     /// halb angesehener Auszug aus wie ein ganz geprüfter.
     pub llm_uebersprungen: usize,
     /// Warum die uebrigen Buchungen keinen Vorschlag wurden. Zusammen mit `uebernommen` und
-    /// `llm_uebersprungen` ergeben diese fuenf Zaehler genau die Zahl der Buchungen.
+    /// `llm_uebersprungen` ergeben diese acht Zaehler genau die Zahl der Buchungen.
     /// Betrag 0 oder positiv: keine Ausgabe.
     pub einnahmen: usize,
     /// Weder Stichwort noch Klassifikator ordnete die Ausgabe einer Kategorie zu.
@@ -829,6 +840,12 @@ pub struct Uebernahme {
     pub feld_fehlt: usize,
     /// Das Zielfeld hatte schon einen Wert (aus dem Store oder der ersten Buchung dieses Auszugs).
     pub feld_belegt: usize,
+    /// Der Datumswert lag ausserhalb des Veranlagungsjahrs des Stores (Bankimport S1).
+    pub anderes_jahr: usize,
+    /// Der Datumswert hatte keine der vier gelesenen Formen; er wird nicht geraten (Bankimport S1).
+    pub datum_unlesbar: usize,
+    /// Der Saldo des Felds war null oder positiv: keine Ausgabe uebrig (Bankimport S1).
+    pub saldo_nicht_positiv: usize,
 }
 
 /// `uebernehme_kontoauszug(store, transaktionen, bindung, llm_klassifikator=, ts=, katalog=)`.
@@ -879,6 +896,9 @@ pub fn uebernehme(
         partei: 0,
         feld_fehlt: 0,
         feld_belegt: 0,
+        anderes_jahr: 0,
+        datum_unlesbar: 0,
+        saldo_nicht_positiv: 0,
     };
     let beginn = Instant::now();
     for tx in transaktionen {
@@ -1131,6 +1151,9 @@ mod tests {
             partei: 1,
             feld_fehlt: 1,
             feld_belegt: 1,
+            anderes_jahr: 0,
+            datum_unlesbar: 0,
+            saldo_nicht_positiv: 0,
         };
         assert_eq!(u, soll);
         let summe = u.uebernommen
@@ -1139,7 +1162,10 @@ mod tests {
             + u.ohne_stichwort
             + u.partei
             + u.feld_fehlt
-            + u.feld_belegt;
+            + u.feld_belegt
+            + u.anderes_jahr
+            + u.datum_unlesbar
+            + u.saldo_nicht_positiv;
         assert_eq!(summe, buchungen.len());
         // Ein Auszug, der nur den Deckel trifft, hat keinen Grund zu nennen (die Route meldet den Deckel selbst).
         let nur_deckel = Uebernahme {
@@ -1150,8 +1176,261 @@ mod tests {
             partei: 0,
             feld_fehlt: 0,
             feld_belegt: 0,
+            anderes_jahr: 0,
+            datum_unlesbar: 0,
+            saldo_nicht_positiv: 0,
         };
         assert_eq!(hinweis_nichts_uebernommen(2, &nur_deckel), None);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Bankimport S1: Zahlungsjahr, Summe je Feld, Gutschrift mindert, Posten im Ereignis.
+    // Diese Tests nutzen nur die heute vorhandene API; auf der Basis `d045d5be` sind sie ROT,
+    // weil die erste Buchung gewinnt, kein Jahr gepraueft wird und das Ereignis nur einen
+    // Einzelposten traegt.
+    // ---------------------------------------------------------------------------
+
+    fn s1_tx(ja: &[(&str, i64, &str)]) -> Vec<Transaktion> {
+        ja.iter()
+            .map(|(d, b, z)| Transaktion {
+                datum: serde_json::json!(d),
+                betrag: *b,
+                verwendungszweck: (*z).to_owned(),
+            })
+            .collect()
+    }
+
+    /// Uebernahme in einen frischen Fall 2025: Feldwert, Zahl uebernommener Posten, Zahl der
+    /// Ereignisse im Log.
+    fn s1_lauf(ja: &[(&str, i64, &str)], feld: &str) -> (Option<i64>, usize, usize) {
+        let tx = s1_tx(ja);
+        let mut store = store::Store::leer(2025, None);
+        let erg = uebernehme(
+            &mut store,
+            &tx,
+            store::BindungNachschlag::neu(crate::doctest_bindung().unwrap()),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let wert = store
+            .aktives(feld)
+            .and_then(|e| e.wert.zu_json().ok())
+            .and_then(|v| v.as_i64());
+        (wert, erg.uebernommen, store.events().len())
+    }
+
+    /// Das Pruefkommando des Backlogeintrags `bankimport-s1`: Summe zweier Spenden,
+    /// Zahlungsjahr, Rueckbuchung.
+    #[test]
+    fn p1_rot_summe_jahr_gutschrift() {
+        let (a, _, _) = s1_lauf(
+            &[
+                ("2025-02-01", -10_000, "Spende A"),
+                ("2025-03-01", -25_000, "Spende B"),
+            ],
+            "spenden_betrag",
+        );
+        let (c, _, _) = s1_lauf(
+            &[
+                ("2024-12-30", -5_000, "Spende A"),
+                ("2025-02-01", -7_000, "Spende B"),
+            ],
+            "spenden_betrag",
+        );
+        let (d, _, _) = s1_lauf(
+            &[
+                ("2025-02-01", -10_000, "Spende A"),
+                ("2025-02-10", 10_000, "Rueckbuchung Spende A"),
+            ],
+            "spenden_betrag",
+        );
+        let mut rot = Vec::new();
+        if a != Some(35_000) {
+            rot.push(format!("A Summe: {a:?}, erwartet Some(35000)"));
+        }
+        if c != Some(7_000) {
+            rot.push(format!("C Zahlungsjahr: {c:?}, erwartet Some(7000)"));
+        }
+        if d.is_some() {
+            rot.push(format!("D Rueckbuchung: {d:?}, erwartet None (Saldo 0)"));
+        }
+        assert!(rot.is_empty(), "P1 ROT: {rot:?}");
+    }
+
+    /// Zwei Ausgaben derselben Kategorie ergeben EINE Summe in EINEM Ereignis; beide Posten
+    /// zaehlen als uebernommen. Heute: die erste Buchung schreibt, die zweite gilt als belegt.
+    #[test]
+    fn s1_rot_zwei_ausgaben_eines_felds_ergeben_eine_summe() {
+        let (wert, uebernommen, ereignisse) = s1_lauf(
+            &[
+                ("01.03.2025", -10_000, "Maler Huber"),
+                ("02.03.2025", -20_000, "Maler Meier"),
+            ],
+            "hh_handwerker_betrag",
+        );
+        assert_eq!((wert, uebernommen, ereignisse), (Some(30_000), 2, 1));
+    }
+
+    /// Eine Gutschrift MIT Stichwort mindert die Summe desselben Felds: 100 + 250 - 50 = 300 EUR.
+    /// Heute gilt jede Gutschrift als Einnahme und aendert nichts.
+    #[test]
+    fn s1_rot_eine_rueckerstattung_mindert_die_summe() {
+        let (wert, _, _) = s1_lauf(
+            &[
+                ("2025-02-01", -10_000, "Spende Rotes Kreuz"),
+                ("2025-02-05", -25_000, "Spende Tierheim"),
+                ("2025-02-10", 5_000, "Rueckbuchung Spende Tierheim"),
+            ],
+            "spenden_betrag",
+        );
+        assert_eq!(wert, Some(30_000));
+    }
+
+    /// Nur Zahlungen des Veranlagungsjahrs zaehlen: ein Posten aus 2024 vor einer Spende von
+    /// 2025 schreibt heute 5,00 EUR, nach dem Bau 7,00 EUR. Ein Datum ohne Jahr (`15.03`) wird
+    /// nicht geraten und schreibt heute eine Ausgabe, die keinem Jahr zuzuordnen ist.
+    #[test]
+    fn s1_rot_zahlungsjahr_und_datum_ohne_jahr() {
+        let (c, _, _) = s1_lauf(
+            &[
+                ("2024-12-30", -5_000, "Spende Rotes Kreuz"),
+                ("2025-02-01", -7_000, "Spende Tierheim"),
+            ],
+            "spenden_betrag",
+        );
+        assert_eq!(c, Some(7_000), "nur der Posten von 2025 zaehlt");
+        let (_, _, ohne_jahr) = s1_lauf(&[("15.03", -6_000, "Spende Rotes Kreuz")], "spenden_betrag");
+        assert_eq!(ohne_jahr, 0, "ein Datum ohne Jahr wird nicht geraten");
+    }
+
+    /// Gelesene Datumsformen: `15.03.25` (zweistelliges Jahr am Steuerjahr) und ein Datum mit
+    /// Uhrzeit zaehlen beide als 2025 und werden nicht verworfen.
+    #[test]
+    fn s1_rot_zweistelliges_jahr_und_uhrzeit_werden_gelesen() {
+        let tx = s1_tx(&[
+            ("15.03.25", -20_00, "Maler Huber"),
+            ("2025-03-15 10:00:05", -25_00, "Basisrente Rürup"),
+        ]);
+        let mut store = store::Store::leer(2025, None);
+        let erg = uebernehme(
+            &mut store,
+            &tx,
+            store::BindungNachschlag::neu(crate::doctest_bindung().unwrap()),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!(erg.feld_belegt, 0, "{erg:?}");
+        assert_eq!(erg.einnahmen, 0, "keine der beiden Buchungen ist eine Einnahme");
+        assert_eq!(
+            store.aktives("hh_handwerker_betrag").and_then(|e| e.wert.zu_json().ok()).and_then(|v| v.as_i64()),
+            Some(20_00),
+            "dd.mm.yy wird 2000 + yy"
+        );
+        assert_eq!(
+            store.aktives("vor_rv_ausserhalb_lstb").and_then(|e| e.wert.zu_json().ok()).and_then(|v| v.as_i64()),
+            Some(25_00),
+            "ein Datum mit Uhrzeit wird gelesen"
+        );
+    }
+
+    /// Dieselbe Buchung zweimal in EINEM Auszug zaehlt einmal (Mehrmenge je Schluessel); mit
+    /// einem dritten Posten ergibt sich die Summe aus der Vereinigung.
+    #[test]
+    fn s1_rot_dubletten_in_einer_datei_zaehlen_einmal() {
+        let (wert, _, _) = s1_lauf(
+            &[
+                ("2025-02-01", -4_00, "Spende Rotes Kreuz"),
+                ("2025-02-01", -4_00, "Spende Rotes Kreuz"),
+                ("2025-02-05", -6_00, "Spende Tierheim"),
+            ],
+            "spenden_betrag",
+        );
+        assert_eq!(wert, Some(10_00), "4 plus 6, die Dublette zaehlt einmal");
+    }
+
+    /// Das Ereignis traegt die Einzelposten in `signal_1`: `datum`, `betrag_cent` mit
+    /// Vorzeichen, `zweck_maskiert`; dazu `jahr` und `summe_cent`. Der Feldwert ist der Saldo
+    /// in Cent, ohne Vorzeichen. Heute traegt das Ereignis nur die ERSTE Buchung.
+    #[test]
+    fn s1_rot_das_ereignis_traegt_posten_und_saldo() {
+        let tx = s1_tx(&[
+            ("01.03.2025", -4_00, "Spende Rotes Kreuz"),
+            ("02.03.2025", -7_00, "Spende Tierheim"),
+        ]);
+        let mut store = store::Store::leer(2025, None);
+        uebernehme(
+            &mut store,
+            &tx,
+            store::BindungNachschlag::neu(crate::doctest_bindung().unwrap()),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let ev = store.aktives("spenden_betrag").expect("kein Ereignis auf spenden_betrag");
+        let s1 = ev
+            .signal
+            .as_ref()
+            .and_then(|s| s.signal_1.as_ref())
+            .and_then(|innen| innen.as_ref())
+            .and_then(|v| v.zu_json().ok())
+            .unwrap_or_default();
+        let posten: Vec<&serde_json::Value> = s1
+            .get("posten")
+            .and_then(serde_json::Value::as_array)
+            .map_or(vec![], |p| p.iter().collect());
+        assert_eq!(s1["typ"], "kontoauszug");
+        assert_eq!(
+            s1.get("jahr").and_then(serde_json::Value::as_i64),
+            Some(2025),
+            "{s1}"
+        );
+        assert_eq!(
+            s1.get("summe_cent").and_then(serde_json::Value::as_i64),
+            Some(11_00),
+            "{s1}"
+        );
+        assert_eq!(posten.len(), 2, "beide Posten im Ereignis: {s1}");
+        assert_eq!(
+            posten
+                .first()
+                .and_then(|p| p.get("betrag_cent"))
+                .and_then(serde_json::Value::as_i64),
+            Some(-4_00),
+            "{s1}"
+        );
+        assert_eq!(ev.wert.zu_json().ok().and_then(|v| v.as_i64()), Some(11_00));
+    }
+
+    /// Waechter: jedes Zielfeld von `zielfeld` laesst den Kontoauszug als Schreiber zu. Eine
+    /// Store-Abweisung bricht die ganze Uebernahme ab (das `?` in `uebernehme`), und nur diese
+    /// Bindungszeile entscheidet, ob sie ueberhaupt erreichbar ist.
+    #[test]
+    fn jedes_zielfeld_ist_fuer_den_kontoauszug_vorschlagbar() {
+        let nachschlag = store::BindungNachschlag::neu(crate::doctest_bindung().unwrap());
+        let mut falsch = Vec::new();
+        for k in [
+            llm::Kategorie::Handwerker,
+            llm::Kategorie::Dienstleistung,
+            llm::Kategorie::Minijob,
+            llm::Kategorie::Spende,
+            llm::Kategorie::Vorsorge,
+        ] {
+            let feld = super::zielfeld(k);
+            match nachschlag.get(feld) {
+                Some(b) => {
+                    if !b.vorschlagbar_von.contains(&bindung::VorschlagsSchreiber::Kontoauszug) {
+                        falsch.push(format!("{feld}: vorschlagbar_von = {:?}", b.vorschlagbar_von));
+                    }
+                }
+                None => falsch.push(format!("{feld}: fehlt in der Bindung")),
+            }
+        }
+        assert!(falsch.is_empty(), "{falsch:?}");
     }
 
     proptest! {
