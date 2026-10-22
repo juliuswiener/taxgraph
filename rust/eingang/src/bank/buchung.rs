@@ -4,7 +4,7 @@
 //! (Vault `research/bankimport-entwurf-version-1-…`, Messung M1): `dd.mm.yyyy`, `dd.mm.yy`,
 //! `yyyy-mm-dd` und `yyyy-mm-dd hh:mm:ss`. Was keine dieser Formen hat, wird NICHT geraten —
 //! die Uebernahme laesst die Buchung weg und zaehlt sie (`datum_unlesbar`). Ein zweistelliges
-//! Jahr wird am Jahrhundertwechsel gebunden: `25` ist 2025, `99` ist 1999.
+//! Jahr ist 2000 plus die Zahl (`25` ist 2025); ein Auszug aus dem 20. Jahrhundert ist kein Fall.
 use serde_json::Value;
 
 /// Das Datum einer Buchung: Zahlentripel ohne Uhrzeit und ohne Zeitzone.
@@ -43,7 +43,7 @@ impl Datum {
         }
         let jahr: i64 = jahr.parse().ok()?;
         Some(Self {
-            jahr: if kurz { if jahr <= 69 { jahr + 2000 } else { jahr + 1900 } } else { jahr },
+            jahr: if kurz { 2000 + jahr } else { jahr },
             monat: monat.parse().ok()?,
             tag: tag.parse().ok()?,
         })
@@ -111,5 +111,63 @@ impl Posten {
     #[must_use]
     pub fn schluessel(&self) -> (String, i64, String) {
         (self.datum.als_text(), self.betrag_cent, self.zweck_maskiert.clone())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::Datum;
+
+    /// Das erwartete Ergebnis des Lesers; `Option`, weil `aus_json` eine liefert.
+    #[allow(clippy::unnecessary_wraps)]
+    fn d(jahr: i64, monat: u32, tag: u32) -> Option<Datum> {
+        Some(Datum { jahr, monat, tag })
+    }
+
+    /// Die vier gelesenen Formen und ihre Raender.
+    #[test]
+    fn die_vier_formen_werden_gelesen() {
+        let lies = |s: &str| Datum::aus_json(&json!(s));
+        assert_eq!(lies("15.03.2025"), d(2025, 3, 15));
+        assert_eq!(lies("01.02.2025"), d(2025, 2, 1));
+        assert_eq!(lies("15.03.25"), d(2025, 3, 15));
+        assert_eq!(lies("15.03.99"), d(2099, 3, 15), "2000 plus yy, kein Jahrhundertraten");
+        assert_eq!(lies("15.03.00"), d(2000, 3, 15));
+        assert_eq!(lies("2025-03-15"), d(2025, 3, 15));
+        assert_eq!(lies("2025-03-15 10:00:05"), d(2025, 3, 15));
+        assert_eq!(lies("  2025-03-15  "), d(2025, 3, 15), "Leerraum am Rand");
+        assert_eq!(lies("31.12.2025"), d(2025, 12, 31));
+        assert_eq!(lies("01.01.2025"), d(2025, 1, 1));
+    }
+
+    /// Alles andere wird NICHT geraten, auch nicht, wenn es fast passt.
+    #[test]
+    fn alles_andere_wird_nicht_geraten() {
+        let lies = |s: &str| Datum::aus_json(&json!(s));
+        for roh in [
+            "", " ", "15.03", "15.3.2025", "1.3.25", "15.03.202", "15.03.20255", "15/03/2025",
+            "15032025", "Sa 15.03.2025", "15.03.2025 10:00", "15.03.-2025", "480,00", "2025-03",
+            "2025-3-15", "2025-03-5", "25-03-15", "2025-03-15T10:00:05", "2025-03-15 10:00",
+            "2025-03-15 10:00:05.123", "2025-03-15 aa:bb:cc", "2025-13-01", "2025-00-10",
+            "2025-03-32", "2025-03-00", "00.01.2025", "32.01.2025", "15.13.2025", "15.00.2025",
+            "+5.03.2025", "１５.03.2025",
+        ] {
+            assert_eq!(lies(roh), None, "{roh:?}");
+        }
+        // Kein Text.
+        for roh in [json!(null), json!(20_250_301), json!(5.5), json!(true), json!([]), json!({})] {
+            assert_eq!(Datum::aus_json(&roh), None, "{roh}");
+        }
+    }
+
+    #[test]
+    fn das_datum_steht_in_der_akte_mit_fuehrenden_nullen() {
+        assert_eq!(Datum { jahr: 2025, monat: 3, tag: 5 }.als_text(), "2025-03-05");
+        assert_eq!(Datum { jahr: 2025, monat: 12, tag: 31 }.als_text(), "2025-12-31");
+        // Rundreise: was `als_text` schreibt, liest der Leser wieder.
+        let tag = Datum { jahr: 2025, monat: 1, tag: 9 };
+        assert_eq!(Datum::aus_json(&json!(tag.als_text())), Some(tag));
     }
 }
