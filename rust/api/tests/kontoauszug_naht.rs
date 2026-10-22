@@ -571,13 +571,19 @@ async fn zweck_datum_und_csv_randfaelle() {
     assert_eq!(a["uebernommen"], 1);
     assert_eq!(events(&d, "kw31")[0]["signal"]["signal_1"]["datum"], 5.5);
     // CSV: der Inhalt, der kein Text ist, ist leer; Vorzeichen wie `lstrip("+-")`.
+    // Seit Bankimport S0 sagt die Antwort, dass nichts gelesen wurde (vorher: kein Hinweis, „0 von 0“).
     let (s, a) = auszug(&d, "kc0", json!({"format": "csv", "inhalt": 5})).await;
+    assert_eq!(s, 200, "{a}");
     assert_eq!(
-        (s, a),
-        (
-            200,
-            json!({"uebernommen": 0, "transaktionen": 0, "verworfen": 0})
-        )
+        (&a["uebernommen"], &a["transaktionen"], &a["verworfen"]),
+        (&json!(0), &json!(0), &json!(0)),
+        "{a}"
+    );
+    assert!(
+        a["hinweis"]
+            .as_str()
+            .is_some_and(|h| h.starts_with("Keine Buchung gelesen") && h.contains("keine Kopfzeile erkannt")),
+        "{a}"
     );
     for (i, (betrag, gebucht)) in [
         ("--5", 1),
@@ -595,14 +601,14 @@ async fn zweck_datum_und_csv_randfaelle() {
             csv(&[&format!("01.03.2025;{betrag};Maler")]),
         )
         .await;
+        assert_eq!(s, 200, "{betrag}: {a}");
         assert_eq!(
-            (s, a),
-            (
-                200,
-                json!({"uebernommen": gebucht, "transaktionen": 1, "verworfen": 0})
-            ),
-            "{betrag}"
+            (&a["uebernommen"], &a["transaktionen"], &a["verworfen"]),
+            (&json!(gebucht), &json!(1), &json!(0)),
+            "{betrag}: {a}"
         );
+        // Ohne Vorschlag sagt die Antwort warum (S0); mit Vorschlag bleibt sie ohne Hinweis.
+        assert_eq!(a["hinweis"].is_null(), gebucht == 1, "{betrag}: {a}");
     }
 }
 
@@ -751,4 +757,105 @@ async fn datum_und_zweck_die_die_akte_nicht_haelt_sind_422() {
     let (s, a) = auszug(&d, "br0", json!({"format": "json", "inhalt": inhalt})).await;
     assert_eq!((s, a), (422, datum_meldung("float")));
     assert_eq!(events(&d, "br0").len(), 0);
+}
+
+/// Bankimport S0, erfunden, Aufbau nach Fremdparsern (kein Bankdokument): eine DKB-Datei mit vier Zeilen
+/// Vorspann und `Betrag (€)` lieferte „0 von 0“ ohne Hinweis. Jetzt zwei Vorschläge, ohne Hinweis.
+#[tokio::test]
+async fn eine_csv_datei_mit_vorspann_ergibt_vorschlaege() {
+    let d = dienst();
+    let dkb = "\"Girokonto\";\"DE89370400440532013000\"\n\n\"Kontostand vom 31.12.2025:\";\"5.000,01 EUR\"\n\n\
+\"Buchungsdatum\";\"Wertstellung\";\"Status\";\"Zahlungsempfänger*in\";\"Verwendungszweck\";\"Betrag (€)\"\n\
+\"15.03.25\";\"15.03.25\";\"Gebucht\";\"Maler Müller GmbH\";\"Rechnung 123 Malerarbeiten\";\"-480,00\"\n\
+\"20.03.25\";\"20.03.25\";\"Gebucht\";\"Rotes Kreuz\";\"Spende Rotes Kreuz\";\"-50,00\"\n";
+    let (status, antwort) = auszug(&d, "kv1", json!({"format": "csv", "inhalt": dkb})).await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(
+        antwort,
+        json!({"uebernommen": 2, "transaktionen": 2, "verworfen": 0})
+    );
+    let ev = events(&d, "kv1");
+    let felder: Vec<_> = ev.iter().map(|e| e["feld_id"].as_str().unwrap()).collect();
+    assert_eq!(felder, ["hh_handwerker_betrag", "spenden_betrag"]);
+    assert_eq!(ev[0]["wert"], 48_000);
+    assert_eq!(ev[0]["signal"]["signal_1"]["datum"], "15.03.25");
+}
+
+/// Bankimport S0: Liefert eine CSV-Datei keine Buchung, nennt die Antwort den Grund, nie eine Datenzeile.
+#[tokio::test]
+async fn csv_ohne_buchung_nennt_den_grund() {
+    async fn lauf(d: &Dienst, id: &str, inhalt: &str) -> String {
+        let (status, antwort) = auszug(d, id, json!({"format": "csv", "inhalt": inhalt})).await;
+        assert_eq!(status, 200, "{id}: {antwort}");
+        assert_eq!(
+            (&antwort["uebernommen"], &antwort["transaktionen"], &antwort["verworfen"]),
+            (&json!(0), &json!(0), &json!(0)),
+            "{id}: {antwort}"
+        );
+        antwort["hinweis"].as_str().unwrap_or_default().to_owned()
+    }
+    let d = dienst();
+    // Keine Betragsspalte: die erwarteten Namen und die gefundenen Spalten, aber nicht der Inhalt der Zeile.
+    let h = lauf(&d, "kg1", "Buchungstag;Wert;Verwendungszweck\n01.03.2025;5;Geheimer Zweck\n").await;
+    assert!(h.starts_with("Keine Buchung gelesen: In den ersten 30 Zeilen steht keine Kopfzeile mit Betragsspalte"), "{h}");
+    assert!(h.contains("erwartet: betrag, umsatz, amount, betrag (eur), betrag (€), umsatz in eur"), "{h}");
+    assert!(h.ends_with("gefundene Spalten: Buchungstag, Wert, Verwendungszweck."), "{h}");
+    assert!(!h.contains("Geheimer Zweck") && !h.contains("01.03.2025"), "{h}");
+    // Nichts, das nach einer Kopfzeile aussieht: keine Namen.
+    let h = lauf(&d, "kg2", "x;y\n1;2\n").await;
+    assert!(h.ends_with("keine Kopfzeile erkannt."), "{h}");
+    // Kopfzeile, aber keine Datenzeile.
+    let h = lauf(&d, "kg3", "datum;betrag;verwendungszweck\n").await;
+    assert_eq!(h, "Keine Buchung gelesen: Unter der Kopfzeile folgt keine Datenzeile.");
+    // Kopfzeile, Datenzeilen ohne Betrag.
+    let h = lauf(&d, "kg4", "datum;betrag;verwendungszweck\n01.03.2025;;Maler\n02.03.2025; ;Maler\n").await;
+    assert_eq!(h, "Keine Buchung gelesen: 2 Zeile(n) unter der Kopfzeile haben keinen Betrag.");
+}
+
+/// Bankimport S0: Wurde gelesen, aber nichts vorgeschlagen, nennt die Antwort die Zahl je Grund.
+/// Mit mindestens einem Vorschlag bleibt sie ohne Hinweis (auch wenn eine zweite Buchung dasselbe Feld traf).
+#[tokio::test]
+async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
+    let d = dienst();
+    // Einnahme, Ausgabe ohne Stichwort, Spende an eine Partei.
+    let (s, a) = auszug(
+        &d,
+        "kh1",
+        csv(&[
+            "01.03.2025;1.000,00;Gehalt",
+            "02.03.2025;-9,99;Einkauf",
+            "03.03.2025;-50,00;Spende SPD Ortsverband",
+        ]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["uebernommen"], 0, "{a}");
+    assert_eq!(
+        a["hinweis"],
+        "3 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) ohne Minuszeichen (nur Beträge mit Minus gelten als Ausgabe); 1 Buchung(en) ohne erkanntes Stichwort; 1 Buchung(en) als Spende mit Parteinamen (dafür gibt es ein eigenes Feld)."
+    );
+    // Die Scheibe `ep` führt `spenden_betrag` nicht.
+    fall_anlegen(&d, "kh2", "ep").await;
+    let (s, a) = sende(
+        &d,
+        "/fall/kh2/kontoauszug",
+        &csv(&["01.03.2025;-50,00;Spende Rotes Kreuz"]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a["hinweis"],
+        "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das dieser Fall nicht führt."
+    );
+    // Zwei Maler in einem Auszug: ein Vorschlag, die zweite trifft das belegte Feld -- kein Hinweis.
+    let zwei = csv(&["01.03.2025;-100,00;Maler Huber", "02.03.2025;-200,00;Maler Meier"]);
+    let (_, a) = auszug(&d, "kh3", zwei.clone()).await;
+    assert_eq!(a, json!({"uebernommen": 1, "transaktionen": 2, "verworfen": 0}));
+    // Derselbe Auszug noch einmal: das Feld hat schon einen Wert.
+    let (_, a) = sende(&d, "/fall/kh3/kontoauszug", &zwei).await;
+    assert_eq!(
+        a["hinweis"],
+        "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, das schon einen Wert hat."
+    );
+    assert_eq!(events(&d, "kh3").len(), 1);
 }

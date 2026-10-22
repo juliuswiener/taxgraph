@@ -2,6 +2,8 @@
 //! `Cargo.toml`. Neue Testdatei: hier eintragen; `rust/bindung/tests/testbinaries_vollstaendig.rs` schlaegt sonst an.
 //! Aufruf einer Datei: `cargo test -p <crate> --test it <datei>::`.
 
+#[path = "kontoauszug_profile.rs"]
+mod kontoauszug_profile;
 #[path = "unterprozess_zeitlimit.rs"]
 mod unterprozess_zeitlimit;
 #[path = "vast_beleg_hermetisch.rs"]
