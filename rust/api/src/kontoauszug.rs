@@ -352,16 +352,18 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     // Ohne diese Hinweise wäre „0 von 0“ ein Erfolg, den der Nutzer nicht von einem leeren Konto
     // unterscheidet (Ticket `kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`).
     // Nur CSV: Bei JSON und PDF kennt der Nutzer die Spalten nicht, die er hochlud.
+    let mut gruende_genannt = false;
     if let Some(befund) = &csv_befund {
         if tx.is_empty() && n_verworfen == 0 {
             hinweise.push(hinweis_nichts_gelesen(befund));
         } else if erg.uebernommen == 0 {
             hinweise.extend(hinweis_nichts_uebernommen(tx.len(), &erg));
+            gruende_genannt = true;
         }
     }
-    // Neben einem Vorschlag: Buchungen, die wegen Jahr, Datum oder Saldo nicht mitzaehlten, in
-    // jedem Format. Ohne Vorschlag nennt `hinweis_nichts_uebernommen` (nur CSV) dieselben Gruende.
-    if erg.uebernommen > 0 {
+    // Buchungen, die wegen Jahr, Datum oder Saldo nicht mitzählten, in jedem Format und auch neben
+    // einem Vorschlag; ohne Vorschlag nennt `hinweis_nichts_uebernommen` (nur CSV) dieselben Gründe.
+    if !gruende_genannt {
         hinweise.extend(hinweis_nicht_gezaehlt(&erg));
     }
     if erg.llm_uebersprungen > 0 {
