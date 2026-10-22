@@ -190,3 +190,43 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
         "Konsolenfehler: {konsole:?}"
     );
 }
+
+/// Von main nachgeschrieben (Mutante U07 „go.disabled = true“ in `kontoauszugErsetzen` ueberlebte alle Tests des Forks): waehrend die
+/// Antwort auf „Ersetzen“ aussteht, ist der Knopf gesperrt, und ein zweiter Klick sendet nichts. Ohne die Sperre ginge derselbe
+/// Auszug zweimal raus; der Dienst schreibt ihn nur einmal (`schon_erfasst`), aber die Meldung des zweiten Aufrufs ueberschriebe
+/// die des Ersetzens.
+#[test]
+fn der_knopf_ersetzen_sendet_waehrend_der_antwort_nicht_noch_einmal() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let fall = zum_kontoauszug(&u);
+
+    waehle_auszug(&u, ERSTER);
+    warte_status(&u, "2 von 2 Buchung(en) als Vorschlag erfasst");
+    waehle_auszug(&u, ZWEITER);
+    warte_status(&u, "Ersetzen möglich");
+    u.s.klick("#konto-ersetzen-haken");
+    assert!(haken_gesetzt(&u) && !knopf_gesperrt(&u));
+
+    // Die Antwort des Dienstes wird festgehalten, `window.__aufrufe` zaehlt, wie oft die Seite sendet.
+    u.s.skript(
+        "window.__echt = jpost; window.__weiter = null; window.__aufrufe = 0; \
+         jpost = (...a) => { window.__aufrufe += 1; return new Promise((ok) => { window.__weiter = () => ok(window.__echt(...a)); }); };",
+        &[],
+    );
+    u.s.klick("#konto-ersetzen-go");
+    u.s.warte_bis("window.__weiter !== null", 10, "der Auszug zum Ersetzen ist unterwegs");
+    assert!(knopf_gesperrt(&u), "waehrend der Antwort ist der Knopf frei");
+    assert!(u.s.textinhalt("#konto-status").contains("Ersetze"), "die Seite zeigt nicht, dass sie ersetzt");
+
+    // Ein zweiter Klick auf den Knopf (ein Doppelklick) sendet nichts mehr.
+    u.s.skript("document.getElementById('konto-ersetzen-go').click();", &[]);
+    assert_eq!(u.s.ausdruck("window.__aufrufe"), json!(1), "der zweite Klick sendet denselben Auszug noch einmal");
+
+    u.s.skript("jpost = window.__echt; window.__weiter();", &[]);
+    let status = warte_status(&u, "Ersetzt:");
+    assert!(status.starts_with("2 von 2 Buchung(en)"), "die Meldung des Ersetzens fehlt: {status:?}");
+    assert_eq!(werte(&u.dienst.ereignisse(&fall, FELD)), [json!(11_00), json!(16_00)], "der Dienst schrieb nicht genau einmal");
+    let konsole = u.konsolenfehler();
+    assert!(konsole.is_empty(), "Konsolenfehler: {konsole:?}");
+}
