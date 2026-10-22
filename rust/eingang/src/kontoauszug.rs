@@ -2588,14 +2588,14 @@ mod tests {
             )
             .unwrap()
         };
-        mit(&[("2024-03-01", -100_00, "Maler Huber")]);
-        let (_, liste) = mit(&[("2024-03-02", -200_00, "Maler Meier")]);
+        mit(&[("2024-03-01", -10_000, "Maler Huber")]);
+        let (_, liste) = mit(&[("2024-03-02", -20_000, "Maler Meier")]);
         assert_eq!(liste.len(), 1);
-        let (u, liste) = mit(&[("2024-03-03", -50_00, "Klempner Schulz")]);
+        let (u, liste) = mit(&[("2024-03-03", -5_000, "Klempner Schulz")]);
         assert_eq!((u.uebernommen, liste.len()), (1, 1), "{u:?}");
         assert_eq!(
             (liste[0].bisher_cent, liste[0].neu_cent, liste[0].neu_posten),
-            (300_00, 350_00, 3)
+            (30_000, 35_000, 3)
         );
         let ids: Vec<_> = store.events().iter().map(|e| e.event_id).collect();
         assert_eq!(ids.len(), 3);
@@ -2605,7 +2605,7 @@ mod tests {
         let s1 = s1b_signal(&store, feld);
         assert_eq!(
             (&s1["jahr"], &s1["kategorie"], &s1["summe_cent"]),
-            (&json!(2024), &json!("handwerker"), &json!(350_00))
+            (&json!(2024), &json!("handwerker"), &json!(35_000))
         );
         assert_eq!(s1["posten"].as_array().unwrap().len(), 3);
     }
