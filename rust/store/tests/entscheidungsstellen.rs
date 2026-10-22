@@ -259,6 +259,223 @@ fn ersetzt_guard_laesst_das_vorjahr_zu_und_sperrt_den_beleg() {
 }
 
 // ---------------------------------------------------------------------------------------------
+// Bankimport S1b (d-63): enge Ausnahme vom Ersetzt-Guard fuer `import:kontoauszug`
+// ---------------------------------------------------------------------------------------------
+
+/// Ein Vorschlag des Kontoauszugs, vorlaeufig, mit `signal_1` und dem Ziel von `ersetzt`.
+fn kontoauszug(feld: &str, wert: i64, ersetzt: Option<EventId>) -> NeuesEvent {
+    let mut neu = vorlaeufig(
+        feld,
+        &json!(wert),
+        Schreiber::ImportKontoauszug,
+        "kontoauszug",
+    );
+    neu.signal_1 = Some(json!({"typ": "kontoauszug"}).into());
+    neu.ersetzt = ersetzt;
+    neu
+}
+
+fn ersetzt_guard(fehler: &Abweisung) -> bool {
+    matches!(
+        fehler,
+        Abweisung::AuflageAErsetztGuard { schreiber } if schreiber == "import:kontoauszug"
+    )
+}
+
+/// Der Kontoauszug darf das aktive, vorlaeufige Ereignis ersetzen, das er selbst auf demselben Feld
+/// schrieb, und die Kette geht weiter (neues ersetzt neues). In zwei Veranlagungsjahren und auf zwei
+/// Feldern, damit kein fester Testwert die Ausnahme traegt.
+#[test]
+fn ersetzt_kontoauszug_ersetzt_sein_eigenes_vorlaeufiges_ereignis() {
+    for (jahr, feld) in [
+        (2024, "spenden_betrag"),
+        (2025, "spenden_betrag"),
+        (2024, "hh_handwerker_betrag"),
+        (2025, "hh_handwerker_betrag"),
+    ] {
+        let mut s = leerer_store(jahr);
+        let a = anhaengen(&mut s, &kontoauszug(feld, 10_000, None)).unwrap();
+        let b = anhaengen(&mut s, &kontoauszug(feld, 35_000, Some(a)))
+            .unwrap_or_else(|f| panic!("{jahr} {feld}: {f:?}"));
+        let aktiv = s.aktives(feld).unwrap();
+        assert_eq!(
+            (aktiv.event_id, aktiv.ersetzt),
+            (b, Some(a)),
+            "{jahr} {feld}"
+        );
+        assert_eq!(aktiv.wert, PyWert::Ganz(35_000), "{jahr} {feld}");
+        assert_eq!(aktiv.zustand, Zustand::Vorlaeufig, "{jahr} {feld}");
+        // Die Kette geht weiter: das neue Ereignis ist selbst ein eigenes vorlaeufiges Ziel.
+        let c = anhaengen(&mut s, &kontoauszug(feld, 40_000, Some(b))).unwrap();
+        assert_eq!(s.aktives(feld).unwrap().event_id, c, "{jahr} {feld}");
+        assert_eq!(s.events().len(), 3, "{jahr} {feld}");
+    }
+}
+
+/// Die Ausnahme ist eng: ein Ziel eines anderen Schreibers oder ein bestaetigtes Ziel bleibt
+/// gesperrt (der Wortlaut ist der des Guards). Das Feld bleibt, wie es war.
+#[test]
+fn ersetzt_kontoauszug_bleibt_gesperrt_auf_fremde_und_bestaetigte_ziele() {
+    // (Feld, Ziel). Auf `bruttoarbeitslohn` darf der Kontoauszug selbst nicht schreiben: Gesperrt
+    // heisst hier der Guard, nicht der Katalog -- ein Fehler der Ausnahme fiele als anderer Fehler auf.
+    let ziele: Vec<(&str, NeuesEvent)> = vec![
+        (
+            "spenden_betrag",
+            bestaetigt("spenden_betrag", &json!(10_000)),
+        ),
+        (
+            "spenden_betrag",
+            vorlaeufig(
+                "spenden_betrag",
+                &json!(10_000),
+                Schreiber::Mensch("julius".to_owned()),
+                "mensch",
+            ),
+        ),
+        (
+            "spenden_betrag",
+            vorlaeufig(
+                "spenden_betrag",
+                &json!(10_000),
+                Schreiber::ImportVorjahr,
+                "vorjahr",
+            ),
+        ),
+        (
+            "bruttoarbeitslohn",
+            vorlaeufig(
+                "bruttoarbeitslohn",
+                &json!(10_000),
+                Schreiber::ImportBeleg,
+                "beleg_import",
+            ),
+        ),
+        (
+            "bruttoarbeitslohn",
+            vorlaeufig(
+                "bruttoarbeitslohn",
+                &json!(10_000),
+                Schreiber::Llm("chat".to_owned()),
+                "llm_vorschlag",
+            ),
+        ),
+    ];
+    for (i, (feld, ziel)) in ziele.iter().enumerate() {
+        let mut s = leerer_store(2025);
+        let id = anhaengen(&mut s, ziel).unwrap_or_else(|f| panic!("Ziel {i}: {f:?}"));
+        let fehler = anhaengen(&mut s, &kontoauszug(feld, 35_000, Some(id))).unwrap_err();
+        assert!(ersetzt_guard(&fehler), "Ziel {i}: {fehler:?}");
+        assert_eq!(s.events().len(), 1, "Ziel {i}");
+        assert_eq!(s.aktives(feld).unwrap().event_id, id, "Ziel {i}");
+    }
+}
+
+/// Eine geladene Akte kann Ereignisse tragen, die `append` nie schriebe: ein bestaetigtes
+/// Kontoauszug-Ereignis und ein vorlaeufiges mit `signal_2`. Beide bleiben gesperrt; das unveraenderte
+/// vorlaeufige Ereignis ist die Gegenprobe und wird ersetzt.
+#[test]
+fn ersetzt_kontoauszug_nicht_auf_geladene_ereignisse_mit_bestaetigung_oder_signal_2() {
+    let geladen = |aendere: &dyn Fn(&mut store::Event)| {
+        let mut s = leerer_store(2025);
+        let id = anhaengen(&mut s, &kontoauszug("spenden_betrag", 10_000, None)).unwrap();
+        let mut datei = s.into_datei();
+        aendere(&mut datei.events[0]);
+        (Store::aus_datei(datei), id)
+    };
+    let (mut s, id) = geladen(&|_| {});
+    assert!(anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).is_ok());
+    let (mut s, id) = geladen(&|e| e.zustand = Zustand::Bestaetigt);
+    let fehler = anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).unwrap_err();
+    assert!(ersetzt_guard(&fehler), "bestaetigt: {fehler:?}");
+    let (mut s, id) = geladen(&|e| e.signal.as_mut().unwrap().signal_2 = Some("klick".to_owned()));
+    let fehler = anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(id))).unwrap_err();
+    assert!(ersetzt_guard(&fehler), "mit signal_2: {fehler:?}");
+}
+
+/// Das Ziel muss das AKTIVE Ereignis desselben Felds sein. Ein anderes Feld, ein schon ersetztes
+/// und ein unbekanntes Ziel bleiben am Guard haengen, nicht erst an Auflage B.
+#[test]
+fn ersetzt_kontoauszug_ziel_muss_das_aktive_ereignis_desselben_feldes_sein() {
+    let mut s = leerer_store(2025);
+    let a = anhaengen(&mut s, &kontoauszug("spenden_betrag", 10_000, None)).unwrap();
+    // Anderes Feld (frei): das Ziel gehoert zu `spenden_betrag`.
+    let fehler =
+        anhaengen(&mut s, &kontoauszug("hh_handwerker_betrag", 5_000, Some(a))).unwrap_err();
+    assert!(ersetzt_guard(&fehler), "anderes Feld: {fehler:?}");
+    // Unbekanntes Ziel.
+    let fehler = anhaengen(
+        &mut s,
+        &kontoauszug("spenden_betrag", 5_000, Some(EventId::aus_bytes([7; 32]))),
+    )
+    .unwrap_err();
+    assert!(ersetzt_guard(&fehler), "unbekannt: {fehler:?}");
+    // Schon ersetztes Ziel: `a` ist nicht mehr aktiv, sobald `b` es ersetzt.
+    anhaengen(&mut s, &kontoauszug("spenden_betrag", 35_000, Some(a))).unwrap();
+    let fehler = anhaengen(&mut s, &kontoauszug("spenden_betrag", 40_000, Some(a))).unwrap_err();
+    assert!(ersetzt_guard(&fehler), "schon ersetzt: {fehler:?}");
+    assert_eq!(s.events().len(), 2);
+}
+
+/// `llm:` und `import:beleg` bleiben fuer JEDES `ersetzt` gesperrt, auch auf das eigene vorlaeufige
+/// aktive Ereignis. Ein Fehler, der die Ausnahme auf alle Vorschlags-Schreiber ausdehnte, faellt hier auf.
+#[test]
+fn ersetzt_llm_und_beleg_bleiben_auch_auf_das_eigene_vorlaeufige_ereignis_gesperrt() {
+    for (schreiber, achse) in [
+        (Schreiber::ImportBeleg, "beleg_import"),
+        (Schreiber::Llm("chat".to_owned()), "llm_vorschlag"),
+    ] {
+        let mut s = leerer_store(2025);
+        let eigenes = vorlaeufig("bruttoarbeitslohn", &json!(100), schreiber.clone(), achse);
+        let id = anhaengen(&mut s, &eigenes).unwrap();
+        let mut neu = vorlaeufig("bruttoarbeitslohn", &json!(150), schreiber.clone(), achse);
+        neu.ersetzt = Some(id);
+        let fehler = anhaengen(&mut s, &neu).unwrap_err();
+        assert!(
+            matches!(&fehler, Abweisung::AuflageAErsetztGuard { schreiber: n } if *n == schreiber.to_string()),
+            "{schreiber}: {fehler:?}"
+        );
+    }
+}
+
+/// `append_roh` bleibt wie Python: dort traegt `import:kontoauszug` nie ein `ersetzt`, auch nicht auf
+/// das eigene vorlaeufige Ereignis. Die Ausnahme gilt nur am typisierten `append`.
+#[test]
+fn ersetzt_kontoauszug_bleibt_am_append_roh_gesperrt() {
+    let karte = echte_karte();
+    let katalog = Katalog::aus_bindungen(bindungen().iter());
+    let mut s = leerer_store(2025);
+    let erste = roh(
+        "spenden_betrag",
+        &json!(10_000),
+        Zustand::Vorlaeufig,
+        "import:kontoauszug",
+        "kontoauszug",
+    );
+    let id = s
+        .append_roh(&erste, Some(&katalog), BindungNachschlag::neu(&karte))
+        .unwrap();
+    let mut zweite = roh(
+        "spenden_betrag",
+        &json!(35_000),
+        Zustand::Vorlaeufig,
+        "import:kontoauszug",
+        "kontoauszug",
+    );
+    zweite.ersetzt = Some(id.to_string());
+    let fehler = s
+        .append_roh(&zweite, Some(&katalog), BindungNachschlag::neu(&karte))
+        .unwrap_err();
+    assert!(
+        matches!(
+            &fehler,
+            AbweisungRoh::Store(Abweisung::AuflageAErsetztGuard { .. })
+        ),
+        "{fehler:?}"
+    );
+    assert_eq!(s.events().len(), 1);
+}
+
+// ---------------------------------------------------------------------------------------------
 // append: Magnitude (F2) und nicht darstellbarer Wert
 // ---------------------------------------------------------------------------------------------
 
