@@ -485,7 +485,11 @@ faelle! {
     a_partner_kegel_fehlt => "an_gesamt", mit(an(), "veranlagung", json!("zusammen")), A0, None, "partner_kegel_offen";
     gz_partner_kap_feld_fehlt => "gesamt", ohne(gesamt_zusammen(), "kap_gewinn_aktien_partner"), GZ0, None, "partner_kegel_offen";
     r_zusammen_ohne_partner_kap_rechnet => "rentner_gesamt", mit(rentner(), "veranlagung", json!("zusammen")), R0, Some(4_824_200), "bestaetigt";
-    r_partner_rente_unvollstaendig => "rentner_gesamt", mit(rentner_zusammen(), "rentner_jahresrente_partner", json!(1_500_000)), RZ0, None, "rente_instanz_offen";
+    // ABWEICHUNG d-53 (Julius, 2026-10-22): die Zeilen `kein_sonstige_partner` und `kein_kap_partner` stehen in der Liste von `rentner_gesamt`
+    // (`FLAG_NEGIERT` gilt dort jetzt). Die Faelle mit gespeicherter Rente des Ehegatten tragen darum die Antwort "ja" auf die Zeile
+    // (`kein_sonstige_partner` = false) und messen weiter ihren eigenen Grund und dieselbe Zahl wie in der Python-Sonde; ohne die Antwort
+    // sperrt `flag_konsistenz_offen` (`r_partnerrente_vollstaendig_kreuz_offen`, wie `gz_kein_kap_partner_nie_gefragt` in `gesamt`).
+    r_partner_rente_unvollstaendig => "rentner_gesamt", mit(plus(rentner_zusammen(), vec![("kein_sonstige_partner", json!(false))]), "rentner_jahresrente_partner", json!(1_500_000)), RZ0, None, "rente_instanz_offen";
     g_zweites_vv_objekt_unvollstaendig => "gesamt", plus(mit(mit(gesamt(), "vv_einnahmen", json!(B)), "kein_vuv", json!(false)), vec![("vv_einnahmen__2", json!(B))]), G0, None, "vv_instanz_offen";
     r_rentenbeginn_jahr_ungueltig => "rentner_gesamt", mit(rentner(), "rentner_renten_beginn_jahr", json!(0)), R0, None, "rentenbeginn_jahr_ungueltig";
     r_rentenbeginn_nach_vz => "rentner_gesamt", mit(rentner(), "rentner_renten_beginn_jahr", json!(2030)), R0, None, "rentenbeginn_nach_vz";
@@ -506,8 +510,12 @@ faelle! {
     kv7_rentner_kv_partner_mit_versicherung_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("basis_kv_partner", json!(100_000)), ("versicherungsart_partner", json!("gesetzlich_an"))]), RZ0, Some(4_783_800), "bestaetigt";
     pr0_rentner_partnerkern_unvollstaendig_sperrt => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente"))]), RZ0, None, "rente_instanz_offen";
     pr1_rentner_partnerkern_drei_von_vier_sperrt => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente")), ("rentner_renten_beginn_jahr_partner", json!(2025)), ("rentner_alter_bei_rentenbeginn_partner", json!(65)), ("rentner_rentenfreibetrag_partner", json!(0))]), RZ0, None, "rente_instanz_offen";
-    pr2_rentner_partnerrente_vollstaendig_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente")), ("rentner_renten_beginn_jahr_partner", json!(2025)), ("rentner_alter_bei_rentenbeginn_partner", json!(65)), ("rentner_rentenfreibetrag_partner", json!(0)), ("rentner_jahresrente_partner", json!(1_500_000))]), RZ0, Some(5_346_000), "bestaetigt";
-    r_partnerrente_vollstaendig_kreuz_nie_gefragt => "rentner_gesamt", plus(mit(rentner(), "veranlagung", json!("zusammen")), partner_rente_voll()), RZ0, Some(5_346_000), "bestaetigt";
+    pr2_rentner_partnerrente_vollstaendig_rechnet => "rentner_gesamt", plus(rentner_zusammen(), vec![("kein_sonstige_partner", json!(false)), ("rentner_renten_art_partner", json!("gesetzliche_rente")), ("rentner_renten_beginn_jahr_partner", json!(2025)), ("rentner_alter_bei_rentenbeginn_partner", json!(65)), ("rentner_rentenfreibetrag_partner", json!(0)), ("rentner_jahresrente_partner", json!(1_500_000))]), RZ0, Some(5_346_000), "bestaetigt";
+    r_partnerrente_vollstaendig_kreuz_ja_rechnet => "rentner_gesamt", plus(plus(mit(rentner(), "veranlagung", json!("zusammen")), vec![("kein_sonstige_partner", json!(false))]), partner_rente_voll()), RZ0, Some(5_346_000), "bestaetigt";
+    r_partnerrente_vollstaendig_kreuz_offen => "rentner_gesamt", plus(mit(rentner(), "veranlagung", json!("zusammen")), partner_rente_voll()), RZ0, None, "flag_konsistenz_offen";
+    r_partnerrente_vollstaendig_kreuz_keine => "rentner_gesamt", plus(plus(mit(rentner(), "veranlagung", json!("zusammen")), vec![("kein_sonstige_partner", json!(true))]), partner_rente_voll()), RZ0, None, "flag_konsistenz_offen";
+    r_kein_kap_partner_betrag_kreuz_offen => "rentner_gesamt", mit(rentner_zusammen(), "kap_kapitalertraege_partner", json!(B)), RZ0, None, "flag_konsistenz_offen";
+    r_kein_kap_partner_betrag_kreuz_keine => "rentner_gesamt", plus(mit(rentner_zusammen(), "kap_kapitalertraege_partner", json!(B)), vec![("kein_kap_partner", json!(true))]), RZ0, None, "flag_konsistenz_offen";
     ri1_rentner_zweite_rente_ohne_kern_sperrt => "rentner_gesamt", plus(mit(mit(rentner(), "veranlagung", json!("zusammen")), "versicherungsart_partner", json!("gesetzlich_an")), vec![("rentner_jahresrente__2", json!(B))]), RZ0, None, "rente_instanz_offen";
     ri2_rentner_einzel_zweite_rente_sperrt => "rentner_gesamt", plus(rentner(), vec![("rentner_jahresrente__2", json!(B))]), R0, None, "rente_instanz_offen";
     ep1_ep_voller_kegel_rechnet => "ep", ep_kegel(), EP0, Some(0), "bestaetigt";
@@ -523,7 +531,9 @@ faelle! {
     aw_pr3_gesamt_partnerkern_feld_abgewiesen => "gesamt", plus(gesamt_zusammen(), vec![("rentner_renten_art_partner", json!("gesetzliche_rente"))]), AW, Some(AW), "AW";
     aw_pr4_gesamt_rente_a_abgewiesen => "gesamt", plus(gesamt(), vec![("rentner_jahresrente", json!(B))]), AW, Some(AW), "AW";
     aw_ksp_gesamt_partnerrente_abgewiesen => "gesamt", plus(gesamt_zusammen(), vec![("rentner_jahresrente_partner", json!(B))]), AW, Some(AW), "AW";
-    aw_ksp_rentner_kreuz_abgewiesen => "rentner_gesamt", plus(mit(rentner(), "veranlagung", json!("zusammen")), vec![("kein_sonstige_partner", json!(true))]), AW, Some(AW), "AW";
+    // ABWEICHUNG d-53 (Julius, 2026-10-22): bis dahin wies `rentner_gesamt` das Kreuz `kein_sonstige_partner` ab (400, Python-Sonde `aw_ksp_rentner_kreuz_abgewiesen`).
+    // Die Zeile steht jetzt in der Liste; "keine Rente des Ehegatten" ohne gespeicherte Rente gibt die Zahl von `r_zusammen_ohne_partner_kap_rechnet`.
+    r_kein_sonstige_partner_keine_rechnet => "rentner_gesamt", plus(mit(rentner(), "veranlagung", json!("zusammen")), vec![("kein_sonstige_partner", json!(true))]), RZ0, Some(4_824_200), "bestaetigt";
     aw_vuv_rentner_abgewiesen => "rentner_gesamt", plus(rentner(), vec![("vv_einnahmen", json!(B))]), AW, Some(AW), "AW";
     aw_sonstige_gesamt_abgewiesen => "gesamt", plus(gesamt(), vec![("rentner_jahresrente", json!(B))]), AW, Some(AW), "AW";
     aw_p32b_an_gesamt_abgewiesen => "an_gesamt", plus(an(), vec![("kap_kapitalertraege", json!(B))]), AW, Some(AW), "AW";

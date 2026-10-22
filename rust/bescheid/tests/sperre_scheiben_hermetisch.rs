@@ -426,9 +426,12 @@ fn faelle() -> Vec<Fall> {
         Fall {
             scheibe: Scheibe::RentnerGesamt,
             gruppe: "rente_b",
+            // d-53 (2026-10-22): in den Faellen mit gespeicherter Jahresrente des Ehegatten steht die Antwort "ja" auf die Zeile
+            // `kein_sonstige_partner` (die Zeile steht seit d-53 in der Rentner-Liste); ohne sie sperrte schon `flag_konsistenz_offen`.
             name: "zusammen, Rente B: 3 von 4 Kernfeldern",
             events: vec![
                 t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", false, true),
                 t("rentner_renten_art_partner", "gesetzliche_rente", true),
                 z("rentner_jahresrente_partner", 900_000, true),
                 z("rentner_renten_beginn_jahr_partner", 2018, true),
@@ -441,6 +444,7 @@ fn faelle() -> Vec<Fall> {
             name: "zusammen, Rente B: alle 4 Kernfelder, Freibetrag fixiert",
             events: vec![
                 t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", false, true),
                 t("rentner_renten_art_partner", "gesetzliche_rente", true),
                 z("rentner_jahresrente_partner", 900_000, true),
                 z("rentner_renten_beginn_jahr_partner", 2018, true),
@@ -455,12 +459,90 @@ fn faelle() -> Vec<Fall> {
             name: "zusammen, Rente B: alle 4 Kernfelder, ohne Freibetrag (aa)",
             events: vec![
                 t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", false, true),
                 t("rentner_renten_art_partner", "gesetzliche_rente", true),
                 z("rentner_jahresrente_partner", 900_000, true),
                 z("rentner_renten_beginn_jahr_partner", 2018, true),
                 z("rentner_alter_bei_rentenbeginn_partner", 66, true),
             ],
             erwartet: Some("rentenfreibetrag_fixierung_offen"),
+        },
+        // d-53 (Julius, 2026-10-22): die Zeile `kein_sonstige_partner` steht in der Rentner-Liste. Ohne ihre Antwort haelt die Flag-Sperre eine
+        // gespeicherte Rente des Ehegatten zurueck (`flag_konsistenz_offen`), ebenso das Kreuz "keine" neben einer gespeicherten Jahresrente.
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, Rente B vollstaendig, Zeile kein_sonstige_partner offen",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                t("rentner_renten_art_partner", "gesetzliche_rente", true),
+                z("rentner_jahresrente_partner", 900_000, true),
+                z("rentner_renten_beginn_jahr_partner", 2025, true),
+                z("rentner_alter_bei_rentenbeginn_partner", 66, true),
+            ],
+            erwartet: Some("flag_konsistenz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, Rente B vollstaendig, Kreuz kein_sonstige_partner = keine",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", true, true),
+                t("rentner_renten_art_partner", "gesetzliche_rente", true),
+                z("rentner_jahresrente_partner", 900_000, true),
+                z("rentner_renten_beginn_jahr_partner", 2025, true),
+                z("rentner_alter_bei_rentenbeginn_partner", 66, true),
+            ],
+            erwartet: Some("flag_konsistenz_offen"),
+        },
+        // Kreuz "keine" und 1 bis 3 der vier Kernfelder gespeichert: die Felder sind verborgen, `rente_instanz_offen` verlangte sie weiter
+        // (Sackgasse), und ohne die Sperre erreichte der Teilfall den Rechenkern (HTTP 500). Unter dem Kreuz meldet `rente_partner` den Widerspruch.
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, Rente B: 3 von 4 Kernfeldern, Kreuz kein_sonstige_partner = keine",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", true, true),
+                t("rentner_renten_art_partner", "gesetzliche_rente", true),
+                z("rentner_jahresrente_partner", 0, true),
+                z("rentner_renten_beginn_jahr_partner", 2025, true),
+            ],
+            erwartet: Some("flag_konsistenz_offen"),
+        },
+        // Dieselben vier Kernfelder vollstaendig (Jahresrente 0, kein Betrag, den die Flag-Tabelle zaehlt): kein Widerspruch.
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, Rente B: alle 4 Kernfelder mit Jahresrente 0, Kreuz kein_sonstige_partner = keine (Kontrolle: kein Widerspruch)",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", true, true),
+                t("rentner_renten_art_partner", "gesetzliche_rente", true),
+                z("rentner_jahresrente_partner", 0, true),
+                z("rentner_renten_beginn_jahr_partner", 2025, true),
+                z("rentner_alter_bei_rentenbeginn_partner", 65, true),
+            ],
+            erwartet: None,
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, Rente B: 1 von 4 Kernfeldern, Kreuz kein_sonstige_partner = keine",
+            events: vec![
+                t("veranlagung", "zusammen", true),
+                b("kein_sonstige_partner", true, true),
+                t("rentner_renten_art_partner", "gesetzliche_rente", true),
+            ],
+            erwartet: Some("flag_konsistenz_offen"),
+        },
+        Fall {
+            scheibe: Scheibe::RentnerGesamt,
+            gruppe: "rente_b",
+            name: "zusammen, keine Rente B, Kreuz kein_sonstige_partner = keine (Kontrolle: kein Widerspruch)",
+            events: vec![t("veranlagung", "zusammen", true), b("kein_sonstige_partner", true, true)],
+            erwartet: None,
         },
         Fall {
             scheibe: Scheibe::RentnerGesamt,

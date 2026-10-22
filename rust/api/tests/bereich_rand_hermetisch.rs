@@ -216,7 +216,10 @@ fn partner(scheibe: &str) -> Paare {
     if scheibe == GESAMT {
         p.push(("bruttoarbeitslohn_partner", json!(0)));
     } else {
+        // d-53 (2026-10-22): die Zeile `kein_sonstige_partner` steht in der Rentner-Liste; mit gespeicherter Rente des Ehegatten ohne ihre
+        // Antwort "ja" hielte `flag_konsistenz_offen` die Zahl zurueck.
         p.extend([
+            ("kein_sonstige_partner", json!(false)),
             ("rentner_jahresrente_partner", json!(15_000_000)),
             (ART_PARTNER, json!("gesetzliche_rente")),
             ("rentner_renten_beginn_jahr_partner", json!(2025)),

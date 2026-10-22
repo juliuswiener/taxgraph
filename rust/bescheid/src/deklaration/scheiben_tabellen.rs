@@ -285,10 +285,10 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// (Person A) sowie `kein_gewinn_partner` (Ehegatte; die Zeile steht nur bei Zusammenveranlagung oder solange `veranlagung` offen
 /// ist, ihre `feld_bedingung` gilt wie in `gesamt`). Sie stehen in der Ankreuzliste wie dort; "nein" verbirgt die Bloecke zu Kindern
 /// (36 Felder), Unterhalt (17), Ausland (8) und die Gewinnfelder des Ehegatten (11), der Ring liest gespeicherte Werte wie bisher.
-/// Mit Absicht fehlen zwei Kreuze des Ehegatten, beide aus `FLAG_NEGIERT`: `kein_sonstige_partner` (`rente_instanz_offen` in `sperre/`
+/// Zwei Kreuze des Ehegatten fehlten damals mit Absicht, beide aus `FLAG_NEGIERT`: `kein_sonstige_partner` (`rente_instanz_offen` in `sperre/`
 /// verlangte die vier Rentenfelder des Ehegatten weiter, die das Kreuz verbirgt: Sackgasse im Kreuz-Sweep) und `kein_kap_partner`
 /// (ein gespeicherter Kapitalbetrag des Ehegatten neben dem unbeantworteten Kreuz sperrte mit `flag_konsistenz_offen`, bisher rechnete
-/// die Scheibe ihn mit). Der Kegel bleibt bei 28.
+/// die Scheibe ihn mit); sie stehen seit 2026-10-22 in der Liste (siehe unten, d-53). Der Kegel bleibt bei 28.
 /// Und die drei Kreuze danach, ebenfalls nur in Rust (2026-10-22, Fragen-Reduktion Teil 2, Phase 2, Vault `fragen-reduktion-teil-2-
 /// konfession-zuerst-und-rentner-kreuze-werden-gebaut-arbeitsweg-und-agb-brauchen-juliuss-wort-2026-10-22`): `keine_behinderung_pflege`,
 /// `keine_energetische_sanierung` und `keine_spenden` (Person A). Die Felder dahinter standen in der Liste und wurden jedem Rentner
@@ -297,8 +297,15 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// bleiben, wie sie sind. Mit Absicht fehlt `keine_behinderung_pflege_partner`: es passt ohne Aenderung an `sperre/` in die Liste (Sweep
 /// 14 von 14), spart dem Ehepaar zwei Fragen, kostet aber jedem Einzelnutzer eine Ankreuzzeile, solange die Ankreuzliste die Zeilen des
 /// Ehegatten vor der Frage nach der Veranlagung zeigt (F5). Der Kegel bleibt bei 28.
+/// Und die zwei Kreuze des Ehegatten danach, ebenfalls nur in Rust (2026-10-22, d-53, Julius, Option 3 "Beide Blöcke"):
+/// `kein_kap_partner` (fünf Kapitalfelder) und `kein_sonstige_partner` (fünf Rentenfelder des Ehegatten), beide bei Zusammenveranlagung.
+/// Anders als bei den Kreuzen oben steht ihr "nein" in `FLAG_NEGIERT`: ein bestätigter Betrag des Ehegatten neben der offenen oder mit
+/// "keine" beantworteten Zeile sperrt mit `flag_konsistenz_offen`, bis der Nutzer die Zeile klärt (Entscheidung 3 vom 2026-10-09 gilt hier
+/// also nur bei der Antwort "ja"); die Zeile steht dann in der Fragenliste oder unter "Schon beantwortet". Unter dem Kreuz
+/// `kein_sonstige_partner` meldet `sperre/gesamt.rs::rente_partner` einen teilweise gespeicherten Rentenfall als Widerspruch statt mit
+/// `rente_instanz_offen` (die verborgenen Felder lassen sich nicht ergänzen).
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 335] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 337] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -372,6 +379,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 335] = [
     "kein_lohn_pension", "kein_lohn_pension_partner",
     "kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte",
     "kein_gewinn_partner",
+    "kein_kap_partner", "kein_sonstige_partner",
     "keine_behinderung_pflege", "keine_energetische_sanierung", "keine_spenden",
     // Nur in Rust (2026-10-09, Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" (der Guard haelt den Abzug hier
     // ab, aber `mit_ring_werten` laeuft vor dem Guard und die Bindung der Scheibe muss das Feld kennen).

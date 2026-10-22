@@ -158,6 +158,8 @@ fn akte(scheibe: Option<&str>) -> store::Store {
 /// 332, Fluss J F2/F3/F8 am 2026-10-21; `an_gesamt` 102, `gesamt` 424 und `n_vor_gwg` 78 bleiben.
 /// danach nur `rentner_gesamt` +3 mit den Kreuzen `keine_behinderung_pflege`, `keine_energetische_sanierung` und `keine_spenden`:
 /// 335, Fragen-Reduktion Teil 2, Phase 2 am 2026-10-22; `an_gesamt` 102, `gesamt` 424 und `n_vor_gwg` 78 bleiben.
+/// danach nur `rentner_gesamt` +2 mit den Kreuzen `kein_kap_partner` und `kein_sonstige_partner`: 337, d-53 am 2026-10-22; `an_gesamt` 102,
+/// `gesamt` 424 und `n_vor_gwg` 78 bleiben (beide Kreuze stehen in `gesamt` schon).
 /// `n_vor_gwg` liest die YAML: 0 statt 69 waere der stille Rueckfall auf "leer".
 #[test]
 fn scheibe_bindung_wie_python() {
@@ -167,7 +169,7 @@ fn scheibe_bindung_wie_python() {
         ("n_vor_gwg", 78),
         ("an_gesamt", 102),
         ("gesamt", 424),
-        ("rentner_gesamt", 335),
+        ("rentner_gesamt", 337),
     ] {
         let sb = d.zustand.scheibe_bindung(&akte(Some(scheibe))).unwrap();
         assert_eq!(sb.cfg.scheibe().to_string(), scheibe);

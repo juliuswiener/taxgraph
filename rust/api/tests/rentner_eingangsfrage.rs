@@ -528,18 +528,21 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// Seit Fragen-Reduktion Teil 2, Phase 2 (2026-10-22) stehen die Kreuze `keine_behinderung_pflege`, `keine_energetische_sanierung` und
 /// `keine_spenden` in der Liste, bis sie beantwortet sind: drei Fragen mehr in jedem Fall (157 -> 160, 211 -> 214). Ihre Bloecke ("nein")
 /// stehen ebenfalls in `nein_verbirgt_den_block_eines_kreuzes_und_nur_ihn`.
+/// Seit d-53 (2026-10-22) stehen bei Zusammenveranlagung auch die Zeilen `kein_kap_partner` und `kein_sonstige_partner` in der Liste, bis sie
+/// beantwortet sind: zwei Fragen mehr in jedem Fall mit Ehegatten (214 -> 216 und so fort); ihre Bloecke ("nein") stehen in
+/// `rentner_ehegatten_kreuze.rs`.
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
         ("einzel offen", "einzel", None, None, 160),
         ("einzel nein", "einzel", Some(true), None, 151),
         ("einzel ja", "einzel", Some(false), None, 159),
-        ("zusammen offen", "zusammen", None, None, 214),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 194),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 204),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 202),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 212),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 213),
+        ("zusammen offen", "zusammen", None, None, 216),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 196),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 206),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 204),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 214),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 215),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {
@@ -563,7 +566,8 @@ async fn die_fragenzahl_vor_und_nach_den_antworten() {
 // Fluss J F2/F3/F8 (2026-10-21, Vault `julius-entscheidet-vorjahr-sackgasse-rentner-eingangsfragen-und-bic-werden-behoben-2026-10-21`):
 // Die Rentner-Scheibe fragt vier Kreuze, die `gesamt` schon fragt: `kein_kind`, `kein_unterhalt`, `keine_auslandseinkuenfte` (Person A) und
 // `kein_gewinn_partner` (Ehegatte). "Nein" (Wert `true`) verbirgt den Block dahinter. Wie bei `kein_lohn_pension` aendert das Kreuz nur die
-// Liste, nie die Rechnung. Mit Absicht fehlen `kein_sonstige_partner` und `kein_kap_partner`: der Grund steht in `scheiben_tabellen.rs`.
+// Liste, nie die Rechnung. `kein_sonstige_partner` und `kein_kap_partner` (beide aus `FLAG_NEGIERT`) fehlten hier bis zum 2026-10-22 (Sackgasse in
+// `rente_instanz_offen`, Flag-Sperre); seit d-53 stehen sie in der Liste, ihre Tests (anderer Aufbau wegen der Sperren) in `rentner_ehegatten_kreuze.rs`.
 
 /// Die Felder hinter `kein_kind` (die Bindung gibt sie her; dieser Test haelt sie einzeln fest, damit eine entfernte Bedingung am
 /// Feldnamen auffaellt): Familie, Kinder, Betreuung, Schulgeld, Kranken- und Pflegeversicherung der Kinder.
@@ -743,19 +747,6 @@ async fn die_zeile_des_ehegatten_fehlt_bei_einzelveranlagung() {
         for (name, ids) in [("einzel", &einzel), ("zusammen", &zusammen), ("offen", &offen)] {
             assert!(pos(ids, kreuz).is_some(), "{kreuz} fehlt bei {name}");
         }
-    }
-}
-
-/// Die beiden Kreuze, die mit Absicht NICHT in der Rentner-Scheibe stehen (Sackgasse und Flag-Sperre, Grund in `scheiben_tabellen.rs`):
-/// sie stehen nicht in der Liste, und der Dienst weist sie ab.
-#[tokio::test]
-async fn kein_sonstige_partner_und_kein_kap_partner_bleiben_draussen() {
-    let d = fall_mit(&rentner(2_000_000, "zusammen")).await;
-    let ids = fragen_ids(&d).await;
-    for kreuz in ["kein_sonstige_partner", "kein_kap_partner"] {
-        assert!(pos(&ids, kreuz).is_none(), "{kreuz} steht in der Rentner-Scheibe");
-        let (status, _) = event_post(&d, kreuz, &json!(true)).await;
-        assert_eq!(status, 400, "{kreuz} wurde angenommen");
     }
 }
 

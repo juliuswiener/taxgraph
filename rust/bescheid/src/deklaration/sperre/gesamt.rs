@@ -169,16 +169,22 @@ fn rente(k: &K<'_>, cfg: &Cfg) -> Grund {
     Ok(None)
 }
 
-/// Person B: alle vier Kernfelder der Rente bestaetigt oder keins; KV/PV-Weiche braucht
-/// `versicherungsart_partner`; aa-Folgejahr-Fixierung fuer die Ehegatten-Rente.
+/// Person B: alle vier Kernfelder der Rente bestaetigt oder keins (ein Teilfall neben dem Kreuz `kein_sonstige_partner` = keine ist
+/// `flag_konsistenz_offen`, nicht `rente_instanz_offen`); KV/PV-Weiche braucht `versicherungsart_partner`; aa-Folgejahr-Fixierung fuer
+/// die Ehegatten-Rente.
 fn rente_partner(k: &K<'_>) -> Option<Sperrgrund> {
     let f = k.f;
     let da = RENTNER_22_PARTNER
         .iter()
         .filter(|p| bestaetigt(f, p))
         .count();
+    // d-53: Das Kreuz `kein_sonstige_partner` steht in der Rentner-Liste und verbirgt bei "keine" die Rentenfelder des Ehegatten. Ein
+    // teilweise gespeicherter Kern waere dann eine Sackgasse (`rente_instanz_offen` verlangte die verborgenen Felder), und ihn zu
+    // ignorieren liesse den Fall unvollstaendig in den Rechenkern laufen (HTTP 500). Er ist ein Widerspruch zum Kreuz: derselbe Grund
+    // wie ein Betrag neben dem Kreuz (`flag_konsistenz_offen`), die Antwort auf die Zeile klaert ihn.
+    let keine_rente = bestaetigt(f, "kein_sonstige_partner") && ist_true(wert(f, "kein_sonstige_partner"));
     if da > 0 && da != RENTNER_22_PARTNER.len() {
-        return Some(Sperrgrund::RenteInstanzOffen);
+        return Some(if keine_rente { Sperrgrund::FlagKonsistenzOffen } else { Sperrgrund::RenteInstanzOffen });
     }
     if (positiv(f, "basis_kv_partner") || positiv(f, "basis_pv_partner"))
         && !bestaetigt(f, "versicherungsart_partner")
