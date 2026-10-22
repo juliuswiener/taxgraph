@@ -84,6 +84,8 @@ mod preflight_pflichtfelder;
 mod rav_bav_waechter_hermetisch;
 #[path = "renten_leistungsmitteilung_texte.rs"]
 mod renten_leistungsmitteilung_texte;
+#[path = "rentner_ehegatten_kreuze.rs"]
+mod rentner_ehegatten_kreuze;
 #[path = "rentner_eingangsfrage.rs"]
 mod rentner_eingangsfrage;
 #[path = "rentner_lohn_versorgung_hermetisch.rs"]

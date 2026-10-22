@@ -211,20 +211,25 @@ fn fluss_j_rentner_einzel_mit_gesetzlicher_rente_erreicht_die_steuerzahl() {
     pruefe_konsole(&u, "Rentner einzel");
 }
 
-/// Rentner-Ehepaar, beide mit gesetzlicher Rente. Die Ankreuzliste der Rentner hat zum Partner nur die Zeile `kein_gewinn_partner`;
-/// was der Lauf deshalb zusaetzlich fragt, steht im Bericht (`TAXGRAPH_FRAGENLOG`).
+/// Rentner-Ehepaar, beide mit gesetzlicher Rente. Die Ankreuzliste hat zum Partner `kein_gewinn_partner`, `kein_kap_partner` und `kein_sonstige_partner`
+/// (d-53); der Partner hat hier eine Rente, also steht dieses Kreuz auf „ja“ (angekreuzt), die Kapitalzeile auf „nein“; die Folge steht im Bericht (`TAXGRAPH_FRAGENLOG`).
 #[test]
 fn fluss_j_rentner_ehepaar_mit_zwei_gesetzlichen_renten_erreicht_die_steuerzahl() {
     let _sperre = crate::browser::seriell();
     let _p = PlatzhalterErlaubt::neu();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
-    bis_zur_ersten_frage(&u, "rentner_gesamt", &["kein_sonstige"]);
+    let liste = bis_zur_ersten_frage(&u, "rentner_gesamt", &["kein_sonstige", "kein_sonstige_partner"]);
     let mut t = person_a();
     t.push(("veranlagung", Gib::Wahl("zusammen")));
     t.extend(kirche("keine", Some("keine"), "bayern"));
     t.extend(rente(false, "2015", "18000"));
     t.extend(rente(true, "2018", "12000"));
     let verlauf = durchlauf(&u, "rentner_ehepaar_rente", &t, &[]);
+    for zeile in ["kein_kap_partner", "kein_sonstige_partner"] {
+        assert!(liste.to_string().contains(zeile), "{zeile} steht nicht in der Ankreuzliste der Rentner: {liste}");
+    }
+    assert_eq!(wie_oft(&verlauf, "rentner_renten_art_partner"), 1, "das Kreuz „Rente des Partners“ ist gesetzt, die Rentenfelder fehlen");
+    assert_eq!(wie_oft(&verlauf, "kap_kapitalertraege_partner"), 0, "das Kreuz „Kapital des Partners“ bleibt leer, die Kapitalfelder werden trotzdem gefragt");
     eprintln!("KENNZAHL rentner_ehepaar: Fragen {}, davon Partner {}, kind_ {}", verlauf.len(), verlauf.iter().filter(|s| s.feld.ends_with("_partner")).count(), zaehle(&verlauf, &["kind_", "fam_"]));
     pruefe_zahl_gezeigt(&u, "Rentner-Ehepaar, zwei gesetzliche Renten");
     wirkungsprobe(&u, "rentner_ehepaar_rente", &verlauf);

@@ -560,8 +560,9 @@ mod aequivalenz {
     }
 }
 
-/// Abweichung Nr. 52: die Kreuze des Ehegatten (`fremd_arten_partner`) gibt es nur auf `gesamt`. Auf `rentner_gesamt` kann der
-/// Nutzer `kein_sonstige_partner` nicht schreiben (400), und `an_gesamt`/`ep`/`n_vor_gwg` kennen keinen Ehegatten.
+/// Abweichung Nr. 52: die Kreuze des Ehegatten (`fremd_arten_partner`) gibt es nur auf `gesamt`, und `an_gesamt`/`ep`/`n_vor_gwg`
+/// kennen keinen Ehegatten. `rentner_gesamt` fuehrt `kein_sonstige_partner` und `kein_kap_partner` seit d-53 als Zeilen der Liste;
+/// sie sind dort Kreuze des Nutzers, aber kein `fremd_arten_partner` (die Rentner-Rechnung hat den Ring nicht).
 #[cfg(test)]
 mod fremd_arten_partner {
     use domain::Scheibe;

@@ -38,6 +38,10 @@
 //! `gesamt`) sass im Guard: Abweichung Nr. 96 (Julius d-47) laesst die Sperre `partner_kegel_offen` die fuenf Kapital-Felder des
 //! Ehegatten nicht mehr verlangen, wenn das Kreuz bestaetigt „keine“ sagt (`sperre/gesamt.rs`). Eine neue Klasse macht den Test rot;
 //! ein behobener Defekt macht `die_bekannten_sackgassen_werden_noch_gesehen` rot, der Eintrag in [`BEKANNT`] faellt dann weg.
+//! `kein_sonstige_partner` stand ab 2026-10-22 (d-53) wieder in `rentner_gesamt` und baute dort eine vierte Klasse: ein Teilfall der
+//! Rente des Ehegatten neben dem Kreuz "keine" (`rente_instanz_offen` verlangte die verborgenen Kernfelder). Jetzt meldet der Guard den
+//! Widerspruch (`flag_konsistenz_offen`), und sein Ausweg ist das Kreuz selbst. Das haelt [`AUSWEG_KREUZ`] als benannte Ausnahme fest,
+//! je Eintrag mit Begruendung und nur im Szenario "Kreuz nach k Feldern"; jedes Kreuz ohne Eintrag bleibt streng.
 //!
 //! **Grenzen** (jede mit einem Mutanten gemessen, siehe `REWRITE_PLAN.md` Nr. 71). Der Guard-Zweig braucht den passenden
 //! Zustand; der Sweep setzt Beispielwerte und sieht nur, was diese Werte erreichen. Er sieht nicht: (1) Zweige, die eine
@@ -58,9 +62,9 @@
 //!
 //! **Abweichung Nr. 74 an allen Eintraegen.** Die Regel in `bedingung_schliesst_aus` (eine Bedingung auf ein Feld, das die Scheibe
 //! nicht fragt, schliesst nichts aus) steht allgemein im Code und wirkt an jedem solchen Eintrag der Bindung, nicht nur an den
-//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (37:
-//! 18 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 14 in `rentner_gesamt`; vorher 48 und 25, bis `rentner_gesamt` am
-//! 2026-10-21 `kein_gewinn_partner` fragte), haelt sie gegen die Liste [`GEPRUEFT`] und misst
+//! zwei Lohn-Kreuzen. Der Abschnitt "Abweichung Nr. 74 an allen Eintraegen" unten zaehlt diese Eintraege aus der Bindung (25:
+//! 18 in `gesamt` und 5 in `an_gesamt`, alle an den zwei Lohn-Kreuzen, 2 in `rentner_gesamt`; vorher 37, bis `rentner_gesamt` am
+//! 2026-10-22 `kein_kap_partner` und `kein_sonstige_partner` fragte, und 48 und 25, bis es am 2026-10-21 `kein_gewinn_partner` fragte), haelt sie gegen die Liste [`GEPRUEFT`] und misst
 //! an jedem: die Frage bleibt stehen, auch wenn die Akte das Bedingungsfeld mit einem schliessenden Wert tragen wuerde.
 #![allow(
     clippy::unwrap_used,
@@ -468,6 +472,25 @@ fn kontexte(lage: &'static Lage, ver: &str) -> Result<Vec<Kontext>, String> {
 
 // ---------------------------------------------------------------- Sackgassen
 
+/// Benannte Ausnahmen des Sweeps (Scheibe, Kreuz, Sperrgrund, Begruendung), je Eintrag nur im Szenario "Kreuz nach k Feldern": ein Treffer
+/// `flag_konsistenz_offen` ist dort ein Widerspruch zwischen dem Kreuz und gespeicherten Feldern, und sein Ausweg ist das Kreuz selbst unter
+/// "Schon beantwortet", obwohl das Ergaenzen der verborgenen Felder ihn ebenfalls aufloeste. Die Ausnahme gilt nicht fuer die Klasse
+/// `flag_konsistenz_offen`, nur fuer den Eintrag; ein Kreuz ohne Eintrag bleibt streng. Den Ausweg belegt je Eintrag ein eigener Test
+/// (`rust/api/tests/rentner_ehegatten_kreuze.rs`: Frage 200, Regel nicht ausgeschlossen, die neue Antwort gibt die Zahl von vor dem Bau).
+const AUSWEG_KREUZ: &[(&str, &str, &str, &str)] = &[(
+    "RentnerGesamt",
+    "kein_sonstige_partner",
+    "flag_konsistenz_offen",
+    "d-53: Kreuz keine nach 1 oder 4 gespeicherten Rentenfeldern des Ehegatten ist ein Teilfall; rente_instanz_offen verlangte die verborgenen \
+     Felder (Sackgasse), jetzt meldet rente_partner den Widerspruch zum Kreuz, und das Kreuz unter Schon beantwortet loest ihn",
+)];
+
+/// Gehoert der Treffer (`scheibe`, `kreuz`, `grund`) im Szenario `wo` ("... nach k Feldern" oder "... vorab") zu einer Ausnahme in
+/// [`AUSWEG_KREUZ`]? Nur dann zaehlt er nicht als Sackgasse.
+fn ist_ausweg_kreuz(scheibe: &str, kreuz: &str, grund: &str, wo: &str) -> bool {
+    wo.ends_with(" Feldern") && AUSWEG_KREUZ.iter().any(|(s, k, g, _)| *s == scheibe && *k == kreuz && *g == grund)
+}
+
 /// Eine Sackgasse: der Guard sperrt, die Warteschlange ist leer, und Antworten auf Felder, die die Scheibe fragen
 /// koennte, es aber nicht (mehr) tut, loesen die Sperre auf.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -492,6 +515,8 @@ struct Zaehler {
     mit_ausschluss: AtomicUsize,
     mit_sperre: AtomicUsize,
     guard_fehler: AtomicUsize,
+    /// Treffer, die entfallen, weil ein Eintrag in [`AUSWEG_KREUZ`] sie nennt.
+    ausweg_kreuz: AtomicUsize,
 }
 
 /// Die Felder, die der Kontext gefragt hat und der Lauf `w` nicht mehr fragt: sie sind durch das Kreuz entfallen.
@@ -629,6 +654,10 @@ fn szenarien(c: &Kontext, kreuz: &str, v: &Value, z: &Zaehler) -> Vec<(Treffer, 
         z.mit_ausschluss.fetch_add(1, Ordering::Relaxed);
         out.extend(sackgasse(&w2, &c.grund, seitenkanal, z).map(|t| (t, wo(&format!("nach {k} Feldern")))));
     }
+    // Nur die benannten Ausnahmen aus [`AUSWEG_KREUZ`], nur im Szenario "Kreuz nach k Feldern"; jedes andere Kreuz bleibt streng.
+    let vorher = out.len();
+    out.retain(|(t, wo)| !ist_ausweg_kreuz(&t.scheibe, kreuz, &t.grund, wo));
+    z.ausweg_kreuz.fetch_add(vorher - out.len(), Ordering::Relaxed);
     out
 }
 
@@ -698,6 +727,7 @@ struct Beobachtung {
     mit_ausschluss: usize,
     mit_sperre: usize,
     guard_fehler: usize,
+    ausweg_kreuz: usize,
 }
 
 fn beobachte(welt: &'static Welt, scheiben: &[Scheibe], veranlagungen: &[&str]) -> Beobachtung {
@@ -721,6 +751,7 @@ fn beobachte(welt: &'static Welt, scheiben: &[Scheibe], veranlagungen: &[&str]) 
         mit_ausschluss: n(&z.mit_ausschluss),
         mit_sperre: n(&z.mit_sperre),
         guard_fehler: n(&z.guard_fehler),
+        ausweg_kreuz: n(&z.ausweg_kreuz),
     }
 }
 
@@ -842,6 +873,14 @@ fn der_sweep_liest_genug() {
     assert_eq!(b.abgewiesen, 0, "Szenarien, deren Vorgabe der Store abwies");
     assert_eq!(b.abgelehnt, 0, "Antworten der Warteschlange, die der Store abwies");
     assert_eq!(b.guard_fehler, 0, "Endstaende, in denen der Guard einen Fehler lieferte");
+    // Jede benannte Ausnahme wird benutzt: ein Sweep, der sie nie trifft, liesse sie still ueberleben (d-53, `kein_sonstige_partner`).
+    eprintln!("Ausnahmen AUSWEG_KREUZ: {} Treffer", b.ausweg_kreuz);
+    assert!(
+        b.ausweg_kreuz >= AUSWEG_KREUZ.len(),
+        "eine Ausnahme in AUSWEG_KREUZ wird nie benutzt: {} Treffer fuer {} Eintraege",
+        b.ausweg_kreuz,
+        AUSWEG_KREUZ.len()
+    );
 }
 
 /// Der Grundzustand ist in jeder Scheibe und Veranlagung frei von Sperren: sonst verdeckte eine Sperre alles, was der Guard
@@ -916,6 +955,22 @@ fn ein_eingeschleustes_kreuz_wird_als_sackgasse_gesehen() {
         assert!(!t.seitenkanal, "{feld}: das Kreuz steht im Fragebogen");
         assert!(t.ausgeschlossen_durch.contains("kein_gewinn"), "{feld}: {:?}", t.ausgeschlossen_durch);
     }
+}
+
+/// Die Ausnahme in [`AUSWEG_KREUZ`] ist eng: sie nimmt den benannten Eintrag im Szenario "Kreuz nach k Feldern" aus und sonst nichts. Ein
+/// anderes Kreuz, ein anderer Sperrgrund, eine andere Scheibe oder das Szenario "vorab" bleiben ein Treffer. Ohne diese Probe liesse sich die
+/// Ausnahme auf die ganze Klasse `flag_konsistenz_offen` ausweiten, ohne dass ein Test es merkt (der echte Bestand hat heute kein zweites Kreuz
+/// in dieser Klasse).
+#[test]
+fn die_ausnahme_fuer_den_ausweg_ueber_das_kreuz_ist_eng() {
+    let nach = "RentnerGesamt/zu kein_sonstige_partner=true nach 1 Feldern";
+    let vorab = "RentnerGesamt/zu kein_sonstige_partner=true vorab";
+    assert!(ist_ausweg_kreuz("RentnerGesamt", "kein_sonstige_partner", "flag_konsistenz_offen", nach), "KONTROLLE: der benannte Eintrag");
+    assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_sonstige_partner", "flag_konsistenz_offen", vorab), "vorab ist keine Ausnahme");
+    assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_kap_partner", "flag_konsistenz_offen", nach), "ein anderes Kreuz");
+    assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_kind", "flag_konsistenz_offen", nach), "ein Kreuz ohne Eintrag");
+    assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_sonstige_partner", "rente_instanz_offen", nach), "ein anderer Sperrgrund");
+    assert!(!ist_ausweg_kreuz("Gesamt", "kein_sonstige_partner", "flag_konsistenz_offen", nach), "eine andere Scheibe");
 }
 
 // ---------------------------------------------------------------- Ticket kein_lohn_pension_partner
@@ -1066,6 +1121,51 @@ fn kein_kind_neben_gespeicherten_kind_angaben_sperrt_nur_in_gesamt() {
         assert_eq!(nein.grund(), "keiner", "KONTROLLE gesamt mit {feld} und kein_kind = nein");
         let rentner = lauf_mit(Scheibe::RentnerGesamt, &[veranlagung, (feld, wert), ("kein_kind", json!(true))]);
         assert_eq!(rentner.grund(), "keiner", "rentner_gesamt mit {feld} und kein_kind = ja");
+    }
+}
+
+// ---------------------------------------------------------------- d-53: Kreuze des Ehegatten in `rentner_gesamt`
+
+/// d-53 (Julius, 2026-10-22): `kein_kap_partner` und `kein_sonstige_partner` stehen in `rentner_gesamt`. Beide stehen in `FLAG_NEGIERT`: "keine"
+/// neben einem bestaetigten Betrag des Ehegatten sperrt mit `flag_konsistenz_offen`. Der Sweep oben beantwortet leere Faelle und sieht diese Klasse
+/// nie (die Sperre loest keine Antwort auf ein ungefragtes Feld, sondern das Kreuz neben dem gespeicherten Betrag); darum steht sie hier einzeln.
+/// Kontrolle: dieselbe Angabe mit dem Kreuz "ja" (`false`, der Ehegatte hat die Einkunft) sperrt nicht. Gegenprobe zum Weg hinaus (Zeile erreichbar,
+/// Zahl nach der Antwort): `rust/api/tests/rentner_ehegatten_kreuze.rs`.
+#[test]
+fn kreuze_des_ehegatten_neben_gespeicherten_betraegen_sperren_in_rentner_gesamt() {
+    let rente_voll = [
+        ("rentner_renten_art_partner", json!("gesetzliche_rente")),
+        ("rentner_jahresrente_partner", json!(1_000_000)),
+        ("rentner_renten_beginn_jahr_partner", json!(2025)),
+        ("rentner_alter_bei_rentenbeginn_partner", json!(65)),
+    ];
+    let faelle: [(&str, Vec<(&str, Value)>); 2] = [
+        ("kein_kap_partner", vec![("kap_kapitalertraege_partner", json!(500_000))]),
+        ("kein_sonstige_partner", rente_voll.to_vec()),
+    ];
+    for (kreuz, werte) in faelle {
+        let mit_kreuz = |wert: bool| {
+            let mut v = vec![("veranlagung", json!("zusammen"))];
+            v.extend(werte.iter().cloned());
+            v.push((kreuz, json!(wert)));
+            lauf_mit(Scheibe::RentnerGesamt, &v)
+        };
+        assert_eq!(mit_kreuz(true).grund(), "flag_konsistenz_offen", "{kreuz} = keine neben dem gespeicherten Betrag");
+        assert_eq!(mit_kreuz(false).grund(), "keiner", "KONTROLLE {kreuz} = ja neben demselben Betrag");
+    }
+    // Das Kreuz "keine Rente" neben einem TEILWEISE gespeicherten Rentenfall: die verborgenen Kernfelder darf `rente_instanz_offen` nicht verlangen
+    // (Sackgasse), und der Teilfall darf nicht ungesperrt in den Rechenkern laufen (HTTP 500 in `api`): Widerspruch zum Kreuz.
+    for teil in 1..=3usize {
+        let kern = [
+            ("rentner_alter_bei_rentenbeginn_partner", json!(65)),
+            ("rentner_renten_art_partner", json!("gesetzliche_rente")),
+            ("rentner_renten_beginn_jahr_partner", json!(2025)),
+        ];
+        let mut v = vec![("veranlagung", json!("zusammen"))];
+        v.extend(kern.iter().take(teil).cloned());
+        let mut keine = v.clone();
+        keine.push(("kein_sonstige_partner", json!(true)));
+        assert_eq!(lauf_mit(Scheibe::RentnerGesamt, &keine).grund(), "flag_konsistenz_offen", "{teil} Kernfelder und Kreuz = keine");
     }
 }
 
@@ -1272,16 +1372,10 @@ const GEPRUEFT: &[(&str, &str, &[&str])] = &[
     ),
     // Fluss J F2/F3/F8: `kein_gewinn_partner` (11 Felder) steht seit 2026-10-21 in `rentner_gesamt`, sein Eintrag hier ist weggefallen
     // (das Kreuz wird gefragt, die Bedingung schliesst dort aus); er steht in [`KONTROLLE`].
-    (
-        "RentnerGesamt",
-        "kein_kap_partner",
-        &["kap_gewinn_aktien_partner", "kap_gewinn_sonstige_partner", "kap_kapitalertraege_partner", "kap_verlust_aktien_partner", "kap_verlust_sonstige_partner"],
-    ),
-    (
-        "RentnerGesamt",
-        "kein_sonstige_partner",
-        &["rentner_alter_bei_rentenbeginn_partner", "rentner_jahresrente_partner", "rentner_renten_art_partner", "rentner_renten_beginn_jahr_partner", "rentner_rentenfreibetrag_partner"],
-    ),
+    // d-53 (Julius, 2026-10-22): `kein_kap_partner` (5 Felder) und `kein_sonstige_partner` (5 Felder) stehen seit 2026-10-22 in `rentner_gesamt`, ihre
+    // Eintraege hier sind weggefallen (die Kreuze werden gefragt, die Bedingung schliesst dort aus). Beide stehen in [`KONTROLLE`]. Die Sackgasse, die
+    // `kein_sonstige_partner` im Prototyp baute (`rente_instanz_offen` verlangte die verborgenen Kernfelder), ist behoben; der Sweep sieht sie nicht
+    // mehr, und die gespeicherten Widersprueche beider Kreuze misst `kreuze_des_ehegatten_neben_gespeicherten_betraegen_sperren_in_rentner_gesamt`.
     // Fragen-Reduktion Teil 2, Phase 2: `keine_behinderung_pflege` (zwei Felder) steht seit 2026-10-22 in `rentner_gesamt`, sein Eintrag hier ist
     // weggefallen (das Kreuz wird gefragt, die Bedingung schliesst dort aus). Er steht NICHT in [`KONTROLLE`]: im Grundzustand ("zu") schliesst
     // das Kreuz die Felder aus, und der Kontext, der sie stellt, gibt das Kreuz selbst vor (`= ja`); `miss_eintraege` ueberspringt den Eintrag
@@ -1311,6 +1405,9 @@ const KONTROLLE: &[(&str, &str, &str)] = &[
     ("RentnerGesamt", "kein_gewinn", "gewinn_betriebsart"),
     // Fluss J F2/F3/F8: das Kreuz des Ehegatten, das `rentner_gesamt` seit 2026-10-21 fragt (vorher ein Eintrag der Regel).
     ("RentnerGesamt", "kein_gewinn_partner", "einkuenfte_gewinn_partner"),
+    // d-53: die zwei Kreuze des Ehegatten, die `rentner_gesamt` seit 2026-10-22 fragt (vorher zwei Eintraege der Regel in `GEPRUEFT`).
+    ("RentnerGesamt", "kein_kap_partner", "kap_kapitalertraege_partner"),
+    ("RentnerGesamt", "kein_sonstige_partner", "rentner_jahresrente_partner"),
 ];
 
 fn als_menge(liste: &[(&str, &str, &[&str])], art: Art) -> BTreeSet<Eintrag> {

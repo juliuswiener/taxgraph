@@ -2045,7 +2045,9 @@ async fn kist_anteil_zaehlt_gewinn_vermietung_und_rente_der_person_zu() {
         ("gewinn_betriebsart_partner", json!("selbstaendig")),
         ("einkuenfte_gewinn_partner", json!(2_000_000)),
     ];
+    // d-53 (2026-10-22): die Zeile `kein_sonstige_partner` steht in der Rentner-Liste; "ja, der Ehegatte hat eine Rente" gehoert zur Rente von B.
     let rente_b = [
+        ("kein_sonstige_partner", json!(false)),
         ("rentner_jahresrente", json!(0)),
         ("rentner_renten_art_partner", json!("gesetzliche_rente")),
         ("rentner_jahresrente_partner", json!(2_000_000)),

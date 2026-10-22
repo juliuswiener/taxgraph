@@ -75,10 +75,13 @@ fn person_a_instanz_2(art: &str, beginn: i64) -> Ereignisse<'_> {
     ]
 }
 
-/// Rente der Person B (Zusammenveranlagung): die vier Kernfelder bestaetigt.
+/// Rente der Person B (Zusammenveranlagung): die vier Kernfelder bestaetigt. Seit d-53 (2026-10-22) steht die Zeile `kein_sonstige_partner` in
+/// der Liste der Scheibe; ohne ihre Antwort "ja, der Ehegatte hat eine Rente" haelt die Flag-Sperre die Zahl neben der gespeicherten Rente
+/// zurueck (`flag_konsistenz_offen`) und die Sperren dieser Datei kaemen nie zum Zug.
 fn person_b(art: &str, beginn: i64) -> Ereignisse<'_> {
     vec![
         ("veranlagung", json!("zusammen"), true),
+        ("kein_sonstige_partner", json!(false), true),
         ("rentner_renten_art_partner", json!(art), true),
         ("rentner_jahresrente_partner", json!(1_200_000), true),
         ("rentner_renten_beginn_jahr_partner", json!(beginn), true),

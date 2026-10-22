@@ -109,12 +109,14 @@ const MIT_LISTE: [Scheibe; 4] = [
 /// danach am 2026-10-22 die drei Kreuze `keine_behinderung_pflege`, `keine_energetische_sanierung` und `keine_spenden` nur in
 /// `rentner_gesamt` (Fragen-Reduktion Teil 2, Phase 2), 332 -> 335, der Kegel bleibt 28, `an_gesamt` 102 und `gesamt` 424 bleiben (sie
 /// fragen die Kreuze schon); `keine_behinderung_pflege_partner` fehlt mit Absicht (F5);
+/// danach am 2026-10-22 die zwei Kreuze `kein_kap_partner` und `kein_sonstige_partner` nur in `rentner_gesamt` (d-53, Julius, Option 3
+/// "Beide Blöcke"), 335 -> 337, der Kegel bleibt 28, `an_gesamt` 102 und `gesamt` 424 bleiben (`gesamt` fragt beide Kreuze schon);
 /// vorher 2026-10-05, `9c07d98e`).
 const LAENGEN: [(Scheibe, usize, usize); 4] = [
     (Scheibe::Ep, 6, 4),
     (Scheibe::AnGesamt, 102, 33),
     (Scheibe::Gesamt, 424, 35),
-    (Scheibe::RentnerGesamt, 335, 28),
+    (Scheibe::RentnerGesamt, 337, 28),
 ];
 
 fn registry() -> &'static Registry {
