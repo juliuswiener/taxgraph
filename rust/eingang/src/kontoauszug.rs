@@ -880,7 +880,7 @@ pub struct Uebernahme {
     /// halb angesehener Auszug aus wie ein ganz geprüfter.
     pub llm_uebersprungen: usize,
     /// Warum die uebrigen Buchungen keinen Vorschlag wurden. Zusammen mit `uebernommen` und
-    /// `llm_uebersprungen` ergeben diese acht Zaehler genau die Zahl der Buchungen.
+    /// `llm_uebersprungen` ergeben diese zehn Zaehler genau die Zahl der Buchungen.
     /// Betrag 0 oder positiv: keine Ausgabe.
     pub einnahmen: usize,
     /// Weder Stichwort noch Klassifikator ordnete die Ausgabe einer Kategorie zu.
@@ -889,8 +889,10 @@ pub struct Uebernahme {
     pub partei: usize,
     /// Das Zielfeld fehlt in der Bindung der Scheibe.
     pub feld_fehlt: usize,
-    /// Das Zielfeld hatte schon einen Wert im Store. Ein Vorschlag ersetzt ihn nie (Auflage A);
-    /// auch den eigenen vorlaeufigen Vorschlag aus einem frueheren Import nicht (offen: d-63).
+    /// Das Zielfeld hatte schon einen Wert im Store, den dieser Import nicht ersetzen darf
+    /// (bestaetigt, von einem anderen Schreiber oder ohne lesbare Posten). Ein Vorschlag ersetzt
+    /// ihn nie (Auflage A); nur der eigene vorlaeufige Vorschlag aus einem frueheren Auszug ist
+    /// ersetzbar (`ersetzbar`, `schon_erfasst`; d-63).
     pub feld_belegt: usize,
     /// Das Datum der Buchung lag ausserhalb des Veranlagungsjahrs des Stores (Bankimport S1).
     pub anderes_jahr: usize,
@@ -1892,9 +1894,9 @@ mod tests {
             .and_then(|v| v.as_i64())
     }
 
-    /// Der Lese-Pfad der Vereinigung (Auflage A verbietet das Ersetzen, d-63): die Posten des
-    /// bestehenden Ereignisses plus die eines zweiten Auszugs ergeben EINE Summe, und dieselbe
-    /// Buchung in beiden zaehlt einmal. Der Import selbst schreibt nichts und zaehlt `feld_belegt`.
+    /// Der Lese-Pfad der Vereinigung (d-63): die Posten des bestehenden Ereignisses plus die eines
+    /// zweiten Auszugs ergeben EINE Summe, und dieselbe Buchung in beiden zaehlt einmal. Der Import
+    /// ohne Haken (`uebernehme`) schreibt nichts und zaehlt `ersetzbar`.
     #[test]
     fn s1_vereinigung_ueber_den_lese_pfad() {
         let erster = [

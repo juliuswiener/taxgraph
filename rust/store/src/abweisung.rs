@@ -222,7 +222,8 @@ pub fn auflage_a_name(schreiber: &Schreiber) -> String {
 
 /// Auflage A, Ersetzt-Guard (`store.py:321`): `llm:`/`import:beleg`/`import:kontoauszug` duerfen
 /// nie `ersetzt` tragen. `berechnet:` ist EXEMPT (`api.py entfernung()` uebergibt dort bewusst
-/// `ersetzt=<aktives Event>`, s. Kommentar in `store.py:317-320`).
+/// `ersetzt=<aktives Event>`, s. Kommentar in `store.py:317-320`). Die eine Ausnahme des
+/// Kontoauszugs steht in [`ersetzt_ausnahme`]; diese Funktion kennt sie nicht.
 #[must_use]
 pub fn ersetzt_gesperrt(schreiber: &Schreiber) -> bool {
     matches!(
