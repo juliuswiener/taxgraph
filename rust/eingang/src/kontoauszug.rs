@@ -1535,6 +1535,33 @@ mod tests {
         );
     }
 
+    /// Das Zahlungsjahr ist das Veranlagungsjahr des STORES, nicht ein festes 2025: im Fall 2024
+    /// zaehlt der Posten von 2024, und der von 2025 ist `anderes_jahr`. Mutante N11 von main
+    /// (`let jahr = 2025;`) ueberlebte, weil jeder Test einen Fall 2025 anlegte.
+    #[test]
+    fn s1_zahlungsjahr_ist_das_veranlagungsjahr_des_stores() {
+        let tx = s1_tx(&[
+            ("2024-12-30", -5_000, "Spende Rotes Kreuz"),
+            ("2025-02-01", -7_000, "Spende Tierheim"),
+        ]);
+        let mut store = store::Store::leer(2024, None);
+        let erg = uebernehme(
+            &mut store,
+            &tx,
+            store::BindungNachschlag::neu(crate::doctest_bindung().unwrap()),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        assert_eq!((erg.uebernommen, erg.anderes_jahr), (1, 1), "{erg:?}");
+        assert_eq!(
+            store.aktives("spenden_betrag").and_then(|e| e.wert.zu_json().ok()).and_then(|v| v.as_i64()),
+            Some(5_000),
+            "im Fall 2024 zaehlt nur der Posten von 2024"
+        );
+    }
+
     /// Zwei gleiche Buchungen in EINEM Auszug sind zwei Buchungen und zaehlen zweimal: eine
     /// Bank bucht nie dieselbe Zeile doppelt. Die Mehrmenge kuerzt erst beim Vereinigen zweier
     /// Auszuege (`bank::saldo::vereinige`, Maximum je Schluessel), nicht innerhalb eines Auszugs.
