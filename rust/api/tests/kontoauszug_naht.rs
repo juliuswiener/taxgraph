@@ -581,11 +581,11 @@ async fn zweck_datum_und_csv_randfaelle() {
     .await;
     assert_eq!(a["uebernommen"], 0);
     assert_eq!(a["hinweis"], hinweis_datum);
-    assert!(events(&d, "kw30").is_empty());
+    assert_eq!(events(&d, "kw30").len(), 0);
     let (_, a) = auszug(&d, "kw31", json!({"format": "json", "inhalt": [{"datum": 5.5, "betrag": -5000, "verwendungszweck": "Spende"}]})).await;
     assert_eq!(a["uebernommen"], 0);
     assert_eq!(a["hinweis"], hinweis_datum);
-    assert!(events(&d, "kw31").is_empty());
+    assert_eq!(events(&d, "kw31").len(), 0);
     let (_, a) = auszug(&d, "kw32", json!({"format": "json", "inhalt": [{"datum": "2025-03-15", "betrag": -5000, "verwendungszweck": "Spende"}]})).await;
     assert_eq!(a["uebernommen"], 1);
     assert!(a.get("hinweis").is_none(), "{a}");
@@ -931,7 +931,7 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         a,
         json!({"uebernommen": 2, "transaktionen": 2, "verworfen": 0})
     );
-    assert_eq!(events(&d, "kh3")[0]["wert"], 300_00);
+    assert_eq!(events(&d, "kh3")[0]["wert"], 30_000);
     // Derselbe Auszug noch einmal: das Feld hat schon einen Wert.
     let (_, a) = sende(&d, "/fall/kh3/kontoauszug", &zwei).await;
     assert_eq!(
