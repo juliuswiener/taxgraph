@@ -4,7 +4,7 @@ use domain::{PyWert, Sperrgrund};
 use rust_decimal::Decimal;
 use store::SnapshotFeld;
 
-use super::einkunft::{betrag_offen, dba_p32b_p16, flag_kapital_gewinn};
+use super::einkunft::{betrag_offen, dba_p32b_p16, flag_kapital_gewinn, kind_abgewaehlt_mit_kindern};
 use super::{bestaetigt, ganzzahl, positiv, py_int_wert, werbungskosten, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::{
     GESAMT_PARTNER_19, GESAMT_PARTNER_KAP, RENTNER_22, RENTNER_22_PARTNER, RENTNER_AA_ARTEN,
@@ -21,6 +21,7 @@ use crate::{
 pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
     sperre!(dba_p32b_p16(k));
     sperre_o!(flag_kapital_gewinn(k));
+    sperre_o!(kind_abgewaehlt_mit_kindern(k));
     sperre_o!(betrag_offen(k));
     // Person B (#4): bei Zusammenveranlagung der vollstaendig BESTAETIGTE Person-B-Kegel.
     // Abweichung Nr. 96 (Julius d-47): ein BESTAETIGTES `kein_kap_partner = ja` („keine Kapitalertraege beim Partner“) nimmt die

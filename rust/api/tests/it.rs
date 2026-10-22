@@ -46,6 +46,8 @@ mod gwg_folgefrage_hermetisch;
 mod http_grenzen_hermetisch;
 #[path = "jahr_ausserhalb_hermetisch.rs"]
 mod jahr_ausserhalb_hermetisch;
+#[path = "kein_kind_sperre.rs"]
+mod kein_kind_sperre;
 #[path = "kind_idnr_schreibweg_hermetisch.rs"]
 mod kind_idnr_schreibweg_hermetisch;
 #[path = "kontoauszug_naht.rs"]
