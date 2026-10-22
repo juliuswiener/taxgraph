@@ -12,6 +12,7 @@
     )
 )]
 
+pub mod bank;
 pub mod beleg;
 pub mod csv;
 pub mod edaten;

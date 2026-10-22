@@ -210,6 +210,72 @@ fn llm_texte(v: &Value) -> Option<Vec<String>> {
 
 // ------------------------------------------------------------------ kontoauszug
 
+/// BEKANNTE ABWEICHUNG (Bankimport S1, Vault `backlog/taxgraph/bankimport-s1-buchungsmodell-mit-zahlungsjahr-summe-und-gutschrift`):
+/// Python nimmt je Feld die ERSTE Buchung und prueft kein Jahr; Rust summiert die Ausgaben des Zahlungsjahrs, zieht
+/// Rueckbuchungen ab und liest ein Datum nur in vier Formen (`bank::buchung::Datum`). Von 523 Faellen der Abschnitte
+/// `konto`, `konto_json` und `konto_stichwort` (ohne die 67 Fehlerfaelle) weichen 36 ab: 19 wegen eines Datums, das Rust
+/// nicht liest oder das nicht im Jahr 2025 liegt (leer, `null`, eine Zahl), 17 wegen zweier Buchungen im selben Feld
+/// (Summe) oder einer Rueckbuchung. Die Listen nennen die Fall-Nummern im eingefrorenen Korpus: jeder Fall der Liste
+/// MUSS abweichen (`assert_ne`), jeder andere MUSS gleich sein. Wer das Verhalten an Python angleicht, kuerzt die Listen.
+const KONTO_ABWEICHUNG: [usize; 22] = [
+    21, 24, 27, 56, 62, 64, 66, 67, 81, 86, 108, 131, 132, 143, 165, 168, 188, 204, 216, 219, 241, 243,
+];
+const KONTO_JSON_ABWEICHUNG: [usize; 9] = [9, 27, 50, 84, 93, 107, 116, 135, 141];
+const KONTO_STICHWORT_ABWEICHUNG: [usize; 5] = [140, 183, 184, 185, 186];
+
+/// Die Felder einer Uebernahme, in denen Rust und Python gleich sein MUESSEN: Feld, Wert, Zustand, Herkunft,
+/// Schreiber, Kategorie, Quelle und die Zaehler `[uebernommen, llm_uebersprungen]`. `signal_1` fehlt hier mit Absicht:
+/// Rust legt seit S1 die Einzelposten ab (`posten`, `jahr`, `summe_cent`), und die `event_id` haengt am ganzen Inhalt.
+fn konto_vergleichsform(r: &Value, events: &Value) -> Value {
+    let ereignisse: Vec<Value> = events
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|e| {
+            json!({
+                "feld_id": e["feld_id"], "wert": e["wert"], "zustand": e["zustand"],
+                "herkunft": e["herkunft"], "schreiber": e["schreiber"],
+                "kategorie": e["signal"]["signal_1"]["kategorie"], "quelle": e["signal"]["signal_1"]["quelle"],
+            })
+        })
+        .collect();
+    json!({"r": r, "events": ereignisse})
+}
+
+/// Ein Fall der Uebernahme: gleich wie Python, oder auf der Liste und dann verschieden. Gibt `true` zurueck, wenn der
+/// Fall auf der Liste stand. Ein Fall der Liste darf kein Feld schreiben, das Python nicht schreibt.
+fn konto_fall(
+    z: &mut Abgleich,
+    liste: &[usize],
+    (nr, was): (usize, String),
+    rust: &Value,
+    py: &Value,
+) -> bool {
+    let r = konto_vergleichsform(&rust["r"], &rust["events"]);
+    let p = konto_vergleichsform(&py["r"], &py["events"]);
+    if !liste.contains(&nr) {
+        z.pruefe(&was, &r, &p);
+        return false;
+    }
+    assert_ne!(r, p, "{was}: Rust stimmt jetzt mit Python ueberein, Liste kuerzen");
+    let felder = |v: &Value| -> Vec<String> {
+        v["events"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|e| e["feld_id"].as_str().unwrap().to_owned())
+            .collect()
+    };
+    let py_felder = felder(&p);
+    assert!(
+        felder(&r).iter().all(|f| py_felder.contains(f)),
+        "{was}: Rust schreibt ein Feld, das Python nicht schreibt: {:?} gegen {py_felder:?}",
+        felder(&r)
+    );
+    z.faelle += 1;
+    true
+}
+
 /// BEKANNTE ABWEICHUNG (Bankimport S0, Vault `backlog/taxgraph/kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`):
 /// Python nimmt den ERSTEN Datensatz als Kopfzeile. Eine Leerzeile davor ergibt dort einen leeren Kopf und keine Buchung,
 /// ein BOM macht den ersten Spaltennamen unlesbar (das Datum bleibt leer). Rust sucht die Kopfzeile in den ersten 30
@@ -337,17 +403,16 @@ fn betragsparser_wie_orakel() {
 #[test]
 fn uebernahme_aus_csv_wie_orakel() {
     let mut z = Abgleich::default();
-    let mut events_n = 0;
-    for f in abschnitt("konto") {
+    let (mut events_n, mut abweichend) = (0, 0);
+    for (nr, f) in abschnitt("konto").iter().enumerate() {
         let llm = llm_texte(&f["llm"]);
         let rust = rust_konto(Ok(transaktionen(&f["tx"])), llm.as_deref());
         events_n += rust["events"].as_array().unwrap().len();
-        z.pruefe(
-            &format!("uebernehme {}", f["tx"]),
-            &rust,
-            &json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]}),
-        );
+        let py = json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]});
+        let fall = (nr, format!("uebernehme {}", f["tx"]));
+        abweichend += usize::from(konto_fall(&mut z, &KONTO_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(abweichend, KONTO_ABWEICHUNG.len());
     assert!(events_n >= 50, "nur {events_n} Events verglichen");
     z.fertig(200);
 }
@@ -355,35 +420,41 @@ fn uebernahme_aus_csv_wie_orakel() {
 #[test]
 fn uebernahme_aus_json_wie_orakel() {
     let mut z = Abgleich::default();
-    for f in abschnitt("konto_json") {
+    let mut abweichend = 0;
+    for (nr, f) in abschnitt("konto_json").iter().enumerate() {
         let roh = &f["roh"];
         let rust = rust_konto(ka::aus_json(roh), None);
         let py_r = py_fehler_normiert(&f["py"]["r"]);
         // Bei einem Fehler verwirft die API den Fall ungespeichert; nur die Klasse zaehlt.
-        let (rust, py) = if py_r.get("err").is_some() {
-            (json!({"r": rust["r"]}), json!({"r": py_r}))
-        } else {
-            (rust, json!({"r": py_r, "events": f["py"]["events"]}))
-        };
-        z.pruefe(&format!("uebernehme json {roh}"), &rust, &py);
+        if py_r.get("err").is_some() {
+            z.pruefe(
+                &format!("uebernehme json {roh}"),
+                &json!({"r": rust["r"]}),
+                &json!({"r": py_r}),
+            );
+            continue;
+        }
+        let py = json!({"r": py_r, "events": f["py"]["events"]});
+        let fall = (nr, format!("uebernehme json {roh}"));
+        abweichend += usize::from(konto_fall(&mut z, &KONTO_JSON_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(abweichend, KONTO_JSON_ABWEICHUNG.len());
     z.fertig(150);
 }
 
 #[test]
 fn schluesselwoerter_deckel_und_llm_wie_orakel() {
     let mut z = Abgleich::default();
-    let mut mit_event = 0;
-    for f in abschnitt("konto_stichwort") {
+    let (mut mit_event, mut abweichend) = (0, 0);
+    for (nr, f) in abschnitt("konto_stichwort").iter().enumerate() {
         let llm = llm_texte(&f["llm"]);
         let rust = rust_konto(Ok(transaktionen(&f["tx"])), llm.as_deref());
         mit_event += usize::from(!rust["events"].as_array().unwrap().is_empty());
-        z.pruefe(
-            &format!("stichwort {}", f["tx"]),
-            &rust,
-            &json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]}),
-        );
+        let py = json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]});
+        let fall = (nr, format!("stichwort {}", f["tx"]));
+        abweichend += usize::from(konto_fall(&mut z, &KONTO_STICHWORT_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(abweichend, KONTO_STICHWORT_ABWEICHUNG.len());
     assert!(mit_event >= 100, "nur {mit_event} Faelle mit Event");
     z.fertig(150);
 }

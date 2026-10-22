@@ -8,8 +8,8 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use domain::py_strip;
 use eingang::kontoauszug::{
-    aus_json, hinweis_nichts_gelesen, hinweis_nichts_uebernommen, hinweis_verworfen,
-    parse_csv_befund, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
+    aus_json, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen, hinweis_nichts_uebernommen,
+    hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
     verwirf_unlesbare_betraege, verwirf_unlesbare_betraege_json, Klassifikator, KontoauszugFehler,
     Transaktion, LLM_AUFRUFE_HOECHSTZAHL,
 };
@@ -352,12 +352,19 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     // Ohne diese Hinweise wäre „0 von 0“ ein Erfolg, den der Nutzer nicht von einem leeren Konto
     // unterscheidet (Ticket `kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`).
     // Nur CSV: Bei JSON und PDF kennt der Nutzer die Spalten nicht, die er hochlud.
+    let mut gruende_genannt = false;
     if let Some(befund) = &csv_befund {
         if tx.is_empty() && n_verworfen == 0 {
             hinweise.push(hinweis_nichts_gelesen(befund));
         } else if erg.uebernommen == 0 {
             hinweise.extend(hinweis_nichts_uebernommen(tx.len(), &erg));
+            gruende_genannt = true;
         }
+    }
+    // Buchungen, die wegen Jahr, Datum oder Saldo nicht mitzählten, in jedem Format und auch neben
+    // einem Vorschlag; ohne Vorschlag nennt `hinweis_nichts_uebernommen` (nur CSV) dieselben Gründe.
+    if !gruende_genannt {
+        hinweise.extend(hinweis_nicht_gezaehlt(&erg));
     }
     if erg.llm_uebersprungen > 0 {
         // Ohne diesen Hinweis wäre der Deckel eine stille Kürzung.
