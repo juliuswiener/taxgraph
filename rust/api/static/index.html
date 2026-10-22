@@ -107,6 +107,12 @@
         <div id="konto-panel" class="vorjahr-panel" hidden>
           <input id="konto-file" type="file" accept=".csv,.json,.pdf,text/csv,application/json,application/pdf">
           <div id="konto-status" class="maps-status">Ausgaben werden als Vorschläge erfasst — du bestätigst jede neben dem Auszug. IBAN/Kontonummern werden maskiert.</div>
+          <!-- Rückfrage mit Haken (Bankimport S1b, d-63): ein zweiter Auszug ersetzt den eigenen Vorschlag eines früheren
+               erst, wenn der Haken sitzt. Die Zahlen nennt die Statuszeile darüber. -->
+          <div id="konto-ersetzen" hidden>
+            <label><input id="konto-ersetzen-haken" type="checkbox"> Bisherigen Vorschlag durch die Summe ersetzen</label>
+            <button id="konto-ersetzen-go" class="maps-berechnen" type="button" disabled>Ersetzen</button>
+          </div>
         </div>
       </div>
 

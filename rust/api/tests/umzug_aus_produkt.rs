@@ -31,13 +31,15 @@ const OBERFLAECHE: &[(&str, &str)] = &[
     // `oberflaeche/lohnersatz_liste.rs`. app.js seit 2026-10-21 (Fluss J F1) zusaetzlich mit `zeigeOffeneFelder` (die Sperre
     // `ring_betrag_vorlaeufig` nennt ihr offenes Feld); Waechter: `oberflaeche/fluss_j.rs`. app.js seit 2026-10-21 (Fluss J F4) laesst
     // die leere Antwort eines Textfelds mit `leer_erlaubt` zu (Hausnummernzusatz, BIC); Waechter: `oberflaeche/fluss_j.rs`.
-    ("app.js", "f35caf3a2f42b080f16c1b8e03f2338f58292f0e65fc367c78b0996bcbf32514"),
+    // app.js und index.html seit 2026-10-22 (Bankimport S1b, d-63) mit der Rueckfrage samt Haken, bevor ein zweiter Kontoauszug den
+    // eigenen Vorschlag eines frueheren ersetzt (`kontoauszugSenden`, `#konto-ersetzen`); Waechter: `oberflaeche/konto_ersetzen.rs`.
+    ("app.js", "9e38b13055fa950017e688291110ea4dc4a70c45bbc184e3f87172325555cb62"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),
     // index.html seit 2026-10-15 (S8, Julius) mit dem Hinweis auf die Namen-Grenze des PII-Filters neben dem KI-Eingabefeld:
     // weicht bewusst von `produkt/haut/static/index.html` ab (Stand 12c0ef31...); Wächter `http.rs::die_startseite_warnt_im_chat_vor_namen`.
-    ("index.html", "9d923eed2beb2fe9ad7b59ba98aa8d60c8966ac66185ca62f10ed45fc3f8f856"),
+    ("index.html", "bba0d94e09e4be06c79846956cbf5a794d35a647428ba3c7dcc7455df49964bb"),
     ("style.css", "5570eccf7a6a32ace378a716b888c9d156c53138762d2a314bbd14f75b3e6797"),
 ];
 

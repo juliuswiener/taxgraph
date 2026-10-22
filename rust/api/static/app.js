@@ -2793,9 +2793,29 @@ async function kontoauszugHochladen(datei) {
                : name.endsWith(".pdf") ? "pdf" : null;
   if (!format) { st.textContent = "Bitte eine CSV-, JSON- oder PDF-Datei wählen."; return; }
   input.disabled = true;
+  $("konto-ersetzen").hidden = true;   // eine offene Rückfrage galt dem alten Auszug; der Haken darf den neuen nicht mitnehmen
   st.textContent = "Lese Auszug …";
   const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await datei.text();
-  const r = await jpost(`/fall/${FALL}/kontoauszug`, { format, inhalt });
+  KONTO_LETZTER = { format, inhalt };
+  await kontoauszugSenden(false);
+  input.disabled = false;
+}
+
+// Der letzte Auszug bleibt im Speicher, damit die Rückfrage mit Haken ihn ohne neue Dateiwahl noch einmal senden kann
+// (Bankimport S1b, d-63). Ohne Rückfrage wird er verworfen.
+let KONTO_LETZTER = null;
+
+// Sendet den letzten Auszug. Trägt ein Feld schon einen eigenen Vorschlag aus einem früheren Auszug, ersetzt der Server ihn
+// nur mit `ersetzen` (dem Haken); ohne Haken antwortet er mit `ersetzbar`, und die Rückfrage erscheint. Jede andere Antwort
+// (auch ein Fehler) schließt die Rückfrage und vergisst den Auszug: der Haken gilt nie für einen Auszug, den die Rückfrage nicht nannte.
+async function kontoauszugSenden(ersetzen) {
+  const st = $("konto-status");
+  const r = await jpost(`/fall/${FALL}/kontoauszug`, ersetzen ? { ...KONTO_LETZTER, ersetzen: true } : KONTO_LETZTER);
+  const fragen = r.status === 200 && !!(r.body.ersetzbar && r.body.ersetzbar.length);
+  $("konto-ersetzen-haken").checked = false;
+  $("konto-ersetzen-go").disabled = true;
+  $("konto-ersetzen").hidden = !fragen;
+  if (!fragen) KONTO_LETZTER = null;
   if (r.status === 200) {
     st.textContent = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`
       + (r.body.hinweis ? ` ${r.body.hinweis}` : "");
@@ -2803,7 +2823,14 @@ async function kontoauszugHochladen(datei) {
   } else {
     st.textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);
   }
-  input.disabled = false;
+}
+
+async function kontoauszugErsetzen() {
+  const go = $("konto-ersetzen-go");
+  if (go.disabled || !KONTO_LETZTER) return;   // Haken fehlt oder Doppel-Submit
+  go.disabled = true;
+  $("konto-status").textContent = "Ersetze …";
+  await kontoauszugSenden(true);
 }
 
 // --- P1.1-Verdrahtung: Anmeldung, Registrierung, Abmeldung ---
@@ -2954,6 +2981,8 @@ $("vorjahr-go").addEventListener("click", vorjahrUebernehmen);
 $("einreichen-btn").addEventListener("click", einreichenPruefen);
 $("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); p.hidden = !p.hidden; });
 $("konto-file").addEventListener("change", (e) => kontoauszugHochladen(e.target.files[0]));
+$("konto-ersetzen-haken").addEventListener("change", (e) => { $("konto-ersetzen-go").disabled = !e.target.checked; });
+$("konto-ersetzen-go").addEventListener("click", kontoauszugErsetzen);
 $("login-go").addEventListener("click", loginGo);
 $("login-umschalten").addEventListener("click", loginModusUmschalten);
 $("logout-btn").addEventListener("click", abmelden);
