@@ -402,7 +402,7 @@ async fn zielfeld_gilt_je_scheibe_und_wird_nicht_ueberschrieben() {
         )
     );
     // Zwei Buchungen derselben Kategorie ergeben EINEN Vorschlag mit der Summe (Bankimport S1; Python nahm die
-    // erste). Ein zweiter Auszug schreibt nichts mehr: Auflage A verbietet dem Kontoauszug `ersetzt`, d-63.
+    // erste). Derselbe Auszug noch einmal aendert nichts: die Buchungen stehen schon im Vorschlag (S1b, d-63).
     let rumpf = json!({"format": "json", "inhalt": [
         {"datum": "2025-03-01", "betrag": -100, "verwendungszweck": "Maler"},
         {"datum": "2025-03-02", "betrag": -200, "verwendungszweck": "Klempner"}]});
@@ -932,13 +932,132 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         json!({"uebernommen": 2, "transaktionen": 2, "verworfen": 0})
     );
     assert_eq!(events(&d, "kh3")[0]["wert"], 30_000);
-    // Derselbe Auszug noch einmal: das Feld hat schon einen Wert.
+    // Derselbe Auszug noch einmal: der eigene Vorschlag des Felds enthaelt die Buchungen schon (S1b).
     let (_, a) = sende(&d, "/fall/kh3/kontoauszug", &zwei).await;
+    assert_eq!(
+        a["hinweis"],
+        "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) im bisherigen Vorschlag des Felds schon enthalten."
+    );
+    assert_eq!(events(&d, "kh3").len(), 1);
+    // Ein BESTAETIGTER Wert auf dem Feld bleibt „schon einen Wert“, auch mit Haken.
+    fall_anlegen(&d, "kh4", "gesamt").await;
+    let (s, _) = sende(
+        &d,
+        "/fall/kh4/event",
+        &json!({"feld_id": "hh_handwerker_betrag", "wert": 1_000, "zustand": "bestaetigt",
+            "herkunft": {"haftung": "nutzer", "herkunft": "laie", "pruef_tiefe": "ungeprueft"},
+            "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": "ok@hh_handwerker_betrag"}}),
+    )
+    .await;
+    assert_eq!(s, 201);
+    let mut mit_haken = zwei.clone();
+    mit_haken["ersetzen"] = json!(true);
+    let (_, a) = sende(&d, "/fall/kh4/kontoauszug", &mit_haken).await;
     assert_eq!(
         a["hinweis"],
         "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, das schon einen Wert hat."
     );
-    assert_eq!(events(&d, "kh3").len(), 1);
+    assert_eq!(events(&d, "kh4").len(), 1);
+}
+
+/// Bankimport S1b (d-63): Ein zweiter Auszug auf ein Feld mit eigenem vorläufigem Vorschlag zeigt ohne
+/// `ersetzen` die Vorschau und schreibt nichts; mit `ersetzen: true` ersetzt er durch die Vereinigung.
+#[tokio::test]
+async fn zweiter_auszug_zeigt_ohne_haken_die_vorschau_und_ersetzt_mit_haken() {
+    let d = dienst();
+    let (s, a) = auszug(
+        &d,
+        "ke1",
+        csv(&[
+            "01.02.2025;-4,00;Spende Rotes Kreuz",
+            "02.02.2025;-7,00;Spende Tierheim",
+        ]),
+    )
+    .await;
+    assert_eq!((s, &a["uebernommen"]), (200, &json!(2)), "{a}");
+    let erstes = events(&d, "ke1");
+    assert_eq!((erstes.len(), &erstes[0]["wert"]), (1, &json!(11_00)));
+    let zweiter = csv(&[
+        "02.02.2025;-7,00;Spende Tierheim",
+        "03.02.2025;-5,00;Spende Unicef",
+    ]);
+    let vorschau = json!([{"feld_id": "spenden_betrag", "bisher_cent": 11_00, "bisher_posten": 2,
+        "neu_cent": 16_00, "neu_posten": 3}]);
+    let satz = "Ersetzen möglich: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), mit diesem Auszug 16,00 € aus 3 Buchung(en). Setze den Haken, um den bisherigen Vorschlag zu ersetzen.";
+    // Ohne `ersetzen` und mit `ersetzen: false`: dieselbe Vorschau, die Akte bleibt, wie sie war.
+    for rumpf in [zweiter.clone(), {
+        let mut b = zweiter.clone();
+        b["ersetzen"] = json!(false);
+        b
+    }] {
+        let (s, a) = sende(&d, "/fall/ke1/kontoauszug", &rumpf).await;
+        assert_eq!(s, 200, "{a}");
+        assert_eq!(
+            a,
+            json!({"uebernommen": 0, "transaktionen": 2, "verworfen": 0, "ersetzbar": vorschau,
+                "hinweis": format!("2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, dessen bisheriger Vorschlag erst mit dem Haken ersetzt wird. {satz}")})
+        );
+        assert_eq!(events(&d, "ke1"), erstes, "die Vorschau schreibt nichts");
+    }
+    // Mit Haken: ein neues Ereignis ersetzt das alte, die Akte auf der Platte traegt es.
+    let mut mit_haken = zweiter.clone();
+    mit_haken["ersetzen"] = json!(true);
+    let (s, a) = sende(&d, "/fall/ke1/kontoauszug", &mit_haken).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(
+        a,
+        json!({"uebernommen": 2, "transaktionen": 2, "verworfen": 0, "ersetzt": vorschau,
+            "hinweis": "Ersetzt: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), jetzt 16,00 € aus 3 Buchung(en)."})
+    );
+    let jetzt = events(&d, "ke1");
+    assert_eq!(jetzt.len(), 2);
+    assert_eq!(
+        (&jetzt[1]["wert"], &jetzt[1]["ersetzt"]),
+        (&json!(16_00), &erstes[0]["event_id"])
+    );
+    assert_eq!(
+        jetzt[1]["signal"]["signal_1"]["posten"]
+            .as_array()
+            .unwrap()
+            .len(),
+        3
+    );
+    // Noch einmal mit Haken: nichts Neues, also auch keine zweite Ersetzung.
+    let (s, a) = sende(&d, "/fall/ke1/kontoauszug", &mit_haken).await;
+    assert_eq!(
+        (s, a.get("ersetzt"), a.get("ersetzbar")),
+        (200, None, None),
+        "{a}"
+    );
+    assert_eq!(events(&d, "ke1").len(), 2);
+}
+
+/// `ersetzen` ist ein Wahrheitswert oder fehlt; alles andere ist 400, bevor der Auszug gelesen wird.
+#[tokio::test]
+async fn ersetzen_muss_ein_wahrheitswert_sein() {
+    let d = dienst();
+    fall_anlegen(&d, "ke2", "gesamt").await;
+    for wert in [
+        json!("ja"),
+        json!(1),
+        json!(null),
+        json!([]),
+        json!({"a": true}),
+    ] {
+        let mut b = csv(&["01.03.2025;-480,00;Maler Huber"]);
+        b["ersetzen"] = wert.clone();
+        let (s, a) = sende(&d, "/fall/ke2/kontoauszug", &b).await;
+        assert_eq!(
+            (s, a),
+            (400, json!({"fehler": "ersetzen muss true oder false sein"})),
+            "{wert}"
+        );
+    }
+    assert_eq!(
+        events(&d, "ke2").len(),
+        0,
+        "ein ungueltiger Haken schreibt nichts"
+    );
 }
 
 /// Bankimport S1: Buchungen, die wegen Jahr, Datum oder Saldo nicht zählten, nennt die Antwort mit Zahlen,

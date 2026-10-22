@@ -697,6 +697,8 @@ pub fn hinweis_nichts_gelesen(befund: &CsvBefund) -> String {
 ///     anderes_jahr: 0,
 ///     datum_unlesbar: 0,
 ///     saldo_nicht_positiv: 0,
+///     ersetzbar: 0,
+///     schon_erfasst: 0,
 /// };
 /// assert_eq!(
 ///     hinweis_nichts_uebernommen(3, &u).as_deref(),
@@ -748,7 +750,7 @@ const GRUND_SALDO: &str = "in einem Feld, dessen Saldo nach Rückbuchungen null 
 ///
 /// ```
 /// use eingang::kontoauszug::{hinweis_nicht_gezaehlt, Uebernahme};
-/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0 };
+/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0, ersetzbar: 0, schon_erfasst: 0 };
 /// assert_eq!(
 ///     hinweis_nicht_gezaehlt(&u).as_deref(),
 ///     Some("Nicht gezählt: 2 Buchung(en) außerhalb des Veranlagungsjahrs.")
@@ -889,6 +891,24 @@ pub struct Uebernahme {
     /// Die Rueckbuchungen glichen die Ausgaben des Felds aus oder uebertrafen sie: kein
     /// Vorschlag. Gezaehlt werden alle Buchungen dieses Felds (Bankimport S1).
     pub saldo_nicht_positiv: usize,
+    /// Das Feld traegt schon einen eigenen vorlaeufigen Vorschlag aus einem frueheren Auszug, und
+    /// dieser Auszug wuerde ihn aendern: ersetzt wird erst mit dem Haken (Bankimport S1b, d-63).
+    pub ersetzbar: usize,
+    /// Der eigene vorlaeufige Vorschlag des Felds enthaelt diese Buchungen schon (derselbe Auszug
+    /// noch einmal): keine Rueckfrage, kein neues Ereignis (Bankimport S1b).
+    pub schon_erfasst: usize,
+}
+
+/// Ein Feld, dessen eigener vorlaeufiger Vorschlag aus einem frueheren Auszug durch die Vereinigung
+/// mit diesem Auszug eine andere Summe bekaeme (Bankimport S1b, d-63). Ohne Haken zeigt es, was sich
+/// aendern wuerde; mit Haken, was ersetzt wurde. Summen in Cent, als Ausgabe positiv.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ersetzung {
+    pub feld_id: &'static str,
+    pub bisher_cent: i64,
+    pub bisher_posten: usize,
+    pub neu_cent: i64,
+    pub neu_posten: usize,
 }
 
 /// Alle Buchungen eines Zielfelds, die in EINE Summe eingehen. Eine Rueckbuchung (Betrag > 0)
@@ -1054,6 +1074,8 @@ pub fn uebernehme(
         anderes_jahr: 0,
         datum_unlesbar: 0,
         saldo_nicht_positiv: 0,
+        ersetzbar: 0,
+        schon_erfasst: 0,
     };
     let beginn = Instant::now();
     // Zuerst ordnen, dann schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
@@ -1133,6 +1155,41 @@ pub fn uebernehme(
     }
     schreibe_gruppen(store, gruppen, jahr, (bindung, katalog, ts), &mut u)?;
     Ok(u)
+}
+
+/// Wie [`uebernehme`], mit der Rueckfrage der Entscheidung d-63 (Bankimport S1b): Traegt ein Feld
+/// schon einen eigenen vorlaeufigen Vorschlag aus einem frueheren Auszug, ersetzt dieser Aufruf ihn
+/// nur mit `ersetzen = true` (der Haken). Die Liste nennt je Feld, was sich aendern wuerde bzw. geaendert hat.
+///
+/// GERUEST: noch ohne Verhalten, die Tests des Baus stehen vor ihm.
+///
+/// # Errors
+/// Wie [`uebernehme`].
+pub fn uebernehme_mit(
+    store: &mut Store,
+    transaktionen: &[Transaktion],
+    bindung: BindungNachschlag<'_>,
+    llm_klassifikator: Option<&Klassifikator<'_>>,
+    ts: Option<&str>,
+    katalog: Option<&Katalog>,
+    ersetzen: bool,
+) -> Result<(Uebernahme, Vec<Ersetzung>), KontoauszugFehler> {
+    let _ = ersetzen;
+    uebernehme(store, transaktionen, bindung, llm_klassifikator, ts, katalog).map(|u| (u, Vec::new()))
+}
+
+/// Der Satz fuer den Nutzer neben der Vorschau: je Feld bisherige und neue Summe, und wie man ersetzt.
+/// GERUEST: noch ohne Verhalten.
+#[must_use]
+pub fn hinweis_ersetzbar(_felder: &[Ersetzung]) -> Option<String> {
+    None
+}
+
+/// Der Satz fuer den Nutzer nach dem Ersetzen: je Feld bisherige und neue Summe.
+/// GERUEST: noch ohne Verhalten.
+#[must_use]
+pub fn hinweis_ersetzt(_felder: &[Ersetzung]) -> Option<String> {
+    None
 }
 
 #[cfg(test)]
@@ -1305,16 +1362,9 @@ mod tests {
         karte.remove("spenden_betrag");
         let bindung = store::BindungNachschlag::neu(&karte);
         let mut store = store::Store::leer(2025, None);
-        // Das Feld der Reinigung hat schon einen Wert aus einem frueheren Import.
-        uebernehme(
-            &mut store,
-            &[tx("01.02.2025", -4_00, "Reinigung Treppenhaus")],
-            bindung,
-            None,
-            None,
-            None,
-        )
-        .unwrap();
+        // Das Feld der Reinigung hat schon einen BESTAETIGTEN Wert (Bankimport S1b: ein eigener
+        // vorlaeufiger Vorschlag aus einem frueheren Import zaehlt seit der Rueckfrage als `ersetzbar`).
+        s1b_mensch(&mut store, bindung, "hh_dienstleistung_betrag", 4_00, None);
         let buchungen = [
             tx("01.03.2025", 10_000, "Gehalt"),
             tx("01.03.2025", -999, "Einkauf"),
@@ -1340,6 +1390,8 @@ mod tests {
             anderes_jahr: 1,
             datum_unlesbar: 1,
             saldo_nicht_positiv: 2,
+            ersetzbar: 0,
+            schon_erfasst: 0,
         };
         assert_eq!(u, soll);
         let summe = u.uebernommen
@@ -1377,6 +1429,8 @@ mod tests {
             anderes_jahr: 0,
             datum_unlesbar: 0,
             saldo_nicht_positiv: 0,
+            ersetzbar: 0,
+            schon_erfasst: 0,
         };
         assert_eq!(hinweis_nichts_uebernommen(2, &nur_deckel), None);
     }
@@ -1717,7 +1771,8 @@ mod tests {
         assert_eq!(saldo::saldo(&zusammen), Some(16_00), "4 + 7 + 5");
         // Dieselbe Datei noch einmal: derselbe Saldo, nicht der doppelte.
         assert_eq!(saldo::saldo(&saldo::vereinige(&bestehend, &bestehend)), Some(11_00));
-        // Der Import selbst: Auflage A haelt ihn auf, der Zaehler nennt es, der Wert bleibt.
+        // Der Import selbst ohne Haken (`uebernehme`): nichts wird ersetzt, der Zaehler nennt es,
+        // der Wert bleibt (Bankimport S1b: die Rueckfrage steht in `uebernehme_mit`).
         let erg = uebernehme(
             &mut store,
             &s1_tx(&zweiter),
@@ -1727,7 +1782,11 @@ mod tests {
             None,
         )
         .unwrap();
-        assert_eq!((erg.uebernommen, erg.feld_belegt), (0, 2), "{erg:?}");
+        assert_eq!(
+            (erg.uebernommen, erg.feld_belegt, erg.ersetzbar),
+            (0, 0, 2),
+            "{erg:?}"
+        );
         assert_eq!(store.events().len(), 1);
         assert_eq!(s1_wert(&store, "spenden_betrag"), Some(11_00));
     }
@@ -1943,6 +2002,8 @@ mod tests {
             anderes_jahr: 3,
             datum_unlesbar: 1,
             saldo_nicht_positiv: 2,
+            ersetzbar: 0,
+            schon_erfasst: 0,
         };
         let jahr = "3 Buchung(en) außerhalb des Veranlagungsjahrs";
         let datum = "1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)";
@@ -1991,6 +2052,447 @@ mod tests {
         assert_eq!(saldo::saldo(&[p(1, i64::MIN, "x"), p(1, 1, "x")]), Some(i64::MAX));
         assert_eq!(saldo::saldo(&[p(1, i64::MAX, "x"), p(1, 1, "x")]), None);
         assert_eq!(saldo::saldo(&[]), Some(0));
+    }
+
+    // ---------------------------------------------------------------------------
+    // Bankimport S1b (d-63): ein zweiter Auszug ersetzt den eigenen vorlaeufigen Vorschlag des
+    // Felds erst nach der Rueckfrage mit Haken. Auf dem Geruest (Signatur ohne Verhalten) sind
+    // diese Tests ROT.
+    // ---------------------------------------------------------------------------
+
+    use super::{hinweis_ersetzbar, hinweis_ersetzt, uebernehme_mit, Ersetzung};
+
+    const S1B_ERSTER: [(&str, i64, &str); 2] = [
+        ("2025-02-01", -4_00, "Spende Rotes Kreuz"),
+        ("2025-02-02", -7_00, "Spende Tierheim"),
+    ];
+    /// Ueberlappt im Tierheim-Posten und bringt die Unicef-Spende neu.
+    const S1B_ZWEITER: [(&str, i64, &str); 2] = [
+        ("2025-02-02", -7_00, "Spende Tierheim"),
+        ("2025-02-03", -5_00, "Spende Unicef"),
+    ];
+
+    fn s1b_bindung() -> store::BindungNachschlag<'static> {
+        store::BindungNachschlag::neu(crate::doctest_bindung().unwrap())
+    }
+
+    fn s1b_mit(
+        store: &mut store::Store,
+        ja: &[(&str, i64, &str)],
+        ersetzen: bool,
+    ) -> (Uebernahme, Vec<Ersetzung>) {
+        uebernehme_mit(
+            store,
+            &s1_tx(ja),
+            s1b_bindung(),
+            None,
+            Some("2025-03-02T00:00:00+00:00"),
+            None,
+            ersetzen,
+        )
+        .unwrap()
+    }
+
+    /// Wie `s1b_mit(.., true)`, aber jede Buchung ohne Stichwort ordnet die KI der Spende zu.
+    fn s1b_mit_ki(store: &mut store::Store, ja: &[(&str, i64, &str)]) {
+        let ki = |_: &llm::pii::Maskiert, _: i64| Some(llm::Kategorie::Spende);
+        uebernehme_mit(
+            store,
+            &s1_tx(ja),
+            s1b_bindung(),
+            Some(&ki),
+            Some("2025-03-02T00:00:00+00:00"),
+            None,
+            true,
+        )
+        .unwrap();
+    }
+
+    fn s1b_spenden(bisher: i64, bp: usize, neu: i64, np: usize) -> Ersetzung {
+        Ersetzung {
+            feld_id: "spenden_betrag",
+            bisher_cent: bisher,
+            bisher_posten: bp,
+            neu_cent: neu,
+            neu_posten: np,
+        }
+    }
+
+    /// Ein Mensch bestaetigt `wert` auf `feld` (optional als Ersatz fuer `ersetzt`).
+    fn s1b_mensch(
+        store: &mut store::Store,
+        bindung: store::BindungNachschlag<'_>,
+        feld: &str,
+        wert: i64,
+        ersetzt: Option<store::EventId>,
+    ) {
+        let neu = store::NeuesEvent {
+            feld_id: feld.to_owned(),
+            wert: json!(wert).into(),
+            feldzustand: domain::Feldzustand::Bestaetigt {
+                signal_2: domain::Signal2::new("klick").unwrap(),
+            },
+            herkunft: domain::Herkunft {
+                herkunft: domain::Achsenwert::new("nutzer").unwrap(),
+                pruef_tiefe: domain::PruefTiefe::Ungeprueft,
+                haftung: domain::Achsenwert::new("nutzer").unwrap(),
+            },
+            schreiber: domain::Schreiber::Mensch("julius".to_owned()),
+            signal_1: None,
+            ersetzt,
+            ts: Some("2025-03-01T00:00:00+00:00".to_owned()),
+        };
+        store.append(&neu, None, bindung).unwrap();
+    }
+
+    /// `signal_1` des aktiven Ereignisses als JSON.
+    fn s1b_signal(store: &store::Store, feld: &str) -> serde_json::Value {
+        store
+            .aktives(feld)
+            .and_then(|e| e.signal.as_ref())
+            .and_then(|s| s.signal_1.as_ref())
+            .and_then(|s| s.as_ref())
+            .and_then(|s| s.zu_json().ok())
+            .unwrap()
+    }
+
+    /// Ohne Haken schreibt der zweite Auszug nichts auf das belegte Feld und nennt alt und neu.
+    #[test]
+    fn s1b_zweiter_auszug_ohne_haken_schreibt_nichts_und_zeigt_alt_und_neu() {
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        let vorher = store.events().to_vec();
+        let (u, liste) = s1b_mit(&mut store, &S1B_ZWEITER, false);
+        assert_eq!(
+            (u.uebernommen, u.ersetzbar, u.feld_belegt, u.schon_erfasst),
+            (0, 2, 0, 0),
+            "{u:?}"
+        );
+        assert_eq!(liste, vec![s1b_spenden(11_00, 2, 16_00, 3)]);
+        assert_eq!(
+            store.events(),
+            vorher.as_slice(),
+            "die Vorschau schreibt nichts"
+        );
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(11_00));
+    }
+
+    /// Mit Haken ersetzt er durch die Vereinigung: ein neues Ereignis, `ersetzt` zeigt auf das alte.
+    #[test]
+    fn s1b_zweiter_auszug_mit_haken_ersetzt_durch_die_vereinigung() {
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        let alt = store.aktives("spenden_betrag").unwrap().event_id;
+        let (u, liste) = s1b_mit(&mut store, &S1B_ZWEITER, true);
+        assert_eq!(
+            (u.uebernommen, u.ersetzbar, u.feld_belegt),
+            (2, 0, 0),
+            "{u:?}"
+        );
+        assert_eq!(liste, vec![s1b_spenden(11_00, 2, 16_00, 3)]);
+        assert_eq!(store.events().len(), 2);
+        let neu = store.aktives("spenden_betrag").unwrap();
+        assert_ne!(neu.event_id, alt);
+        assert_eq!(neu.ersetzt, Some(alt));
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(16_00));
+        let s1 = s1b_signal(&store, "spenden_betrag");
+        assert_eq!(
+            (&s1["summe_cent"], &s1["jahr"], &s1["quelle"]),
+            (&json!(16_00), &json!(2025), &json!("heuristik"))
+        );
+        assert_eq!(s1["posten"].as_array().unwrap().len(), 3);
+        // Erst die alten Posten, dann der neue.
+        assert_eq!(s1["posten"][2]["zweck_maskiert"], "Spende Unicef");
+    }
+
+    /// Dieselbe Datei noch einmal, auch ein Teil des Bisherigen: keine Rueckfrage, kein neues Ereignis.
+    #[test]
+    fn s1b_dieselbe_datei_noch_einmal_fragt_nicht_und_schreibt_nichts() {
+        for ersetzen in [false, true] {
+            let mut store = s1_store_mit(&S1B_ERSTER);
+            let (u, liste) = s1b_mit(&mut store, &S1B_ERSTER, ersetzen);
+            assert_eq!(
+                (u.schon_erfasst, u.ersetzbar, u.uebernommen),
+                (2, 0, 0),
+                "Haken {ersetzen}: {u:?}"
+            );
+            assert!(liste.is_empty());
+            assert_eq!(store.events().len(), 1);
+        }
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        let (u, liste) = s1b_mit(&mut store, &S1B_ERSTER[..1], true);
+        assert_eq!((u.schon_erfasst, u.uebernommen), (1, 0), "{u:?}");
+        assert!(liste.is_empty());
+        assert_eq!(store.events().len(), 1);
+    }
+
+    /// Eine Rueckbuchung im zweiten Auszug mindert die vereinigte Summe; gleicht sie alles aus,
+    /// bleibt der alte Vorschlag stehen und nichts wird ersetzt.
+    #[test]
+    fn s1b_rueckbuchung_im_zweiten_auszug_mindert_die_vereinigte_summe() {
+        let mut store = s1_store_mit(&[("2025-02-01", -10_000, "Spende Rotes Kreuz")]);
+        let (u, liste) = s1b_mit(
+            &mut store,
+            &[("2025-02-10", 3_000, "Erstattung Spende")],
+            true,
+        );
+        assert_eq!((u.uebernommen, u.saldo_nicht_positiv), (1, 0), "{u:?}");
+        assert_eq!(liste, vec![s1b_spenden(10_000, 1, 7_000, 2)]);
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(7_000));
+        let mut store = s1_store_mit(&[("2025-02-01", -10_000, "Spende Rotes Kreuz")]);
+        let (u, liste) = s1b_mit(
+            &mut store,
+            &[("2025-02-10", 10_000, "Erstattung Spende")],
+            true,
+        );
+        assert_eq!(
+            (u.uebernommen, u.saldo_nicht_positiv, u.ersetzbar),
+            (0, 1, 0),
+            "{u:?}"
+        );
+        assert!(liste.is_empty());
+        assert_eq!(store.events().len(), 1);
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(10_000));
+    }
+
+    /// Ein bestaetigter Wert, ein Vorschlag des Belegs und ein Kontoauszug-Ereignis ohne lesbare
+    /// Posten bleiben stehen, auch mit Haken. Wird das Feld zwischen Vorschau und Haken bestaetigt,
+    /// ersetzt der Haken nichts mehr.
+    #[test]
+    fn s1b_fremde_und_bestaetigte_vorschlaege_ersetzt_auch_der_haken_nicht() {
+        let bindung = s1b_bindung();
+        let katalog = store::Katalog::aus_bindungen(bindung.alle().map(|(_, b)| b));
+        let posten = json!({"typ": "kontoauszug", "posten": [
+            {"datum": "2025-02-02", "betrag_cent": -700, "zweck_maskiert": "Spende Tierheim"}]});
+        let mut faelle: Vec<(&str, store::Store)> = Vec::new();
+        let mut s = store::Store::leer(2025, None);
+        s1b_mensch(&mut s, bindung, "spenden_betrag", 99_00, None);
+        faelle.push(("bestaetigt", s));
+        let mut s = store::Store::leer(2025, None);
+        crate::vorschlag::VorschlagEvent {
+            quelle: crate::vorschlag::Quelle::Beleg,
+            feld_id: "spenden_betrag".to_owned(),
+            wert: json!(700),
+            signal_1: posten,
+        }
+        .schreibe(&mut s, Some(&katalog), bindung, None)
+        .unwrap();
+        faelle.push(("beleg", s));
+        let mut s = store::Store::leer(2025, None);
+        crate::vorschlag::VorschlagEvent {
+            quelle: crate::vorschlag::Quelle::Kontoauszug,
+            feld_id: "spenden_betrag".to_owned(),
+            wert: json!(500),
+            signal_1: json!({"typ": "kontoauszug", "datum": "01.03.2025", "betrag": -500}),
+        }
+        .schreibe(&mut s, Some(&katalog), bindung, None)
+        .unwrap();
+        faelle.push(("ohne lesbare Posten", s));
+        for (name, mut store) in faelle {
+            let alt = store.aktives("spenden_betrag").unwrap().event_id;
+            let (u, liste) = s1b_mit(&mut store, &S1B_ZWEITER, true);
+            assert_eq!(
+                (u.uebernommen, u.feld_belegt, u.ersetzbar),
+                (0, 2, 0),
+                "{name}: {u:?}"
+            );
+            assert!(liste.is_empty(), "{name}");
+            assert_eq!(store.events().len(), 1, "{name}");
+            assert_eq!(
+                store.aktives("spenden_betrag").unwrap().event_id,
+                alt,
+                "{name}"
+            );
+        }
+        // Zwischen Vorschau und Haken bestaetigt Julius das Feld im Fluss.
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        let alt = store.aktives("spenden_betrag").unwrap().event_id;
+        let (u, liste) = s1b_mit(&mut store, &S1B_ZWEITER, false);
+        assert_eq!((u.ersetzbar, liste.len()), (2, 1), "{u:?}");
+        s1b_mensch(&mut store, bindung, "spenden_betrag", 99_00, Some(alt));
+        let (u, liste) = s1b_mit(&mut store, &S1B_ZWEITER, true);
+        assert_eq!(
+            (u.uebernommen, u.feld_belegt, u.ersetzbar),
+            (0, 2, 0),
+            "{u:?}"
+        );
+        assert!(liste.is_empty());
+        assert_eq!(store.events().len(), 2);
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(99_00));
+    }
+
+    /// `quelle` wird `llm`, sobald Alt oder Neu von der KI kam; sonst bleibt sie `heuristik`.
+    #[test]
+    fn s1b_quelle_wird_llm_sobald_ein_teil_von_der_ki_kam() {
+        let mut store = store::Store::leer(2025, None);
+        s1b_mit_ki(&mut store, &[("2025-02-01", -4_00, "Zahlung Anna")]);
+        assert_eq!(s1b_signal(&store, "spenden_betrag")["quelle"], "llm");
+        // Alt KI, neu Stichwort.
+        s1b_mit(
+            &mut store,
+            &[("2025-02-02", -7_00, "Spende Tierheim")],
+            true,
+        );
+        let s1 = s1b_signal(&store, "spenden_betrag");
+        assert_eq!(
+            (&s1["summe_cent"], &s1["quelle"]),
+            (&json!(11_00), &json!("llm"))
+        );
+        // Alt Stichwort, neu KI.
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        assert_eq!(s1b_signal(&store, "spenden_betrag")["quelle"], "heuristik");
+        s1b_mit_ki(&mut store, &[("2025-02-03", -5_00, "Zahlung Anna")]);
+        let s1 = s1b_signal(&store, "spenden_betrag");
+        assert_eq!(
+            (&s1["summe_cent"], &s1["quelle"]),
+            (&json!(16_00), &json!("llm"))
+        );
+    }
+
+    /// Ein freies Feld neben einem Vorschau-Feld wird wie bisher geschrieben; mit Haken geht beides
+    /// in einem Aufruf, und das unveraenderte Feld fragt nicht.
+    #[test]
+    fn s1b_freie_felder_neben_einem_vorschau_feld_werden_wie_bisher_geschrieben() {
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        let ja = [
+            S1B_ZWEITER[0],
+            S1B_ZWEITER[1],
+            ("2025-02-04", -30_000, "Maler Huber"),
+        ];
+        let (u, liste) = s1b_mit(&mut store, &ja, false);
+        assert_eq!((u.uebernommen, u.ersetzbar), (1, 2), "{u:?}");
+        assert_eq!(liste, vec![s1b_spenden(11_00, 2, 16_00, 3)]);
+        assert_eq!(s1_wert(&store, "hh_handwerker_betrag"), Some(30_000));
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(11_00));
+        let (u, liste) = s1b_mit(&mut store, &ja, true);
+        assert_eq!(
+            (u.uebernommen, u.schon_erfasst, u.ersetzbar),
+            (2, 1, 0),
+            "{u:?}"
+        );
+        assert_eq!(liste, vec![s1b_spenden(11_00, 2, 16_00, 3)]);
+        assert_eq!(s1_wert(&store, "spenden_betrag"), Some(16_00));
+    }
+
+    /// Jede Buchung steht in genau einem Zaehler, auch mit den zwei neuen.
+    #[test]
+    fn s1b_jede_buchung_zaehlt_in_genau_einem_grund() {
+        let bindung = s1b_bindung();
+        let mut store = s1_store_mit(&S1B_ERSTER);
+        s1b_mit(&mut store, &[("2025-02-04", -30_000, "Maler Huber")], true);
+        s1b_mensch(&mut store, bindung, "hh_dienstleistung_betrag", 12_00, None);
+        let buchungen = [
+            S1B_ZWEITER[0],
+            S1B_ZWEITER[1],
+            ("2025-02-04", -30_000, "Maler Huber"),
+            ("2025-03-01", -6_000, "Reinigung Treppenhaus"),
+            ("2025-03-01", -5_000, "Minijob Anna"),
+            ("2025-03-02", 5_000, "Rueckbuchung Minijob Anna"),
+            ("2025-03-01", -20_000, "Rentenversicherung Ruerup"),
+            ("2025-03-01", 100_000, "Gehalt"),
+            ("2025-03-01", -999, "Einkauf"),
+            ("2024-12-31", -3_000, "Maler Vorjahr"),
+            ("15.03", -3_000, "Maler ohne Jahr"),
+            ("2025-03-01", -5_000, "Spende SPD Ortsverband"),
+        ];
+        let (u, _) = s1b_mit(&mut store, &buchungen, false);
+        let soll = Uebernahme {
+            uebernommen: 1,
+            llm_uebersprungen: 0,
+            einnahmen: 1,
+            ohne_stichwort: 1,
+            partei: 1,
+            feld_fehlt: 0,
+            feld_belegt: 1,
+            anderes_jahr: 1,
+            datum_unlesbar: 1,
+            saldo_nicht_positiv: 2,
+            ersetzbar: 2,
+            schon_erfasst: 1,
+        };
+        assert_eq!(u, soll);
+        let summe = u.uebernommen
+            + u.llm_uebersprungen
+            + u.einnahmen
+            + u.ohne_stichwort
+            + u.partei
+            + u.feld_fehlt
+            + u.feld_belegt
+            + u.anderes_jahr
+            + u.datum_unlesbar
+            + u.saldo_nicht_positiv
+            + u.ersetzbar
+            + u.schon_erfasst;
+        assert_eq!(summe, buchungen.len());
+    }
+
+    /// Der Ueberlauf der VEREINIGTEN Summe ist ein Fehler, kein Panic, und ersetzt nichts.
+    #[test]
+    fn s1b_ueberlauf_der_vereinigten_summe_bricht_ab_bevor_etwas_ersetzt_wird() {
+        let mut store = s1_store_mit(&[("2025-02-01", -9_000_000_000, "Spende Rotes Kreuz")]);
+        let vorher = store.events().to_vec();
+        let fehler = uebernehme_mit(
+            &mut store,
+            &s1_tx(&[("2025-02-02", -(i64::MAX - 5), "Spende Tierheim")]),
+            s1b_bindung(),
+            None,
+            None,
+            None,
+            true,
+        )
+        .unwrap_err();
+        assert!(
+            matches!(fehler, KontoauszugFehler::BetragUeberlauf(_)),
+            "{fehler:?}"
+        );
+        assert_eq!(store.events(), vorher.as_slice());
+    }
+
+    /// Die Saetze fuer den Nutzer: Feld, bisherige und neue Summe in Euro, nur Zahlen.
+    #[test]
+    fn s1b_die_saetze_nennen_feld_summen_und_den_haken() {
+        let eins = vec![s1b_spenden(11_00, 2, 16_00, 3)];
+        assert_eq!(
+            hinweis_ersetzbar(&eins).as_deref(),
+            Some("Ersetzen möglich: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), mit diesem Auszug 16,00 € aus 3 Buchung(en). Setze den Haken, um den bisherigen Vorschlag zu ersetzen.")
+        );
+        assert_eq!(
+            hinweis_ersetzt(&eins).as_deref(),
+            Some("Ersetzt: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), jetzt 16,00 € aus 3 Buchung(en).")
+        );
+        let zwei = vec![
+            s1b_spenden(5, 1, 100_000, 2),
+            Ersetzung {
+                feld_id: "hh_handwerker_betrag",
+                bisher_cent: 123_456_789,
+                bisher_posten: 4,
+                neu_cent: 123_456_790,
+                neu_posten: 5,
+            },
+        ];
+        assert_eq!(
+            hinweis_ersetzbar(&zwei).as_deref(),
+            Some("Ersetzen möglich: spenden_betrag: bisher 0,05 € aus 1 Buchung(en), mit diesem Auszug 1.000,00 € aus 2 Buchung(en); hh_handwerker_betrag: bisher 1.234.567,89 € aus 4 Buchung(en), mit diesem Auszug 1.234.567,90 € aus 5 Buchung(en). Setze den Haken, um den bisherigen Vorschlag zu ersetzen.")
+        );
+        assert_eq!(hinweis_ersetzbar(&[]), None);
+        assert_eq!(hinweis_ersetzt(&[]), None);
+        // Die neuen Gruende im Satz „gelesen, aber kein Vorschlag“.
+        let u = Uebernahme {
+            uebernommen: 0,
+            llm_uebersprungen: 0,
+            einnahmen: 0,
+            ohne_stichwort: 0,
+            partei: 0,
+            feld_fehlt: 0,
+            feld_belegt: 1,
+            anderes_jahr: 0,
+            datum_unlesbar: 0,
+            saldo_nicht_positiv: 0,
+            ersetzbar: 2,
+            schon_erfasst: 3,
+        };
+        assert_eq!(
+            hinweis_nichts_uebernommen(6, &u).as_deref(),
+            Some("6 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das schon einen Wert hat; 2 Buchung(en) für ein Feld, dessen bisheriger Vorschlag erst mit dem Haken ersetzt wird; 3 Buchung(en) im bisherigen Vorschlag des Felds schon enthalten.")
+        );
     }
 
     proptest! {
