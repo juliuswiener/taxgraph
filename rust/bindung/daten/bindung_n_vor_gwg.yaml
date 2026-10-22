@@ -12,6 +12,10 @@ bindungen:
     einheit: Tage
     bereich: {min: 0, max: 366, grund: "Kalendertage im Veranlagungsjahr (Schaltjahr)"}
     askable: true
+    # Fragen-Reduktion Teil 2, Phase 3 (Entscheidung d-55): die Antwort 0 streicht sechs Fragen (Auto, Entfernung und Bus und Bahn
+    # abgeleitet, Ziel und Adresse per `feld_bedingung`, die Unfallkosten folgen der Entfernung), also kommt sie vor ihnen. Ziel und
+    # Adresse standen nach der Vordruck-Reihenfolge (E0203003, E0203501) davor.
+    eingangsfrage: true
     vorjahr: vorschlag
     fragetext_laie: "An wie vielen Tagen bist du dieses Jahr zur Arbeit gefahren?"
     hilfe_kurz: "Zähl nur die Tage, an denen du wirklich zu deiner Arbeitsstelle gefahren bist."
@@ -36,6 +40,9 @@ bindungen:
     beispielwert: 30
     herkunft_slots: null
     elster_kz: E0203504
+    # Fragen-Reduktion Teil 2, Phase 3 (Entscheidung d-55, Julius 2026-10-22): wer bestaetigt, dass er an 0 Tagen zur Arbeit gefahren
+    # ist, hat keinen Weg; die Frage nach der Entfernung faellt weg. Der Kegel (`input_kegel_nicht_bestaetigt`) bleibt, wie er ist.
+    ableitung: {aus: ep_arbeitstage, art: neutral_bei_null, neutral: 0, grund: "Wer an 0 Tagen zur Arbeit gefahren ist, hat keinen Weg zwischen Wohnung und erster Tätigkeitsstätte (§ 9 Abs. 1 S. 3 Nr. 4 EStG: je Arbeitstag). Die Entfernung ändert die Pauschale dann nicht; eine Frage danach ist eine Frage zu viel."}
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 1 S. 3 Nr. 4 EStG"
@@ -54,6 +61,12 @@ bindungen:
     beispielwert: 138000
     herkunft_slots: null
     elster_kz: E0203611
+    # Fragen-Reduktion Teil 2, Phase 3 (Entscheidungen d-55 und d-56, Julius 2026-10-22): wer bestaetigt, an 0 Tagen zur Arbeit gefahren
+    # zu sein, hat keine Wege zur ersten Taetigkeitsstaette und damit keinen Fahrkartenabzug in diesem Block (§ 9 Abs. 2 EStG; BMF
+    # 18.11.2021 Rz. 20). Die Frage entfaellt. BEKANNTE GRENZE: der Rechenkern kennt die Tage hier nicht (`abziehbarer_betrag =
+    # oepnv_kosten_jahr`, wenn sie ueber der Pauschale 0 liegen); eine EIGENE Antwort des Nutzers vor der 0 bleibt stehen und wird
+    # weiter abgezogen, wie heute. Der Regelfix ist ein eigenes Ticket.
+    ableitung: {aus: ep_arbeitstage, art: neutral_bei_null, neutral: 0, grund: "Wer an 0 Tagen zur Arbeit gefahren ist, hat keine Wege zur ersten Tätigkeitsstätte und damit keinen Abzug für Fahrkarten in diesem Block (§ 9 Abs. 2 EStG). Eine Frage danach ist eine Frage zu viel."}
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 2 S. 2 EStG"
@@ -71,6 +84,7 @@ bindungen:
     herkunft_slots: null
     elster_kz: null
     elster_kz_grund: "Steuerungs-Flag der ÖPNV-Günstigerprüfung, kein eigenes Deklarationsfeld im Vordruck."
+    ableitung: {aus: ep_arbeitstage, art: neutral_bei_null, neutral: false, grund: "Wer an 0 Tagen zur Arbeit gefahren ist, ist mit keinem Auto zur Arbeit gefahren. Die Frage nach dem eigenen Auto ändert die Pauschale dann nicht (jahrespauschale = 0); eine Frage danach ist eine Frage zu viel."}
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 9 Abs. 2 S. 2 EStG"
@@ -93,7 +107,11 @@ bindungen:
   # Fehlerklasse, die mitveranlagung_faktor und vpf_frist_unterbrochen gekostet haben: ein
   # erfundener Bedingungsname schliesst ueber relevanz() die GANZE Regel aus, sobald der
   # Normalfall bestaetigt wird.
+  # Fragen-Reduktion Teil 2, Phase 3 (Entscheidung d-55): Ziel und Adresse gehoeren nicht zum Kegel und nicht in die Erklaerung, wenn
+  # der Nutzer bestaetigt, an 0 Tagen zur Arbeit gefahren zu sein. Sie fallen aus der Liste (`feld_bedingung`) statt einen Wert zu
+  # bekommen: ein abgeleiteter Wert stuende als E0203003 und E0203501 in der Erklaerung (gemessen, `null_arbeitstage.rs`).
   - feld_id: ep_ziel_des_weges
+    feld_bedingung: {feld: ep_arbeitstage, wert_nicht: 0, grund: "Ziel des Weges und Adresse des Arbeitsplatzes gehören zur Entfernungspauschale. Wer bestätigt, an 0 Tagen zur Arbeit gefahren zu sein, hat keinen solchen Weg und gibt kein Ziel an."}
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: ziel_des_weges}
     typ: enum
     enum_werte: ["1", "2"]
@@ -112,6 +130,7 @@ bindungen:
       zitatanker: "erste Tätigkeitsstätte"
       datei: "sources/gesetze-im-internet/estg_p9_abs1nr4_abs2_2026-07-09.txt"
   - feld_id: ep_ziel_adresse
+    feld_bedingung: {feld: ep_arbeitstage, wert_nicht: 0, grund: "Ziel des Weges und Adresse des Arbeitsplatzes gehören zur Entfernungspauschale. Wer bestätigt, an 0 Tagen zur Arbeit gefahren zu sein, hat keinen solchen Weg und gibt kein Ziel an."}
     quelle: {regel_id: p09_entfernungspauschale, signatur_slot: zieladresse}
     typ: text
     einheit: null

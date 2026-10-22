@@ -420,9 +420,17 @@ macro_rules! faelle {
     };
 }
 
-/// Der Pflicht-Kegel von `ep`, nur die ersten drei Felder (die Luecke selbst).
+/// Der Pflicht-Kegel von `ep`, nur die ersten drei Felder (die Luecke selbst), mit 220 Arbeitstagen: bei bestaetigten 0 Arbeitstagen
+/// leitet der Store die uebrigen Kegel-Felder ab (Fragen-Reduktion Teil 2, Phase 3), dann gaebe es keine Luecke.
 fn ep_kegel_erste_drei() -> Paare {
-    ep_kegel().into_iter().take(3).collect()
+    let mut paare: Paare = ep_kegel().into_iter().take(3).collect();
+    paare[0] = ("ep_arbeitstage", json!(220));
+    paare
+}
+
+/// Nur bestaetigte 0 Arbeitstage: der Store leitet die uebrigen Kegel-Felder von `ep` ab (Fragen-Reduktion Teil 2, Phase 3).
+fn ep_null_arbeitstage() -> Paare {
+    vec![("ep_arbeitstage", json!(0))]
 }
 
 /// Der Pflicht-Kegel von `an_gesamt`, nur die ersten 20 Felder (die Luecke selbst).
@@ -504,6 +512,7 @@ faelle! {
     ri2_rentner_einzel_zweite_rente_sperrt => "rentner_gesamt", plus(rentner(), vec![("rentner_jahresrente__2", json!(B))]), R0, None, "rente_instanz_offen";
     ep1_ep_voller_kegel_rechnet => "ep", ep_kegel(), EP0, Some(0), "bestaetigt";
     ep2_ep_kegel_luecke_sperrt_kegel => "ep", ep_kegel_erste_drei(), EP0, None, "input_kegel_nicht_bestaetigt";
+    ep3_null_arbeitstage_schliessen_den_kegel => "ep", ep_null_arbeitstage(), EP0, Some(0), "bestaetigt";
     nv1_leer_ohne_gesamtbescheid => "n_vor_gwg", leer(), EP0, None, "kein_scheiben_gesamtbescheid";
     an1_an_kegel_luecke_sperrt_kegel => "an_gesamt", an_erste_zwanzig(), A0, None, "input_kegel_nicht_bestaetigt";
     ag1_an_gesamt_zusammen_ohne_partner_kegel => "an_gesamt", mit(an(), "veranlagung", json!("zusammen")), A0, None, "partner_kegel_offen";

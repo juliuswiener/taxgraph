@@ -350,6 +350,10 @@ fn fluss_j_vorjahr_uebernahme_beantwortet_fragen_vor() {
     let mut t = person_a();
     t.push(("veranlagung", Gib::Wahl("einzel")));
     t.extend(kirche("evangelisch", None, "nordrhein_westfalen"));
+    // Fragen-Reduktion Teil 2, Phase 3 (d-55): bei bestaetigten 0 Arbeitstagen (der neutrale Standard der Tabelle) leitet der Store
+    // `ep_entfernung_km` und `ep_eigenes_kfz` selbst ab, die Fragen kaemen nie. Mit 220 Tagen bleibt, was dieser Test prueft: die
+    // Kegel-Felder des Vorjahresfalls sind nach der Uebernahme wieder eine Frage.
+    t.push(("ep_arbeitstage", Gib::Euro("220")));
     bis_zur_ersten_frage(&u, "gesamt", &[]);
     let quelle = durchlauf(&u, "vorjahr_quelle", &t, &[]);
     let fall1 = u.fall();

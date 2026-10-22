@@ -60,6 +60,14 @@ fn zweistellig(a: u8, b: u8) -> Option<u32> {
 /// Pythons `_jahr`/`_monat_tag` (`isinstance(wert, str)`-Wache).
 #[must_use]
 pub fn berechne(regel: &Ableitung, wert: &PyWert, vz: i64) -> Option<serde_json::Value> {
+    // Rust-eigen (Fragen-Reduktion Teil 2, Phase 3): die einzige Art, die aus einer Zahl rechnet. Nur eine bestaetigte 0 gibt den
+    // Neutralwert; jede andere Zahl ergibt NICHTS (die Gegenrichtung ist nicht sicher: ein Tag mehr, und der Weg zaehlt).
+    if regel.art == AbleitungArt::NeutralBeiNull {
+        return match wert {
+            PyWert::Ganz(0) => regel.neutral.clone(),
+            _ => None,
+        };
+    }
     let PyWert::Text(wert_str) = wert else {
         return None;
     };
@@ -89,7 +97,7 @@ pub fn berechne(regel: &Ableitung, wert: &PyWert, vz: i64) -> Option<serde_json:
         // finalen `return None`. Das Ergebnis ist in Python IMMER `None`, unabhaengig vom Wert.
         // Dokumentierte Luecke (keine bekannte Bindung nutzt diese Art heute), keine erfundene
         // Semantik.
-        AbleitungArt::Uebernahme => None,
+        AbleitungArt::Uebernahme | AbleitungArt::NeutralBeiNull => None,
     }
 }
 
@@ -122,6 +130,20 @@ mod tests {
             schwelle,
             grund: "test".to_string(),
             und_feld: None,
+            neutral: None,
+        }
+    }
+
+    #[test]
+    fn neutral_bei_null_gibt_den_neutralwert_nur_bei_bestaetigter_null() {
+        let r = Ableitung {
+            neutral: Some(json!(false)),
+            ..regel(AbleitungArt::NeutralBeiNull, None)
+        };
+        assert_eq!(berechne(&r, &json!(0).into(), 2025), Some(json!(false)));
+        // Jede andere Zahl, ein Text, ein Bool und ein Gleitkomma-Null ergeben NICHTS.
+        for nicht_null in [json!(1), json!(220), json!(-1), json!("0"), json!(false), json!(0.5), json!(null)] {
+            assert_eq!(berechne(&r, &nicht_null.clone().into(), 2025), None, "{nicht_null}");
         }
     }
 

@@ -516,7 +516,8 @@ impl Store {
     ) -> Result<EventId, Abweisung> {
         Self::pruefe_auflage_a(neu)?;
         Self::pruefe_wert(&neu.feld_id, &neu.wert, &neu.schreiber, katalog, bindung)?;
-        self.pruefe_auflage_b(&neu.feld_id, neu.ersetzt)?;
+        let ersetzt = self.ersetzt_oder_abgeleitetes(&neu.feld_id, neu.ersetzt, neu.zustand(), bindung);
+        self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
         let wert = &neu.wert;
 
         let signal =
@@ -532,7 +533,7 @@ impl Store {
             herkunft: neu.herkunft.clone().into(),
             schreiber: neu.schreiber.clone(),
             signal: Some(signal),
-            ersetzt: neu.ersetzt,
+            ersetzt,
         };
         let event_id = self.push_neu(event)?;
 
@@ -584,6 +585,7 @@ impl Store {
                 EventId::parse(text).map_err(|_| AbweisungRoh::ErsetztZielText(text.clone()))?,
             ),
         };
+        let ersetzt = self.ersetzt_oder_abgeleitetes(&neu.feld_id, ersetzt, neu.zustand, bindung);
         self.pruefe_auflage_b(&neu.feld_id, ersetzt)?;
         let event = Event {
             event_id: EventId::aus_bytes([0; 32]),
@@ -680,6 +682,40 @@ impl Store {
             pruefe_magnitude(feld_id, wert, schreiber)?;
         }
         pruefe_bindung(feld_id, wert, bindung)
+    }
+
+    /// Rust-eigen (Fragen-Reduktion Teil 2, Phase 3): Steht als aktives Event eines Feldes mit der Ableitungsart `neutral_bei_null`
+    /// der Neutralwert, den [`Store::rechne_ab`] selbst geschrieben hat, und kommt eine BESTAETIGTE Antwort ohne `ersetzt`, ersetzt sie
+    /// diesen Wert. Die Antwort des Nutzers schlaegt den Neutralwert; der Nutzer hat ihn nie gesehen (die Frage kam nicht) und konnte
+    /// keine Kennung dafuer mitschicken. Vorschlaege (`vorlaeufig`), jede andere Ableitungsart (`geburtsjahr` u. a.: der Test
+    /// `eigenschaften` haelt Auflage B auch fuer sie fest) und jede andere Art von Event gehen weiter durch Auflage B.
+    ///
+    /// Das Event im Log traegt das aufgeloeste `ersetzt` ausdruecklich: die Faltung des Logs (`aus_datei`, `materialisiere`) braucht die
+    /// Ausnahme nicht, nur der Schreibweg (Test `entscheidungsstellen`, Wiederholung des Logs ueber diesen Weg).
+    // ponytail: Ausnahme NUR fuer `neutral_bei_null` und NUR fuer eine bestaetigte Antwort. `geburtsjahr`, `rentner_alter_64_erfuellt`
+    // und `kind_unter_14_haushaltszugehoerig` bleiben draussen: `eigenschaften::index_datei_und_faltung_sind_derselbe_stand` und
+    // `jeder_snapshot_bleibt_nachrechenbar` halten fuer sie fest, dass ein Event ohne `ersetzt` genau dann durchgeht, wenn das Feld
+    // noch kein aktives Event hat (gemessen: mit einer allgemeinen Ausnahme beide rot). Vorschlaege (KI, Beleg, Entfernungsdienst)
+    // bekommen weiter 422. Upgrade: jede Ableitungsart aufnehmen, wenn Julius es will und `eigenschaften` mitzieht.
+    fn ersetzt_oder_abgeleitetes(
+        &self,
+        feld_id: &str,
+        ersetzt: Option<EventId>,
+        zustand: Zustand,
+        bindung: BindungNachschlag<'_>,
+    ) -> Option<EventId> {
+        let neutral = bindung
+            .basis_eintrag(feld_id)
+            .and_then(|b| b.ableitung.as_ref())
+            .is_some_and(|a| a.art == bindung::AbleitungArt::NeutralBeiNull);
+        if ersetzt.is_some() || zustand != Zustand::Bestaetigt || !neutral {
+            return ersetzt;
+        }
+        self.aktiv
+            .get(feld_id)
+            .and_then(|&idx| self.datei.events.get(idx))
+            .filter(|ev| ev.zustand == Zustand::Bestaetigt && ev.schreiber == Schreiber::Abgeleitet("ableitung".to_owned()))
+            .map(|ev| ev.event_id)
     }
 
     /// Auflage B (`store.py:368-381`): hoechstens ein aktives Event je `feld_id`; Ueberschreiben
@@ -784,7 +820,8 @@ impl Store {
     /// `und_feld` gerade bestaetigt wurde, werden berechnet (ZWEI Ausloeser). Liest `aktiv`
     /// EINMAL vor der Schleife (`store.py:529-531`: "keine Kette"). Rust-eigen (Fluss J F1): Steht das Ziel nur als `vorlaeufig` da
     /// oder hat diese Ableitung es berechnet, ersetzt das neue abgeleitete Event es (`ersetzt`); ergibt die Ableitung keinen
-    /// sicheren Wert mehr, zieht ein vorlaeufiges Event ohne Wert das berechnete Ziel zurueck. Eine Antwort des Nutzers bleibt.
+    /// sicheren Wert mehr, zieht ein vorlaeufiges Event ohne Wert das berechnete Ziel zurueck (bei `neutral_bei_null` ein vorlaeufiges
+    /// Event mit dem Neutralwert, s. unten). Eine Antwort des Nutzers bleibt.
     /// # Errors
     /// [`Abweisung::WertNichtDarstellbar`], wenn ein abgeleiteter `wert` nicht nach JSON geht.
     fn rechne_ab(
@@ -893,7 +930,7 @@ impl Store {
             let (neuer_wert, neuer_zustand, signal_2) = match soll {
                 Some(w) if alt.is_some_and(|ev| alt_berechnet && ev.wert == w) => continue,
                 Some(w) => (w, Zustand::Bestaetigt, Some(format!("ableitung@{aus_i}"))),
-                None if alt_berechnet => (PyWert::Null, Zustand::Vorlaeufig, None),
+                None if alt_berechnet => (Self::rueckzugswert(regel), Zustand::Vorlaeufig, None),
                 None => continue,
             };
             neue_events.push(Event {
@@ -917,6 +954,18 @@ impl Store {
             self.push_neu(event)?;
         }
         Ok(())
+    }
+
+    /// Der Wert des vorlaeufigen Events, das eine Ableitung zurueckzieht (`rechne_ab`). Gewoehnlich `Null`. Ein Neutralwert
+    /// (`neutral_bei_null`) bleibt als Vorschlag stehen: `Null` auf der Entfernung bricht die Rechnung
+    /// (`Decimal(str(entfernung_km_roh))`, `GET /stand` und `GET /fragen` gaben 500, weil der Rohsnapshot des Rings ein
+    /// vorlaeufiges Event als Vorschlag liest). Die Frage kommt trotzdem, der Kegel verlangt die bestaetigte Antwort.
+    fn rueckzugswert(regel: &bindung::Ableitung) -> PyWert {
+        if regel.art == bindung::AbleitungArt::NeutralBeiNull {
+            regel.neutral.clone().map_or(PyWert::Null, PyWert::from)
+        } else {
+            PyWert::Null
+        }
     }
 
     /// Berechnet den `event_id` und haengt an (Ableitungen und `append` teilen sich diesen einen

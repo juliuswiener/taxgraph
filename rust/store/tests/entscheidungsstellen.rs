@@ -618,6 +618,9 @@ fn eine_bestaetigte_quelle_ersetzt_ein_vorlaeufiges_ziel_der_ableitung() {
         ("geburtsjahr", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
         ("geburtsjahr_partner", "stammdaten_geburtsdatum_partner", json!("01.01.1961"), json!(1980), PyWert::Ganz(1961)),
         ("rentner_alter_64_erfuellt", "stammdaten_geburtsdatum", json!("01.01.1961"), json!(false), PyWert::Bool(true)),
+        // Fragen-Reduktion Teil 2, Phase 3: bestaetigte 0 Arbeitstage ersetzen die Vorschlaege des Vorjahres durch den Neutralwert.
+        ("ep_entfernung_km", "ep_arbeitstage", json!(0), json!(30), PyWert::Ganz(0)),
+        ("ep_eigenes_kfz", "ep_arbeitstage", json!(0), json!(true), PyWert::Bool(false)),
     ];
     let mut erwartet: Vec<&str> = bindungen()
         .iter()
@@ -650,6 +653,106 @@ fn eine_bestaetigte_quelle_ersetzt_ein_vorlaeufiges_ziel_der_ableitung() {
         anhaengen(&mut s, &vorlaeufig(quelle, &quellwert, Schreiber::ImportVorjahr, "vorjahr")).unwrap();
         assert_eq!(s.aktives(ziel).unwrap().event_id, alt, "{ziel}: ohne bestaetigte Quelle bleibt der Vorschlag");
     }
+}
+
+/// Der Stand eines Stores und der Stand, den die Faltung seines Logs ergibt (`aus_datei`, `materialisiere`): derselbe Index, derselbe
+/// Snapshot (`eigenschaften::index_datei_und_faltung_sind_derselbe_stand`).
+fn gleicher_stand_nach_wiederholung(s: &Store, was: &str) {
+    let neu = Store::aus_datei(s.datei().clone());
+    assert_eq!(aktive(s), aktive(&neu), "{was}: der Index weicht von der Faltung des Logs ab");
+    assert_eq!(s.materialisiere(None).unwrap().0, neu.materialisiere(None).unwrap().0, "{was}: der Snapshot weicht ab");
+    let ersetzt: Vec<EventId> = s.events().iter().filter_map(|e| e.ersetzt).collect();
+    assert_eq!(s.events().iter().filter(|e| !ersetzt.contains(&e.event_id)).count(), s.aktive().count(), "{was}: ein Feld hat zwei aktive Events");
+}
+
+/// Rust-eigen (Fragen-Reduktion Teil 2, Phase 3, Entscheidung d-55): Auflage B hat eine schmale Ausnahme. Eine BESTAETIGTE Antwort ohne
+/// `ersetzt` ersetzt den Neutralwert, den die Ableitung `neutral_bei_null` geschrieben hat (der Nutzer sah die Frage nie und kennt die
+/// Kennung nicht). Das Event im Log traegt das aufgeloeste `ersetzt`; die Faltung des Logs, auch ueber die Vorjahr-Ersetzung, ergibt
+/// denselben Stand. Gilt fuer beide Schreibwege (`append`, `append_roh`).
+#[test]
+fn die_antwort_ersetzt_einen_neutralwert_ohne_kennung_und_das_log_gibt_denselben_stand() {
+    // `append`: erst die Ableitung, dann die eigene Antwort.
+    let mut store = leerer_store(2025);
+    anhaengen(&mut store, &bestaetigt("ep_arbeitstage", &json!(0))).unwrap();
+    let abgeleitet = store.aktives("ep_entfernung_km").unwrap();
+    assert_eq!(abgeleitet.wert, PyWert::Ganz(0));
+    assert_eq!(abgeleitet.schreiber, Schreiber::Abgeleitet("ableitung".to_owned()));
+    let abgeleitet = abgeleitet.event_id;
+    let eigen = anhaengen(&mut store, &bestaetigt("ep_entfernung_km", &json!(30))).unwrap();
+    let ev = store.aktives("ep_entfernung_km").unwrap();
+    assert_eq!((ev.event_id, ev.ersetzt, ev.wert.clone()), (eigen, Some(abgeleitet), PyWert::Ganz(30)), "die Antwort ersetzt den Neutralwert");
+    gleicher_stand_nach_wiederholung(&store, "append");
+    // Die Antwort des Nutzers bleibt, auch wenn die Arbeitstage danach auf einen Wert ueber 0 und zurueck auf 0 gehen.
+    korrigiere(&mut store, "ep_arbeitstage", &json!(220));
+    korrigiere(&mut store, "ep_arbeitstage", &json!(0));
+    assert_eq!(gilt(&store, "ep_entfernung_km"), Some(PyWert::Ganz(30)), "die eigene Antwort bleibt stehen");
+    gleicher_stand_nach_wiederholung(&store, "append, 0 -> 220 -> 0");
+
+    // `append_roh`: derselbe Weg ueber den Rohweg der Route `POST /event`.
+    let mut roh = leerer_store(2025);
+    roh_anhaengen(&mut roh, &roh_bestaetigt("ep_arbeitstage", &json!(0)), None).unwrap();
+    let alt = roh.aktives("ep_eigenes_kfz").unwrap().event_id;
+    roh_anhaengen(&mut roh, &roh_bestaetigt("ep_eigenes_kfz", &json!(true)), None).unwrap();
+    let ev = roh.aktives("ep_eigenes_kfz").unwrap();
+    assert_eq!((ev.ersetzt, ev.wert.clone()), (Some(alt), PyWert::Bool(true)), "append_roh: die Antwort ersetzt den Neutralwert");
+    gleicher_stand_nach_wiederholung(&roh, "append_roh");
+
+    // Vorjahr: ein Vorschlag, die bestaetigte 0 ersetzt ihn durch den Neutralwert, die eigene Antwort danach diesen.
+    let mut vorjahr = leerer_store(2025);
+    let vorschlag = anhaengen(&mut vorjahr, &vorlaeufig("ep_entfernung_km", &json!(30), Schreiber::ImportVorjahr, "vorjahr")).unwrap();
+    anhaengen(&mut vorjahr, &bestaetigt("ep_arbeitstage", &json!(0))).unwrap();
+    let ev = vorjahr.aktives("ep_entfernung_km").unwrap();
+    assert_eq!((ev.ersetzt, ev.wert.clone(), ev.zustand), (Some(vorschlag), PyWert::Ganz(0), Zustand::Bestaetigt), "der Neutralwert ersetzt den Vorschlag");
+    gleicher_stand_nach_wiederholung(&vorjahr, "Vorjahr, nach der Ableitung");
+    anhaengen(&mut vorjahr, &bestaetigt("ep_entfernung_km", &json!(12))).unwrap();
+    assert_eq!(gilt(&vorjahr, "ep_entfernung_km"), Some(PyWert::Ganz(12)));
+    gleicher_stand_nach_wiederholung(&vorjahr, "Vorjahr, nach der eigenen Antwort");
+
+    // KONTROLLE 1: Ein Vorschlag (KI, Beleg, Dienst) auf ein abgeleitetes Feld geht weiter durch Auflage B.
+    let mut kontrolle = leerer_store(2025);
+    anhaengen(&mut kontrolle, &bestaetigt("ep_arbeitstage", &json!(0))).unwrap();
+    let fehler = anhaengen(&mut kontrolle, &vorlaeufig("ep_entfernung_km", &json!(25), Schreiber::ImportVorjahr, "vorjahr")).unwrap_err();
+    assert!(matches!(fehler, Abweisung::AktivesEventVorhanden { .. }), "{fehler:?}");
+    // KONTROLLE 2: Eine andere Ableitungsart bleibt draussen (`geburtsjahr`; `eigenschaften` haelt Auflage B dort fest).
+    anhaengen(&mut kontrolle, &bestaetigt("stammdaten_geburtsdatum", &json!("01.01.1961"))).unwrap();
+    let fehler = anhaengen(&mut kontrolle, &bestaetigt("geburtsjahr", &json!(1980))).unwrap_err();
+    assert!(matches!(fehler, Abweisung::AktivesEventVorhanden { .. }), "{fehler:?}");
+    // KONTROLLE 3: Eine Antwort des Nutzers ersetzt keine andere Antwort des Nutzers ohne Kennung.
+    anhaengen(&mut kontrolle, &bestaetigt("ep_oepnv_kosten", &json!(0))).unwrap();
+    let fehler = anhaengen(&mut kontrolle, &bestaetigt("ep_oepnv_kosten", &json!(5))).unwrap_err();
+    assert!(matches!(fehler, Abweisung::AktivesEventVorhanden { .. }), "{fehler:?}");
+    gleicher_stand_nach_wiederholung(&kontrolle, "Kontrollen");
+}
+
+/// Rust-eigen (Fragen-Reduktion Teil 2, Phase 3): Korrigiert der Nutzer die Arbeitstage von 0 auf mehr, zieht die Ableitung die drei
+/// Neutralwerte zurueck, aber als vorlaeufiges Event MIT dem Neutralwert, nicht als `Null`: `Null` auf `ep_entfernung_km` brach die
+/// Rechnung (`GET /stand` und `GET /fragen` gaben 500, gemessen). Die Frage kommt, der Kegel verlangt die bestaetigte Antwort. Die
+/// naechste 0 ersetzt den Vorschlag, und die Faltung des Logs ergibt denselben Stand.
+#[test]
+fn der_rueckzug_eines_neutralwerts_bleibt_ein_vorlaeufiger_neutralwert() {
+    let ziele = [("ep_entfernung_km", PyWert::Ganz(0)), ("ep_eigenes_kfz", PyWert::Bool(false)), ("ep_oepnv_kosten", PyWert::Ganz(0))];
+    let mut s = leerer_store(2025);
+    anhaengen(&mut s, &bestaetigt("ep_arbeitstage", &json!(0))).unwrap();
+    let abgeleitet: Vec<EventId> = ziele.iter().map(|(z, _)| s.aktives(z).unwrap().event_id).collect();
+    korrigiere(&mut s, "ep_arbeitstage", &json!(220));
+    for ((ziel, neutral), alt) in ziele.iter().zip(&abgeleitet) {
+        let e = s.aktives(ziel).unwrap();
+        assert_eq!((e.zustand, e.wert.clone(), e.ersetzt), (Zustand::Vorlaeufig, neutral.clone(), Some(*alt)), "{ziel}: zurueckgezogen");
+        assert_eq!(e.schreiber, Schreiber::Abgeleitet("ableitung".to_owned()), "{ziel}");
+    }
+    gleicher_stand_nach_wiederholung(&s, "nach 0 -> 220");
+    // Ein Tag mehr aendert nichts mehr: kein weiteres Event.
+    let anzahl = s.events().len();
+    korrigiere(&mut s, "ep_arbeitstage", &json!(1));
+    assert_eq!(s.events().len(), anzahl + 1, "nur die Korrektur selbst, keine neuen abgeleiteten Events");
+    // Zurueck auf 0: die Ableitung ersetzt den Vorschlag.
+    let vorschlaege: Vec<EventId> = ziele.iter().map(|(z, _)| s.aktives(z).unwrap().event_id).collect();
+    korrigiere(&mut s, "ep_arbeitstage", &json!(0));
+    for ((ziel, neutral), vorschlag) in ziele.iter().zip(&vorschlaege) {
+        let e = s.aktives(ziel).unwrap();
+        assert_eq!((e.zustand, e.wert.clone(), e.ersetzt), (Zustand::Bestaetigt, neutral.clone(), Some(*vorschlag)), "{ziel}: wieder abgeleitet");
+    }
+    gleicher_stand_nach_wiederholung(&s, "nach 0 -> 220 -> 1 -> 0");
 }
 
 /// Das Ziel, das gilt: der bestaetigte Wert. `None`, wenn kein Event oder nur ein Vorschlag dasteht (dann kommt die Frage).
@@ -700,6 +803,10 @@ fn eine_korrigierte_quelle_erneuert_oder_zieht_den_abgeleiteten_wert_zurueck() {
         // Ausserhalb von `bereich` (1900 bis 2010): der alte Wert darf nicht weitergelten.
         Korrektur { ziel: "geburtsjahr", vorher: vec![(geb, json!("01.01.1961"))], korrigiert: (geb, json!("15.06.2015")), alt: PyWert::Ganz(1961), neu: None },
         Korrektur { ziel: "geburtsjahr_partner", vorher: vec![(geb_p, json!("01.01.1961"))], korrigiert: (geb_p, json!("01.01.1850")), alt: PyWert::Ganz(1961), neu: None },
+        // Fragen-Reduktion Teil 2, Phase 3: die Neutralwerte gelten nur, solange die Arbeitstage 0 sind; bei einem Tag mehr kommen die Fragen wieder.
+        Korrektur { ziel: "ep_entfernung_km", vorher: vec![("ep_arbeitstage", json!(0))], korrigiert: ("ep_arbeitstage", json!(220)), alt: PyWert::Ganz(0), neu: None },
+        Korrektur { ziel: "ep_oepnv_kosten", vorher: vec![("ep_arbeitstage", json!(0))], korrigiert: ("ep_arbeitstage", json!(1)), alt: PyWert::Ganz(0), neu: None },
+        Korrektur { ziel: "ep_eigenes_kfz", vorher: vec![("ep_arbeitstage", json!(0))], korrigiert: ("ep_arbeitstage", json!(220)), alt: PyWert::Bool(false), neu: None },
     ];
     let mut gedeckt: Vec<&str> = tabelle.iter().map(|z| z.ziel.trim_end_matches("__2")).collect();
     gedeckt.sort_unstable();
