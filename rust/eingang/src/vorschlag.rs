@@ -82,6 +82,21 @@ impl VorschlagEvent {
         bindung: BindungNachschlag<'_>,
         ts: Option<&str>,
     ) -> Result<EventId, SchreibFehler> {
+        self.schreibe_mit(None, store, katalog, bindung, ts)
+    }
+
+    /// Wie [`VorschlagEvent::schreibe`], und das neue Ereignis ersetzt `ersetzt`. NUR der Kontoauszug
+    /// ruft es mit `Some` (Bankimport S1b, Entscheidung d-63; `uebernehme_mit`): Die Funktion bleibt
+    /// `pub(crate)`, ein Aufrufer ausserhalb von `eingang` kann kein `ersetzt` setzen. Der Speicher prueft zusaetzlich, dass das Ziel das aktive, vorlaeufige
+    /// Ereignis des Kontoauszugs auf diesem Feld ist (`store::ersetzt_ausnahme`).
+    pub(crate) fn schreibe_mit(
+        &self,
+        ersetzt: Option<EventId>,
+        store: &mut Store,
+        katalog: Option<&Katalog>,
+        bindung: BindungNachschlag<'_>,
+        ts: Option<&str>,
+    ) -> Result<EventId, SchreibFehler> {
         let herkunft = Herkunft {
             herkunft: achse(self.quelle.herkunft_wort())?,
             pruef_tiefe: PruefTiefe::Ungeprueft,
@@ -99,7 +114,7 @@ impl VorschlagEvent {
             herkunft: herkunft.into(),
             schreiber: self.quelle.schreiber(),
             signal_1: Some(self.signal_1.clone().into()),
-            ersetzt: None,
+            ersetzt,
             ts: ts.map(str::to_owned),
         };
         Ok(store.append(&neu, katalog, bindung)?)

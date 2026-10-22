@@ -8,10 +8,11 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use domain::py_strip;
 use eingang::kontoauszug::{
-    aus_json, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen, hinweis_nichts_uebernommen,
-    hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen, pruefe_buchungsfelder, uebernehme,
-    verwirf_unlesbare_betraege, verwirf_unlesbare_betraege_json, Klassifikator, KontoauszugFehler,
-    Transaktion, LLM_AUFRUFE_HOECHSTZAHL,
+    aus_json, hinweis_ersetzbar, hinweis_ersetzt, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen,
+    hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen,
+    pruefe_buchungsfelder, uebernehme_mit, verwirf_unlesbare_betraege,
+    verwirf_unlesbare_betraege_json, Ersetzung, Klassifikator, KontoauszugFehler, Transaktion,
+    LLM_AUFRUFE_HOECHSTZAHL,
 };
 use eingang::ocr::{lies_kontoauszug_pdf, OcrFehler};
 use eingang::vorschlag::SchreibFehler;
@@ -285,6 +286,35 @@ fn pdf_bytes(inhalt: &Value) -> Result<Vec<u8>, ApiFehler> {
         .ok_or_else(|| ApiFehler::status(400, "pdf-Inhalt nicht gültig base64-kodiert"))
 }
 
+/// Felder mit eigenem Vorschlag aus einem früheren Auszug (Bankimport S1b, d-63): ohne Haken die
+/// Vorschau (`ersetzbar`), mit Haken das Ersetzte (`ersetzt`), beide als Liste in der Antwort und als
+/// Satz im Hinweis. Ohne solche Felder bleibt die Antwort, wie sie war.
+fn ersetzungen_melden(
+    ersetzungen: &[Ersetzung],
+    ersetzen: bool,
+    aus: &mut Map<String, Value>,
+    hinweise: &mut Vec<String>,
+) {
+    if ersetzungen.is_empty() {
+        return;
+    }
+    let liste: Vec<Value> = ersetzungen
+        .iter()
+        .map(|e| {
+            json!({"feld_id": e.feld_id, "bisher_cent": e.bisher_cent,
+                "bisher_posten": e.bisher_posten, "neu_cent": e.neu_cent,
+                "neu_posten": e.neu_posten})
+        })
+        .collect();
+    let (schluessel, satz) = if ersetzen {
+        ("ersetzt", hinweis_ersetzt(ersetzungen))
+    } else {
+        ("ersetzbar", hinweis_ersetzbar(ersetzungen))
+    };
+    aus.insert(schluessel.into(), Value::Array(liste));
+    hinweise.extend(satz);
+}
+
 /// Der Rumpf nach dem Owner-Check: Format, Inhalt, Lesen, Verwerfen, Übernehmen, Speichern.
 ///
 /// # Errors
@@ -299,6 +329,13 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
         ));
     };
     let fmt = format_lesen(b)?;
+    // Der Haken der Entscheidung d-63 (Bankimport S1b): fehlt er, ersetzt der Auszug keinen
+    // bisherigen Vorschlag, sondern zeigt ihn nur. Andere Typen als ein Wahrheitswert sind 400.
+    let ersetzen = match b.get("ersetzen") {
+        None => false,
+        Some(Value::Bool(haken)) => *haken,
+        Some(_) => return Err(ApiFehler::status(400, "ersetzen muss true oder false sein")),
+    };
     let inhalt = b.get("inhalt").unwrap_or(&NICHTS);
     let mut csv_befund = None;
     let (tx, n_verworfen) = match fmt.as_str() {
@@ -331,13 +368,14 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     };
     let katalog = z.katalog()?;
     let klassifikator = klassifikator();
-    let erg = uebernehme(
+    let (erg, ersetzungen) = uebernehme_mit(
         fall.store_mut(),
         &tx,
         BindungNachschlag::neu(&sb.index),
         Some(&*klassifikator),
         None,
         Some(&katalog),
+        ersetzen,
     )
     .map_err(|e| lese_fehler(&e))?;
     store::speichere(fall.pfad(), fall.store().datei())?;
@@ -366,6 +404,9 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     if !gruende_genannt {
         hinweise.extend(hinweis_nicht_gezaehlt(&erg));
     }
+    // Felder mit eigenem Vorschlag aus einem frueheren Auszug (S1b, d-63): ohne Haken die Vorschau,
+    // mit Haken das Ersetzte. Die Liste steht auch strukturiert in der Antwort.
+    ersetzungen_melden(&ersetzungen, ersetzen, &mut aus, &mut hinweise);
     if erg.llm_uebersprungen > 0 {
         // Ohne diesen Hinweis wäre der Deckel eine stille Kürzung.
         aus.insert("llm_uebersprungen".into(), json!(erg.llm_uebersprungen));

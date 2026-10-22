@@ -24,7 +24,7 @@ mod persistenz;
 mod store;
 mod zeit;
 
-pub use abweisung::{Abweisung, AbweisungRoh};
+pub use abweisung::{ersetzt_ausnahme, Abweisung, AbweisungRoh};
 pub use canonical::{canonical_json, sha256_hex, EventId, EventIdFehler};
 pub use event::{Event, NeuesEvent, NeuesEventRoh, Signal};
 pub use katalog::Katalog;

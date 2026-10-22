@@ -6,7 +6,7 @@
 use std::sync::LazyLock;
 use std::time::{Duration, Instant};
 
-use domain::{Schreiber, Zustand};
+use domain::Schreiber;
 use llm::pii::{self, Maskiert};
 use llm::py::{self, PyInt, PyRegex};
 use llm::Kategorie;
@@ -721,6 +721,14 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
         ),
         (u.feld_fehlt, "für ein Feld, das dieser Fall nicht führt"),
         (u.feld_belegt, "für ein Feld, das schon einen Wert hat"),
+        (
+            u.ersetzbar,
+            "für ein Feld, dessen bisheriger Vorschlag erst mit dem Haken ersetzt wird",
+        ),
+        (
+            u.schon_erfasst,
+            "im bisherigen Vorschlag des Felds schon enthalten",
+        ),
         (u.anderes_jahr, GRUND_ANDERES_JAHR),
         (u.datum_unlesbar, GRUND_DATUM_UNLESBAR),
         (u.saldo_nicht_positiv, GRUND_SALDO),
@@ -863,7 +871,7 @@ pub fn parse_pdf_zeilen(
 pub type Klassifikator<'a> = dyn Fn(&Maskiert, i64) -> Option<Kategorie> + 'a;
 
 /// Ergebnis einer Uebernahme: `(uebernommen, llm_uebersprungen)`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Uebernahme {
     /// Buchungen, die in die Summe eines geschriebenen Vorschlags eingingen (nicht die Zahl der
     /// Vorschlaege: zwei Maler-Rechnungen ergeben EINEN Vorschlag und zaehlen zweimal).
@@ -919,6 +927,16 @@ struct Gruppe {
     /// Alle Buchungen kamen ueber ein Stichwort, keine ueber die KI.
     nur_stichwort: bool,
     posten: Vec<Posten>,
+    /// Das Feld traegt einen eigenen vorlaeufigen Vorschlag aus einem frueheren Auszug (Bankimport S1b).
+    alt: Option<Bestehend>,
+}
+
+/// Der eigene vorlaeufige Vorschlag eines Felds aus einem frueheren Auszug, wie `uebernehme` ihn
+/// in `signal_1` ablegte.
+struct Bestehend {
+    posten: Vec<Posten>,
+    /// Ein Teil der Posten kam ueber die KI (`quelle == "llm"`).
+    llm: bool,
 }
 
 /// Die Posten eines vorlaeufigen Kontoauszug-Ereignisses auf `feld`, wie `uebernehme` sie in
@@ -927,9 +945,8 @@ struct Gruppe {
 /// Posten nicht ganz traegt (ein Ereignis vor S1). Eine unlesbare Menge wird nie vereinigt.
 ///
 /// Das ist der Lese-Pfad der Vereinigung: `bank::saldo::vereinige(&bestehende, &neue)` ergibt
-/// den Saldo, der entstuende, wenn der neue Import das Ereignis ersetzen duerfte. Heute darf er
-/// es nicht (Auflage A verbietet `ersetzt` fuer `import:kontoauszug`, Entscheidung d-63 offen);
-/// dann kommt nur das Schreiben dazu, nicht die Rechnung.
+/// den Saldo, der entsteht, wenn der neue Import das Ereignis ersetzt (`uebernehme_mit` mit Haken,
+/// Entscheidung d-63). Gelesen wird nur, was der Speicher ersetzen liesse ([`store::ersetzt_ausnahme`]).
 ///
 /// ```
 /// use eingang::kontoauszug::{bestehende_posten, uebernehme, Transaktion};
@@ -943,9 +960,13 @@ struct Gruppe {
 /// ```
 #[must_use]
 pub fn bestehende_posten(store: &Store, feld: &str) -> Option<Vec<Posten>> {
+    bestehendes(store, feld).map(|b| b.posten)
+}
+
+/// Wie [`bestehende_posten`], dazu die Quelle der Posten.
+fn bestehendes(store: &Store, feld: &str) -> Option<Bestehend> {
     let ereignis = store.aktives(feld)?;
-    if ereignis.zustand != Zustand::Vorlaeufig || ereignis.schreiber != Schreiber::ImportKontoauszug
-    {
+    if !store::ersetzt_ausnahme(&Schreiber::ImportKontoauszug, ereignis) {
         return None;
     }
     let signal_1 = ereignis
@@ -959,7 +980,7 @@ pub fn bestehende_posten(store: &Store, feld: &str) -> Option<Vec<Posten>> {
     if signal_1.get("typ")? != "kontoauszug" {
         return None;
     }
-    signal_1
+    let posten = signal_1
         .get("posten")?
         .as_array()?
         .iter()
@@ -970,31 +991,77 @@ pub fn bestehende_posten(store: &Store, feld: &str) -> Option<Vec<Posten>> {
                 zweck_maskiert: p.get("zweck_maskiert")?.as_str()?.to_owned(),
             })
         })
-        .collect()
+        .collect::<Option<Vec<_>>>()?;
+    Some(Bestehend {
+        posten,
+        llm: signal_1.get("quelle").is_some_and(|q| q == "llm"),
+    })
+}
+
+/// Ein Cent-Betrag als Euro im Satz fuer den Nutzer: `1.234,50 €`.
+fn euro_text(cent: i64) -> String {
+    let betrag = cent.unsigned_abs();
+    let ganz = (betrag / 100).to_string();
+    let mut mit_punkten = String::new();
+    for (i, z) in ganz.chars().enumerate() {
+        if i > 0 && (ganz.len() - i).is_multiple_of(3) {
+            mit_punkten.push('.');
+        }
+        mit_punkten.push(z);
+    }
+    let vorzeichen = if cent < 0 { "-" } else { "" };
+    format!("{vorzeichen}{mit_punkten},{:02} €", betrag % 100)
 }
 
 /// Bildet den Saldo je Gruppe und schreibt, wo er positiv ist, EINEN Vorschlag. Erst alle Salden,
 /// dann die Schreibungen: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
+///
+/// Traegt das Feld einen eigenen vorlaeufigen Vorschlag (`Gruppe::alt`), rechnet der Saldo auf der
+/// Vereinigung beider Mengen. Aendert sich dadurch nichts, entsteht nichts (`schon_erfasst`); sonst
+/// ersetzt der Aufruf den alten Vorschlag nur mit `ersetzen`, ohne Haken meldet er ihn (`ersetzbar`).
 fn schreibe_gruppen(
     store: &mut Store,
     gruppen: Vec<Gruppe>,
     jahr: i64,
     (bindung, katalog, ts): (BindungNachschlag<'_>, &Katalog, Option<&str>),
+    ersetzen: bool,
     u: &mut Uebernahme,
-) -> Result<(), KontoauszugFehler> {
+) -> Result<Vec<Ersetzung>, KontoauszugFehler> {
+    let ueberlauf = |g: &Gruppe| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld));
     let mut zu_schreiben = Vec::new();
+    let mut ersetzungen = Vec::new();
     for g in gruppen {
-        let saldo = saldo::saldo(&g.posten)
-            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld)))?;
+        let posten = match &g.alt {
+            Some(alt) => saldo::vereinige(&alt.posten, &g.posten),
+            None => g.posten.clone(),
+        };
+        let saldo = saldo::saldo(&posten).ok_or_else(|| ueberlauf(&g))?;
         if saldo <= 0 {
             u.saldo_nicht_positiv += g.posten.len();
-        } else {
-            zu_schreiben.push((g, saldo));
+            continue;
         }
+        if let Some(alt) = &g.alt {
+            if posten.len() == alt.posten.len() {
+                u.schon_erfasst += g.posten.len();
+                continue;
+            }
+            ersetzungen.push(Ersetzung {
+                feld_id: g.feld,
+                bisher_cent: saldo::saldo(&alt.posten).ok_or_else(|| ueberlauf(&g))?,
+                bisher_posten: alt.posten.len(),
+                neu_cent: saldo,
+                neu_posten: posten.len(),
+            });
+            if !ersetzen {
+                u.ersetzbar += g.posten.len();
+                continue;
+            }
+        }
+        zu_schreiben.push((g, posten, saldo));
     }
-    for (g, saldo) in zu_schreiben {
-        let posten: Vec<Value> = g
-            .posten
+    for (g, posten, saldo) in zu_schreiben {
+        let llm = !g.nur_stichwort || g.alt.as_ref().is_some_and(|alt| alt.llm);
+        let posten: Vec<Value> = posten
             .iter()
             .map(|p| {
                 json!({"datum": p.datum.als_text(), "betrag_cent": p.betrag_cent,
@@ -1003,17 +1070,22 @@ fn schreibe_gruppen(
             .collect();
         let signal_1 = json!({"typ": "kontoauszug", "jahr": jahr, "posten": posten,
             "summe_cent": saldo, "kategorie": g.kategorie.als_str(),
-            "quelle": if g.nur_stichwort { "heuristik" } else { "llm" }});
+            "quelle": if llm { "llm" } else { "heuristik" }});
         let v = VorschlagEvent {
             quelle: Quelle::Kontoauszug,
             feld_id: g.feld.to_owned(),
             wert: json!(saldo),
             signal_1,
         };
-        v.schreibe(store, Some(katalog), bindung, ts)?;
+        // Das Ziel ist das aktive Ereignis, das `bestehendes` las; der Speicher prueft es noch einmal.
+        let ersetzt = g
+            .alt
+            .as_ref()
+            .and_then(|_| store.aktives(g.feld).map(|e| e.event_id));
+        v.schreibe_mit(ersetzt, store, Some(katalog), bindung, ts)?;
         u.uebernommen += g.posten.len();
     }
-    Ok(())
+    Ok(ersetzungen)
 }
 
 /// `uebernehme_kontoauszug(store, transaktionen, bindung, llm_klassifikator=, ts=, katalog=)`.
@@ -1026,8 +1098,9 @@ fn schreibe_gruppen(
 /// Veranlagungsjahrs in Cent, abzueglich der Rueckbuchungen derselben Kategorie (Betrag > 0 mit
 /// Stichwort); `signal_1` traegt die Einzelposten. Ein Datum ausserhalb des Jahres oder ohne eine
 /// der vier gelesenen Formen laesst die Buchung weg und zaehlt sie. Ist der Saldo null oder
-/// negativ, entsteht kein Vorschlag. Hatte das Feld schon einen Wert, auch den eines frueheren
-/// Imports, schreibt dieser Aufruf nichts (Auflage A, `feld_belegt`).
+/// negativ, entsteht kein Vorschlag. Hatte das Feld schon einen Wert, schreibt dieser Aufruf
+/// nichts (`feld_belegt`); der eigene vorlaeufige Vorschlag eines frueheren Auszugs ist der eine
+/// Sonderfall (`ersetzbar`, `schon_erfasst`): ohne Haken wird er nie ersetzt, siehe [`uebernehme_mit`].
 ///
 /// Eine Buchung der Kategorie Spende, deren Zweck einen Parteinamen nennt (`PARTEINAMEN`), bekommt KEINEN Vorschlag
 /// (Abweichung Nr. 39, `rust/fixtures/README.md`): Python schriebe sie nach `spenden_betrag`. Das gilt auch fuer
@@ -1054,6 +1127,56 @@ pub fn uebernehme(
     ts: Option<&str>,
     katalog: Option<&Katalog>,
 ) -> Result<Uebernahme, KontoauszugFehler> {
+    uebernehme_mit(
+        store,
+        transaktionen,
+        bindung,
+        llm_klassifikator,
+        ts,
+        katalog,
+        false,
+    )
+    .map(|(u, _)| u)
+}
+
+/// Wie [`uebernehme`], mit der Rueckfrage der Entscheidung d-63 (Bankimport S1b): Traegt ein Feld
+/// schon einen eigenen vorlaeufigen Vorschlag aus einem frueheren Auszug (`bestehende_posten` liest
+/// ihn), rechnet dieser Aufruf auf der Vereinigung beider Posten-Mengen (dieselbe Buchung zaehlt
+/// einmal). Ergibt sich dieselbe Menge, passiert nichts (`schon_erfasst`). Sonst ersetzt er den
+/// alten Vorschlag nur mit `ersetzen = true` (der Haken); ohne Haken schreibt er nichts auf dieses
+/// Feld (`ersetzbar`). Die Liste nennt je Feld bisherige und neue Summe, ohne Haken als Vorschau,
+/// mit Haken als das, was ersetzt wurde. Ein bestaetigtes Ereignis, eines eines anderen Schreibers
+/// und ein Ereignis ohne lesbare Posten bleiben `feld_belegt`, auch mit Haken. Felder ohne Ereignis
+/// schreibt der Aufruf wie immer.
+///
+/// # Errors
+/// Wie [`uebernehme`]; der Ueberlauf der vereinigten Summe bricht ab, bevor etwas ersetzt wird.
+///
+/// ```
+/// use eingang::kontoauszug::{uebernehme_mit, Transaktion};
+/// use store::{BindungNachschlag, Store};
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let tx = |tag: &str, cent: i64| Transaktion { datum: serde_json::json!(tag), betrag: cent, verwendungszweck: "Spende Tierheim".into() };
+/// let mut store = Store::leer(2025, None);
+/// uebernehme_mit(&mut store, &[tx("2025-03-01", -4_00)], nachschlag, None, None, None, false).unwrap();
+/// let zweiter = [tx("2025-03-01", -4_00), tx("2025-03-02", -7_00)];
+/// // Ohne Haken: die Vorschau nennt alt und neu, geschrieben wird nichts.
+/// let (u, vorschau) = uebernehme_mit(&mut store, &zweiter, nachschlag, None, None, None, false).unwrap();
+/// assert_eq!((u.ersetzbar, vorschau[0].bisher_cent, vorschau[0].neu_cent), (2, 4_00, 11_00));
+/// assert_eq!(store.events().len(), 1);
+/// // Mit Haken: der alte Vorschlag wird ersetzt.
+/// let (u, _) = uebernehme_mit(&mut store, &zweiter, nachschlag, None, None, None, true).unwrap();
+/// assert_eq!((u.uebernommen, store.events().len()), (2, 2));
+/// ```
+pub fn uebernehme_mit(
+    store: &mut Store,
+    transaktionen: &[Transaktion],
+    bindung: BindungNachschlag<'_>,
+    llm_klassifikator: Option<&Klassifikator<'_>>,
+    ts: Option<&str>,
+    katalog: Option<&Katalog>,
+    ersetzen: bool,
+) -> Result<(Uebernahme, Vec<Ersetzung>), KontoauszugFehler> {
     let eigener;
     let katalog = if let Some(k) = katalog {
         k
@@ -1063,20 +1186,7 @@ pub fn uebernehme(
     };
     let jahr = store.veranlagungszeitraum();
     let mut aufrufe = 0;
-    let mut u = Uebernahme {
-        uebernommen: 0,
-        llm_uebersprungen: 0,
-        einnahmen: 0,
-        ohne_stichwort: 0,
-        partei: 0,
-        feld_fehlt: 0,
-        feld_belegt: 0,
-        anderes_jahr: 0,
-        datum_unlesbar: 0,
-        saldo_nicht_positiv: 0,
-        ersetzbar: 0,
-        schon_erfasst: 0,
-    };
+    let mut u = Uebernahme::default();
     let beginn = Instant::now();
     // Zuerst ordnen, dann schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
     let mut gruppen: Vec<Gruppe> = Vec::new();
@@ -1132,10 +1242,6 @@ pub fn uebernehme(
             u.feld_fehlt += 1;
             continue;
         }
-        if store.aktives(feld).is_some() {
-            u.feld_belegt += 1;
-            continue;
-        }
         let posten = Posten {
             datum,
             betrag_cent: tx.betrag,
@@ -1144,52 +1250,91 @@ pub fn uebernehme(
         if let Some(g) = gruppen.iter_mut().find(|g| g.feld == feld) {
             g.nur_stichwort &= det.is_some();
             g.posten.push(posten);
-        } else {
-            gruppen.push(Gruppe {
-                feld,
-                kategorie,
-                nur_stichwort: det.is_some(),
-                posten: vec![posten],
-            });
+            continue;
         }
+        // Die erste Buchung des Felds in diesem Auszug entscheidet, ob das Feld frei ist, einen
+        // ersetzbaren eigenen Vorschlag traegt oder belegt bleibt.
+        let alt = if store.aktives(feld).is_some() {
+            let Some(alt) = bestehendes(store, feld) else {
+                u.feld_belegt += 1;
+                continue;
+            };
+            Some(alt)
+        } else {
+            None
+        };
+        gruppen.push(Gruppe {
+            feld,
+            kategorie,
+            nur_stichwort: det.is_some(),
+            posten: vec![posten],
+            alt,
+        });
     }
-    schreibe_gruppen(store, gruppen, jahr, (bindung, katalog, ts), &mut u)?;
-    Ok(u)
+    let ersetzungen = schreibe_gruppen(
+        store,
+        gruppen,
+        jahr,
+        (bindung, katalog, ts),
+        ersetzen,
+        &mut u,
+    )?;
+    Ok((u, ersetzungen))
 }
 
-/// Wie [`uebernehme`], mit der Rueckfrage der Entscheidung d-63 (Bankimport S1b): Traegt ein Feld
-/// schon einen eigenen vorlaeufigen Vorschlag aus einem frueheren Auszug, ersetzt dieser Aufruf ihn
-/// nur mit `ersetzen = true` (der Haken). Die Liste nennt je Feld, was sich aendern wuerde bzw. geaendert hat.
+/// `neu` bzw. `jetzt` je Feld: `spenden_betrag: bisher 11,00 € aus 2 Buchung(en), <wort> 16,00 € aus 3 Buchung(en)`.
+fn ersetzung_zeilen(felder: &[Ersetzung], wort: &str) -> String {
+    felder
+        .iter()
+        .map(|e| {
+            format!(
+                "{}: bisher {} aus {} Buchung(en), {wort} {} aus {} Buchung(en)",
+                e.feld_id,
+                euro_text(e.bisher_cent),
+                e.bisher_posten,
+                euro_text(e.neu_cent),
+                e.neu_posten
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("; ")
+}
+
+/// Der Satz fuer den Nutzer neben der Vorschau: je Feld bisherige und neue Summe, und wie man
+/// ersetzt. Nur Feldnamen, Summen und Zahlen, nie ein Zweck oder eine Gegenpartei. `None` ohne Feld.
 ///
-/// GERUEST: noch ohne Verhalten, die Tests des Baus stehen vor ihm.
+/// ```
+/// use eingang::kontoauszug::{hinweis_ersetzbar, Ersetzung};
+/// let e = Ersetzung { feld_id: "spenden_betrag", bisher_cent: 11_00, bisher_posten: 2, neu_cent: 16_00, neu_posten: 3 };
+/// assert_eq!(
+///     hinweis_ersetzbar(&[e]).as_deref(),
+///     Some("Ersetzen möglich: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), mit diesem Auszug 16,00 € aus 3 Buchung(en). Setze den Haken, um den bisherigen Vorschlag zu ersetzen.")
+/// );
+/// assert_eq!(hinweis_ersetzbar(&[]), None);
+/// ```
+#[must_use]
+pub fn hinweis_ersetzbar(felder: &[Ersetzung]) -> Option<String> {
+    (!felder.is_empty()).then(|| {
+        format!(
+            "Ersetzen möglich: {}. Setze den Haken, um den bisherigen Vorschlag zu ersetzen.",
+            ersetzung_zeilen(felder, "mit diesem Auszug")
+        )
+    })
+}
+
+/// Der Satz fuer den Nutzer nach dem Ersetzen: je Feld bisherige und jetzige Summe. `None` ohne Feld.
 ///
-/// # Errors
-/// Wie [`uebernehme`].
-pub fn uebernehme_mit(
-    store: &mut Store,
-    transaktionen: &[Transaktion],
-    bindung: BindungNachschlag<'_>,
-    llm_klassifikator: Option<&Klassifikator<'_>>,
-    ts: Option<&str>,
-    katalog: Option<&Katalog>,
-    ersetzen: bool,
-) -> Result<(Uebernahme, Vec<Ersetzung>), KontoauszugFehler> {
-    let _ = ersetzen;
-    uebernehme(store, transaktionen, bindung, llm_klassifikator, ts, katalog).map(|u| (u, Vec::new()))
-}
-
-/// Der Satz fuer den Nutzer neben der Vorschau: je Feld bisherige und neue Summe, und wie man ersetzt.
-/// GERUEST: noch ohne Verhalten.
+/// ```
+/// use eingang::kontoauszug::{hinweis_ersetzt, Ersetzung};
+/// let e = Ersetzung { feld_id: "spenden_betrag", bisher_cent: 11_00, bisher_posten: 2, neu_cent: 16_00, neu_posten: 3 };
+/// assert_eq!(
+///     hinweis_ersetzt(&[e]).as_deref(),
+///     Some("Ersetzt: spenden_betrag: bisher 11,00 € aus 2 Buchung(en), jetzt 16,00 € aus 3 Buchung(en).")
+/// );
+/// ```
 #[must_use]
-pub fn hinweis_ersetzbar(_felder: &[Ersetzung]) -> Option<String> {
-    None
-}
-
-/// Der Satz fuer den Nutzer nach dem Ersetzen: je Feld bisherige und neue Summe.
-/// GERUEST: noch ohne Verhalten.
-#[must_use]
-pub fn hinweis_ersetzt(_felder: &[Ersetzung]) -> Option<String> {
-    None
+pub fn hinweis_ersetzt(felder: &[Ersetzung]) -> Option<String> {
+    (!felder.is_empty()).then(|| format!("Ersetzt: {}.", ersetzung_zeilen(felder, "jetzt")))
 }
 
 #[cfg(test)]
@@ -2214,13 +2359,13 @@ mod tests {
                 (2, 0, 0),
                 "Haken {ersetzen}: {u:?}"
             );
-            assert!(liste.is_empty());
+            assert_eq!(liste, Vec::new());
             assert_eq!(store.events().len(), 1);
         }
         let mut store = s1_store_mit(&S1B_ERSTER);
         let (u, liste) = s1b_mit(&mut store, &S1B_ERSTER[..1], true);
         assert_eq!((u.schon_erfasst, u.uebernommen), (1, 0), "{u:?}");
-        assert!(liste.is_empty());
+        assert_eq!(liste, Vec::new());
         assert_eq!(store.events().len(), 1);
     }
 
@@ -2248,7 +2393,7 @@ mod tests {
             (0, 1, 0),
             "{u:?}"
         );
-        assert!(liste.is_empty());
+        assert_eq!(liste, Vec::new());
         assert_eq!(store.events().len(), 1);
         assert_eq!(s1_wert(&store, "spenden_betrag"), Some(10_000));
     }
@@ -2294,7 +2439,7 @@ mod tests {
                 (0, 2, 0),
                 "{name}: {u:?}"
             );
-            assert!(liste.is_empty(), "{name}");
+            assert_eq!(liste, Vec::new(), "{name}");
             assert_eq!(store.events().len(), 1, "{name}");
             assert_eq!(
                 store.aktives("spenden_betrag").unwrap().event_id,
@@ -2314,7 +2459,7 @@ mod tests {
             (0, 2, 0),
             "{u:?}"
         );
-        assert!(liste.is_empty());
+        assert_eq!(liste, Vec::new());
         assert_eq!(store.events().len(), 2);
         assert_eq!(s1_wert(&store, "spenden_betrag"), Some(99_00));
     }
