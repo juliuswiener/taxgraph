@@ -1771,6 +1771,26 @@ mod tests {
         };
         mensch.append(&bestaetigt, Some(&katalog), bindung).unwrap();
         assert!(bestehende_posten(&mensch, "spenden_betrag").is_none());
+        // Ein BESTAETIGTES Ereignis des Schreibers `import:kontoauszug`: `append` weist es ab
+        // (Auflage A), eine geladene Akte haelt es trotzdem. Es wird nicht vereinigt.
+        let mut datei = {
+            let mut vorlaeufig = store::Store::leer(2025, None);
+            crate::vorschlag::VorschlagEvent {
+                quelle: crate::vorschlag::Quelle::Kontoauszug,
+                feld_id: "spenden_betrag".to_owned(),
+                wert: json!(250),
+                signal_1: json!({"typ": "kontoauszug", "posten": [
+                    {"datum": "2025-03-01", "betrag_cent": -250, "zweck_maskiert": "Spende"}]}),
+            }
+            .schreibe(&mut vorlaeufig, Some(&katalog), bindung, None)
+            .unwrap();
+            vorlaeufig.into_datei()
+        };
+        let geladen = store::Store::aus_datei(datei.clone());
+        assert_eq!(bestehende_posten(&geladen, "spenden_betrag").map(|p| p.len()), Some(1));
+        datei.events[0].zustand = domain::Zustand::Bestaetigt;
+        let bestaetigt_geladen = store::Store::aus_datei(datei);
+        assert!(bestehende_posten(&bestaetigt_geladen, "spenden_betrag").is_none());
         // Kein aktives Ereignis: nichts zu vereinigen.
         assert!(bestehende_posten(&store::Store::leer(2025, None), "spenden_betrag").is_none());
     }
