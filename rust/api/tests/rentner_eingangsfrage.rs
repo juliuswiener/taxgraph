@@ -235,6 +235,13 @@ fn mit(mut basis: Paare, mehr: Paare) -> Paare {
     basis
 }
 
+/// Wie [`mit`], aber eine Antwort aus `basis` zu demselben Feld entfaellt (der Dienst nimmt je Feld nur ein aktives Ereignis).
+fn ueberschreibe(mut basis: Paare, mehr: Paare) -> Paare {
+    basis.retain(|(f, _)| !mehr.iter().any(|(g, _)| g == f));
+    basis.extend(mehr);
+    basis
+}
+
 /// Die Felder aus `felder`, die in der Liste fehlen.
 fn fehlende<'a>(ids: &[String], felder: &[&'a str]) -> Vec<&'a str> {
     felder
@@ -518,18 +525,21 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// Seit Fluss J F2/F3/F8 (2026-10-21) stehen die Kreuze `kein_kind`, `kein_unterhalt` und `keine_auslandseinkuenfte` in der Liste, bis sie
 /// beantwortet sind (drei Fragen mehr in jedem Fall), bei Zusammenveranlagung dazu `kein_gewinn_partner` (vier mehr; 207 -> 211, 154 -> 157).
 /// Ihre Bloecke ("nein") stehen in `nein_verbirgt_den_block_eines_kreuzes_und_nur_ihn`.
+/// Seit Fragen-Reduktion Teil 2, Phase 2 (2026-10-22) stehen die Kreuze `keine_behinderung_pflege`, `keine_energetische_sanierung` und
+/// `keine_spenden` in der Liste, bis sie beantwortet sind: drei Fragen mehr in jedem Fall (157 -> 160, 211 -> 214). Ihre Bloecke ("nein")
+/// stehen ebenfalls in `nein_verbirgt_den_block_eines_kreuzes_und_nur_ihn`.
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
-        ("einzel offen", "einzel", None, None, 157),
-        ("einzel nein", "einzel", Some(true), None, 148),
-        ("einzel ja", "einzel", Some(false), None, 156),
-        ("zusammen offen", "zusammen", None, None, 211),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 191),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 201),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 199),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 209),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 210),
+        ("einzel offen", "einzel", None, None, 160),
+        ("einzel nein", "einzel", Some(true), None, 151),
+        ("einzel ja", "einzel", Some(false), None, 159),
+        ("zusammen offen", "zusammen", None, None, 214),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 194),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 204),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 202),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 212),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 213),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {
@@ -644,19 +654,64 @@ const GEWINN_PARTNER_BLOCK: [&str; 11] = [
     "verguetung_ueberlassung_partner",
 ];
 
-/// Kreuz, Veranlagung des Falls und Block: die vier neuen Kreuze.
-const NEUE_KREUZE: [(&str, &str, &[&str]); 4] = [
+// Fragen-Reduktion Teil 2, Phase 2 (F10, 2026-10-22): die Rentner-Scheibe fragt auch `keine_behinderung_pflege`, `keine_energetische_sanierung`
+// und `keine_spenden`. Die Bloecke sind die Felder, die `rentner()` offen laesst; `rentner_grad_der_behinderung` und `rentner_hilflos_blind_taubblind`
+// beantwortet `rentner()` schon (Kegel), sie prueft `nein_auf_behinderung_und_pflege_verbirgt_auch_die_zwei_felder_des_kegels`.
+
+/// Die elf offenen Felder hinter `keine_behinderung_pflege`: die Pflege (§ 33b Abs. 6; die ganze Regel `p33b_pflege_pauschbetrag`), die zwei
+/// Fahrtkostenfragen (§ 33 Abs. 2a), der Grad und die Merkzeichen der Kinder (§ 33b Abs. 5) und die zwei Fragen zu den behinderungsbedingten
+/// Aufwendungen (§ 33b Abs. 1, `feld_bedingung` am Kreuz).
+const BEHINDERUNG_PFLEGE_BLOCK: [&str; 11] = [
+    "rentner_gepflegter_wohnsitz_inland",
+    "rentner_pflege_durch",
+    "rentner_gepflegter_idnr",
+    "rentner_gepflegter_angaben",
+    "rentner_pflege_weitere_personen",
+    "fahrtkosten_pausch_gdb80_oder_70g",
+    "fahrtkosten_pausch_ag_bl_tbl_h",
+    "kind_grad_der_behinderung",
+    "kind_hilflos_blind_taubblind",
+    "behinderungsbedingte_aufwendungen",
+    "behinderungsbedingte_aufwendungen_wahlrecht_pb",
+];
+
+/// Die zwoelf Felder hinter `keine_energetische_sanierung` (§ 35c `EStG`): die Regeln `p35c_sanierung_ermaessigung` und
+/// `p35c_energieberater_ermaessigung` ganz. Ein Fragenlauf mit neutralen Antworten (`korrektur_sweep`) fragt nur drei davon
+/// (`p35c_bereits_ermaessigung_frueher`, `p35c_keine_doppelfoerderung`, `p35c_energieberater_aufwendungen`), die offene Liste hat alle zwoelf.
+const SANIERUNG_BLOCK: [&str; 12] = [
+    "p35c_sanierungsaufwendungen",
+    "p35c_ist_uebernaechstes_foerderjahr",
+    "p35c_keine_doppelfoerderung",
+    "p35c_objekt_strasse",
+    "p35c_objekt_plz_ort",
+    "p35c_gebaeude_herstellungsbeginn",
+    "p35c_baubeginn_massnahme",
+    "p35c_gesamtflaeche_qm",
+    "p35c_eigene_wohnflaeche_qm",
+    "p35c_bereits_ermaessigung_frueher",
+    "p35c_massnahme_art",
+    "p35c_energieberater_aufwendungen",
+];
+
+/// Die drei Felder hinter `keine_spenden` (§ 10b `EStG`).
+const SPENDEN_BLOCK: [&str; 3] = ["spenden_betrag", "parteispenden_betrag", "waehlervereinigungen_betrag"];
+
+/// Kreuz, Veranlagung des Falls und Block: die sieben neuen Kreuze (vier aus Fluss J, drei aus der Fragen-Reduktion Teil 2).
+const NEUE_KREUZE: [(&str, &str, &[&str]); 7] = [
     ("kein_kind", "einzel", &KIND_BLOCK),
     ("kein_unterhalt", "einzel", &UNTERHALT_BLOCK),
     ("keine_auslandseinkuenfte", "einzel", &AUSLAND_BLOCK),
     ("kein_gewinn_partner", "zusammen", &GEWINN_PARTNER_BLOCK),
+    ("keine_behinderung_pflege", "einzel", &BEHINDERUNG_PFLEGE_BLOCK),
+    ("keine_energetische_sanierung", "einzel", &SANIERUNG_BLOCK),
+    ("keine_spenden", "einzel", &SPENDEN_BLOCK),
 ];
 
 fn menge(ids: &[String]) -> std::collections::BTreeSet<&str> {
     ids.iter().map(String::as_str).collect()
 }
 
-/// Die vier Kreuze stehen in der Fragenliste, so wie sie `gesamt` zeigt: Ja/Nein-Frage, `frage_invertiert` (das Feld nennt die
+/// Die Kreuze stehen in der Fragenliste, so wie sie `gesamt` zeigt: Ja/Nein-Frage, `frage_invertiert` (das Feld nennt die
 /// Abwesenheit, die Frage fragt nach der Anwesenheit) und `screening` (die Ankreuzliste am Anfang zeigt sie; wer nichts ankreuzt,
 /// antwortet "nein"). Die Polaritaet steht an der Frage, die der Dienst liefert, nicht am Feldnamen.
 #[tokio::test]
@@ -684,7 +739,7 @@ async fn die_zeile_des_ehegatten_fehlt_bei_einzelveranlagung() {
     assert!(pos(&einzel, "kein_gewinn_partner").is_none(), "Zeile des Ehegatten bei Einzelveranlagung");
     assert!(pos(&zusammen, "kein_gewinn_partner").is_some(), "Zeile des Ehegatten fehlt bei Zusammenveranlagung");
     assert!(pos(&offen, "kein_gewinn_partner").is_some(), "Zeile des Ehegatten fehlt, solange die Veranlagung offen ist");
-    for kreuz in ["kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte"] {
+    for kreuz in ["kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte", "keine_behinderung_pflege", "keine_energetische_sanierung", "keine_spenden"] {
         for (name, ids) in [("einzel", &einzel), ("zusammen", &zusammen), ("offen", &offen)] {
             assert!(pos(ids, kreuz).is_some(), "{kreuz} fehlt bei {name}");
         }
@@ -738,13 +793,17 @@ async fn ja_laesst_den_block_stehen_und_der_wechsel_von_nein_auf_ja_zeigt_ihn_wi
     }
 }
 
-/// Jedes Kreuz steht vor den Feldern, die es abschaltet (sonst beantwortet der Nutzer die Details, bevor er das Kreuz sieht).
+/// Jedes Kreuz steht vor den Feldern, die es abschaltet (sonst beantwortet der Nutzer die Details, bevor er das Kreuz sieht). Ausnahme:
+/// die zwei Fragen zu den behinderungsbedingten Aufwendungen ordnet die Warteschlange vor `keine_behinderung_pflege` (Position 17 gegen 21).
+/// Die Oberflaeche stoert das nicht: ihre Ankreuzliste sammelt jede Frage mit `screening` und steht vor der ersten Detailfrage
+/// (`zeigeScreening` in `app.js`); `die_neuen_kreuze_sind_invertierte_ankreuzfragen_der_liste` haelt `screening` fest.
 #[tokio::test]
 async fn jedes_neue_kreuz_steht_vor_den_feldern_die_es_abschaltet() {
+    const NACH_DEM_KREUZ_ERLAUBT: [&str; 2] = ["behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_wahlrecht_pb"];
     for (kreuz, veranlagung, block) in NEUE_KREUZE {
         let ids = fragen_ids(&fall_mit(&rentner(2_000_000, veranlagung)).await).await;
         let k = pos(&ids, kreuz).unwrap_or_else(|| panic!("{kreuz} fehlt in der Liste"));
-        for f in block {
+        for f in block.iter().filter(|f| !NACH_DEM_KREUZ_ERLAUBT.contains(f)) {
             let p = pos(&ids, f).unwrap_or_else(|| panic!("{f} fehlt ohne Antwort auf {kreuz}"));
             assert!(k < p, "{kreuz}@{k} steht nicht vor {f}@{p}");
         }
@@ -752,7 +811,7 @@ async fn jedes_neue_kreuz_steht_vor_den_feldern_die_es_abschaltet() {
 }
 
 /// Keine Sperre durch die neuen Kreuze: mit "nein" auf alle gibt es eine bestaetigte Zahl, ohne Zusatzfrage und ohne neuen Sperrgrund
-/// (die Kreuze stehen in keiner Sperre des Bescheids; `sperrgrund_kreuz_sweep` misst das ueber alle Kontexte).
+/// (`sperrgrund_kreuz_sweep` misst das ueber alle Kontexte).
 #[tokio::test]
 async fn nein_auf_alle_neuen_kreuze_gibt_eine_bestaetigte_zahl() {
     for veranlagung in ["einzel", "zusammen"] {
@@ -770,6 +829,29 @@ async fn nein_auf_alle_neuen_kreuze_gibt_eine_bestaetigte_zahl() {
     }
 }
 
+/// Der Grad der Behinderung und die Merkzeichen von Person A stehen im Kegel (`rentner()` beantwortet sie). `keine_behinderung_pflege`
+/// verbirgt beide: bei "nein" verlassen sie die Liste, und die Zahl steht trotzdem (keine Sackgasse ueber `input_kegel_nicht_bestaetigt`).
+/// Sie ist die Zahl mit den Antworten 0 und "nein"; "ja" holt die Fragen zurueck.
+#[tokio::test]
+async fn nein_auf_behinderung_und_pflege_verbirgt_auch_die_zwei_felder_des_kegels() {
+    const KEGEL_BEHINDERUNG: [&str; 2] = ["rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind"];
+    let ohne_kegel: Paare = rentner(4_000_000, "einzel").into_iter().filter(|(f, _)| !KEGEL_BEHINDERUNG.contains(f)).collect();
+    let d = fall_mit(&ohne_kegel).await;
+    let vorher = fragen_ids(&d).await;
+    assert!(fehlende(&vorher, &KEGEL_BEHINDERUNG).is_empty(), "vor der Antwort fehlen: {:?}", fehlende(&vorher, &KEGEL_BEHINDERUNG));
+    antworte(&d, "keine_behinderung_pflege", json!(true)).await;
+    let nachher = fragen_ids(&d).await;
+    assert_eq!(vorhandene(&nachher, &KEGEL_BEHINDERUNG), Vec::<&str>::new(), "trotz 'nein' gefragt");
+    let e = ergebnis(&d).await;
+    assert!(e["zahl_cent"].is_i64(), "keine Zahl nach 'nein' ohne die Kegel-Antworten: {e}");
+    assert_eq!(e["grund"], json!("bestaetigt"), "{e}");
+    let mit_antworten = ergebnis(&fall_mit(&rentner(4_000_000, "einzel")).await).await;
+    assert_eq!(e["zahl_cent"], mit_antworten["zahl_cent"], "die Zahl ohne die Kegel-Antworten weicht von der mit 0 und 'nein' ab");
+    aendere(&d, "keine_behinderung_pflege", json!(false)).await;
+    let ja = fragen_ids(&d).await;
+    assert!(fehlende(&ja, &KEGEL_BEHINDERUNG).is_empty(), "nach 'ja' fehlen: {:?}", fehlende(&ja, &KEGEL_BEHINDERUNG));
+}
+
 /// Ein gespeicherter Wert zaehlt weiter, auch wenn das Kreuz auf "nein" steht (wie bei `kein_lohn_pension`): das Kreuz aendert nur die
 /// Liste, nie die Rechnung. Je Block ein Wert, der die Steuer bewegt; das Kreuz laesst die Zahl, wie sie ist; ohne den Wert ist sie
 /// eine andere (sonst belegte die Gleichheit nichts).
@@ -783,15 +865,24 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter_in_jedem_neuen_block() 
         ("dba_gezahlte_auslaendische_steuer", json!(100_000)),
         ("dba_mehrere_staaten", json!(false)),
     ];
-    let faelle: [(&str, &str, i64, Paare); 4] = [
+    let faelle: [(&str, &str, i64, Paare); 7] = [
         ("kein_kind", "einzel", 2_000_000, vec![("schulgeld", json!(600_000))]),
         ("kein_unterhalt", "einzel", 2_000_000, vec![("p33a_unterhalt_aufwendungen", json!(300_000))]),
         ("keine_auslandseinkuenfte", "einzel", 2_000_000, ausland),
         ("kein_gewinn_partner", "zusammen", 4_000_000, vec![("einkuenfte_gewinn_partner", json!(3_000_000))]),
+        // `rentner()` beantwortet den Grad mit 0; der gespeicherte Wert ersetzt diese Antwort.
+        ("keine_behinderung_pflege", "einzel", 4_000_000, vec![("rentner_grad_der_behinderung", json!(100))]),
+        (
+            "keine_energetische_sanierung",
+            "einzel",
+            4_000_000,
+            vec![("p35c_keine_doppelfoerderung", json!(true)), ("p35c_energieberater_aufwendungen", json!(500_000))],
+        ),
+        ("keine_spenden", "einzel", 4_000_000, vec![("spenden_betrag", json!(300_000))]),
     ];
     for (kreuz, veranlagung, rente, wert) in faelle {
         let ohne = zahl(&fall_mit(&rentner(rente, veranlagung)).await).await;
-        let mit_wert = mit(rentner(rente, veranlagung), wert.clone());
+        let mit_wert = ueberschreibe(rentner(rente, veranlagung), wert.clone());
         let offen = zahl(&fall_mit(&mit_wert).await).await;
         assert_ne!(ohne, offen, "{kreuz}: der Wert bewegt die Steuer nicht ({ohne} gegen {offen}), der Test belegt nichts");
         let d = fall_mit(&mit_wert).await;
@@ -802,4 +893,25 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter_in_jedem_neuen_block() 
             assert_eq!(stand["felder"][*feld]["wert"], *w, "{kreuz}: {feld} ist nach dem Kreuz nicht mehr im Store");
         }
     }
+}
+
+/// "Ja" auf `keine_behinderung_pflege` ist in der Rentner-Scheibe ein neuer Zustand (das Kreuz stand vorher nicht in der Liste). Die Sperre
+/// `fahrtkostenpauschale_offen` verlangt dann die zwei Fahrtkostenfragen; beide stehen in der Liste (keine Sackgasse), und mit ihren
+/// Antworten gibt es die bestaetigte Zahl.
+#[tokio::test]
+async fn ja_auf_behinderung_und_pflege_fragt_die_fahrtkosten_und_gibt_dann_eine_zahl() {
+    const FAHRTKOSTEN: [&str; 2] = ["fahrtkosten_pausch_ag_bl_tbl_h", "fahrtkosten_pausch_gdb80_oder_70g"];
+    let d = fall_mit(&rentner(4_000_000, "einzel")).await;
+    antworte(&d, "keine_behinderung_pflege", json!(false)).await;
+    let gesperrt = ergebnis(&d).await;
+    assert_eq!(gesperrt["grund"], json!("fahrtkostenpauschale_offen"), "{gesperrt}");
+    assert_eq!(gesperrt["zahl_cent"], Value::Null, "{gesperrt}");
+    let ids = fragen_ids(&d).await;
+    assert!(fehlende(&ids, &FAHRTKOSTEN).is_empty(), "die Sperre verlangt Felder, die nicht in der Liste stehen: {:?}", fehlende(&ids, &FAHRTKOSTEN));
+    for f in FAHRTKOSTEN {
+        antworte(&d, f, json!(false)).await;
+    }
+    let e = ergebnis(&d).await;
+    assert!(e["zahl_cent"].is_i64(), "keine Zahl nach 'ja' und beantworteten Fahrtkostenfragen: {e}");
+    assert_eq!(e["grund"], json!("bestaetigt"), "{e}");
 }
