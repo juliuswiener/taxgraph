@@ -417,6 +417,26 @@ async fn ein_teilweise_gespeicherter_rentenfall_hinter_dem_kreuz_ist_ein_widersp
     }
 }
 
+/// Mutante M1 (von main auf `898d9035` ueberlebend): faellt die Pruefung der BESTAETIGUNG am Kreuz weg, schaltet schon ein VORLAEUFIGES Kreuz
+/// "keine" den teilweise gespeicherten Kern auf den Widerspruch um, obwohl der Nutzer nichts bestaetigt hat. Ein vorlaeufiges Kreuz darf
+/// `rente_partner` nicht umschalten: der Teilfall bleibt `rente_instanz_offen`, und die verlangten Felder stehen weiter in der Liste.
+#[tokio::test]
+async fn ein_vorlaeufiges_kreuz_zaehlt_fuer_den_widerspruch_nicht() {
+    // Zwei Kernfelder OHNE die Jahresrente: ein bestaetigter Betrag neben offenem Kreuz sperrt schon als `flag_konsistenz_offen`.
+    let d = fall_mit(&mit(rentner("zusammen"), vec![
+        ("rentner_renten_art_partner", json!("gesetzliche_rente")),
+        ("rentner_alter_bei_rentenbeginn_partner", json!(65)),
+    ]))
+    .await;
+    let e = ergebnis(&d).await;
+    assert_eq!(e["grund"], json!("rente_instanz_offen"), "Kontrolle, zwei Kernfelder, Kreuz offen: {e}");
+    let (status, antwort) = schreibe_roh(&d, "kein_sonstige_partner", json!(true), false).await;
+    assert_eq!(status, 201, "Kreuz vorlaeufig: {antwort}");
+    let e = ergebnis(&d).await;
+    assert_eq!(e["grund"], json!("rente_instanz_offen"), "Kreuz nur vorlaeufig: {e}");
+    assert!(!vorhandene(&fragen_ids(&d).await, &RENTE_BLOCK).is_empty(), "Kreuz vorlaeufig: rente_instanz_offen verlangt Felder, die nicht in der Liste stehen");
+}
+
 /// GRENZE (dokumentiert, nicht behoben; d-53 gilt nur fuer die Listenmitgliedschaft, nichts unter `sperre/` darueber hinaus): alle vier
 /// Kernfelder gespeichert, der Beginn liegt vor dem Veranlagungsjahr (2020), der Freibetrag fehlt, danach folgt das Kreuz "keine". Dann sperrt
 /// `rentenfreibetrag_fixierung_offen` (`beginn_grund`) und verlangt den Freibetrag, den das Kreuz verbirgt. Der Zustand entsteht nur durch eine
