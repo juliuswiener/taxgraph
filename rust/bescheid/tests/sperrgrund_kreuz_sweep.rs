@@ -1262,7 +1262,10 @@ const GEPRUEFT: &[(&str, &str, &[&str])] = &[
         "kein_sonstige_partner",
         &["rentner_alter_bei_rentenbeginn_partner", "rentner_jahresrente_partner", "rentner_renten_art_partner", "rentner_renten_beginn_jahr_partner", "rentner_rentenfreibetrag_partner"],
     ),
-    ("RentnerGesamt", "keine_behinderung_pflege", &["behinderungsbedingte_aufwendungen", "behinderungsbedingte_aufwendungen_wahlrecht_pb"]),
+    // Fragen-Reduktion Teil 2, Phase 2: `keine_behinderung_pflege` (zwei Felder) steht seit 2026-10-22 in `rentner_gesamt`, sein Eintrag hier ist
+    // weggefallen (das Kreuz wird gefragt, die Bedingung schliesst dort aus). Er steht NICHT in [`KONTROLLE`]: im Grundzustand ("zu") schliesst
+    // das Kreuz die Felder aus, und der Kontext, der sie stellt, gibt das Kreuz selbst vor (`= ja`); `miss_eintraege` ueberspringt den Eintrag
+    // dann (gemessen: "stand 0, fehlte []"). Die Kontrolle der Messung bleibt bei den vier Eintraegen unten.
     ("RentnerGesamt", "keine_behinderung_pflege_partner", &["rentner_grad_der_behinderung_partner", "rentner_hilflos_blind_taubblind_partner"]),
 ];
 

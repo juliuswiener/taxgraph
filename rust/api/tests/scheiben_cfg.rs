@@ -120,13 +120,15 @@ fn rentner_gesamt_fuehrt_jedes_feld_einmal() {
     // Rueckfragen zum Lohn je Person (Abweichung Nr. 85): 320; seit 2026-10-19 zwei mehr mit `lohn_erstattungen` je Person (Abweichung
     // Nr. 86): 322; seit 2026-10-19 sechs mehr mit den drei Zuschussfeldern zur KV und PV je Person (Abweichung Nr. 92): 328; seit
     // 2026-10-21 vier mehr mit den Kreuzen `kein_kind`, `kein_unterhalt`, `keine_auslandseinkuenfte` und `kein_gewinn_partner`
-    // (Fluss J F2/F3/F8, Vault `julius-entscheidet-vorjahr-sackgasse-rentner-eingangsfragen-und-bic-werden-behoben-2026-10-21`): 332.
+    // (Fluss J F2/F3/F8, Vault `julius-entscheidet-vorjahr-sackgasse-rentner-eingangsfragen-und-bic-werden-behoben-2026-10-21`): 332; seit
+    // 2026-10-22 drei mehr mit den Kreuzen `keine_behinderung_pflege`, `keine_energetische_sanierung` und `keine_spenden` (Fragen-Reduktion
+    // Teil 2, Phase 2): 335.
     let c = Cfg::fuer(Scheibe::RentnerGesamt);
     let f = c.felder(ohne_datei).unwrap();
-    assert_eq!(f.len(), 332, "roh gezaehlt");
+    assert_eq!(f.len(), 335, "roh gezaehlt");
     let n_geburtsjahr = f.iter().filter(|x| x.as_str() == "geburtsjahr").count();
     assert_eq!(n_geburtsjahr, 1, "geburtsjahr steht einmal in der Liste");
     let distinct: std::collections::HashSet<_> = f.iter().collect();
-    assert_eq!(distinct.len(), 332, "jedes Feld genau einmal");
+    assert_eq!(distinct.len(), 335, "jedes Feld genau einmal");
     assert_eq!(c.kegel(ohne_datei).unwrap().len(), 28, "der Meet laeuft ueber 28, nicht 255");
 }

@@ -211,8 +211,8 @@ fn fluss_j_rentner_einzel_mit_gesetzlicher_rente_erreicht_die_steuerzahl() {
     pruefe_konsole(&u, "Rentner einzel");
 }
 
-/// Rentner-Ehepaar, beide mit gesetzlicher Rente. Die Ankreuzliste der Rentner hat keine Zeile zum Partner; was der Lauf
-/// deshalb zusaetzlich fragt, steht im Bericht (`TAXGRAPH_FRAGENLOG`).
+/// Rentner-Ehepaar, beide mit gesetzlicher Rente. Die Ankreuzliste der Rentner hat zum Partner nur die Zeile `kein_gewinn_partner`;
+/// was der Lauf deshalb zusaetzlich fragt, steht im Bericht (`TAXGRAPH_FRAGENLOG`).
 #[test]
 fn fluss_j_rentner_ehepaar_mit_zwei_gesetzlichen_renten_erreicht_die_steuerzahl() {
     let _sperre = crate::browser::seriell();

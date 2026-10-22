@@ -289,8 +289,16 @@ pub(super) const SCHEIBEN_GESAMT_KEGEL: [&str; 35] = [
 /// verlangte die vier Rentenfelder des Ehegatten weiter, die das Kreuz verbirgt: Sackgasse im Kreuz-Sweep) und `kein_kap_partner`
 /// (ein gespeicherter Kapitalbetrag des Ehegatten neben dem unbeantworteten Kreuz sperrte mit `flag_konsistenz_offen`, bisher rechnete
 /// die Scheibe ihn mit). Der Kegel bleibt bei 28.
+/// Und die drei Kreuze danach, ebenfalls nur in Rust (2026-10-22, Fragen-Reduktion Teil 2, Phase 2, Vault `fragen-reduktion-teil-2-
+/// konfession-zuerst-und-rentner-kreuze-werden-gebaut-arbeitsweg-und-agb-brauchen-juliuss-wort-2026-10-22`): `keine_behinderung_pflege`,
+/// `keine_energetische_sanierung` und `keine_spenden` (Person A). Die Felder dahinter standen in der Liste und wurden jedem Rentner
+/// gefragt; "nein" verbirgt sie jetzt (Behinderung und Pflege 11, Sanierung 12, Spenden 3 in der offenen Liste; ein Fragenlauf mit
+/// neutralen Antworten spart 13, davon zwei im Kegel). Der Ring liest gespeicherte Werte wie bisher, und die Sperren des Bescheids
+/// bleiben, wie sie sind. Mit Absicht fehlt `keine_behinderung_pflege_partner`: es passt ohne Aenderung an `sperre/` in die Liste (Sweep
+/// 14 von 14), spart dem Ehepaar zwei Fragen, kostet aber jedem Einzelnutzer eine Ankreuzzeile, solange die Ankreuzliste die Zeilen des
+/// Ehegatten vor der Frage nach der Veranlagung zeigt (F5). Der Kegel bleibt bei 28.
 #[rustfmt::skip]
-pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 332] = [
+pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 335] = [
     "rentner_renten_art", "rentner_jahresrente", "rentner_renten_beginn_jahr", "rentner_alter_bei_rentenbeginn",
     "rentner_grad_der_behinderung", "rentner_hilflos_blind_taubblind", "rentner_pflegegrad", "rentner_gepflegter_hilflos",
     "rentner_hinterbliebenenbezuege", "veranlagung", "kein_gewinn", "kein_kap",
@@ -364,6 +372,7 @@ pub(super) const SCHEIBEN_RENTNER_GESAMT_FELDER: [&str; 332] = [
     "kein_lohn_pension", "kein_lohn_pension_partner",
     "kein_kind", "kein_unterhalt", "keine_auslandseinkuenfte",
     "kein_gewinn_partner",
+    "keine_behinderung_pflege", "keine_energetische_sanierung", "keine_spenden",
     // Nur in Rust (2026-10-09, Abweichung Nr. 49): der Ring-Wert zur zweiten Zeile "Sonstiges" (der Guard haelt den Abzug hier
     // ab, aber `mit_ring_werten` laeuft vor dem Guard und die Bindung der Scheibe muss das Feld kennen).
     "dba_abzug_zeile_cent",
