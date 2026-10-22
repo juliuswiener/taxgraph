@@ -1063,7 +1063,8 @@ mod tests {
         assert_eq!((b.trenner, b.kopf_nr, b.ohne_betrag), (';', None, 0));
         assert_eq!(b.spalten, ["Buchungstag", "Wert"]);
         // Gar nichts, das nach einer Kopfzeile aussieht: keine Namen (kein Inhalt einer Zeile in die Antwort).
-        assert!(befund("a;b\n1;2\n").spalten.is_empty());
+        let b = befund("a;b\n1;2\n");
+        assert!(b.spalten.is_empty(), "{:?}", b.spalten);
     }
 
     /// Bankimport S0: die Saetze fuer den Nutzer. Der Hinweis ohne Betragsspalte kuerzt auf 20 Namen
