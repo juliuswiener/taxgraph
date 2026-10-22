@@ -217,8 +217,77 @@ pub fn eur_cent_signed(roh: &str) -> Option<i64> {
     Some(if neg { -cent } else { cent })
 }
 
-/// `parse_csv(text)`: `;`-getrennt, Spalten per Alias (case-insensitiv), Zeilen ohne Betrag
-/// uebersprungen, Zeilen mit unlesbarem Betrag gezaehlt (zweiter Wert).
+/// So viele Datensaetze von oben sucht der Leser die Kopfzeile: Banken stellen ihr Kontostand, Zeitraum
+/// und Kontonummer voran (DKB 4 bis 5 Zeilen, ING 13).
+const KOPF_SUCHE: usize = 30;
+
+/// Die Trenner, die der Leser nacheinander versucht; `;` zuerst (deutsche Banken, die Dateien vor S0).
+const TRENNER: [char; 3] = [';', ',', '\t'];
+
+// Spaltennamen (klein) je Bedeutung, in der Reihenfolge ihres Vorrangs. Alle aus nachgebauten Dateien
+// nach Fremdparsern (Vault `research/bankimport-entwurf-version-1-…`, M1): KEIN Bankdokument bestaetigt
+// sie, eine echte Datei kann anders heissen.
+const ALIASE_DATUM: [&str; 6] = [
+    "datum",
+    "buchungstag",
+    "buchungsdatum",
+    "date",
+    "buchung",
+    "completed date",
+];
+const ALIASE_BETRAG: [&str; 6] = [
+    "betrag",
+    "umsatz",
+    "amount",
+    "betrag (eur)",
+    "betrag (€)",
+    "umsatz in eur",
+];
+const ALIASE_ZWECK: [&str; 6] = [
+    "verwendungszweck",
+    "buchungstext",
+    "zweck",
+    "beschreibung",
+    "description",
+    "vorgang/verwendungszweck",
+];
+
+/// Kopfnamen klein und ohne Rand; ein doppelter Name behaelt den letzten (wie `DictReader`).
+fn normalisiere(kopf: &[String]) -> Vec<(String, String)> {
+    let mut norm: Vec<(String, String)> = Vec::new();
+    for f in kopf {
+        let k = py::strip(f).to_lowercase();
+        match norm.iter_mut().find(|(n, _)| *n == k) {
+            Some(e) => e.1.clone_from(f),
+            None => norm.push((k, f.clone())),
+        }
+    }
+    norm
+}
+
+/// Der erste Alias (in Rangfolge), den der Kopf fuehrt, als Name im Kopf.
+fn spalte(norm: &[(String, String)], aliase: &[&str]) -> Option<String> {
+    aliase
+        .iter()
+        .find_map(|a| norm.iter().find(|(n, _)| n == a).map(|(_, f)| f.clone()))
+}
+
+/// Was `parse_csv_befund` ueber die Datei weiss, damit die Route sagen kann, warum nichts gelesen wurde.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CsvBefund {
+    /// Der Trenner, mit dem gelesen wurde (`;`, wenn keiner eine Kopfzeile fand).
+    pub trenner: char,
+    /// Nr. (ab 0) des Datensatzes, der die Kopfzeile mit Betragsspalte ist; `None` = keine gefunden.
+    pub kopf_nr: Option<usize>,
+    /// Die Spaltennamen der Kopfzeile; ohne Betragsspalte die des ersten Datensatzes, der nach einer
+    /// Kopfzeile aussieht (fuehrt ein Datums- oder Zweck-Alias), sonst leer. Nie eine Datenzeile.
+    pub spalten: Vec<String>,
+    /// Zeilen unter der Kopfzeile, deren Betragsfeld leer ist (uebersprungen).
+    pub ohne_betrag: usize,
+}
+
+/// `parse_csv(text)`: Spalten per Alias (case-insensitiv), Zeilen ohne Betrag uebersprungen, Zeilen
+/// mit unlesbarem Betrag gezaehlt (zweiter Wert). Wie [`parse_csv_befund`], ohne den Befund.
 ///
 /// ```
 /// let (tx, verworfen) = eingang::kontoauszug::parse_csv("Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n02.03.2025;1e3;X\n").unwrap();
@@ -228,32 +297,67 @@ pub fn eur_cent_signed(roh: &str) -> Option<i64> {
 /// # Errors
 /// [`KontoauszugFehler::Csv`].
 pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFehler> {
-    let (kopf, zeilen, csv_fehler) = csv::dict_reader(text, ';');
-    if kopf.is_empty() {
-        return csv_fehler.map_or(Ok((Vec::new(), 0)), |e| Err(e.into()));
-    }
-    let mut norm: Vec<(String, String)> = Vec::new();
-    for f in &kopf {
-        let k = py::strip(f).to_lowercase();
-        match norm.iter_mut().find(|(n, _)| *n == k) {
-            Some(e) => e.1.clone_from(f),
-            None => norm.push((k, f.clone())),
+    parse_csv_befund(text).map(|(tx, verworfen, _)| (tx, verworfen))
+}
+
+/// Liest einen CSV-Auszug und sagt dazu, was es gefunden hat. Die Kopfzeile steht in den ersten
+/// 30 (`KOPF_SUCHE`) Datensaetzen: der erste, der eine Betragsspalte fuehrt, mit dem ersten Trenner
+/// (`;`, `,`, Tab), bei dem es einen gibt. Fuehrt keiner eine, liest der Leser wie vor S0: `;`, erster
+/// Datensatz als Kopf, keine Buchung. Ein BOM am Anfang gehoert nicht zum ersten Spaltennamen.
+///
+/// Die Profile (DKB, ING, comdirect, N26, Revolut) stammen aus Fremdparsern, nicht aus einem
+/// Bankdokument.
+///
+/// ```
+/// let text = "Konto;DE89\nKontostand;1,00\n\nBuchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n";
+/// let (tx, verworfen, befund) = eingang::kontoauszug::parse_csv_befund(text).unwrap();
+/// assert_eq!((tx.len(), verworfen, befund.kopf_nr), (1, 0, Some(3)));
+/// ```
+///
+/// # Errors
+/// [`KontoauszugFehler::Csv`].
+pub fn parse_csv_befund(
+    text: &str,
+) -> Result<(Vec<Transaktion>, usize, CsvBefund), KontoauszugFehler> {
+    let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+    let mut befund = CsvBefund {
+        trenner: ';',
+        kopf_nr: None,
+        spalten: Vec::new(),
+        ohne_betrag: 0,
+    };
+    for trenner in TRENNER {
+        let (anfang, _) = csv::lies_anfang(text, trenner, KOPF_SUCHE);
+        let fuehrt =
+            |satz: &[String], aliase: &[&str]| spalte(&normalisiere(satz), aliase).is_some();
+        if let Some((nr, satz)) = anfang
+            .iter()
+            .enumerate()
+            .find(|(_, s)| fuehrt(s, &ALIASE_BETRAG))
+        {
+            befund.trenner = trenner;
+            befund.kopf_nr = Some(nr);
+            befund.spalten.clone_from(satz);
+            break;
+        }
+        if befund.spalten.is_empty() {
+            if let Some(s) = anfang
+                .iter()
+                .find(|s| fuehrt(s, &ALIASE_DATUM) || fuehrt(s, &ALIASE_ZWECK))
+            {
+                befund.spalten.clone_from(s);
+            }
         }
     }
-    let spalte = |aliase: &[&str]| {
-        aliase
-            .iter()
-            .find_map(|a| norm.iter().find(|(n, _)| n == a).map(|(_, f)| f.clone()))
-    };
-    let c_dat = spalte(&["datum", "buchungstag", "buchungsdatum", "date"]);
-    let c_bet = spalte(&["betrag", "umsatz", "amount", "betrag (eur)"]);
-    let c_zwk = spalte(&[
-        "verwendungszweck",
-        "buchungstext",
-        "zweck",
-        "beschreibung",
-        "description",
-    ]);
+    let (saetze, csv_fehler) = csv::lies_datensaetze(text, befund.trenner);
+    let (kopf, zeilen) = csv::dict_aus_saetzen(saetze, befund.kopf_nr.unwrap_or(0));
+    if kopf.is_empty() {
+        return csv_fehler.map_or(Ok((Vec::new(), 0, befund)), |e| Err(e.into()));
+    }
+    let norm = normalisiere(&kopf);
+    let c_dat = spalte(&norm, &ALIASE_DATUM);
+    let c_bet = spalte(&norm, &ALIASE_BETRAG);
+    let c_zwk = spalte(&norm, &ALIASE_ZWECK);
     let wert = |z: &csv::Zeile, c: &Option<String>| {
         c.as_ref()
             .and_then(|c| z.get(c).cloned().flatten())
@@ -263,7 +367,11 @@ pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFeh
     let mut verworfen = 0;
     for z in &zeilen {
         let betrag_roh = wert(z, &c_bet);
-        if c_bet.is_none() || py::strip(&betrag_roh).is_empty() {
+        if c_bet.is_none() {
+            continue;
+        }
+        if py::strip(&betrag_roh).is_empty() {
+            befund.ohne_betrag += 1;
             continue;
         }
         let Some(betrag) = eur_cent_signed(&betrag_roh) else {
@@ -278,7 +386,7 @@ pub fn parse_csv(text: &str) -> Result<(Vec<Transaktion>, usize), KontoauszugFeh
     }
     // Der `csv.Error` kommt in Python erst beim Lesen der Zeile, in der er steckt — also nach
     // allen frueheren Zeilen.
-    csv_fehler.map_or(Ok((out, verworfen)), |e| Err(e.into()))
+    csv_fehler.map_or(Ok((out, verworfen, befund)), |e| Err(e.into()))
 }
 
 /// JSON-Zweig: die Eingabe von `uebernehme_kontoauszug` (`int(tx.get("betrag", 0))`, `tx.get(...)`):
@@ -523,6 +631,94 @@ pub fn hinweis_verworfen(n: usize, fmt: &str) -> String {
     format!("{n} Zeile(n) {grund} — bitte manuell prüfen/nachtragen.")
 }
 
+/// Hoechstens so viele Spaltennamen und so viele Zeichen je Name nennt der Hinweis: Er zeigt die
+/// Kopfzeile, nie eine Datenzeile, und bleibt kurz.
+const HINWEIS_SPALTEN: usize = 20;
+const HINWEIS_NAME_ZEICHEN: usize = 40;
+
+/// Der Satz fuer den Nutzer, wenn ein CSV-Auszug KEINE Buchung lieferte (und keine Zeile verworfen
+/// wurde): fehlt die Kopfzeile mit Betragsspalte, nennt er die erwarteten und die gefundenen
+/// Spaltennamen, sonst, warum unter der Kopfzeile nichts steht.
+///
+/// ```
+/// use eingang::kontoauszug::{hinweis_nichts_gelesen, parse_csv_befund};
+/// let (_, _, b) = parse_csv_befund("Buchungstag;Wert;Verwendungszweck\n01.03.2025;5;X\n").unwrap();
+/// let h = hinweis_nichts_gelesen(&b);
+/// assert!(h.contains("keine Kopfzeile mit Betragsspalte") && h.contains("Buchungstag, Wert, Verwendungszweck"));
+/// ```
+#[must_use]
+pub fn hinweis_nichts_gelesen(befund: &CsvBefund) -> String {
+    if befund.kopf_nr.is_some() {
+        return if befund.ohne_betrag > 0 {
+            format!(
+                "Keine Buchung gelesen: {} Zeile(n) unter der Kopfzeile haben keinen Betrag.",
+                befund.ohne_betrag
+            )
+        } else {
+            "Keine Buchung gelesen: Unter der Kopfzeile folgt keine Datenzeile.".to_owned()
+        };
+    }
+    let gefunden = if befund.spalten.is_empty() {
+        "keine Kopfzeile erkannt".to_owned()
+    } else {
+        let namen: Vec<String> = befund
+            .spalten
+            .iter()
+            .filter(|s| !py::strip(s).is_empty())
+            .take(HINWEIS_SPALTEN)
+            .map(|s| py::strip(s).chars().take(HINWEIS_NAME_ZEICHEN).collect())
+            .collect();
+        format!("gefundene Spalten: {}", namen.join(", "))
+    };
+    format!(
+        "Keine Buchung gelesen: In den ersten {KOPF_SUCHE} Zeilen steht keine Kopfzeile mit Betragsspalte \
+         (erwartet: {}); {gefunden}.",
+        ALIASE_BETRAG.join(", ")
+    )
+}
+
+/// Der Satz fuer den Nutzer, wenn ein CSV-Auszug `gelesen` Buchungen lieferte und keine davon ein
+/// Vorschlag wurde: die Zahl je Grund, nie ein Zweck oder eine Gegenpartei. Die Buchungen, die der
+/// Deckel der KI-Aufrufe uebersprang, meldet die Route mit eigenem Satz.
+///
+/// ```
+/// use eingang::kontoauszug::{hinweis_nichts_uebernommen, Uebernahme};
+/// let u = Uebernahme { uebernommen: 0, llm_uebersprungen: 0, einnahmen: 1, ohne_stichwort: 2, partei: 0, feld_fehlt: 0, feld_belegt: 0 };
+/// assert_eq!(
+///     hinweis_nichts_uebernommen(3, &u).as_deref(),
+///     Some("3 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) ohne Minuszeichen (nur Beträge mit Minus gelten als Ausgabe); 2 Buchung(en) ohne erkanntes Stichwort.")
+/// );
+/// let nur_deckel = Uebernahme { llm_uebersprungen: 3, einnahmen: 0, ohne_stichwort: 0, ..u };
+/// assert_eq!(hinweis_nichts_uebernommen(3, &nur_deckel), None);
+/// ```
+#[must_use]
+pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<String> {
+    let gruende = [
+        (
+            u.einnahmen,
+            "ohne Minuszeichen (nur Beträge mit Minus gelten als Ausgabe)",
+        ),
+        (u.ohne_stichwort, "ohne erkanntes Stichwort"),
+        (
+            u.partei,
+            "als Spende mit Parteinamen (dafür gibt es ein eigenes Feld)",
+        ),
+        (u.feld_fehlt, "für ein Feld, das dieser Fall nicht führt"),
+        (u.feld_belegt, "für ein Feld, das schon einen Wert hat"),
+    ];
+    let teile: Vec<String> = gruende
+        .iter()
+        .filter(|(n, _)| *n > 0)
+        .map(|(n, text)| format!("{n} Buchung(en) {text}"))
+        .collect();
+    (!teile.is_empty()).then(|| {
+        format!(
+            "{gelesen} Buchung(en) gelesen, aber kein Vorschlag: {}.",
+            teile.join("; ")
+        )
+    })
+}
+
 static SALDO: LazyLock<PyRegex> =
     LazyLock::new(|| PyRegex::neu(r"(?i)(kontostand|saldo)\b|\bzwischensumme\b"));
 static DATUM_ZEILE: LazyLock<PyRegex> =
@@ -621,6 +817,18 @@ pub struct Uebernahme {
     /// Buchungen, die wegen Aufruf- oder Zeitdeckel NIE klassifiziert wurden — sonst saehe ein
     /// halb angesehener Auszug aus wie ein ganz geprüfter.
     pub llm_uebersprungen: usize,
+    /// Warum die uebrigen Buchungen keinen Vorschlag wurden. Zusammen mit `uebernommen` und
+    /// `llm_uebersprungen` ergeben diese fuenf Zaehler genau die Zahl der Buchungen.
+    /// Betrag 0 oder positiv: keine Ausgabe.
+    pub einnahmen: usize,
+    /// Weder Stichwort noch Klassifikator ordnete die Ausgabe einer Kategorie zu.
+    pub ohne_stichwort: usize,
+    /// Eine Spende, deren Zweck eine Partei nennt (Abweichung Nr. 39).
+    pub partei: usize,
+    /// Das Zielfeld fehlt in der Bindung der Scheibe.
+    pub feld_fehlt: usize,
+    /// Das Zielfeld hatte schon einen Wert (aus dem Store oder der ersten Buchung dieses Auszugs).
+    pub feld_belegt: usize,
 }
 
 /// `uebernehme_kontoauszug(store, transaktionen, bindung, llm_klassifikator=, ts=, katalog=)`.
@@ -662,10 +870,20 @@ pub fn uebernehme(
         &eigener
     };
     let mut aktiv: HashSet<String> = store.aktive().map(|(f, _)| f.to_owned()).collect();
-    let (mut n, mut aufrufe, mut uebersprungen) = (0, 0, 0);
+    let mut aufrufe = 0;
+    let mut u = Uebernahme {
+        uebernommen: 0,
+        llm_uebersprungen: 0,
+        einnahmen: 0,
+        ohne_stichwort: 0,
+        partei: 0,
+        feld_fehlt: 0,
+        feld_belegt: 0,
+    };
     let beginn = Instant::now();
     for tx in transaktionen {
         if tx.betrag >= 0 {
+            u.einnahmen += 1;
             continue;
         }
         let zweck = &tx.verwendungszweck;
@@ -674,21 +892,30 @@ pub fn uebernehme(
         if kategorie.is_none() {
             if let Some(k) = llm_klassifikator {
                 if aufrufe >= LLM_AUFRUFE_HOECHSTZAHL || beginn.elapsed() > LLM_ZEITBUDGET {
-                    uebersprungen += 1;
+                    u.llm_uebersprungen += 1;
                     continue;
                 }
                 aufrufe += 1;
                 kategorie = k(&pii::maskiere(zweck), tx.betrag);
             }
         }
-        let Some(kategorie) = kategorie else { continue };
+        let Some(kategorie) = kategorie else {
+            u.ohne_stichwort += 1;
+            continue;
+        };
         // GEWOLLT ABWEICHEND von Python (Abweichung Nr. 39): Eine Spende, deren Zweck eine Partei nennt, gehoert nicht
         // in `spenden_betrag`. Die Pruefung steht hinter beiden Wegen der Kategorisierung (Schluesselwort und LLM).
         if kategorie == Kategorie::Spende && nennt_partei(zweck) {
+            u.partei += 1;
             continue;
         }
         let feld = zielfeld(kategorie);
-        if bindung.get(feld).is_none() || aktiv.contains(feld) {
+        if bindung.get(feld).is_none() {
+            u.feld_fehlt += 1;
+            continue;
+        }
+        if aktiv.contains(feld) {
+            u.feld_belegt += 1;
             continue;
         }
         let betrag_abs = tx
@@ -706,19 +933,20 @@ pub fn uebernehme(
         };
         v.schreibe(store, Some(katalog), bindung, ts)?;
         aktiv.insert(feld.to_owned());
-        n += 1;
+        u.uebernommen += 1;
     }
-    Ok(Uebernahme {
-        uebernommen: n,
-        llm_uebersprungen: uebersprungen,
-    })
+    Ok(u)
 }
 
 #[cfg(test)]
 mod tests {
     use proptest::prelude::*;
 
-    use super::{aus_json, eur_cent_signed, hinweis_verworfen, parse_csv, KontoauszugFehler};
+    use super::{
+        aus_json, eur_cent_signed, hinweis_nichts_gelesen, hinweis_nichts_uebernommen,
+        hinweis_verworfen, parse_csv, parse_csv_befund, uebernehme, KontoauszugFehler, Transaktion,
+        Uebernahme,
+    };
 
     /// Vault `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`; Python-Gegenstueck
     /// `tests/test_kontoauszug_writer.py::test_eur_cent_signed_tabelle`.
@@ -816,6 +1044,114 @@ mod tests {
         };
         let betraege: Vec<i64> = tx.iter().map(|t| t.betrag).collect();
         assert_eq!((betraege, verworfen), (vec![-120_000], 2));
+    }
+
+    /// Bankimport S0: der Befund nennt, wo die Kopfzeile steht, mit welchem Trenner gelesen wurde und
+    /// wie viele Zeilen keinen Betrag trugen.
+    #[test]
+    fn befund_nennt_kopfzeile_trenner_und_zeilen_ohne_betrag() {
+        let befund = |text: &str| parse_csv_befund(text).unwrap().2;
+        let b = befund("Vorspann\n\nBuchungstag;Betrag;Zweck\n01.03.2025;-1,00;A\n02.03.2025;;B\n");
+        assert_eq!((b.trenner, b.kopf_nr, b.ohne_betrag), (';', Some(2), 1));
+        assert_eq!(b.spalten, ["Buchungstag", "Betrag", "Zweck"]);
+        let b = befund("Datum,Betrag (EUR),Verwendungszweck\n2025-03-15,\"-4.99\",A\n");
+        assert_eq!((b.trenner, b.kopf_nr), (',', Some(0)));
+        let b = befund("Datum\tAmount\n2025-03-15\t-4.99\n");
+        assert_eq!((b.trenner, b.kopf_nr), ('\t', Some(0)));
+        // Ohne Betragsspalte: Rueckfall auf `;` und den ersten Datensatz, die Namen kommen vom Kopf-Kandidaten.
+        let b = befund("Konto;1\nBuchungstag;Wert\n01.03.2025;5\n");
+        assert_eq!((b.trenner, b.kopf_nr, b.ohne_betrag), (';', None, 0));
+        assert_eq!(b.spalten, ["Buchungstag", "Wert"]);
+        // Gar nichts, das nach einer Kopfzeile aussieht: keine Namen (kein Inhalt einer Zeile in die Antwort).
+        let b = befund("a;b\n1;2\n");
+        assert!(b.spalten.is_empty(), "{:?}", b.spalten);
+    }
+
+    /// Bankimport S0: die Saetze fuer den Nutzer. Der Hinweis ohne Betragsspalte kuerzt auf 20 Namen
+    /// zu je 40 Zeichen; mit Kopfzeile nennt er, was darunter fehlt.
+    #[test]
+    fn hinweis_nichts_gelesen_nennt_namen_gekuerzt_und_den_grund_darunter() {
+        let lang = "x".repeat(60);
+        let namen: Vec<String> = std::iter::once("Datum".to_owned())
+            .chain((1..=24).map(|i| format!("S{i}")))
+            .chain(std::iter::once(lang.clone()))
+            .collect();
+        let (_, _, b) = parse_csv_befund(&format!("{}\n1;2\n", namen.join(";"))).unwrap();
+        let h = hinweis_nichts_gelesen(&b);
+        let genannt = h.rsplit_once("gefundene Spalten: ").unwrap().1;
+        assert_eq!(genannt.trim_end_matches('.').split(", ").count(), 20, "{h}");
+        assert!(!h.contains(&lang), "{h}");
+        let (_, _, b) = parse_csv_befund(&format!("Datum;{lang};Betrag\n")).unwrap();
+        assert_eq!(
+            hinweis_nichts_gelesen(&b),
+            "Keine Buchung gelesen: Unter der Kopfzeile folgt keine Datenzeile."
+        );
+        let (_, _, b) = parse_csv_befund("Datum;Betrag\n01.03.2025;\n").unwrap();
+        assert_eq!(
+            hinweis_nichts_gelesen(&b),
+            "Keine Buchung gelesen: 1 Zeile(n) unter der Kopfzeile haben keinen Betrag."
+        );
+    }
+
+    /// Bankimport S0: jede Buchung faellt in genau einen Zaehler. Ohne diese Summe waere der Hinweis
+    /// „kein Vorschlag, weil …“ eine Behauptung ueber eine Teilmenge.
+    #[test]
+    fn jede_buchung_zaehlt_in_genau_einem_grund() {
+        let tx = |betrag: i64, zweck: &str| Transaktion {
+            datum: serde_json::json!("01.03.2025"),
+            betrag,
+            verwendungszweck: zweck.to_owned(),
+        };
+        let buchungen = [
+            tx(10_000, "Gehalt"),
+            tx(-999, "Einkauf"),
+            tx(-5_000, "Spende SPD Ortsverband"),
+            tx(-5_000, "Spende Tierheim"),
+            tx(-10_000, "Maler Huber"),
+            tx(-20_000, "Maler Meier"),
+        ];
+        // Eine Bindung ohne `spenden_betrag`: die Spende an das Tierheim hat kein Zielfeld.
+        let mut karte = crate::doctest_bindung().unwrap().clone();
+        karte.remove("spenden_betrag");
+        let mut store = store::Store::leer(2025, None);
+        let u = uebernehme(
+            &mut store,
+            &buchungen,
+            store::BindungNachschlag::neu(&karte),
+            None,
+            None,
+            None,
+        )
+        .unwrap();
+        let soll = Uebernahme {
+            uebernommen: 1,
+            llm_uebersprungen: 0,
+            einnahmen: 1,
+            ohne_stichwort: 1,
+            partei: 1,
+            feld_fehlt: 1,
+            feld_belegt: 1,
+        };
+        assert_eq!(u, soll);
+        let summe = u.uebernommen
+            + u.llm_uebersprungen
+            + u.einnahmen
+            + u.ohne_stichwort
+            + u.partei
+            + u.feld_fehlt
+            + u.feld_belegt;
+        assert_eq!(summe, buchungen.len());
+        // Ein Auszug, der nur den Deckel trifft, hat keinen Grund zu nennen (die Route meldet den Deckel selbst).
+        let nur_deckel = Uebernahme {
+            llm_uebersprungen: 2,
+            uebernommen: 0,
+            einnahmen: 0,
+            ohne_stichwort: 0,
+            partei: 0,
+            feld_fehlt: 0,
+            feld_belegt: 0,
+        };
+        assert_eq!(hinweis_nichts_uebernommen(2, &nur_deckel), None);
     }
 
     proptest! {

@@ -210,17 +210,45 @@ fn llm_texte(v: &Value) -> Option<Vec<String>> {
 
 // ------------------------------------------------------------------ kontoauszug
 
+/// BEKANNTE ABWEICHUNG (Bankimport S0, Vault `backlog/taxgraph/kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`):
+/// Python nimmt den ERSTEN Datensatz als Kopfzeile. Eine Leerzeile davor ergibt dort einen leeren Kopf und keine Buchung,
+/// ein BOM macht den ersten Spaltennamen unlesbar (das Datum bleibt leer). Rust sucht die Kopfzeile in den ersten 30
+/// Datensaetzen und schneidet das BOM ab; beide Dateien lesen die Buchung ganz. Die Faelle stehen hier mit dem heutigen
+/// Rust-Verhalten fest, statt aus dem Vergleich zu fallen: wer sie angleicht, aendert diese Liste.
+const CSV_KOPFZEILE_ABWEICHUNG: [&str; 2] = [
+    "\nDatum;Betrag;Zweck\n01.03.2025;-1,00;Maler",
+    "\u{feff}Datum;Betrag;Zweck\n01.03.2025;-1,00;Maler",
+];
+
 #[test]
 fn csv_wie_orakel() {
     let mut z = Abgleich::default();
+    let mut abweichend = 0;
     for f in abschnitt("csv") {
         let t = f["text"].as_str().unwrap();
+        if CSV_KOPFZEILE_ABWEICHUNG.contains(&t) {
+            let rust = csv_ergebnis(t);
+            let buchung = json!({"ok": [[{"betrag": -100, "datum": "01.03.2025", "verwendungszweck": "Maler"}], 0]});
+            z.pruefe(
+                &format!("parse_csv {t:?} (bekannte Abweichung)"),
+                &rust,
+                &buchung,
+            );
+            assert_ne!(
+                rust,
+                py_fehler_normiert(&f["py"]),
+                "{t:?}: Rust stimmt jetzt mit Python ueberein, Liste kuerzen"
+            );
+            abweichend += 1;
+            continue;
+        }
         z.pruefe(
             &format!("parse_csv {t:?}"),
             &csv_ergebnis(t),
             &py_fehler_normiert(&f["py"]),
         );
     }
+    assert_eq!(abweichend, CSV_KOPFZEILE_ABWEICHUNG.len());
     z.fertig(600);
 }
 
