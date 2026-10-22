@@ -30,10 +30,7 @@ impl Datum {
     #[must_use]
     pub fn aus_json(wert: &Value) -> Option<Self> {
         let text = wert.as_str()?.trim();
-        if text.len() >= 5
-            && text.as_bytes()[..4].iter().all(|b| b.is_ascii_digit())
-            && text.as_bytes()[4] == b'-'
-        {
+        if text.split_once('-').is_some_and(|(jahr, _)| ziffern(jahr, 4)) {
             return Self::iso(text);
         }
         let teile: Vec<&str> = text.split('.').collect();

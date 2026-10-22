@@ -953,6 +953,49 @@ pub fn bestehende_posten(store: &Store, feld: &str) -> Option<Vec<Posten>> {
         .collect()
 }
 
+/// Bildet den Saldo je Gruppe und schreibt, wo er positiv ist, EINEN Vorschlag. Erst alle Salden,
+/// dann die Schreibungen: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
+fn schreibe_gruppen(
+    store: &mut Store,
+    gruppen: Vec<Gruppe>,
+    jahr: i64,
+    (bindung, katalog, ts): (BindungNachschlag<'_>, &Katalog, Option<&str>),
+    u: &mut Uebernahme,
+) -> Result<(), KontoauszugFehler> {
+    let mut zu_schreiben = Vec::new();
+    for g in gruppen {
+        let saldo = saldo::saldo(&g.posten)
+            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld)))?;
+        if saldo <= 0 {
+            u.saldo_nicht_positiv += g.posten.len();
+        } else {
+            zu_schreiben.push((g, saldo));
+        }
+    }
+    for (g, saldo) in zu_schreiben {
+        let posten: Vec<Value> = g
+            .posten
+            .iter()
+            .map(|p| {
+                json!({"datum": p.datum.als_text(), "betrag_cent": p.betrag_cent,
+                    "zweck_maskiert": p.zweck_maskiert})
+            })
+            .collect();
+        let signal_1 = json!({"typ": "kontoauszug", "jahr": jahr, "posten": posten,
+            "summe_cent": saldo, "kategorie": g.kategorie.als_str(),
+            "quelle": if g.nur_stichwort { "heuristik" } else { "llm" }});
+        let v = VorschlagEvent {
+            quelle: Quelle::Kontoauszug,
+            feld_id: g.feld.to_owned(),
+            wert: json!(saldo),
+            signal_1,
+        };
+        v.schreibe(store, Some(katalog), bindung, ts)?;
+        u.uebernommen += g.posten.len();
+    }
+    Ok(())
+}
+
 /// `uebernehme_kontoauszug(store, transaktionen, bindung, llm_klassifikator=, ts=, katalog=)`.
 ///
 /// `bindung` = Bindung der Scheibe (Zielfeld muss darin stehen); `katalog` = globaler Katalog,
@@ -1088,37 +1131,7 @@ pub fn uebernehme(
             });
         }
     }
-    let mut zu_schreiben = Vec::new();
-    for g in gruppen {
-        let saldo = saldo::saldo(&g.posten)
-            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld)))?;
-        if saldo <= 0 {
-            u.saldo_nicht_positiv += g.posten.len();
-        } else {
-            zu_schreiben.push((g, saldo));
-        }
-    }
-    for (g, saldo) in zu_schreiben {
-        let posten: Vec<Value> = g
-            .posten
-            .iter()
-            .map(|p| {
-                json!({"datum": p.datum.als_text(), "betrag_cent": p.betrag_cent,
-                    "zweck_maskiert": p.zweck_maskiert})
-            })
-            .collect();
-        let signal_1 = json!({"typ": "kontoauszug", "jahr": jahr, "posten": posten,
-            "summe_cent": saldo, "kategorie": g.kategorie.als_str(),
-            "quelle": if g.nur_stichwort { "heuristik" } else { "llm" }});
-        let v = VorschlagEvent {
-            quelle: Quelle::Kontoauszug,
-            feld_id: g.feld.to_owned(),
-            wert: json!(saldo),
-            signal_1,
-        };
-        v.schreibe(store, Some(katalog), bindung, ts)?;
-        u.uebernommen += g.posten.len();
-    }
+    schreibe_gruppen(store, gruppen, jahr, (bindung, katalog, ts), &mut u)?;
     Ok(u)
 }
 
@@ -1525,7 +1538,7 @@ mod tests {
     /// Zwei gleiche Buchungen in EINEM Auszug sind zwei Buchungen und zaehlen zweimal: eine
     /// Bank bucht nie dieselbe Zeile doppelt. Die Mehrmenge kuerzt erst beim Vereinigen zweier
     /// Auszuege (`bank::saldo::vereinige`, Maximum je Schluessel), nicht innerhalb eines Auszugs.
-    /// Die Erwartung dieses Tests lautete im ersten Commit 10_00 ("die Dublette zaehlt einmal");
+    /// Die Erwartung dieses Tests lautete im ersten Commit 10,00 EUR ("die Dublette zaehlt einmal");
     /// das hiess, 4,00 EUR einer echten zweiten Buchung still zu verlieren.
     #[test]
     fn s1_rot_gleiche_buchungen_in_einem_auszug_zaehlen_je_buchung() {
