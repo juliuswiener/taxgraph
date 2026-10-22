@@ -2,8 +2,8 @@
 //! (`_an_gesamt_sperrgrund`, DBA bis `gewst_hebesatz_offen`).
 use std::collections::HashSet;
 
-use domain::{Konfession, Lage, PyWert, Sperrgrund};
-use konsistenz::flag_widersprueche;
+use domain::{BasisId, Konfession, Lage, PyWert, Sperrgrund};
+use konsistenz::{flag_widersprueche, instanz_feld_ids};
 
 use super::{bestaetigt, oder_null_positiv, positiv, zahl_wert, Grund, K};
 use crate::deklaration::konstanten::AGB_KIST;
@@ -102,6 +102,41 @@ pub(super) fn flag_kapital_gewinn(k: &K<'_>) -> Option<Sperrgrund> {
         return Some(Sperrgrund::KapitalSemantikOffen);
     }
     gewinn(k)
+}
+
+/// Die Betragsfelder des Kind-Blocks hinter `kein_kind`, die bei "keine Kinder" trotzdem rechnen (Messung 2026-10-22, Lohn 150.000 EUR,
+/// `kein-kind-sperre/messung-euro.log`): `fam_anzahl_kinder` zaehlt mit den Kind-Instanzen (Sweep: -2.345 EUR), `schulgeld` (-741 EUR) und
+/// `p33a_ausbildung_anzahl_kinder` (-504 EUR) zaehlen je allein. Die Instanzen `<feld>__<n>` gehoeren dazu. Die Liste folgt den
+/// Betragsfeldern des Blocks in `rentner_eingangsfrage.rs::KIND_BLOCK`; `fam_alleinstehend` ist kein Betrag.
+const KIND_BETRAEGE: [&str; 6] = [
+    "fam_anzahl_kinder",
+    "p33a_ausbildung_anzahl_kinder",
+    "schulgeld",
+    "kinderbetreuungskosten",
+    "kind_kv",
+    "kind_pv",
+];
+
+/// d-54 (Julius, 2026-10-22): "keine Kinder" bestaetigt, aber bestaetigte Angaben zu Kindern im Fall. Die Rechnung nahm die Kinder bisher
+/// mit (zu wenig Steuer, im Sweep -2.345 EUR); jetzt gibt es keine Zahl, bis der Nutzer das Kreuz oder die Kinder klaert. Nur `gesamt`
+/// (die Kachel "Arbeitnehmer, Vermieter oder Kapital"): `rentner_gesamt` rechnet gespeicherte Werte weiter (Entscheidung 3 vom 2026-10-09,
+/// `rentner_eingangsfrage.rs`), `an_gesamt` hat das Kreuz nicht und sperrt Kinder mit `kinder_gehoeren_in_gesamt`. Wie die Sperre der
+/// sieben anderen Kreuze: nur BESTAETIGT zaehlt, ein unbeantwortetes Kreuz oder ein "nein" sperrt nicht. Der Grund ist `FlagKonsistenzOffen`
+/// (nicht `FLAG_NEGIERT` in `konsistenz`: dessen Tabelle haengt am Orakel und wirkte auch auf `rentner_gesamt`); den Weg heraus zeigt der Klartext.
+pub(super) fn kind_abgewaehlt_mit_kindern(k: &K<'_>) -> Option<Sperrgrund> {
+    let f = k.f;
+    if k.cfg.is_some_and(|c| c.rentner) || !(bestaetigt(f, "kein_kind") && ist_true(wert(f, "kein_kind"))) {
+        return None;
+    }
+    KIND_BETRAEGE
+        .iter()
+        .filter_map(|b| BasisId::new(*b).ok())
+        .any(|basis| {
+            instanz_feld_ids(f, &basis)
+                .iter()
+                .any(|id| bestaetigt(f, id) && positiv(f, id))
+        })
+        .then_some(Sperrgrund::FlagKonsistenzOffen)
 }
 
 /// Nennen der Direktwert `einkuenfte_gewinn` und die Aufschluesselung (EUeR-Komponenten, GWG, Beteiligung) denselben Gewinn

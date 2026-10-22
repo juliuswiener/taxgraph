@@ -193,3 +193,103 @@ Partnerbezogene Angaben sind nur bei gemeinsamer Veranlagung möglich. Bitte pr�
         nach["banner"]
     );
 }
+
+/// d-54 (Julius, 2026-10-22): "keine Kinder" angekreuzt, aber Kinder gespeichert: die Zahl bleibt aus, der Sperr-Bildschirm nennt die Kinder und das
+/// Kreuz laesst sich ueber „Schon beantwortet“ wieder oeffnen und beantworten. Der Ausweg geht durch die Oberflaeche, nicht nur durch den Dienst:
+/// `korrigiereBestaetigt` sperrt jede Frage, deren Regel `ausgeschlossen` ist (die Kind-Felder sind es hier, das Kreuz selbst nicht).
+#[test]
+fn fluss_e_abgewaehltes_kind_sperre_ist_ueber_das_kreuz_behebbar() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1100, 1400);
+    let s = &u.s;
+    let d = &u.dienst;
+    let fall = "kk1";
+
+    // Pflichtfelder der Scheibe `gesamt`, Lohn 150.000 EUR, dann zwei Kinder und DANN das Kreuz „keine Kinder“ (ersetzt das abgeleitete „nein“).
+    let (st, antwort) = d.post("/fall", &json!({"scheibe": "gesamt", "veranlagungszeitraum": 2025, "fall_id": fall}));
+    assert_eq!(st, 201, "{antwort}");
+    let kegel: [(&str, Value); 35] = [
+        ("vv_einnahmen", json!(0)),
+        ("vv_gebaeude_afa", json!(0)),
+        ("vv_schuldzinsen", json!(0)),
+        ("vv_erhaltungsaufwand", json!(0)),
+        ("vv_sonstige_wk", json!(0)),
+        ("vv_entgelt_quote_prozent", json!(0)),
+        ("veranlagung", json!("einzel")),
+        ("bruttoarbeitslohn", json!(15_000_000)),
+        ("ep_arbeitstage", json!(0)),
+        ("ep_entfernung_km", json!(0)),
+        ("ep_oepnv_kosten", json!(0)),
+        ("ep_eigenes_kfz", json!(false)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("kap_kapitalertraege", json!(0)),
+        ("kap_gewinn_aktien", json!(0)),
+        ("kap_verlust_aktien", json!(0)),
+        ("kap_gewinn_sonstige", json!(0)),
+        ("kap_verlust_sonstige", json!(0)),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(true)),
+        ("agb_zwangslaeufig", json!(true)),
+        ("agb_notwendig_angemessen", json!(true)),
+    ];
+    for (feld, wert) in kegel.iter().chain([("fam_anzahl_kinder", json!(2)), ("schulgeld", json!(600_000))].iter()) {
+        let (st, r) = d.post(&format!("/fall/{fall}/event"), &laie(feld, wert));
+        assert_eq!(st, 201, "{feld}: {r}");
+    }
+    let (_, stand) = d.get(&format!("/fall/{fall}/stand"));
+    let mut kreuz = laie("kein_kind", &json!(true));
+    kreuz["ersetzt"] = stand["felder"]["kein_kind"]["event_id"].clone();
+    let (st, r) = d.post(&format!("/fall/{fall}/event"), &kreuz);
+    assert_eq!(st, 201, "kein_kind = ja: {r}");
+
+    // Der Dienst haelt die Zahl zurueck.
+    let (st, erg) = d.get(&format!("/fall/{fall}/ergebnis"));
+    assert_eq!(st, 200, "{erg}");
+    pp!("E.abgewaehltes_kind_haelt_die_zahl_zurueck", erg["grund"] == json!("flag_konsistenz_offen") && erg["zahl_cent"].is_null(), "grund/zahl: {erg}");
+
+    // Der Sperr-Bildschirm nennt die Kinder und den Weg.
+    zum_sperrfall(&u, fall);
+    s.skript("(async () => { await zeigeErgebnis(); })();", &[]);
+    let vorn = s.try_warte_bis("(() => { const e = document.getElementById('fertig'); return !!e && !e.hidden; })()", 10);
+    pp!("E.sperr_bildschirm_nennt_die_kinder", vorn.is_some(), "der Sperr-Screen ist nicht vorn");
+    let text = s.textinhalt("#ergebnis");
+    pp!("E.sperr_bildschirm_nennt_die_kinder", text.contains("keine Kinder") && text.contains("Schon beantwortet"), "der Klartext nennt Kinder und Weg nicht: {text}");
+
+    // Die Belegt-Zeile des Kreuzes ist da und ihr Klick oeffnet die Frage (nicht der „entfallen“-Hinweis).
+    let geklickt = s.auswerten(
+        "() => { const li = [...document.querySelectorAll('#belegt-liste li')].find(x => x.querySelector('.z-name') \
+         && x.querySelector('.z-name').title === 'kein_kind'); if (!li) return false; li.click(); return true; }",
+        &[],
+    );
+    pp!("E.das_kreuz_oeffnet_ueber_schon_beantwortet", geklickt == json!(true), "die Belegt-Zeile von kein_kind fehlt");
+    std::thread::sleep(std::time::Duration::from_millis(800));
+    let nach = s.ausdruck(
+        "({aktuell: (typeof AKTUELL !== 'undefined' && AKTUELL) ? AKTUELL.feld_id : null, \
+         korrektur_fid: (typeof KORREKTUR_FID !== 'undefined') ? KORREKTUR_FID : null, \
+         banner: (document.getElementById('netz-banner') || {}).textContent || ''})",
+    );
+    pp!("E.das_kreuz_oeffnet_ueber_schon_beantwortet", nach["aktuell"] == json!("kein_kind") && nach["korrektur_fid"] == json!("kein_kind"), "{nach}");
+    pp!("E.das_kreuz_oeffnet_ueber_schon_beantwortet", nach["banner"].as_str().unwrap_or("").trim().is_empty(), "die Frage wurde abgewiesen: {nach}");
+
+    // „Ja, ich habe Kinder“ (Wert `false` im Feld) und Bestaetigen hebt die Sperre auf.
+    s.klick(".wahl-opt[data-wert='true']");
+    s.klick("#bestaetigen");
+    s.warte_bis("STAND && STAND.felder && STAND.felder['kein_kind'] && STAND.felder['kein_kind'].wert === false", 8, "kein_kind steht auf nein");
+    let (st, erg) = d.get(&format!("/fall/{fall}/ergebnis"));
+    pp!("E.antwort_auf_das_kreuz_hebt_die_sperre_auf", st == 200 && erg["grund"] == json!("bestaetigt") && erg["zahl_cent"].as_i64().is_some(), "die Sperre steht nach der Antwort: {erg}");
+    let fehler = u.konsolenfehler();
+    pp!("E.antwort_auf_das_kreuz_hebt_die_sperre_auf", fehler.is_empty(), "Konsolenfehler: {fehler:?}");
+}

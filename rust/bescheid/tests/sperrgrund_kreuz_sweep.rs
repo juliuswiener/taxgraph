@@ -1049,6 +1049,26 @@ fn bei_kreuz_und_nur_vorlaeufigem_lohn_bleibt_die_lohnfrage_in_gesamt_und_an_ges
     }
 }
 
+// ---------------------------------------------------------------- d-54: "keine Kinder" neben gespeicherten Kind-Angaben
+
+/// d-54 (Julius, 2026-10-22): `kein_kind` = ja neben einem bestaetigten Kind-Betrag sperrt in `gesamt` mit `flag_konsistenz_offen` und in keiner
+/// anderen Scheibe (`rentner_gesamt`: Entscheidung 3 vom 2026-10-09, ein gespeicherter Wert zaehlt weiter; `an_gesamt` hat das Kreuz nicht).
+/// Der Sweep oben sieht diese Klasse nie: er beantwortet leere Faelle, und die Sperre loest keine Antwort auf ein ungefragtes Feld, sondern
+/// das Kreuz selbst. Darum steht sie hier einzeln. Kontrolle: dieselbe Angabe mit `kein_kind` = nein sperrt nicht. Die Gegenprobe zum Weg hinaus
+/// (Kreuz erreichbar, Zahl nach der Antwort) steht in `rust/api/tests/kein_kind_sperre.rs` und `fluss_e`.
+#[test]
+fn kein_kind_neben_gespeicherten_kind_angaben_sperrt_nur_in_gesamt() {
+    for (feld, wert) in [("schulgeld", json!(600_000)), ("p33a_ausbildung_anzahl_kinder", json!(1)), ("fam_anzahl_kinder", json!(2))] {
+        let veranlagung = ("veranlagung", json!("einzel"));
+        let ja = lauf_mit(Scheibe::Gesamt, &[veranlagung.clone(), (feld, wert.clone()), ("kein_kind", json!(true))]);
+        assert_eq!(ja.grund(), "flag_konsistenz_offen", "gesamt mit {feld} und kein_kind = ja");
+        let nein = lauf_mit(Scheibe::Gesamt, &[veranlagung.clone(), (feld, wert.clone()), ("kein_kind", json!(false))]);
+        assert_eq!(nein.grund(), "keiner", "KONTROLLE gesamt mit {feld} und kein_kind = nein");
+        let rentner = lauf_mit(Scheibe::RentnerGesamt, &[veranlagung, (feld, wert), ("kein_kind", json!(true))]);
+        assert_eq!(rentner.grund(), "keiner", "rentner_gesamt mit {feld} und kein_kind = ja");
+    }
+}
+
 // ---------------------------------------------------------------- Abweichung Nr. 74 an allen Eintraegen
 
 /// Wie eine Bedingung eines Felds auf ein anderes Feld (`kreuz`) in einer Scheibe wirkt.
