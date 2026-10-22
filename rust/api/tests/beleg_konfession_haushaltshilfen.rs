@@ -280,19 +280,32 @@ async fn ein_gespeicherter_zaehler_zaehlt_ohne_ja_weiter() {
     assert_ne!(instanzen(&ohne), instanzen(&mit), "Kontrolle: ohne gespeicherten Zaehler ist die Zahl der Instanzen eine andere");
 }
 
+/// Die drei Kegel-Felder, die der Store bei bestaetigten 0 Arbeitstagen selbst ableitet (Fragen-Reduktion Teil 2, Phase 3,
+/// Entscheidung d-55): sie sind dann beantwortet und stehen nicht in der Liste. `agb_notwendig_angemessen` bleibt.
+const BEI_NULL_ABGELEITET: [&str; 3] = ["ep_entfernung_km", "ep_eigenes_kfz", "ep_oepnv_kosten"];
+
 /// AK4 (Haushaltshilfen), AK-Pin: Der Beleg nimmt den Arbeitsweg und `agb_notwendig_angemessen` nicht mit. Beide sind
 /// Pflichtfelder des Kegels; fehlten sie in der Liste, bliebe die Steuerzahl bei `input_kegel_nicht_bestaetigt` gesperrt
-/// (Bericht Phase 0, Abschnitt 6). Der Mutant "`beleg` auch an `ep_entfernung_km`" muss diesen Test rot faerben.
+/// (Bericht Phase 0, Abschnitt 6). Der Mutant "`beleg` auch an `ep_entfernung_km`" muss diesen Test rot faerben. Ausnahme: bei
+/// bestaetigten 0 Arbeitstagen sind die drei Weg-Felder abgeleitet (`null_arbeitstage.rs`), dort bleibt nur die AgB-Frage.
 #[tokio::test]
 async fn arbeitsweg_und_agb_bleiben_in_der_liste() {
-    for (name, paare) in [
-        ("leerer Fall", vec![]),
-        ("keine Konfession, kein Aufwand", vec![ja(KONF, &json!("keine")), ja(HH_JA_NEIN, &json!(false))]),
-        ("Arbeitstage 0", vec![ja("ep_arbeitstage", &json!(0))]),
+    for (name, paare, null_tage) in [
+        ("leerer Fall", vec![], false),
+        ("keine Konfession, kein Aufwand", vec![ja(KONF, &json!("keine")), ja(HH_JA_NEIN, &json!(false))], false),
+        ("Arbeitstage 0", vec![ja("ep_arbeitstage", &json!(0))], true),
+        ("Arbeitstage 220", vec![ja("ep_arbeitstage", &json!(220))], false),
     ] {
         let liste = fragen_nach(&paare).await;
         let ids = ids(&liste);
-        let erwartet: Vec<&str> = PFLICHT_BLEIBT.iter().copied().filter(|f| !paare.iter().any(|(p, _, _)| p == f)).collect();
+        let erwartet: Vec<&str> = PFLICHT_BLEIBT
+            .iter()
+            .copied()
+            .filter(|f| !(paare.iter().any(|(p, _, _)| p == f) || (null_tage && BEI_NULL_ABGELEITET.contains(f))))
+            .collect();
         assert_eq!(davon(&ids, &erwartet), erwartet, "{name}: Pflichtfelder fehlen in der Liste: {}", kopf(&ids));
+        if null_tage {
+            assert_eq!(davon(&ids, &BEI_NULL_ABGELEITET), Vec::<&str>::new(), "{name}: abgeleitete Felder stehen in der Liste: {}", kopf(&ids));
+        }
     }
 }

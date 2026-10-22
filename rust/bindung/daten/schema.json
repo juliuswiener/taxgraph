@@ -479,9 +479,13 @@
                 "jahr_aus_datum",
                 "alter_am_jahresbeginn_erreicht",
                 "uebernahme",
-                "alter_unter_am_jahresende"
+                "alter_unter_am_jahresende",
+                "neutral_bei_null"
               ],
-              "description": "jahr_aus_datum: das Jahr der Jahreszahl. alter_am_jahresbeginn_erreicht: true, wenn die Person zu Beginn des Veranlagungszeitraums `schwelle` Jahre alt war. uebernahme: derselbe Wert (zwei Felder, eine Frage). alter_unter_am_jahresende: true, wenn die Person am Jahresende juenger als `schwelle` ist — sonst NICHTS (die Gegenrichtung ist nicht sicher)."
+              "description": "jahr_aus_datum: das Jahr der Jahreszahl. alter_am_jahresbeginn_erreicht: true, wenn die Person zu Beginn des Veranlagungszeitraums `schwelle` Jahre alt war. uebernahme: derselbe Wert (zwei Felder, eine Frage). alter_unter_am_jahresende: true, wenn die Person am Jahresende juenger als `schwelle` ist — sonst NICHTS (die Gegenrichtung ist nicht sicher). neutral_bei_null (nur Rust): der Wert `neutral`, wenn `aus` bestaetigt 0 ist — sonst NICHTS."
+            },
+            "neutral": {
+              "description": "Nur bei neutral_bei_null: der Wert, den die Ableitung schreibt, wenn `aus` bestaetigt 0 ist (ein Wert, der die Steuer bei 0 nicht aendert)."
             },
             "schwelle": {
               "type": "number",

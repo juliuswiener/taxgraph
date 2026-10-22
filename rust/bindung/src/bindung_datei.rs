@@ -62,6 +62,8 @@ pub enum BindungFehler {
     OderAlternativeMitUnd { feld_id: String },
     #[error("{wo}: beleg gilt nur an wert/wert_nicht/alter_im_vz/praefix_nicht eines Glieds der und-Kette (groesser_als und jede oder-Alternative sind schon ein Beleg)")]
     BelegOhneSinn { wo: String },
+    #[error("{feld_id}.ableitung: `neutral` gehoert genau zur Art neutral_bei_null (dort ein Wert, bei jeder anderen Art keiner) und neutral_bei_null kennt weder schwelle noch und_feld")]
+    AbleitungNeutral { feld_id: String },
     #[error("{feld_id}: ungueltige instanz_gruppe {gruppe:?} (erwartet ^[a-z][a-z0-9_]*$)")]
     UngueltigeInstanzGruppe { feld_id: String, gruppe: String },
     #[error("instanz_gruppen {gruppe}: max {max} liegt ausserhalb von {}..={}", MIN_INSTANZ_MAX, MAX_INSTANZ_MAX)]
@@ -400,6 +402,8 @@ pub enum AbleitungArt {
     AlterAmJahresbeginnErreicht,
     Uebernahme,
     AlterUnterAmJahresende,
+    /// Rust-eigen (Fragen-Reduktion Teil 2, Phase 3, Entscheidung d-55): `neutral`, sobald `aus` bestaetigt 0 ist, sonst nichts.
+    NeutralBeiNull,
 }
 
 /// Dieses Feld wird berechnet, sobald `aus` bestaetigt vorliegt.
@@ -411,6 +415,9 @@ pub struct Ableitung {
     pub schwelle: Option<f64>,
     pub grund: String,
     pub und_feld: Option<String>,
+    /// Der Wert, den `neutral_bei_null` schreibt (Rust-eigen, nur bei dieser Art).
+    #[serde(default)]
+    pub neutral: Option<Value>,
 }
 
 /// Eine einzelne Feld-Bindung (`$defs/bindung`). Feldnamen und Optionalitaet 1:1 aus
@@ -611,6 +618,17 @@ impl Bindung {
                     wo: format!("{}.ableitung", self.feld_id),
                     was: "grund",
                     min: MIN_GRUND_LANG,
+                });
+            }
+            let neutral_bei_null = ableitung.art == AbleitungArt::NeutralBeiNull;
+            let stimmig = if neutral_bei_null {
+                ableitung.neutral.is_some() && ableitung.schwelle.is_none() && ableitung.und_feld.is_none()
+            } else {
+                ableitung.neutral.is_none()
+            };
+            if !stimmig {
+                return Err(BindungFehler::AbleitungNeutral {
+                    feld_id: self.feld_id.clone(),
                 });
             }
         }

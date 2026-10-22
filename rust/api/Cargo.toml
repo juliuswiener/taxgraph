@@ -109,6 +109,10 @@ name = "kontoauszug_werkzeug"
 path = "tests/kontoauszug_werkzeug.rs"
 
 [[test]]
+name = "null_arbeitstage_entfernungsdienst"
+path = "tests/null_arbeitstage_entfernungsdienst.rs"
+
+[[test]]
 name = "offene_defekte"
 path = "tests/offene_defekte.rs"
 
