@@ -1152,3 +1152,104 @@ async fn die_antwort_nennt_jahr_datum_und_saldo_auch_neben_einem_vorschlag() {
             "hinweis": "Nicht gezählt: 1 Buchung(en) außerhalb des Veranlagungsjahrs."})
     );
 }
+
+// ---------------------------------------------------------------------------
+// Bankimport S2 (d-61, Vault `backlog/taxgraph/bankimport-s2-regelkatalog-mit-stufen-35a-ohne-betrag-und-art9-waechter`):
+// § 35a schreibt keinen Betrag ins Feld, die Antwort nennt die Zahlungen als Nachfrage; ein Beleg schlaegt den Kontoauszug.
+// ---------------------------------------------------------------------------
+
+/// Die drei § 35a-Kategorien schreiben kein Ereignis; die Antwort nennt je Buchung Feld, Art, Datum, Betrag (Ausgabe negativ)
+/// und den maskierten Zweck, in der Reihenfolge der Datei, und einen Satz im Hinweis. Die Spende im selben Auszug wird weiter
+/// vorgeschlagen (Kontrolle gegen einen Test, der nie etwas schreibt).
+#[tokio::test]
+async fn bank_regeln_35a_route_schreibt_kein_ereignis_und_nennt_die_nachfragen() {
+    let d = dienst();
+    let (s, a) = auszug(
+        &d,
+        "b351",
+        csv(&[
+            "01.03.2025;-73,00;Maler Huber",
+            "02.03.2025;-41,00;Reinigung Treppenhaus",
+            "03.03.2025;-29,00;Minijob-Zentrale",
+            "04.03.2025;-11,00;Spende Tierheim",
+        ]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    let felder: Vec<String> = events(&d, "b351").iter().map(|e| e["feld_id"].as_str().unwrap().to_owned()).collect();
+    assert_eq!(felder, ["spenden_betrag"], "nur die Spende schreibt");
+    assert_eq!(a["uebernommen"], 1, "{a}");
+    assert_eq!(a["transaktionen"], 4, "{a}");
+    let nachfragen = a["nachfragen"].as_array().unwrap_or_else(|| panic!("Antwortfeld nachfragen fehlt: {a}"));
+    let erwartet = [
+        ("hh_handwerker_betrag", "2025-03-01", -73_00, "Maler Huber"),
+        ("hh_dienstleistung_betrag", "2025-03-02", -41_00, "Reinigung Treppenhaus"),
+        ("hh_minijob_betrag", "2025-03-03", -29_00, "Minijob-Zentrale"),
+    ];
+    assert_eq!(nachfragen.len(), erwartet.len(), "{nachfragen:?}");
+    for (zeile, (feld, datum, betrag, zweck)) in nachfragen.iter().zip(erwartet) {
+        assert_eq!(
+            zeile,
+            &json!({"feld_id": feld, "art": "arbeitskosten_nachfragen", "datum": datum, "betrag_cent": betrag,
+                "zweck_maskiert": zweck})
+        );
+    }
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("Arbeitskosten laut Rechnung"), "{hinweis}");
+}
+
+/// Die Nachfrage ist ein Teil der Antwort an die Nutzerin, kein Teil der Akte: weder das Ereignis noch das Audit noch das
+/// Fehlerlog tragen den Zweck einer § 35a-Buchung. Kontrollen: die Spende steht mit ihrem Zweck in der Akte, und das Audit
+/// hat den Eintrag des Aufrufs.
+#[tokio::test]
+async fn bank_regeln_35a_nachfragen_stehen_nicht_in_ereignis_log_audit() {
+    let d = dienst();
+    let (s, a) = auszug(
+        &d,
+        "b352",
+        csv(&["05.03.2025;-83,00;Maler Zebrastreifen 4711", "06.03.2025;-17,00;Spende Wellensittich"]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    let akte = std::fs::read_to_string(d.zustand.konfig.faelle.join("b352.json")).unwrap();
+    assert!(akte.contains("Wellensittich"), "Kontrolle: der Zweck der Spende steht in der Akte");
+    let audit = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap_or_default();
+    assert!(audit.contains("fall_kontoauszug"), "Kontrolle: das Audit nennt den Aufruf: {audit}");
+    let fehler = std::fs::read_to_string(d.zustand.konfig.fehler_pfad()).unwrap_or_default();
+    for (wo, inhalt) in [("Akte", &akte), ("Audit", &audit), ("Fehlerlog", &fehler)] {
+        assert!(!inhalt.contains("Zebrastreifen"), "der Zweck der § 35a-Buchung steht in {wo}");
+    }
+    assert!(a["nachfragen"].to_string().contains("Zebrastreifen"), "die Antwort nennt den Zweck: {a}");
+}
+
+/// Beleg schlaegt Konto, Seite der Antwort: steht auf dem Feld ein Ereignis des Belegs, schreibt der Kontoauszug nichts und
+/// nennt seine Summe als Abgleich (Einheit und Vorzeichen wie die Summe, die der Import ins Feld geschrieben haette: Ausgabe
+/// positiv, in Cent).
+#[tokio::test]
+async fn bank_beleg_schlaegt_konto_antwort_nennt_den_abgleich() {
+    let d = dienst();
+    fall_anlegen(&d, "bb1", "gesamt").await;
+    let (s, _) = sende(
+        &d,
+        "/fall/bb1/event",
+        &json!({"feld_id": "spenden_betrag", "wert": 25_00, "zustand": "vorlaeufig",
+            "herkunft": {"haftung": "nutzer", "herkunft": "beleg_import", "pruef_tiefe": "ungeprueft"},
+            "schreiber": "import:beleg", "signal": {"signal_1": null, "signal_2": null},
+            "ts": "2026-01-01T00:00:00+00:00"}),
+    )
+    .await;
+    assert_eq!(s, 201, "der Beleg-Vorschlag wird angenommen");
+    let (s, a) = sende(
+        &d,
+        "/fall/bb1/kontoauszug",
+        &csv(&["02.03.2025;-15,00;Spende Tierheim", "03.03.2025;-20,00;Spende Unicef"]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["uebernommen"], 0, "{a}");
+    let ev = events(&d, "bb1");
+    assert_eq!((ev.len(), &ev[0]["wert"], &ev[0]["schreiber"]), (1, &json!(25_00), &json!("import:beleg")), "{ev:?}");
+    assert_eq!(a["abgleich"], json!([{"feld_id": "spenden_betrag", "summe_cent": 35_00, "anzahl": 2}]), "{a}");
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("Abgleich") && hinweis.contains("35,00 €"), "{hinweis}");
+}

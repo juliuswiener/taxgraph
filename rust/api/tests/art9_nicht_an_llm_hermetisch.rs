@@ -339,6 +339,7 @@ const TEXT: &str = "Ich habe 100 Euro Lohn bekommen.";
 
 #[tokio::test]
 async fn art9_werte_der_akte_erreichen_das_sprachmodell_auf_keinem_weg() {
+    let _sperre = LLM_UMGEBUNG.lock().await;
     // Drei Stufen des Chats, danach die Klassifikation einer Buchung: vier Antworten, in dieser Reihenfolge.
     let stub = Stub::starte(vec![
         modell(
@@ -463,4 +464,67 @@ async fn art9_werte_der_akte_erreichen_das_sprachmodell_auf_keinem_weg() {
         "die Zahl der ausgelassenen Angaben ({ausgelassen}) wird nicht genannt:\n{}",
         nachr[2]
     );
+}
+
+// ------------------------------------------------------------------ Bankimport S2: der Buchungstext
+
+/// `$LLM_*` gilt fuer den ganzen Prozess: die zwei Tests dieser Datei, die es setzen, laufen nacheinander (unter nextest ohnehin,
+/// ein Prozess je Test; unter `cargo test` nur mit der Sperre).
+static LLM_UMGEBUNG: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Bankimport S2 (d-59, d-60): Der Buchungstext erreicht das Sprachmodell nur mit dem Haken `ki_buchungstext`, und ein Text mit
+/// Gesundheits-, Gewerkschafts- oder Kirchenbezug in keinem der vier Haken-Zustaende. Weder Akte noch Audit noch Fehlerlog tragen
+/// ihn. Kontrolle: mit dem Haken geht die harmlose Buchung hinaus, sonst waere "nichts geht hinaus" leer wahr.
+/// Die Texte sind erfunden.
+#[tokio::test]
+async fn art9_buchungstext_erreicht_ohne_haken_nie_das_sprachmodell() {
+    let _sperre = LLM_UMGEBUNG.lock().await;
+    const ART9: [&str; 3] = ["Zahnarzt Dr. Beispiel", "ver.di Mitgliedsbeitrag", "Kirchensteuer Erzbistum"];
+    let inhalt = format!(
+        "datum;betrag;verwendungszweck\n01.03.2025;-41,17;{}\n02.03.2025;-22,33;{}\n03.03.2025;-55,44;{}\n04.03.2025;-9,99;Muster Einkauf 4711\n",
+        ART9[0], ART9[1], ART9[2]
+    );
+    let d = dienst();
+    // (ki_buchungstext, art9, Zahl der Anfragen an das Modell)
+    for (n, (ki, art9, soll)) in [(false, false, 0), (true, false, 1), (false, true, 0), (true, true, 1)]
+        .into_iter()
+        .enumerate()
+    {
+        let stub = Stub::starte(vec![modell(&json!({"kategorie": null}))]);
+        std::env::set_var("LLM_API_BASE", stub.basis(""));
+        std::env::set_var("LLM_MODEL", "stub/modell");
+        std::env::set_var("LLM_API_KEY", "SYNTHETISCH-LLM-SCHLUESSEL");
+        let fall = format!("bt{n}");
+        let (s, a) = post(
+            &d,
+            "/fall",
+            &json!({"fall_id": fall, "scheibe": "gesamt", "veranlagungszeitraum": 2025}),
+        )
+        .await;
+        assert_eq!(s, 201, "{a}");
+        let (s, a) = post(
+            &d,
+            &format!("/fall/{fall}/kontoauszug"),
+            &json!({"format": "csv", "inhalt": inhalt, "ki_buchungstext": ki, "art9": art9}),
+        )
+        .await;
+        assert_eq!(s, 200, "ki={ki} art9={art9}: {a}");
+        let anfragen = stub.anfragen();
+        assert_eq!(anfragen.len(), soll, "ki={ki} art9={art9}: Anfragen an das Modell");
+        for an in &anfragen {
+            let roh = String::from_utf8_lossy(&an.koerper).into_owned();
+            assert!(roh.contains("Muster Einkauf 4711"), "ki={ki} art9={art9}: die harmlose Buchung fehlt: {roh}");
+            for text in ART9 {
+                assert!(!roh.contains(text), "ki={ki} art9={art9}: {text:?} steht in der Anfrage");
+            }
+        }
+        let akte = std::fs::read_to_string(d.zustand.konfig.faelle.join(format!("{fall}.json"))).unwrap();
+        let audit = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap_or_default();
+        let fehler = std::fs::read_to_string(d.zustand.konfig.fehler_pfad()).unwrap_or_default();
+        for text in ART9 {
+            for (wo, inhalt) in [("Akte", &akte), ("Audit", &audit), ("Fehlerlog", &fehler)] {
+                assert!(!inhalt.contains(text), "ki={ki} art9={art9}: {text:?} steht in {wo}");
+            }
+        }
+    }
 }
