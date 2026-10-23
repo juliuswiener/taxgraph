@@ -63,6 +63,7 @@ macro_rules! umgebung_oder_ende {
     };
 }
 
+mod bank_vorschlaege_pruefen;
 mod browser;
 mod chat;
 mod darstellung;
