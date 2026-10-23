@@ -563,6 +563,14 @@ fn bank_vorschlaege_pruefen_art9_haken_sendet_neu_und_ki_haken_gilt_beim_ueberne
         "{}",
         senden[0]
     );
+    // Die Seite schickt keinen Betrag und keine Summe, nur den Auszug, die Haken und die Stellen: die Summe rechnet der Dienst.
+    let mut schluessel: Vec<&str> = senden[0]["body"].as_object().unwrap().keys().map(String::as_str).collect();
+    schluessel.sort_unstable();
+    assert_eq!(schluessel, ["abgewaehlt", "art9", "format", "inhalt", "ki_buchungstext"], "{}", senden[0]);
+    let vorschau_aufrufe = aufrufe(&u, "/bank/vorschau");
+    let mut schluessel: Vec<&str> = vorschau_aufrufe[0]["body"].as_object().unwrap().keys().map(String::as_str).collect();
+    schluessel.sort_unstable();
+    assert_eq!(schluessel, ["abgewaehlt", "art9", "format", "inhalt"], "die Vorschau schickt den KI-Haken nie: {}", vorschau_aufrufe[0]);
     // Ohne Anbieter sagt der Dienst, dass die KI nicht eingerichtet ist; die Seite nennt es.
     assert!(status.contains("nicht eingerichtet"), "{status:?}");
     let kv = ereignisse(&u, &fall, "basis_kv");
