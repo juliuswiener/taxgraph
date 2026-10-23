@@ -1299,7 +1299,7 @@ async fn bank_art9_route_ohne_haken_gesperrt_und_mit_haken_ohne_zweck() {
     assert_eq!((&a["uebernommen"], &a["transaktionen"]), (&json!(2), &json!(3)), "{a}");
     let ev = events(&d, "ba2");
     let felder: Vec<_> = ev.iter().map(|e| (e["feld_id"].as_str().unwrap(), e["wert"].clone())).collect();
-    assert_eq!(felder, [("basis_kv", json!(262_00)), ("basis_pv", json!(57_00))]);
+    assert_eq!(felder, [("basis_kv", json!(26_200)), ("basis_pv", json!(5_700))]);
     for e in &ev {
         assert_eq!(e["zustand"], "vorlaeufig");
         let s1 = &e["signal"]["signal_1"];
