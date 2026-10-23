@@ -92,13 +92,16 @@ fn konto_zeichensatz_utf8_datei_mit_bom_bleibt_unveraendert() {
     assert_eq!(zweck, json!(ZWECK));
 }
 
-/// Das Byte `0x81` ist in cp1252 nicht belegt. Die Seite darf daran nicht scheitern; der Vorschlag entsteht, weil „maler“ davor steht.
+/// Das Byte `0x81` ist in cp1252 nicht belegt und kein UTF-8. Die Seite darf daran nicht scheitern: `TextDecoder("windows-1252")`
+/// macht daraus das Steuerzeichen U+0081 (WHATWG-Index; hier im Browser gemessen), nie einen Fehler. Der Vorschlag entsteht, weil
+/// „maler“ davor steht.
 #[test]
 fn konto_zeichensatz_unbelegtes_byte_bricht_die_seite_nicht() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
     let mut zweck = b"Maler Huber ".to_vec();
     zweck.push(0x81);
-    let (wert, _) = lade(&u, &auszug(&zweck));
+    let (wert, gespeichert) = lade(&u, &auszug(&zweck));
     assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR");
+    assert_eq!(gespeichert, json!("Maler Huber \u{81}"), "das unbelegte Byte kommt als U+0081 an");
 }

@@ -129,6 +129,17 @@ function _dateiAlsBase64(datei) {
     r.readAsDataURL(datei);
   });
 }
+// Eine Bank liefert ihre CSV oft in windows-1252 (ein Byte je Umlaut). `datei.text()` liest immer UTF-8 und machte daraus
+// U+FFFD: Stichwörter mit Umlaut (sanitär, rürup) trafen nie. Erst streng UTF-8 (BOM fällt weg), nur wenn die Bytes keins
+// sind, windows-1252. Dieses kennt für jedes Byte ein Zeichen (ein unbelegtes Byte wird ein Steuerzeichen), wirft also nie.
+async function _dateiAlsText(datei) {
+  const bytes = await datei.arrayBuffer();
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch (e) {
+    return new TextDecoder("windows-1252").decode(bytes);
+  }
+}
 
 // --- P0: Scheiben-Wahl (2 Kacheln) — scheibe NICHT hardcoden ---
 async function waehleScheibe(scheibe) {
@@ -2795,7 +2806,7 @@ async function kontoauszugHochladen(datei) {
   input.disabled = true;
   $("konto-ersetzen").hidden = true;   // eine offene Rückfrage galt dem alten Auszug; der Haken darf den neuen nicht mitnehmen
   st.textContent = "Lese Auszug …";
-  const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await datei.text();
+  const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await _dateiAlsText(datei);
   KONTO_LETZTER = { format, inhalt };
   await kontoauszugSenden(false);
   input.disabled = false;
