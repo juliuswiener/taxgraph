@@ -1057,6 +1057,75 @@ struct Gruppe {
     alt: Option<Bestehend>,
 }
 
+/// Was `uebernehme_voll` einer Buchung nach dem Ordnen zuweist, bevor etwas geschrieben wird.
+#[derive(Default)]
+struct Sammlung {
+    gruppen: Vec<Gruppe>,
+    nachfragen: Vec<Nachfrage>,
+    /// Posten je Feld, das einen Wert traegt, den dieser Import nicht ersetzen darf (Beleg schlaegt Konto).
+    belegt: Vec<(&'static str, Vec<Posten>)>,
+}
+
+impl Sammlung {
+    /// Haengt den Posten an die Gruppe seines Felds; die erste Buchung des Felds in diesem Auszug entscheidet, ob das Feld frei
+    /// ist, einen ersetzbaren eigenen Vorschlag traegt oder belegt bleibt.
+    fn ordne(&mut self, store: &Store, u: &mut Uebernahme, (regel, nur_stichwort): (&'static Regel, bool), posten: Posten) {
+        let feld = regel.feld.as_str();
+        if let Some(g) = self.gruppen.iter_mut().find(|g| g.feld == feld) {
+            g.nur_stichwort &= nur_stichwort;
+            g.posten.push(posten);
+            return;
+        }
+        let alt = if store.aktives(feld).is_some() {
+            let Some(alt) = bestehendes(store, feld) else {
+                u.feld_belegt += 1;
+                match self.belegt.iter_mut().find(|(f, _)| *f == feld) {
+                    Some((_, liste)) => liste.push(posten),
+                    None => self.belegt.push((feld, vec![posten])),
+                }
+                return;
+            };
+            Some(alt)
+        } else {
+            None
+        };
+        self.gruppen.push(Gruppe {
+            feld,
+            regel,
+            nur_stichwort,
+            posten: vec![posten],
+            alt,
+        });
+    }
+
+    /// Die Summe je belegtem Feld; eine Summe null oder darunter wird nicht genannt.
+    fn abgleich(&self) -> Result<Vec<Abgleich>, KontoauszugFehler> {
+        let mut abgleich = Vec::new();
+        for (feld, posten) in &self.belegt {
+            let summe = saldo::saldo(posten)
+                .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {feld}")))?;
+            if summe > 0 {
+                abgleich.push(Abgleich {
+                    feld_id: feld,
+                    summe_cent: summe,
+                    anzahl: posten.len(),
+                });
+            }
+        }
+        Ok(abgleich)
+    }
+}
+
+/// Das Datum einer Buchung im Veranlagungsjahr; sonst zaehlt `u` den Grund und die Antwort ist `None`.
+fn lies_datum(tx: &Transaktion, jahr: i64, u: &mut Uebernahme) -> Option<Datum> {
+    match Datum::aus_json(&tx.datum) {
+        None => u.datum_unlesbar += 1,
+        Some(d) if d.jahr != jahr => u.anderes_jahr += 1,
+        Some(d) => return Some(d),
+    }
+    None
+}
+
 /// Der eigene vorlaeufige Vorschlag eines Felds aus einem frueheren Auszug, wie `uebernehme` ihn
 /// in `signal_1` ablegte.
 struct Bestehend {
@@ -1369,9 +1438,7 @@ pub fn uebernehme_voll(
     let mut u = Uebernahme::default();
     let beginn = Instant::now();
     // Zuerst ordnen, dann schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
-    let mut gruppen: Vec<Gruppe> = Vec::new();
-    let mut nachfragen: Vec<Nachfrage> = Vec::new();
-    let mut belegt: Vec<(&'static str, Vec<Posten>)> = Vec::new();
+    let mut sammlung = Sammlung::default();
     for tx in transaktionen {
         // Betrag 0 ist weder Ausgabe noch Rueckbuchung.
         if tx.betrag == 0 {
@@ -1387,16 +1454,8 @@ pub fn uebernehme_voll(
             continue;
         }
         // Das Datum vor der KI: eine Buchung ausserhalb des Jahres kostet keinen Aufruf.
-        let datum = match Datum::aus_json(&tx.datum) {
-            None => {
-                u.datum_unlesbar += 1;
-                continue;
-            }
-            Some(d) if d.jahr != jahr => {
-                u.anderes_jahr += 1;
-                continue;
-            }
-            Some(d) => d,
+        let Some(datum) = lies_datum(tx, jahr, &mut u) else {
+            continue;
         };
         let mut regel = det;
         if regel.is_none() {
@@ -1436,7 +1495,7 @@ pub fn uebernehme_voll(
         let maskiert = pii::maskiere(zweck).as_str().to_owned();
         if regel.art == Art::ArbeitskostenNachfragen {
             u.nachgefragt += 1;
-            nachfragen.push(Nachfrage {
+            sammlung.nachfragen.push(Nachfrage {
                 feld_id: feld,
                 datum: datum.als_text(),
                 betrag_cent: tx.betrag,
@@ -1453,51 +1512,15 @@ pub fn uebernehme_voll(
             betrag_cent: tx.betrag,
             zweck_maskiert: if regel.art9 { String::new() } else { maskiert },
         };
-        if let Some(g) = gruppen.iter_mut().find(|g| g.feld == feld) {
-            g.nur_stichwort &= det.is_some();
-            g.posten.push(posten);
-            continue;
-        }
-        // Die erste Buchung des Felds in diesem Auszug entscheidet, ob das Feld frei ist, einen
-        // ersetzbaren eigenen Vorschlag traegt oder belegt bleibt.
-        let alt = if store.aktives(feld).is_some() {
-            let Some(alt) = bestehendes(store, feld) else {
-                u.feld_belegt += 1;
-                // Beleg schlaegt Konto: der Kontoauszug schreibt nichts, die Antwort nennt seine Summe als Abgleich.
-                match belegt.iter_mut().find(|(f, _)| *f == feld) {
-                    Some((_, liste)) => liste.push(posten),
-                    None => belegt.push((feld, vec![posten])),
-                }
-                continue;
-            };
-            Some(alt)
-        } else {
-            None
-        };
-        gruppen.push(Gruppe {
-            feld,
-            regel,
-            nur_stichwort: det.is_some(),
-            posten: vec![posten],
-            alt,
-        });
+        // Beleg schlaegt Konto: ein belegtes Feld bleibt unberuehrt, die Antwort nennt die Summe des Kontos als Abgleich.
+        sammlung.ordne(store, &mut u, (regel, det.is_some()), posten);
     }
-    let mut abgleich = Vec::new();
-    for (feld, posten) in belegt {
-        let summe = saldo::saldo(&posten)
-            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {feld}")))?;
-        if summe > 0 {
-            abgleich.push(Abgleich {
-                feld_id: feld,
-                summe_cent: summe,
-                anzahl: posten.len(),
-            });
-        }
-    }
+    // Vor dem Schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
+    let abgleich = sammlung.abgleich()?;
     let mut regelhinweise = Vec::new();
     let ersetzungen = schreibe_gruppen(
         store,
-        gruppen,
+        sammlung.gruppen,
         jahr,
         (bindung, katalog, ts),
         haken.ersetzen,
@@ -1506,7 +1529,7 @@ pub fn uebernehme_voll(
     Ok(Ergebnis {
         uebernahme: u,
         ersetzungen,
-        nachfragen,
+        nachfragen: sammlung.nachfragen,
         abgleich,
         regelhinweise,
     })

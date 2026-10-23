@@ -91,7 +91,8 @@ async fn auszug(d: &Dienst, id: &str, inhalt: Vec<Value>) -> (u16, Value) {
     post(
         d,
         &format!("/fall/{id}/kontoauszug"),
-        &json!({"format": "json", "inhalt": inhalt}),
+        // Das Modell sieht einen Buchungstext nur mit dem Haken (d-59).
+        &json!({"format": "json", "inhalt": inhalt, "ki_buchungstext": true}),
     )
     .await
 }

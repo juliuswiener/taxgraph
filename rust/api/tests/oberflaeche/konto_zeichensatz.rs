@@ -7,8 +7,11 @@
 //! Hier steht, was die Seite aus den Bytes macht: eine cp1252-Datei liefert den Vorschlag, eine UTF-8-Datei (mit und ohne BOM)
 //! bleibt unveraendert, und ein Byte, das in cp1252 nicht belegt ist, bricht die Seite nicht.
 //!
-//! HERKUNFT DER ERWARTUNGSWERTE: Handrechnung. Eine Buchung, -50,00 EUR, Stichwort „sanitär“ (Handwerker): Saldo 50,00 EUR = 5_000 Cent
-//! in `hh_handwerker_betrag`. Die Datei ist erfunden.
+//! Seit Bankimport S2 schreiben `sanitär` und `gebäudereinig` kein Ereignis mehr (§ 35a, d-61); der Umlaut-Test nimmt darum das
+//! Stichwort `rürup` (Vorsorge).
+//!
+//! HERKUNFT DER ERWARTUNGSWERTE: Handrechnung. Eine Buchung, -50,00 EUR, Stichwort „rürup“ (Vorsorge): Saldo 50,00 EUR = 5_000 Cent
+//! in `vor_rv_ausserhalb_lstb`. Die Datei ist erfunden.
 //!
 //! Grenzen: Chromium allein. Die Datei kommt per `DataTransfer` ins Eingabefeld (wie die Dateiwahl sie liefert); der
 //! Dateiwahl-Dialog des Betriebssystems laeuft nicht.
@@ -19,8 +22,8 @@ use crate::dienst::Start;
 use crate::konto_ersetzen::{warte_status, zum_kontoauszug};
 use crate::seite::Umgebung;
 
-const FELD: &str = "hh_handwerker_betrag";
-const ZWECK: &str = "Sanitär Meier Rechnung";
+const FELD: &str = "vor_rv_ausserhalb_lstb";
+const ZWECK: &str = "Rürup Meier Beitrag";
 
 /// Die Bytes, die eine Bank im Zeichensatz `windows-1252` schreibt. Nur die Zeichen, die diese Tests brauchen.
 fn cp1252(text: &str) -> Vec<u8> {
@@ -105,9 +108,9 @@ fn konto_zeichensatz_utf8_datei_mit_bom_bleibt_unveraendert() {
 fn konto_zeichensatz_eurozeichen_kommt_als_euro_an() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
-    let (wert, zweck) = lade(&u, &auszug(&cp1252("Maler Huber € Anzahlung")));
+    let (wert, zweck) = lade(&u, &auszug(&cp1252("Rürup Huber € Anzahlung")));
     assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR");
-    assert_eq!(zweck, json!("Maler Huber € Anzahlung"), "0x80 ist in cp1252 das Eurozeichen");
+    assert_eq!(zweck, json!("Rürup Huber € Anzahlung"), "0x80 ist in cp1252 das Eurozeichen");
 }
 
 /// Die JSON-Datei geht denselben Weg wie die CSV-Datei (`_dateiAlsText`): eine JSON-Datei in cp1252 liefert den Vorschlag
@@ -124,14 +127,14 @@ fn konto_zeichensatz_json_datei_in_cp1252_liefert_den_vorschlag() {
 
 /// Das Byte `0x81` ist in cp1252 nicht belegt und kein UTF-8. Die Seite darf daran nicht scheitern: `TextDecoder("windows-1252")`
 /// macht daraus das Steuerzeichen U+0081 (WHATWG-Index; hier im Browser gemessen), nie einen Fehler. Der Vorschlag entsteht, weil
-/// „maler“ davor steht.
+/// „rentenversicherung“ davor steht.
 #[test]
 fn konto_zeichensatz_unbelegtes_byte_bricht_die_seite_nicht() {
     let _sperre = crate::browser::seriell();
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
-    let mut zweck = b"Maler Huber ".to_vec();
+    let mut zweck = b"Rentenversicherung Huber ".to_vec();
     zweck.push(0x81);
     let (wert, gespeichert) = lade(&u, &auszug(&zweck));
     assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR");
-    assert_eq!(gespeichert, json!("Maler Huber \u{81}"), "das unbelegte Byte kommt als U+0081 an");
+    assert_eq!(gespeichert, json!("Rentenversicherung Huber \u{81}"), "das unbelegte Byte kommt als U+0081 an");
 }

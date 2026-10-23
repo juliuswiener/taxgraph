@@ -157,7 +157,7 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
          jpost = (...a) => new Promise((ok) => { window.__weiter = () => ok(window.__echt(...a)); });",
         &[],
     );
-    waehle_auszug(&u, &["05.02.2025;-480,00;Maler Huber"]);
+    waehle_auszug(&u, &["05.02.2025;-480,00;Rentenversicherung Huber"]);
     u.s.warte_bis("window.__weiter !== null", 10, "der dritte Auszug ist unterwegs");
     assert!(!rueckfrage_offen(&u), "waehrend ein neuer Auszug unterwegs ist, steht die alte Rueckfrage noch");
     u.s.skript("jpost = window.__echt; window.__weiter();", &[]);
@@ -172,7 +172,7 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
     );
     assert_eq!(u.s.textinhalt("#konto-status"), status_vorher, "der erzwungene Aufruf sendet einen Auszug, den keine Rueckfrage nannte");
     assert_eq!(u.dienst.ereignisse(&fall, FELD), erste, "der Haken der alten Rueckfrage hat ersetzt");
-    assert_eq!(u.dienst.ereignisse(&fall, "hh_handwerker_betrag").len(), 1, "der dritte Auszug schrieb sein Feld nicht");
+    assert_eq!(u.dienst.ereignisse(&fall, "vor_rv_ausserhalb_lstb").len(), 1, "der dritte Auszug schrieb sein Feld nicht");
 
     // Ein fehlerhafter Auszug (kein lesbares JSON) laesst die Rueckfrage ebenfalls nicht stehen.
     waehle_auszug(&u, ZWEITER);

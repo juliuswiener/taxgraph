@@ -212,7 +212,7 @@ fn bank_art9_ohne_haken_schlagen_die_regeln_nie_an_und_die_ki_sieht_nichts() {
     };
     let mut store = Store::leer(2025, None);
     let buchungen = [
-        tx("2025-03-01", -251_00, "Techniker Krankenversicherung Beitrag"),
+        tx("2025-03-01", -25_100, "Techniker Krankenversicherung Beitrag"),
         tx("2025-03-02", -52_00, "Pflegeversicherung Beitrag"),
         tx("2025-03-03", -41_17, "Zahnarzt Dr. Beispiel"),
         tx("2025-03-04", -9_99, "Muster Einkauf 4711"),
@@ -240,7 +240,7 @@ fn bank_art9_mit_haken_schreiben_die_regeln_ohne_zweck() {
     };
     let mut store = Store::leer(2025, None);
     let buchungen = [
-        tx("2025-03-01", -251_00, "Techniker Krankenversicherung Beitrag"),
+        tx("2025-03-01", -25_100, "Techniker Krankenversicherung Beitrag"),
         tx("2025-03-02", -52_00, "Pflegeversicherung Beitrag"),
         tx("2025-03-03", -41_17, "Zahnarzt Dr. Beispiel"),
         tx("2025-03-04", -9_99, "Muster Einkauf 4711"),
@@ -249,7 +249,7 @@ fn bank_art9_mit_haken_schreiben_die_regeln_ohne_zweck() {
     assert_eq!(aufrufe.get(), 1, "nur die harmlose Buchung geht an den Klassifikator");
     let u = e.uebernahme;
     assert_eq!((u.uebernommen, u.art9_gesperrt, u.ohne_stichwort), (2, 0, 2), "{u:?}");
-    assert_eq!(wert(&store, "basis_kv"), Some(251_00));
+    assert_eq!(wert(&store, "basis_kv"), Some(25_100));
     assert_eq!(wert(&store, "basis_pv"), Some(52_00));
     let ereignisse = serde_json::to_string(&store.events()).unwrap();
     for text in ["Techniker", "Krankenversicherung", "Pflegeversicherung", "Zahnarzt", "Beispiel"] {
@@ -259,7 +259,7 @@ fn bank_art9_mit_haken_schreiben_die_regeln_ohne_zweck() {
     let s1 = &serde_json::to_value(ev).unwrap()["signal"]["signal_1"];
     assert_eq!(s1["regel_id"], "krankenversicherung");
     assert_eq!(s1["kategorie"], "krankenversicherung", "Regeln ohne Kategorie tragen die Kennung");
-    assert_eq!(s1["posten"], json!([{"datum": "2025-03-01", "betrag_cent": -251_00, "zweck_maskiert": ""}]));
+    assert_eq!(s1["posten"], json!([{"datum": "2025-03-01", "betrag_cent": -25_100, "zweck_maskiert": ""}]));
     assert_eq!(e.regelhinweise.len(), 2, "{:?}", e.regelhinweise);
     assert!(e.regelhinweise[0].starts_with("basis_kv: ") && e.regelhinweise[0].contains("Beitragsbescheinigung"));
 }
@@ -284,13 +284,13 @@ fn bank_art9_gleiche_posten_zaehlen_im_auszug_beide_und_der_zweite_import_verdop
     ];
     let mut store = Store::leer(2025, None);
     let e = uebernehme_voll(&mut store, &b, nachschlag(), None, None, None, MIT_ART9).unwrap();
-    assert_eq!((e.uebernahme.uebernommen, wert(&store, "basis_kv")), (2, Some(150_00)));
+    assert_eq!((e.uebernahme.uebernommen, wert(&store, "basis_kv")), (2, Some(15_000)));
     // Derselbe Auszug noch einmal, auch mit dem Haken zum Ersetzen: dieselbe Menge, nichts Neues.
     for ersetzen in [false, true] {
         let e = uebernehme_voll(&mut store, &b, nachschlag(), None, None, None, Haken { ersetzen, art9: true }).unwrap();
         assert_eq!((e.uebernahme.schon_erfasst, e.uebernahme.uebernommen, e.uebernahme.ersetzbar), (2, 0, 0), "{:?}", e.uebernahme);
         assert_eq!(store.events().len(), 1, "kein neues Ereignis");
-        assert_eq!(wert(&store, "basis_kv"), Some(150_00), "die Summe bleibt");
+        assert_eq!(wert(&store, "basis_kv"), Some(15_000), "die Summe bleibt");
     }
 }
 

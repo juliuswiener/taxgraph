@@ -1097,7 +1097,8 @@ Das hat der Nutzer bereits bestätigt:\n";
     let (s, a) = post(
         &d,
         "/fall/ko1/kontoauszug",
-        &json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n01.03.2025;-50,00;Einkauf Wochenmarkt\n"}),
+        &json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n01.03.2025;-50,00;Einkauf Wochenmarkt\n",
+            "ki_buchungstext": true}),
     )
     .await;
     assert_eq!(s, 200, "{a}");

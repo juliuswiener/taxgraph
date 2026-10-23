@@ -99,23 +99,21 @@ async fn csv_kategorien_werden_vorlaeufige_vorschlaege() {
         &d,
         "ka1",
         csv(&[
-            "01.03.2025;-480,00;Maler Huber",
-            "02.03.2025;-50,00;Spende Rotes Kreuz",
-            "03.03.2025;-300,00;Minijob-Zentrale",
+            "01.03.2025;-480,00;Spende Unicef Huber",
             "04.03.2025;-1.200,00;Rentenversicherung Ruerup",
             "05.03.2025;1.000,00;Gehalt",
-            "06.03.2025;-20,00;Reinigung Treppenhaus",
             "07.03.2025;-9,99;Einkauf",
         ]),
     )
     .await;
     assert_eq!(status, 200, "{antwort}");
+    // Seit Bankimport S2 schreiben nur Spende und Vorsorge; Handwerker, Reinigung und Minijob sind Nachfragen (eigene Tests unten).
     assert_eq!(
         antwort,
-        json!({"uebernommen": 5, "transaktionen": 7, "verworfen": 0})
+        json!({"uebernommen": 2, "transaktionen": 4, "verworfen": 0})
     );
     let ev = events(&d, "ka1");
-    assert_eq!(ev.len(), 5);
+    assert_eq!(ev.len(), 2);
     for e in &ev {
         assert_eq!(e["schreiber"], "import:kontoauszug");
         assert_eq!(e["zustand"], "vorlaeufig");
@@ -123,16 +121,7 @@ async fn csv_kategorien_werden_vorlaeufige_vorschlaege() {
         assert!(e["signal"]["signal_2"].is_null());
     }
     let felder: Vec<_> = ev.iter().map(|e| e["feld_id"].as_str().unwrap()).collect();
-    assert_eq!(
-        felder,
-        [
-            "hh_handwerker_betrag",
-            "spenden_betrag",
-            "hh_minijob_betrag",
-            "vor_rv_ausserhalb_lstb",
-            "hh_dienstleistung_betrag"
-        ]
-    );
+    assert_eq!(felder, ["spenden_betrag", "vor_rv_ausserhalb_lstb"]);
     // Der Saldo steht ohne Vorzeichen im Feld; die Posten stehen mit Vorzeichen und ISO-Datum im
     // Beleg (`signal_1`, Bankimport S1). Die alten Schluessel `betrag`/`datum` gibt es nicht mehr.
     assert_eq!(ev[0]["wert"], 48_000);
@@ -141,11 +130,14 @@ async fn csv_kategorien_werden_vorlaeufige_vorschlaege() {
     assert_eq!(s1["jahr"], 2025);
     assert_eq!(s1["summe_cent"], 48_000);
     assert_eq!(s1["quelle"], "heuristik");
+    assert_eq!(s1["kategorie"], "spende");
+    assert_eq!(s1["regel_id"], "spende");
     assert_eq!(s1["posten"].as_array().unwrap().len(), 1);
     assert_eq!(s1["posten"][0]["betrag_cent"], -48_000);
     assert_eq!(s1["posten"][0]["datum"], "2025-03-01");
-    assert_eq!(s1["posten"][0]["zweck_maskiert"], "Maler Huber");
+    assert_eq!(s1["posten"][0]["zweck_maskiert"], "Spende Unicef Huber");
     assert!(s1.get("betrag").is_none() && s1.get("datum").is_none(), "{s1}");
+    assert_eq!(ev[1]["wert"], 120_000);
 }
 
 #[tokio::test]
@@ -155,13 +147,13 @@ async fn unlesbarer_betrag_faellt_einzeln_raus() {
         &d,
         "ka2",
         csv(&[
-            "01.03.2025;-100000000,00;Maler",
-            "01.03.2025;-99999999,99;Maler",
+            "01.03.2025;-100000000,00;Rentenversicherung",
+            "01.03.2025;-99999999,99;Rentenversicherung",
             "01.03.2025;100000000,00;Gehalt",
-            "01.03.2025;-92233720368547758,07;Maler",
-            "01.03.2025;-92233720368547758,08;Maler",
-            "01.03.2025;-123456789012345678901,00;Maler",
-            "01.03.2025;-abc;Maler",
+            "01.03.2025;-92233720368547758,07;Rentenversicherung",
+            "01.03.2025;-92233720368547758,08;Rentenversicherung",
+            "01.03.2025;-123456789012345678901,00;Rentenversicherung",
+            "01.03.2025;-abc;Rentenversicherung",
             "01.03.2025;99999999,99;Gehalt",
         ]),
     )
@@ -376,7 +368,7 @@ async fn echtdatei_depot_tabelle_ist_ueber_die_route_keine_buchung() {
     let d = dienst();
     let inhalt = "\"Umsätze Girokonto\";\"Zeitraum: 180 Tage\";\r\n\r\n\
         \"Buchungstag\";\"Wertstellung (Valuta)\";\"Vorgang\";\"Buchungstext\";\"Umsatz in EUR\";\r\n\
-        \"15.03.2025\";\"15.03.2025\";\"Lastschrift\";\"Maler Huber Rechnung\";\"-480,00\";\r\n\
+        \"15.03.2025\";\"15.03.2025\";\"Lastschrift\";\"Spende Tierheim Muster\";\"-480,00\";\r\n\
         \"16.03.2025\";\"16.03.2025\";\"Lastschrift\";\"Einkauf\";\"-12,50\";\r\n\
         \"17.03.2025\";\"17.03.2025\";\"Gutschrift\";\"Gehalt\";\"2.000,00\";\r\n\r\n\
         \"Summe Ausgaben\";\"-492,50 EUR\";\r\n\r\n\
@@ -447,8 +439,8 @@ async fn zielfeld_gilt_je_scheibe_und_wird_nicht_ueberschrieben() {
     // Zwei Buchungen derselben Kategorie ergeben EINEN Vorschlag mit der Summe (Bankimport S1; Python nahm die
     // erste). Derselbe Auszug noch einmal aendert nichts: die Buchungen stehen schon im Vorschlag (S1b, d-63).
     let rumpf = json!({"format": "json", "inhalt": [
-        {"datum": "2025-03-01", "betrag": -100, "verwendungszweck": "Maler"},
-        {"datum": "2025-03-02", "betrag": -200, "verwendungszweck": "Klempner"}]});
+        {"datum": "2025-03-01", "betrag": -100, "verwendungszweck": "Spende Tierheim"},
+        {"datum": "2025-03-02", "betrag": -200, "verwendungszweck": "Spende Unicef"}]});
     let (_, antwort) = auszug(&d, "kz2", rumpf.clone()).await;
     assert_eq!(antwort["uebernommen"], 2);
     assert_eq!(events(&d, "kz2")[0]["wert"], 300);
@@ -661,7 +653,7 @@ async fn zweck_datum_und_csv_randfaelle() {
         let (s, a) = auszug(
             &d,
             &format!("kc1{i}"),
-            csv(&[&format!("01.03.2025;{betrag};Maler")]),
+            csv(&[&format!("01.03.2025;{betrag};Spende Tierheim")]),
         )
         .await;
         assert_eq!(s, 200, "{betrag}: {a}");
@@ -834,7 +826,7 @@ async fn eine_csv_datei_mit_vorspann_ergibt_vorschlaege() {
     let d = dienst();
     let dkb = "\"Girokonto\";\"DE89370400440532013000\"\n\n\"Kontostand vom 31.12.2025:\";\"5.000,01 EUR\"\n\n\
 \"Buchungsdatum\";\"Wertstellung\";\"Status\";\"Zahlungsempfänger*in\";\"Verwendungszweck\";\"Betrag (€)\"\n\
-\"15.03.25\";\"15.03.25\";\"Gebucht\";\"Maler Müller GmbH\";\"Rechnung 123 Malerarbeiten\";\"-480,00\"\n\
+\"15.03.25\";\"15.03.25\";\"Gebucht\";\"Rente Müller GmbH\";\"Beitrag 123 Basisrente\";\"-480,00\"\n\
 \"20.03.25\";\"20.03.25\";\"Gebucht\";\"Rotes Kreuz\";\"Spende Rotes Kreuz\";\"-50,00\"\n";
     let (status, antwort) = auszug(&d, "kv1", json!({"format": "csv", "inhalt": dkb})).await;
     assert_eq!(status, 200, "{antwort}");
@@ -844,7 +836,7 @@ async fn eine_csv_datei_mit_vorspann_ergibt_vorschlaege() {
     );
     let ev = events(&d, "kv1");
     let felder: Vec<_> = ev.iter().map(|e| e["feld_id"].as_str().unwrap()).collect();
-    assert_eq!(felder, ["hh_handwerker_betrag", "spenden_betrag"]);
+    assert_eq!(felder, ["vor_rv_ausserhalb_lstb", "spenden_betrag"]);
     assert_eq!(ev[0]["wert"], 48_000);
     assert_eq!(ev[0]["signal"]["signal_1"]["posten"][0]["datum"], "2025-03-15", "15.03.25 wird 2025");
 }
@@ -964,10 +956,10 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
         a["hinweis"],
         "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das dieser Fall nicht führt."
     );
-    // Zwei Maler in einem Auszug: EIN Vorschlag mit der Summe, beide Buchungen zählen (Bankimport S1) -- kein Hinweis.
+    // Zwei Spenden in einem Auszug: EIN Vorschlag mit der Summe, beide Buchungen zählen (Bankimport S1) -- kein Hinweis.
     let zwei = csv(&[
-        "01.03.2025;-100,00;Maler Huber",
-        "02.03.2025;-200,00;Maler Meier",
+        "01.03.2025;-100,00;Spende Tierheim Huber",
+        "02.03.2025;-200,00;Spende Unicef Meier",
     ]);
     let (_, a) = auszug(&d, "kh3", zwei.clone()).await;
     assert_eq!(
@@ -987,19 +979,23 @@ async fn csv_ohne_vorschlag_nennt_die_zahl_je_grund() {
     let (s, _) = sende(
         &d,
         "/fall/kh4/event",
-        &json!({"feld_id": "hh_handwerker_betrag", "wert": 1_000, "zustand": "bestaetigt",
+        &json!({"feld_id": "spenden_betrag", "wert": 1_000, "zustand": "bestaetigt",
             "herkunft": {"haftung": "nutzer", "herkunft": "laie", "pruef_tiefe": "ungeprueft"},
-            "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": "ok@hh_handwerker_betrag"}}),
+            "schreiber": "ui:laie", "signal": {"signal_1": null, "signal_2": "ok@spenden_betrag"}}),
     )
     .await;
     assert_eq!(s, 201);
     let mut mit_haken = zwei.clone();
     mit_haken["ersetzen"] = json!(true);
     let (_, a) = sende(&d, "/fall/kh4/kontoauszug", &mit_haken).await;
+    // Seit S2 nennt die Antwort daneben den Abgleich (Beleg schlaegt Konto): was das Konto ergaebe, schreibt es nicht.
     assert_eq!(
         a["hinweis"],
-        "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, das schon einen Wert hat."
+        "2 Buchung(en) gelesen, aber kein Vorschlag: 2 Buchung(en) für ein Feld, das schon einen Wert hat. \
+         Abgleich: Für spenden_betrag gilt schon ein Wert aus einem Beleg, einer Eingabe oder einem früheren Import. \
+         Das Konto zeigt 300,00 € aus 2 Buchung(en); der Kontoauszug schreibt dort nichts."
     );
+    assert_eq!(a["abgleich"], json!([{"feld_id": "spenden_betrag", "summe_cent": 30_000, "anzahl": 2}]));
     assert_eq!(events(&d, "kh4").len(), 1);
 }
 
@@ -1108,14 +1104,14 @@ async fn ersetzen_muss_ein_wahrheitswert_sein() {
 #[tokio::test]
 async fn die_antwort_nennt_jahr_datum_und_saldo_auch_neben_einem_vorschlag() {
     let d = dienst();
-    // Ein Vorschlag (Maler), dazu eine Buchung aus 2024, eine ohne Jahr, und eine Spende, die zurückgebucht wurde.
+    // Ein Vorschlag (Vorsorge), dazu eine Buchung aus 2024, eine ohne Jahr, und eine Spende, die zurückgebucht wurde.
     let (s, a) = auszug(
         &d,
         "kj1",
         csv(&[
-            "01.03.2025;-100,00;Maler Huber",
+            "01.03.2025;-100,00;Rentenversicherung Huber",
             "30.12.2024;-50,00;Spende Rotes Kreuz",
-            "15.03;-20,00;Maler ohne Jahr",
+            "15.03;-20,00;Rentenversicherung ohne Jahr",
             "01.02.2025;-80,00;Spende Tierheim",
             "10.02.2025;80,00;Rueckbuchung Spende Tierheim",
         ]),
@@ -1128,8 +1124,8 @@ async fn die_antwort_nennt_jahr_datum_und_saldo_auch_neben_einem_vorschlag() {
             "hinweis": "Nicht gezählt: 1 Buchung(en) außerhalb des Veranlagungsjahrs; 1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT); 2 Buchung(en) in einem Feld, dessen Saldo nach Rückbuchungen null oder negativ ist."})
     );
     let ev = events(&d, "kj1");
-    assert_eq!(ev.len(), 1, "nur der Maler; die ausgeglichene Spende schreibt nichts");
-    assert_eq!(ev[0]["feld_id"], "hh_handwerker_betrag");
+    assert_eq!(ev.len(), 1, "nur die Vorsorge; die ausgeglichene Spende schreibt nichts");
+    assert_eq!(ev[0]["feld_id"], "vor_rv_ausserhalb_lstb");
     // Weder Zweck noch Gegenpartei der nicht gezählten Buchungen steht in der Antwort.
     let text = a.to_string();
     assert!(!text.contains("Tierheim") && !text.contains("Rotes Kreuz") && !text.contains("ohne Jahr"), "{text}");
@@ -1252,4 +1248,113 @@ async fn bank_beleg_schlaegt_konto_antwort_nennt_den_abgleich() {
     assert_eq!(a["abgleich"], json!([{"feld_id": "spenden_betrag", "summe_cent": 35_00, "anzahl": 2}]), "{a}");
     let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
     assert!(hinweis.contains("Abgleich") && hinweis.contains("35,00 €"), "{hinweis}");
+}
+
+/// `ki_buchungstext` und `art9` sind Wahrheitswerte oder fehlen; alles andere ist 400 (wie `ersetzen`), bevor der Auszug gelesen
+/// wird. Der Rumpf mit beiden Haken auf `false` oder ohne sie liest den Auszug.
+#[tokio::test]
+async fn bank_haken_muessen_wahrheitswerte_sein() {
+    let d = dienst();
+    fall_anlegen(&d, "bh1", "gesamt").await;
+    for haken in ["ki_buchungstext", "art9"] {
+        for wert in [json!("ja"), json!(1), json!(null), json!([]), json!({"a": true})] {
+            let mut b = csv(&["01.03.2025;-31,00;Spende Tierheim"]);
+            b[haken] = wert.clone();
+            let (s, a) = sende(&d, "/fall/bh1/kontoauszug", &b).await;
+            assert_eq!((s, a), (400, json!({"fehler": format!("{haken} muss true oder false sein")})), "{haken}={wert}");
+        }
+    }
+    assert_eq!(events(&d, "bh1").len(), 0, "ein ungueltiger Haken schreibt nichts");
+    let mut b = csv(&["01.03.2025;-31,00;Spende Tierheim"]);
+    b["ki_buchungstext"] = json!(false);
+    b["art9"] = json!(false);
+    let (s, a) = sende(&d, "/fall/bh1/kontoauszug", &b).await;
+    assert_eq!((s, &a["uebernommen"]), (200, &json!(1)), "{a}");
+}
+
+/// Art. 9 (d-60) an der Route: ohne den Haken schlaegt keine Gesundheits-Regel an, die Buchungen zaehlen als nicht ausgewertet und
+/// die Antwort sagt es; mit dem Haken schreiben `basis_kv` und `basis_pv` je eine Summe, deren Posten KEINEN Zweck tragen.
+/// Weder Akte noch Audit noch Fehlerlog noch Antwort tragen den Buchungstext. Die Texte sind erfunden.
+#[tokio::test]
+async fn bank_art9_route_ohne_haken_gesperrt_und_mit_haken_ohne_zweck() {
+    let d = dienst();
+    let zeilen = [
+        "01.03.2025;-262,00;Muster Krankenkasse Beitrag Zebra",
+        "02.03.2025;-57,00;Muster Pflegeversicherung Beitrag Zebra",
+        "03.03.2025;-13,00;Zahnarzt Dr. Beispiel Zebra",
+    ];
+    // Ohne den Haken.
+    let (s, a) = auszug(&d, "ba1", csv(&zeilen)).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!((&a["uebernommen"], &a["transaktionen"]), (&json!(0), &json!(3)), "{a}");
+    assert_eq!(events(&d, "ba1").len(), 0, "ohne Haken schreibt keine Gesundheits-Regel");
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("3 Buchung(en) mit Bezug zu Gesundheit, Gewerkschaft oder Kirche wurden nicht ausgewertet"), "{hinweis}");
+    // Mit dem Haken.
+    let mut b = csv(&zeilen);
+    b["art9"] = json!(true);
+    fall_anlegen(&d, "ba2", "gesamt").await;
+    let (s, a) = sende(&d, "/fall/ba2/kontoauszug", &b).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!((&a["uebernommen"], &a["transaktionen"]), (&json!(2), &json!(3)), "{a}");
+    let ev = events(&d, "ba2");
+    let felder: Vec<_> = ev.iter().map(|e| (e["feld_id"].as_str().unwrap(), e["wert"].clone())).collect();
+    assert_eq!(felder, [("basis_kv", json!(262_00)), ("basis_pv", json!(57_00))]);
+    for e in &ev {
+        assert_eq!(e["zustand"], "vorlaeufig");
+        let s1 = &e["signal"]["signal_1"];
+        assert_eq!(s1["posten"].as_array().unwrap().len(), 1, "{s1}");
+        assert_eq!(s1["posten"][0]["zweck_maskiert"], "", "der Posten einer Art.-9-Regel traegt keinen Zweck: {s1}");
+    }
+    assert_eq!(ev[0]["signal"]["signal_1"]["regel_id"], "krankenversicherung");
+    assert_eq!(ev[1]["signal"]["signal_1"]["regel_id"], "pflegeversicherung");
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("Beitragsbescheinigung"), "der Satz der Regel fehlt: {hinweis}");
+    assert!(a["hinweis"].as_str().is_some_and(|h| !h.contains("wurden nicht ausgewertet")), "kein Gesperrt-Satz mit Haken: {hinweis}");
+    // Der Text steht nirgends: weder in der Antwort noch in einer Akte, im Audit oder im Fehlerlog.
+    let audit = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap_or_default();
+    let fehler = std::fs::read_to_string(d.zustand.konfig.fehler_pfad()).unwrap_or_default();
+    let akten: String = ["ba1", "ba2"]
+        .iter()
+        .map(|id| std::fs::read_to_string(d.zustand.konfig.faelle.join(format!("{id}.json"))).unwrap())
+        .collect();
+    for (wo, inhalt) in [("Akte", &akten), ("Audit", &audit), ("Fehlerlog", &fehler), ("Antwort", &a.to_string())] {
+        assert!(!inhalt.contains("Zebra"), "der Buchungstext steht in {wo}");
+    }
+    assert!(audit.contains("haken_art9=true") && audit.contains("haken_art9=false"), "Kontrolle: das Audit nennt beide Haken-Zustaende: {audit}");
+}
+
+/// Das Protokoll haelt den Import mit Zaehlern und Haken fest, nie mit Text, Betrag oder Datum der Buchungen. Neben der Zeile des
+/// Dispatchers (`fall_kontoauszug`, Status) steht eine Zeile `bank_import`; ohne KI keine Zeile `llm_call`.
+#[tokio::test]
+async fn bank_import_audit_nennt_zaehler_und_haken_ohne_text_und_betrag() {
+    let d = dienst();
+    let (s, a) = auszug(
+        &d,
+        "bz1",
+        csv(&["06.03.2025;-77,00;Maler Quokka", "07.03.2025;-19,00;Spende Tierheim", "08.03.2025;1.000,00;Gehalt"]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    let eintraege = store::audit::lies(&d.zustand.konfig.audit_pfad()).unwrap();
+    let dieser: Vec<_> = eintraege.iter().filter(|e| e.fall_id.as_deref() == Some("bz1")).collect();
+    let aktionen: Vec<&str> = dieser.iter().map(|e| e.action.als_str()).collect();
+    assert!(aktionen.contains(&"fall_kontoauszug"), "Zeile des Dispatchers: {aktionen:?}");
+    assert!(!aktionen.contains(&"llm_call"), "ohne Haken kein Aufruf des Modells: {aktionen:?}");
+    let import: Vec<_> = dieser.iter().filter(|e| e.action.als_str() == "bank_import").collect();
+    assert_eq!(import.len(), 1, "{aktionen:?}");
+    let detail = import[0].detail.as_deref().unwrap();
+    for teil in [
+        "transaktionen=3 ",
+        "uebernommen=1 ",
+        "nachgefragt=1 ",
+        "art9_gesperrt=0 ",
+        "einnahmen=1 ",
+        "haken_ersetzen=false haken_art9=false haken_ki_buchungstext=false ki_aufrufe=0",
+    ] {
+        assert!(detail.contains(teil), "{teil:?} fehlt: {detail}");
+    }
+    for geheim in ["Maler", "Quokka", "Tierheim", "7700", "77,00", "1900", "2025-03"] {
+        assert!(!detail.contains(geheim), "{geheim:?} steht im Protokoll: {detail}");
+    }
 }

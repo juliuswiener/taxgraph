@@ -401,11 +401,12 @@ async fn art9_werte_der_akte_erreichen_das_sprachmodell_auf_keinem_weg() {
     // --- Weg 1: der Chat, drei Stufen.
     let (s, a) = post(&d, "/fall/a9/chat", &json!({"text": TEXT})).await;
     assert_eq!(s, 200, "{a}");
-    // --- Weg 2: der Kontoauszug, eine Buchung, die kein Stichwort trifft und darum das Modell fragt.
+    // --- Weg 2: der Kontoauszug, eine Buchung, die kein Stichwort trifft und darum das Modell fragt (nur mit dem Haken, d-59).
     let (s, a) = post(
         &d,
         "/fall/a9/kontoauszug",
-        &json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n07.03.2025;-9,99;Einkauf\n"}),
+        &json!({"format": "csv", "inhalt": "datum;betrag;verwendungszweck\n07.03.2025;-9,99;Einkauf\n",
+            "ki_buchungstext": true}),
     )
     .await;
     assert_eq!(s, 200, "{a}");
@@ -478,8 +479,8 @@ static LLM_UMGEBUNG: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 /// Die Texte sind erfunden.
 #[tokio::test]
 async fn art9_buchungstext_erreicht_ohne_haken_nie_das_sprachmodell() {
-    let _sperre = LLM_UMGEBUNG.lock().await;
     const ART9: [&str; 3] = ["Zahnarzt Dr. Beispiel", "ver.di Mitgliedsbeitrag", "Kirchensteuer Erzbistum"];
+    let _sperre = LLM_UMGEBUNG.lock().await;
     let inhalt = format!(
         "datum;betrag;verwendungszweck\n01.03.2025;-41,17;{}\n02.03.2025;-22,33;{}\n03.03.2025;-55,44;{}\n04.03.2025;-9,99;Muster Einkauf 4711\n",
         ART9[0], ART9[1], ART9[2]
@@ -526,5 +527,18 @@ async fn art9_buchungstext_erreicht_ohne_haken_nie_das_sprachmodell() {
                 assert!(!inhalt.contains(text), "ki={ki} art9={art9}: {text:?} steht in {wo}");
             }
         }
+        // Das Protokoll nennt die Haken und die Zahl der Aufrufe an das Modell (je Import eine Zeile `bank_import`; eine Zeile
+        // `llm_call` nur, wenn das Modell gefragt wurde).
+        let eintraege = store::audit::lies(&d.zustand.konfig.audit_pfad()).unwrap();
+        let dieser: Vec<_> = eintraege.iter().filter(|e| e.fall_id.as_deref() == Some(fall.as_str())).collect();
+        let import: Vec<_> = dieser.iter().filter(|e| e.action.als_str() == "bank_import").collect();
+        assert_eq!(import.len(), 1, "ki={ki} art9={art9}: {dieser:?}");
+        let detail = import[0].detail.as_deref().unwrap();
+        assert!(
+            detail.ends_with(&format!("haken_ersetzen=false haken_art9={art9} haken_ki_buchungstext={ki} ki_aufrufe={soll}")),
+            "ki={ki} art9={art9}: {detail}"
+        );
+        let llm_zeilen = dieser.iter().filter(|e| e.action.als_str() == "llm_call").count();
+        assert_eq!(llm_zeilen, usize::from(soll > 0), "ki={ki} art9={art9}: {dieser:?}");
     }
 }

@@ -6,18 +6,23 @@
 //! Eine Buchung, deren Betrag nicht lesbar ist oder ab 10^10 Cent liegt, fliegt einzeln raus und
 //! zählt in `verworfen`; den Auszug ganz abzulehnen ist ausdrücklich nicht gewollt (Vault
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
+use std::cell::Cell;
+
 use domain::py_strip;
+use eingang::bank::regeln::Art;
 use eingang::kontoauszug::{
-    aus_json, hinweis_ersetzbar, hinweis_ersetzt, hinweis_fremde_zeilen, hinweis_nicht_gezaehlt,
-    hinweis_nichts_gelesen, hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund,
-    parse_pdf_zeilen,
-    pruefe_buchungsfelder, uebernehme_mit, verwirf_unlesbare_betraege,
-    verwirf_unlesbare_betraege_json, Ersetzung, Klassifikator, KontoauszugFehler, Transaktion,
-    LLM_AUFRUFE_HOECHSTZAHL,
+    aus_json, hinweis_abgleich, hinweis_art9_gesperrt, hinweis_ersetzbar, hinweis_ersetzt,
+    hinweis_fremde_zeilen, hinweis_nachfragen, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen,
+    hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen,
+    pruefe_buchungsfelder, uebernehme_voll, verwirf_unlesbare_betraege,
+    verwirf_unlesbare_betraege_json, Abgleich, CsvBefund, Ersetzung, Haken, Klassifikator,
+    KontoauszugFehler, Nachfrage, Transaktion, Uebernahme, LLM_AUFRUFE_HOECHSTZAHL,
 };
 use eingang::ocr::{lies_kontoauszug_pdf, OcrFehler};
 use eingang::vorschlag::SchreibFehler;
+use llm::pii::Maskiert;
 use serde_json::{json, Map, Value};
+use store::audit::{anhaengen, AuditAktion};
 use store::BindungNachschlag;
 
 use crate::antwort::Antwort;
@@ -216,7 +221,56 @@ fn pdf_lesen(bytes: &[u8]) -> Result<(Vec<Transaktion>, usize), ApiFehler> {
     Ok(parse_pdf_zeilen(&text, &konfidenz, PDF_SCHWELLE))
 }
 
-/// Der Klassifikator für Buchungen, die kein Stichwort trifft (`_kontoauszug_llm_klassifikator`).
+/// Ein Haken des Rumpfs: fehlt er, ist er `false`; ein anderer Typ als ein Wahrheitswert ist 400.
+fn haken_lesen(b: &Map<String, Value>, name: &str) -> Result<bool, ApiFehler> {
+    match b.get(name) {
+        None => Ok(false),
+        Some(Value::Bool(haken)) => Ok(*haken),
+        Some(_) => Err(ApiFehler::status(400, format!("{name} muss true oder false sein"))),
+    }
+}
+
+/// Die Protokollzeile eines Imports (Bankimport S2): die Zaehler, die Haken und die Zahl der Aufrufe an das Sprachmodell. NIE ein
+/// Buchungstext, ein Betrag oder ein Datum: das Protokoll gehoert zum Datenschutz-Nebenkanal (`store::audit`). Die Zeile des
+/// Dispatchers (`fall_kontoauszug`, Status) bleibt daneben bestehen. Ein Schreibfehler kippt die Antwort nicht (die Akte steht).
+fn protokolliere_import(
+    z: &Dienst,
+    fall: &EigenerFall,
+    u: &Uebernahme,
+    transaktionen: usize,
+    verworfen: usize,
+    (ersetzen, art9, ki_buchungstext): (bool, bool, bool),
+    ki_aufrufe: usize,
+) {
+    let nutzer = fall.nutzer().map(auth::Username::as_str);
+    // Eine Zeile: das Inventar der Protokoll-Aufrufer (`store/tests/audit_aufrufer.rs`) fuehrt die Vorlage als Schluessel.
+    let detail = format!(
+        "transaktionen={transaktionen} verworfen={verworfen} uebernommen={} nachgefragt={} art9_gesperrt={} llm_uebersprungen={} einnahmen={} ohne_stichwort={} partei={} feld_fehlt={} feld_belegt={} anderes_jahr={} datum_unlesbar={} saldo_nicht_positiv={} ersetzbar={} schon_erfasst={} haken_ersetzen={ersetzen} haken_art9={art9} haken_ki_buchungstext={ki_buchungstext} ki_aufrufe={ki_aufrufe}",
+        u.uebernommen,
+        u.nachgefragt,
+        u.art9_gesperrt,
+        u.llm_uebersprungen,
+        u.einnahmen,
+        u.ohne_stichwort,
+        u.partei,
+        u.feld_fehlt,
+        u.feld_belegt,
+        u.anderes_jahr,
+        u.datum_unlesbar,
+        u.saldo_nicht_positiv,
+        u.ersetzbar,
+        u.schon_erfasst,
+    );
+    let pfad = z.konfig.audit_pfad();
+    let fall_id = Some(fall.id().as_str());
+    let _ = anhaengen(&pfad, nutzer, AuditAktion::from("bank_import"), fall_id, Some(&detail));
+    if ki_aufrufe > 0 {
+        let _ = anhaengen(&pfad, nutzer, AuditAktion::LlmCall, fall_id, Some(&format!("bank_import aufrufe={ki_aufrufe}")));
+    }
+}
+
+/// Der Klassifikator für Buchungen, die kein Stichwort trifft (`_kontoauszug_llm_klassifikator`), nur mit dem Haken
+/// `ki_buchungstext` gebaut (d-59).
 /// ABWEICHUNG von Python (Plan Nr. 107): ohne Provider-Angaben in der Umgebung gibt es keinen. Python
 /// liefert dort einen Klassifikator, der immer `None` gibt, und zählt den Deckel von
 /// 50 Aufrufen trotzdem; der Hinweis „die Grenze von 50 Klassifikationen war erreicht … in kleineren
@@ -317,6 +371,74 @@ fn ersetzungen_melden(
     hinweise.extend(satz);
 }
 
+/// Format und Inhalt lesen und die Buchungen mit unlesbarem Betrag einzeln verwerfen: `(Buchungen, Zahl der verworfenen, Befund
+/// der CSV-Datei)`.
+fn lies_auszug(
+    fmt: &str,
+    inhalt: &Value,
+) -> Result<(Vec<Transaktion>, usize, Option<CsvBefund>), ApiFehler> {
+    Ok(match fmt {
+        "csv" => {
+            let (tx, n, befund) =
+                parse_csv_befund(inhalt.as_str().unwrap_or("")).map_err(|e| lese_fehler(&e))?;
+            let (tx, n) = verwirf_unlesbare_betraege(tx, n);
+            (tx, n, Some(befund))
+        }
+        "json" => {
+            let (liste, marke) = json_liste(inhalt)?;
+            let (ok, n) = verwirf_unlesbare_betraege_json(&liste, 0);
+            // Datum und Zweck, die die Akte nicht hält: 422 (`api.kontoauszug`, vorher 500 beim Schreiben).
+            pruefe_buchungsfelder(&ok, marke.as_deref()).map_err(|text| {
+                ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {text}"))
+            })?;
+            let tx = aus_json(&Value::Array(ok)).map_err(|e| lese_fehler(&e))?;
+            (tx, n, None)
+        }
+        "pdf" => {
+            let (tx, n) = pdf_lesen(&pdf_bytes(inhalt)?)?;
+            let (tx, n) = verwirf_unlesbare_betraege(tx, n);
+            (tx, n, None)
+        }
+        _ => {
+            return Err(ApiFehler::status(
+                400,
+                "format muss csv, json oder pdf sein",
+            ))
+        }
+    })
+}
+
+/// Bankimport S2: § 35a ohne Betrag im Feld (d-61), Beleg schlägt Konto, Art.-9-Sperre. `nachfragen` und `abgleich` stehen nur
+/// in der Antwort, wenn sie Einträge haben; die Sätze dazu kommen in den Hinweis.
+fn s2_melden(
+    erg: &Uebernahme,
+    nachfragen: &[Nachfrage],
+    abgleich: &[Abgleich],
+    aus: &mut Map<String, Value>,
+    hinweise: &mut Vec<String>,
+) {
+    if !nachfragen.is_empty() {
+        let liste: Vec<Value> = nachfragen
+            .iter()
+            .map(|n| {
+                json!({"feld_id": n.feld_id, "art": Art::ArbeitskostenNachfragen.als_str(), "datum": n.datum,
+                    "betrag_cent": n.betrag_cent, "zweck_maskiert": n.zweck_maskiert})
+            })
+            .collect();
+        aus.insert("nachfragen".into(), Value::Array(liste));
+    }
+    if !abgleich.is_empty() {
+        let liste: Vec<Value> = abgleich
+            .iter()
+            .map(|a| json!({"feld_id": a.feld_id, "summe_cent": a.summe_cent, "anzahl": a.anzahl}))
+            .collect();
+        aus.insert("abgleich".into(), Value::Array(liste));
+    }
+    hinweise.extend(hinweis_nachfragen(erg.nachgefragt));
+    hinweise.extend(hinweis_art9_gesperrt(erg.art9_gesperrt));
+    hinweise.extend(hinweis_abgleich(abgleich));
+}
+
 /// Der Rumpf nach dem Owner-Check: Format, Inhalt, Lesen, Verwerfen, Übernehmen, Speichern.
 ///
 /// # Errors
@@ -333,54 +455,34 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     let fmt = format_lesen(b)?;
     // Der Haken der Entscheidung d-63 (Bankimport S1b): fehlt er, ersetzt der Auszug keinen
     // bisherigen Vorschlag, sondern zeigt ihn nur. Andere Typen als ein Wahrheitswert sind 400.
-    let ersetzen = match b.get("ersetzen") {
-        None => false,
-        Some(Value::Bool(haken)) => *haken,
-        Some(_) => return Err(ApiFehler::status(400, "ersetzen muss true oder false sein")),
-    };
-    let inhalt = b.get("inhalt").unwrap_or(&NICHTS);
-    let mut csv_befund = None;
-    let (tx, n_verworfen) = match fmt.as_str() {
-        "csv" => {
-            let (tx, n, befund) =
-                parse_csv_befund(inhalt.as_str().unwrap_or("")).map_err(|e| lese_fehler(&e))?;
-            csv_befund = Some(befund);
-            verwirf_unlesbare_betraege(tx, n)
-        }
-        "json" => {
-            let (liste, marke) = json_liste(inhalt)?;
-            let (ok, n) = verwirf_unlesbare_betraege_json(&liste, 0);
-            // Datum und Zweck, die die Akte nicht hält: 422 (`api.kontoauszug`, vorher 500 beim Schreiben).
-            pruefe_buchungsfelder(&ok, marke.as_deref()).map_err(|text| {
-                ApiFehler::status(422, format!("Kontoauszug nicht lesbar: {text}"))
-            })?;
-            let tx = aus_json(&Value::Array(ok)).map_err(|e| lese_fehler(&e))?;
-            (tx, n)
-        }
-        "pdf" => {
-            let (tx, n) = pdf_lesen(&pdf_bytes(inhalt)?)?;
-            verwirf_unlesbare_betraege(tx, n)
-        }
-        _ => {
-            return Err(ApiFehler::status(
-                400,
-                "format muss csv, json oder pdf sein",
-            ))
-        }
-    };
+    let ersetzen = haken_lesen(b, "ersetzen")?;
+    // Die Haken der Bankimport-Entscheidungen d-59 (KI auf den Buchungstext) und d-60 (Art.-9-Regeln): fehlt einer, gilt false.
+    let ki_buchungstext = haken_lesen(b, "ki_buchungstext")?;
+    let art9 = haken_lesen(b, "art9")?;
+    let (tx, n_verworfen, csv_befund) = lies_auszug(&fmt, b.get("inhalt").unwrap_or(&NICHTS))?;
     let katalog = z.katalog()?;
-    let klassifikator = klassifikator();
-    let (erg, ersetzungen) = uebernehme_mit(
+    // Das Sprachmodell sieht einen Buchungstext nur mit dem Haken (d-59). Ohne Haken wird die Umgebung nicht einmal gelesen.
+    let basis = if ki_buchungstext { klassifikator() } else { None };
+    let ki_nicht_eingerichtet = ki_buchungstext && basis.is_none();
+    let ki_aufrufe = Cell::new(0_usize);
+    let gezaehlt = |zweck: &Maskiert, betrag: i64| {
+        ki_aufrufe.set(ki_aufrufe.get() + 1);
+        basis.as_deref().and_then(|k| k(zweck, betrag))
+    };
+    let klassifikator = basis.as_ref().map(|_| &gezaehlt as &Klassifikator<'_>);
+    let ergebnis = uebernehme_voll(
         fall.store_mut(),
         &tx,
         BindungNachschlag::neu(&sb.index),
-        klassifikator.as_deref(),
+        klassifikator,
         None,
         Some(&katalog),
-        ersetzen,
+        Haken { ersetzen, art9 },
     )
     .map_err(|e| lese_fehler(&e))?;
+    let (erg, ersetzungen) = (ergebnis.uebernahme, ergebnis.ersetzungen);
     store::speichere(fall.pfad(), fall.store().datei())?;
+    protokolliere_import(z, fall, &erg, tx.len(), n_verworfen, (ersetzen, art9, ki_buchungstext), ki_aufrufe.get());
     let mut aus = Map::new();
     aus.insert("uebernommen".into(), json!(erg.uebernommen));
     aus.insert("transaktionen".into(), json!(tx.len()));
@@ -413,6 +515,15 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     // Felder mit eigenem Vorschlag aus einem frueheren Auszug (S1b, d-63): ohne Haken die Vorschau,
     // mit Haken das Ersetzte. Die Liste steht auch strukturiert in der Antwort.
     ersetzungen_melden(&ersetzungen, ersetzen, &mut aus, &mut hinweise);
+    s2_melden(&erg, &ergebnis.nachfragen, &ergebnis.abgleich, &mut aus, &mut hinweise);
+    hinweise.extend(ergebnis.regelhinweise);
+    if ki_nicht_eingerichtet {
+        hinweise.push(
+            "Die KI-Einordnung war angefordert, ist aber nicht eingerichtet (es fehlen die Zugangsdaten). \
+             Buchungen ohne Stichwort blieben ohne Vorschlag."
+                .to_owned(),
+        );
+    }
     if erg.llm_uebersprungen > 0 {
         // Ohne diesen Hinweis wäre der Deckel eine stille Kürzung.
         aus.insert("llm_uebersprungen".into(), json!(erg.llm_uebersprungen));
