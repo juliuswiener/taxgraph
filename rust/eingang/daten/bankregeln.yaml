@@ -1,0 +1,44 @@
+# Regelkatalog des Bankimports (Bankimport S2). Eine Regel ordnet Buchungen anhand von Stichwoertern im
+# Verwendungszweck einem Feld zu. Die Reihenfolge gilt: die erste Regel, deren Stichwort im kleingeschriebenen Zweck steht,
+# gewinnt. Stichwoerter stehen kleingeschrieben.
+#
+#   id          Kennung, eindeutig
+#   feld        Zielfeld der Bindung
+#   kategorie   Kategorie der KI-Antwort und des Altbestands (llm::Kategorie); fehlt bei Regeln ohne KI-Weg
+#   stichworte  Teilwoerter des Zwecks
+#   quelle      Datei unter sources/ oder params/, die die Behandlung des Felds traegt
+#   ponytail    Obergrenze und Ausbauweg dort, wo keine Quelle die Regel traegt (ein Waechter verlangt eines von beiden)
+#
+# Das Repo hat keine Quelle fuer Gegenparteinamen oder Branchenwoerter: die Stichwortlisten sind von Hand geschrieben.
+
+- id: handwerker
+  feld: hh_handwerker_betrag
+  kategorie: handwerker
+  stichworte: [maler, "sanitär", elektr, dachdeck, handwerk, installat, klempner, heizung, renovier, modernisier]
+  ponytail: "Stichwortliste von Hand; trifft nur diese Wortanfaenge. Ausbau: ein Verzeichnis von Gewerken, sobald eines im Repo liegt."
+
+- id: dienstleistung
+  feld: hh_dienstleistung_betrag
+  kategorie: dienstleistung
+  stichworte: [reinigung, putzhilfe, gartenpfleg, hausmeister, "gebäudereinig", fensterputz, winterdienst]
+  ponytail: "Stichwortliste von Hand; trifft nur diese Wortanfaenge. Ausbau: ein Verzeichnis haushaltsnaher Dienstleistungen."
+
+- id: minijob
+  feld: hh_minijob_betrag
+  kategorie: minijob
+  stichworte: [minijob, haushaltshilfe, minijob-zentrale]
+  ponytail: "Stichwortliste von Hand. Die Bescheinigung der Minijob-Zentrale ist der Nachweis; bis dahin gilt die Regel wie bei den anderen § 35a-Feldern."
+
+- id: spende
+  feld: spenden_betrag
+  kategorie: spende
+  stichworte: [spende, zuwendung, hilfswerk, stiftung, " e.v", "e. v.", tierheim, unicef, rotes kreuz]
+  quelle: sources/bfinv/anleitungen/anl_sonderausgaben_2025.txt
+  ponytail: "Stichwortliste von Hand; ' e.v' ist ein Vereinskuerzel und trifft jeden Zweck mit dieser Zeichenfolge. Ausbau: Empfaengerverzeichnis."
+
+- id: vorsorge
+  feld: vor_rv_ausserhalb_lstb
+  kategorie: vorsorge
+  stichworte: [rentenversicherung, "rürup", basisrente, altersvorsorge, "rürup-rente"]
+  quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+  ponytail: "Stichwortliste von Hand; trifft jeden Zweck mit diesen Wortanfaengen."

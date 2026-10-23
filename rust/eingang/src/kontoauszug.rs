@@ -14,6 +14,7 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, Katalog, Store};
 
 use crate::bank::buchung::{Datum, Posten};
+use crate::bank::regeln;
 use crate::bank::saldo;
 use crate::csv;
 use crate::vorschlag::{Quelle, SchreibFehler, VorschlagEvent};
@@ -30,72 +31,9 @@ pub const LLM_ZEITBUDGET: Duration = Duration::from_secs(300);
 /// ```
 #[must_use]
 pub fn zielfeld(k: Kategorie) -> &'static str {
-    match k {
-        Kategorie::Handwerker => "hh_handwerker_betrag",
-        Kategorie::Dienstleistung => "hh_dienstleistung_betrag",
-        Kategorie::Minijob => "hh_minijob_betrag",
-        Kategorie::Spende => "spenden_betrag",
-        Kategorie::Vorsorge => "vor_rv_ausserhalb_lstb",
-    }
+    // Fail-closed: eine Kategorie ohne Regel ergibt kein Feld der Bindung, die Buchung zaehlt als `feld_fehlt`.
+    regeln::regel_fuer(k).map_or("", |r| r.feld.as_str())
 }
-
-const SCHLUESSELWOERTER: [(Kategorie, &[&str]); 5] = [
-    (
-        Kategorie::Handwerker,
-        &[
-            "maler",
-            "sanitär",
-            "elektr",
-            "dachdeck",
-            "handwerk",
-            "installat",
-            "klempner",
-            "heizung",
-            "renovier",
-            "modernisier",
-        ],
-    ),
-    (
-        Kategorie::Dienstleistung,
-        &[
-            "reinigung",
-            "putzhilfe",
-            "gartenpfleg",
-            "hausmeister",
-            "gebäudereinig",
-            "fensterputz",
-            "winterdienst",
-        ],
-    ),
-    (
-        Kategorie::Minijob,
-        &["minijob", "haushaltshilfe", "minijob-zentrale"],
-    ),
-    (
-        Kategorie::Spende,
-        &[
-            "spende",
-            "zuwendung",
-            "hilfswerk",
-            "stiftung",
-            " e.v",
-            "e. v.",
-            "tierheim",
-            "unicef",
-            "rotes kreuz",
-        ],
-    ),
-    (
-        Kategorie::Vorsorge,
-        &[
-            "rentenversicherung",
-            "rürup",
-            "basisrente",
-            "altersvorsorge",
-            "rürup-rente",
-        ],
-    ),
-];
 
 /// `klassifiziere_det(zweck)`: erste Kategorie, deren Schluesselwort im kleingeschriebenen
 /// Zweck steht.
@@ -106,11 +44,7 @@ const SCHLUESSELWOERTER: [(Kategorie, &[&str]); 5] = [
 /// ```
 #[must_use]
 pub fn klassifiziere_det(zweck: &str) -> Option<Kategorie> {
-    let z = zweck.to_lowercase();
-    SCHLUESSELWOERTER
-        .iter()
-        .find(|(_, keys)| keys.iter().any(|k| z.contains(k)))
-        .map(|(k, _)| *k)
+    regeln::treffer(zweck, false).and_then(|r| r.kategorie)
 }
 
 /// Parteinamen (kleingeschrieben), bei denen `uebernehme` fuer eine Spende KEINEN Vorschlag schreibt: Eine Parteispende

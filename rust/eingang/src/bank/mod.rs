@@ -1,9 +1,10 @@
 //! Bankimport: die Bausteine, die eine Buchung zu einem Vorschlag machen.
 //!
 //! [`buchung`] liest das Datum einer Buchung und beschreibt ihren Posten, [`saldo`] vereinigt
-//! Posten aus zwei Auszuegen und bildet den Saldo eines Felds. Die Uebernahme selbst bleibt in
-//! [`crate::kontoauszug`], weil dort die Kategorien und die Zielfelder sitzen.
+//! Posten aus zwei Auszuegen und bildet den Saldo eines Felds, [`regeln`] haelt den Regelkatalog
+//! (`daten/bankregeln.yaml`). Die Uebernahme selbst bleibt in [`crate::kontoauszug`].
 pub mod buchung;
+pub mod regeln;
 pub mod saldo;
 
 /// Waechter ueber die Regeldatei `daten/bankregeln.yaml` (Bankimport S2, AK3): jede Regel hat eine Kennung, ein Feld, Stichwoerter
