@@ -52,6 +52,8 @@ mod kein_kind_sperre;
 mod kind_idnr_schreibweg_hermetisch;
 #[path = "kontoauszug_naht.rs"]
 mod kontoauszug_naht;
+#[path = "kontoauszug_vorschau.rs"]
+mod kontoauszug_vorschau;
 #[path = "kopfnamen.rs"]
 mod kopfnamen;
 #[path = "korrektur_sweep.rs"]
