@@ -1986,7 +1986,7 @@ mod tests {
     // Einzelposten traegt.
     // ---------------------------------------------------------------------------
 
-    /// Die Summe aller dreizehn Zaehler: jede Buchung steht in genau einem.
+    /// Die Summe aller fuenfzehn Zaehler (`uebernommen`, `llm_uebersprungen` und die dreizehn Gruende): jede Buchung steht in genau einem.
     fn zaehler_summe(u: &Uebernahme) -> usize {
         u.uebernommen
             + u.llm_uebersprungen
