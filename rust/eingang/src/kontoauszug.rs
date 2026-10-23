@@ -287,6 +287,48 @@ pub struct CsvBefund {
     pub spalten: Vec<String>,
     /// Zeilen unter der Kopfzeile, deren Betragsfeld leer ist (uebersprungen).
     pub ohne_betrag: usize,
+    /// Zeilen unter der Kopfzeile mit mehr nicht leeren Feldern, als die Kopfzeile Namen hat: eine andere Tabelle in
+    /// derselben Datei (etwa das Depot hinter den Buchungen). Sie sind keine Buchung und keine „Zeile mit unlesbarem
+    /// Betrag“ und werden nicht gelesen.
+    pub fremde_zeilen: usize,
+}
+
+/// Hinter den Buchungen kann eine zweite Tabelle stehen (das Depot einer Bank, mehr Spalten als die Girokonto-Tabelle).
+/// Mit der Kopfzeile der ersten gelesen, laege ihre Kennnummer auf der Betragsspalte: eine Zeile mit unlesbarem Betrag, oder,
+/// bei einer rein numerischen Kennnummer, eine erfundene Buchung. Eine Leerzeile trennt Abschnitte; beginnt ein Abschnitt mit
+/// einem Datensatz, der nicht leere Felder JENSEITS der Kopfzeile (Datensatz Nr. `kopf_nr`) hat (ein Endsemikolon zaehlt nicht),
+/// ist der Abschnitt bis zur naechsten Leerzeile eine andere Tabelle: gezaehlt, nicht gelesen, vom Hinweis genannt. Das gilt
+/// erst, wenn schon eine Zeile unter der Kopfzeile stand: eine Leerzeile DIREKT unter der Kopfzeile trennt nichts. Ein breiter
+/// Datensatz MITTEN in einem Abschnitt bleibt eine Buchung wie in Python (`DictReader` verwirft die Ueberschuss-Felder).
+/// Gibt die uebrigen Datensaetze und die Zahl der entfernten zurueck.
+// ponytail: eine zweite Tabelle OHNE Leerzeile davor liest der Leser weiter als Buchungen; ein Bankprofil (Story S4) kennt
+// das Ende der Buchungen besser als diese Regel.
+fn ohne_fremde_tabellen(saetze: Vec<Vec<String>>, kopf_nr: usize) -> (Vec<Vec<String>>, usize) {
+    let breite = saetze.get(kopf_nr).map_or(0, Vec::len);
+    let (mut davor_leer, mut fremder_abschnitt, mut zeile_gesehen) = (false, false, false);
+    let mut fremde = 0;
+    let rest = saetze
+        .into_iter()
+        .enumerate()
+        .filter(|(i, s)| {
+            if *i <= kopf_nr {
+                return true;
+            }
+            if s.iter().all(|f| py::strip(f).is_empty()) {
+                (davor_leer, fremder_abschnitt) = (true, false);
+                return true;
+            }
+            if davor_leer && zeile_gesehen && s.iter().skip(breite).any(|f| !py::strip(f).is_empty()) {
+                fremder_abschnitt = true;
+            }
+            davor_leer = false;
+            zeile_gesehen = true;
+            fremde += usize::from(fremder_abschnitt);
+            !fremder_abschnitt
+        })
+        .map(|(_, s)| s)
+        .collect();
+    (rest, fremde)
 }
 
 /// `parse_csv(text)`: Spalten per Alias (case-insensitiv), Zeilen ohne Betrag uebersprungen, Zeilen
@@ -328,6 +370,7 @@ pub fn parse_csv_befund(
         kopf_nr: None,
         spalten: Vec::new(),
         ohne_betrag: 0,
+        fremde_zeilen: 0,
     };
     for trenner in TRENNER {
         let (anfang, _) = csv::lies_anfang(text, trenner, KOPF_SUCHE);
@@ -353,6 +396,14 @@ pub fn parse_csv_befund(
         }
     }
     let (saetze, csv_fehler) = csv::lies_datensaetze(text, befund.trenner);
+    let saetze = match befund.kopf_nr {
+        Some(nr) => {
+            let (rest, fremde) = ohne_fremde_tabellen(saetze, nr);
+            befund.fremde_zeilen = fremde;
+            rest
+        }
+        None => saetze,
+    };
     let (kopf, zeilen) = csv::dict_aus_saetzen(saetze, befund.kopf_nr.unwrap_or(0));
     if kopf.is_empty() {
         return csv_fehler.map_or(Ok((Vec::new(), 0, befund)), |e| Err(e.into()));
@@ -632,6 +683,20 @@ pub fn hinweis_verworfen(n: usize, fmt: &str) -> String {
         "mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen"
     };
     format!("{n} Zeile(n) {grund} — bitte manuell prüfen/nachtragen.")
+}
+
+/// Der Satz fuer den Nutzer, wenn ein CSV-Auszug Zeilen einer anderen Tabelle trug (`CsvBefund::fremde_zeilen`): Er nennt die
+/// Zahl und die Regel (mehr Spalten als die Kopfzeile), damit eine Buchung, die darunter fiel, auffindbar ist.
+///
+/// ```
+/// assert_eq!(
+///     eingang::kontoauszug::hinweis_fremde_zeilen(13),
+///     "13 Zeile(n) einer anderen Tabelle in der Datei ignoriert (mehr Spalten als die Kopfzeile der Buchungen)."
+/// );
+/// ```
+#[must_use]
+pub fn hinweis_fremde_zeilen(n: usize) -> String {
+    format!("{n} Zeile(n) einer anderen Tabelle in der Datei ignoriert (mehr Spalten als die Kopfzeile der Buchungen).")
 }
 
 /// Hoechstens so viele Spaltennamen und so viele Zeichen je Name nennt der Hinweis: Er zeigt die

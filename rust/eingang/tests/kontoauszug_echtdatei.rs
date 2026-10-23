@@ -9,6 +9,7 @@
 #![allow(clippy::unwrap_used, clippy::indexing_slicing)]
 
 use std::cell::Cell;
+use std::fmt::Write as _;
 
 use eingang::kontoauszug::{
     parse_csv_befund, uebernehme, Transaktion, LLM_AUFRUFE_HOECHSTZAHL,
@@ -29,7 +30,7 @@ fn girokonto_mit_depot() -> String {
         ("21.03.2025", "Auftraggeber: Muster AG Buchungstext: Gehalt", "1.234,56"),
         ("22.03.2025", "Auftraggeber: Muster Markt Buchungstext: Einkauf", "-7,31"),
     ] {
-        s.push_str(&format!("\"{tag}\";\"{tag}\";\"Lastschrift / Belastung\";\"{text}\";\"{betrag}\";\r\n"));
+        write!(s, "\"{tag}\";\"{tag}\";\"Lastschrift / Belastung\";\"{text}\";\"{betrag}\";\r\n").unwrap();
     }
     s.push_str("\r\n");
     s.push_str("\"Summe Ausgaben\";\"-537,31 EUR\";\r\n");
@@ -42,10 +43,12 @@ fn girokonto_mit_depot() -> String {
     // Zwoelf Zeilen; die Kennnummer in Feld 5 liegt auf der Betragsspalte der ersten Tabelle. Eine ist rein numerisch.
     for n in 0..12 {
         let wkn = if n == 11 { "123456".to_owned() } else { format!("A{n}B{n}C{n}") };
-        s.push_str(&format!(
+        write!(
+            s,
             "\"01.0{m}.2025\";\"01.0{m}.2025\";\"{n},500\";\"Muster Fonds {n}\";\"{wkn}\";\"EUR\";\"12,34\";\"{n}1,17\";\r\n",
             m = 1 + n % 9
-        ));
+        )
+        .unwrap();
     }
     s
 }
@@ -57,11 +60,47 @@ fn echtdatei_zweite_tabelle_zaehlt_nicht_als_buchung() {
     // noch die elf Kennnummern mit Buchstaben als „unlesbarer Betrag“.
     assert_eq!(
         tx.iter().map(|t| t.betrag).collect::<Vec<_>>(),
-        [-480_00, -50_00, 1_234_56, -7_31],
+        [-48_000, -5_000, 123_456, -731],
         "Betraege der gelesenen Buchungen"
     );
     assert_eq!(verworfen, 0, "keine Zeile mit unlesbarem Betrag: die Depot-Zeilen sind keine Buchungen");
     assert_eq!(befund.kopf_nr, Some(4));
+    // Die zweite Tabelle wird gezaehlt, nicht still verschluckt: ihre Kopfzeile und die zwoelf Zeilen. Die Fusszeilen mit
+    // weniger Feldern sind keine fremde Tabelle (sie hatten und haben keinen Betrag).
+    assert_eq!(befund.fremde_zeilen, 13);
+    assert_eq!(befund.ohne_betrag, 3, "Summe Ausgaben, Anzahl Buchungen und die Depot-Ueberschrift ohne Betragsfeld");
+}
+
+/// Eine breite Zeile MITTEN in der Tabelle bleibt eine Buchung wie in Python (`DictReader` wirft das Ueberschussfeld weg).
+#[test]
+fn echtdatei_breiter_datensatz_mitten_im_abschnitt_bleibt_buchung() {
+    let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler;extra\n02.03.2025;-50,00;Spende\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (2, 0, 0));
+}
+
+/// Eine Leerzeile unter der Kopfzeile oder mitten in der Tabelle trennt keine Tabelle ab: die Zeilen davor und danach bleiben
+/// Buchungen. Eine breite Zeile direkt NACH der ersten Leerzeile unter der Kopfzeile ist ebenfalls noch Buchung (kein
+/// Abschnitt war zu Ende).
+#[test]
+fn echtdatei_leerzeile_trennt_nur_nach_einer_zeile_unter_der_kopfzeile() {
+    let direkt = "Buchungstag;Betrag;Verwendungszweck\n\n01.03.2025;-480,00;Maler;extra\n02.03.2025;-50,00;Spende\n";
+    let (tx, _, befund) = parse_csv_befund(direkt).unwrap();
+    assert_eq!((tx.len(), befund.fremde_zeilen), (2, 0));
+    let mitten = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n\n02.03.2025;-50,00;Spende\n";
+    let (tx, _, befund) = parse_csv_befund(mitten).unwrap();
+    assert_eq!((tx.len(), befund.fremde_zeilen), (2, 0));
+}
+
+/// Der fremde Abschnitt endet an der naechsten Leerzeile: eine weitere Buchungstabelle danach wird wieder gelesen.
+#[test]
+fn echtdatei_fremder_abschnitt_endet_an_der_leerzeile() {
+    let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n\n\
+                Kaufdatum;Valuta;Stueck;Bezeichnung\n01.02.2025;01.02.2025;1,000;Muster Fonds\n\n\
+                02.03.2025;-50,00;Spende\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!(tx.iter().map(|t| t.betrag).collect::<Vec<_>>(), [-48_000, -5_000]);
+    assert_eq!((verworfen, befund.fremde_zeilen), (0, 2));
 }
 
 /// Gegenprobe zu AK1: eine Datei mit uneinheitlichen, aber gueltigen Zeilen verliert keine Buchung. Die Kopfzeile hat drei
