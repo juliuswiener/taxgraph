@@ -389,6 +389,11 @@ async fn echtdatei_depot_tabelle_ist_ueber_die_route_keine_buchung() {
     assert_eq!(antwort["transaktionen"], 3, "nur die drei Buchungen der ersten Tabelle: {antwort}");
     assert_eq!(antwort["verworfen"], 0, "die Depot-Zeilen sind keine Zeilen mit unlesbarem Betrag: {antwort}");
     assert_eq!(antwort["uebernommen"], 1, "{antwort}");
+    // Die vier Zeilen der zweiten Tabelle (Kopfzeile und drei Depot-Zeilen) werden gezaehlt und genannt, sonst nichts.
+    assert_eq!(
+        antwort["hinweis"],
+        "4 Zeile(n) einer anderen Tabelle in der Datei ignoriert (mehr Spalten als die Kopfzeile der Buchungen)."
+    );
 }
 
 /// Auftrag k9-2 (Mutant K34): ein CSV, das Python mit `csv.Error` abbricht (ein `\r` mitten im ungequoteten Feld),

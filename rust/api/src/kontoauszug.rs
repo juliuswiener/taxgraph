@@ -8,8 +8,9 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use domain::py_strip;
 use eingang::kontoauszug::{
-    aus_json, hinweis_ersetzbar, hinweis_ersetzt, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen,
-    hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen,
+    aus_json, hinweis_ersetzbar, hinweis_ersetzt, hinweis_fremde_zeilen, hinweis_nicht_gezaehlt,
+    hinweis_nichts_gelesen, hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund,
+    parse_pdf_zeilen,
     pruefe_buchungsfelder, uebernehme_mit, verwirf_unlesbare_betraege,
     verwirf_unlesbare_betraege_json, Ersetzung, Klassifikator, KontoauszugFehler, Transaktion,
     LLM_AUFRUFE_HOECHSTZAHL,
@@ -215,17 +216,18 @@ fn pdf_lesen(bytes: &[u8]) -> Result<(Vec<Transaktion>, usize), ApiFehler> {
     Ok(parse_pdf_zeilen(&text, &konfidenz, PDF_SCHWELLE))
 }
 
-/// Der Klassifikator für Buchungen, die kein Stichwort trifft (`_kontoauszug_llm_klassifikator`):
-/// ohne Provider-Angaben in der Umgebung liefert jeder Aufruf `None` (unklassifiziert) — der Deckel
-/// und der Zähler `llm_uebersprungen` laufen trotzdem, wie in Python.
-fn klassifikator() -> Box<Klassifikator<'static>> {
-    match llm::Konfiguration::aus_env() {
-        Ok(konfiguration) => {
-            let chat = llm::HttpChat { konfiguration };
-            Box::new(move |zweck, betrag| llm::kontoauszug::klassifiziere(&chat, zweck, betrag))
-        }
-        Err(_) => Box::new(|_, _| None),
-    }
+/// Der Klassifikator für Buchungen, die kein Stichwort trifft (`_kontoauszug_llm_klassifikator`).
+/// ABWEICHUNG von Python (Plan Nr. 107): ohne Provider-Angaben in der Umgebung gibt es keinen. Python
+/// liefert dort einen Klassifikator, der immer `None` gibt, und zählt den Deckel von
+/// 50 Aufrufen trotzdem; der Hinweis „die Grenze von 50 Klassifikationen war erreicht … in kleineren
+/// Zeiträumen hochladen“ stimmte dann nicht (kein Modell, kein Aufruf, ein kleinerer Auszug ändert
+/// nichts). Ohne Klassifikator zählt eine Ausgabe ohne Stichwort als `ohne_stichwort`.
+fn klassifikator() -> Option<Box<Klassifikator<'static>>> {
+    let konfiguration = llm::Konfiguration::aus_env().ok()?;
+    let chat = llm::HttpChat { konfiguration };
+    Some(Box::new(move |zweck, betrag| {
+        llm::kontoauszug::klassifiziere(&chat, zweck, betrag)
+    }))
 }
 
 /// `(body.get("format") or "").strip().lower()`: ein falscher Wert ist leer, ein wahrer Nicht-Text
@@ -372,7 +374,7 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
         fall.store_mut(),
         &tx,
         BindungNachschlag::neu(&sb.index),
-        Some(&*klassifikator),
+        klassifikator.as_deref(),
         None,
         Some(&katalog),
         ersetzen,
@@ -386,6 +388,10 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     let mut hinweise: Vec<String> = Vec::new();
     if n_verworfen > 0 {
         hinweise.push(hinweis_verworfen(n_verworfen, &fmt));
+    }
+    // Zeilen einer zweiten Tabelle (Depot) hinter den Buchungen: weder Buchung noch „unlesbarer Betrag“, aber genannt.
+    if let Some(befund) = csv_befund.as_ref().filter(|b| b.fremde_zeilen > 0) {
+        hinweise.push(hinweis_fremde_zeilen(befund.fremde_zeilen));
     }
     // Ohne diese Hinweise wäre „0 von 0“ ein Erfolg, den der Nutzer nicht von einem leeren Konto
     // unterscheidet (Ticket `kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`).
