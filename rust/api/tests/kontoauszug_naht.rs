@@ -394,6 +394,17 @@ async fn echtdatei_depot_tabelle_ist_ueber_die_route_keine_buchung() {
         antwort["hinweis"],
         "4 Zeile(n) einer anderen Tabelle in der Datei ignoriert (mehr Spalten als die Kopfzeile der Buchungen)."
     );
+    // EINE Zeile einer anderen Tabelle (nur ihre Kopfzeile) ist schon einen Satz wert.
+    let nur_kopf = "\"Buchungstag\";\"Wertstellung (Valuta)\";\"Vorgang\";\"Buchungstext\";\"Umsatz in EUR\";\r\n\
+        \"15.03.2025\";\"15.03.2025\";\"Lastschrift\";\"Einkauf\";\"-12,50\";\r\n\r\n\
+        \"Kaufdatum\";\"Valuta\";\"Stück\";\"Bezeichnung\";\"WKN\";\"Währung\";\"Kurs\";\"Wert\";\r\n";
+    let (status, antwort) = auszug(&d, "kz3", json!({"format": "csv", "inhalt": nur_kopf})).await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(antwort["transaktionen"], 1, "{antwort}");
+    assert!(
+        antwort["hinweis"].as_str().unwrap().contains("1 Zeile(n) einer anderen Tabelle in der Datei ignoriert"),
+        "{antwort}"
+    );
 }
 
 /// Auftrag k9-2 (Mutant K34): ein CSV, das Python mit `csv.Error` abbricht (ein `\r` mitten im ungequoteten Feld),
