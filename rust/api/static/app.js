@@ -2971,7 +2971,7 @@ async function kontoVorschauSenden() {
   const nr = ++KONTO_NR;
   KONTO_OFFEN += 1;
   kontoKnoepfe();
-  const rumpf = { ...KONTO_LETZTER, art9: $("konto-haken-art9").checked, abgewaehlt: [...KONTO_ABGEWAEHLT].sort((a, b) => a - b) };
+  const rumpf = { ...KONTO_LETZTER, art9: $("konto-haken-art9").checked, abgewaehlt: [...KONTO_ABGEWAEHLT] };
   const r = await jpost(`/fall/${FALL}/bank/vorschau`, rumpf);
   KONTO_OFFEN -= 1;
   if (nr !== KONTO_NR) { kontoKnoepfe(); return; }   // eine jüngere Anfrage oder „Verwerfen" gilt
@@ -2996,7 +2996,7 @@ async function kontoauszugUebernehmen() {
   KONTO_OPTIONEN = {
     art9: $("konto-haken-art9").checked,
     ki_buchungstext: $("konto-haken-ki").checked,
-    abgewaehlt: [...KONTO_ABGEWAEHLT].sort((a, b) => a - b),
+    abgewaehlt: [...KONTO_ABGEWAEHLT],
   };
   kontoKnoepfe();
   $("konto-status").textContent = "Übernehme …";

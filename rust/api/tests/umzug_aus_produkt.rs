@@ -37,7 +37,7 @@ const OBERFLAECHE: &[(&str, &str)] = &[
     // windows-1252 (`_dateiAlsText`); Waechter: `oberflaeche/konto_zeichensatz.rs`. app.js, index.html und style.css seit 2026-10-23
     // (Bankimport S3) mit der Vorschau vor dem Schreiben, den Haken, der Abwahl von Posten und dem Kreuz `keine_spenden`
     // (`kontoVorschauSenden`, `kontoauszugUebernehmen`, `#konto-vorschau`); Waechter: `oberflaeche/bank_vorschlaege_pruefen.rs`.
-    ("app.js", "31ecdb6f943dbd772b1236dbc368b250a81b077a7f01dd2734ac1c3aea1496b5"),
+    ("app.js", "38613aad7e5c8d6a514316b85ed6d284159d48b990e8621a7d275803ab665d72"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),

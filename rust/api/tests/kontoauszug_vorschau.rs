@@ -379,6 +379,11 @@ async fn bank_uebernehmen_abgewaehlt_schreibt_die_summe_ohne_den_posten() {
     let eintraege = store::audit::lies(&d.zustand.konfig.audit_pfad()).unwrap();
     let u2 = eintraege.iter().find(|e| e.action.als_str() == "bank_import" && e.fall_id.as_deref() == Some("u2")).unwrap();
     assert!(u2.detail.as_deref().unwrap().contains("abgewaehlt=0 "), "{u2:?}");
+    // Ist die einzige Buchung abgewaehlt, nennt der Satz zur leeren Uebernahme den Grund mit der Zahl.
+    fall_anlegen(&d, "u3").await;
+    let (_, a) = sende(&d, "/fall/u3/kontoauszug", &rumpf(&["01.03.2025;-11,00;Spende Tierheim"], &json!({"abgewaehlt": [0]}))).await;
+    assert_eq!(a["uebernommen"], json!(0), "{a}");
+    assert!(a["hinweis"].as_str().is_some_and(|h| h.contains("1 Buchung(en) von dir abgewählt")), "{a}");
 }
 
 /// Die Vorschau hat dieselbe Anmeldung, denselben Besitzer-Check und dieselbe Groessenbegrenzung wie `kontoauszug`: ohne Token 401,

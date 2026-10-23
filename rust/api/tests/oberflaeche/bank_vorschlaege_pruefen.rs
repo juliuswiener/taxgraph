@@ -378,6 +378,85 @@ fn bank_vorschlaege_pruefen_uebernehmen_ist_gesperrt_solange_eine_anfrage_laeuft
     u.s.warte_bis("!document.getElementById('konto-uebernehmen').disabled", 10, "der Knopf ist wieder frei");
 }
 
+/// „Verwerfen“ gilt auch fuer eine Anfrage, die noch laeuft: ihre Antwort bringt die Vorschau nicht zurueck.
+#[test]
+fn bank_vorschlaege_pruefen_verwerfen_waehrend_eine_anfrage_laeuft_zeigt_die_antwort_nicht_mehr() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    vorschau(&u, AUSZUG_A);
+    beobachte(&u, true);
+    u.s.klick(&box_selektor(SPENDEN, 0));
+    u.s.warte_bis("window.__wartend.length === 1", 10, "die Anfrage ist unterwegs");
+    u.s.klick("#konto-verwerfen");
+    u.s.warte_unsichtbar("#konto-vorschau", 10);
+    u.s.skript("window.__halten = false; window.__wartend[0]();", &[]);
+    // Die Antwort braucht einen Augenblick; danach darf die Vorschau nicht wieder da sein.
+    u.s.auswerten("async () => { await new Promise((ok) => setTimeout(ok, 700)); return true; }", &[]);
+    assert!(!u.s.sichtbar("#konto-vorschau"), "die Antwort brachte die verworfene Vorschau zurueck");
+    assert_eq!(u.s.ausdruck("KONTO_LETZTER"), Value::Null);
+    assert!(uebernehmen_gesperrt(&u), "ohne Vorschau steht „Uebernehmen“ frei");
+}
+
+/// Laeuft „Uebernehmen“, sind Knopf, Verwerfen, Dateiwahl und Kaestchen gesperrt, und ein erzwungener zweiter Aufruf sendet nichts
+/// (Doppel-Submit: derselbe Auszug ginge sonst zweimal an den Dienst).
+#[test]
+fn bank_vorschlaege_pruefen_uebernehmen_laeuft_sperrt_alles_und_ein_zweiter_aufruf_sendet_nichts() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let fall = vorschau(&u, AUSZUG_A);
+    u.s.skript(
+        "window.__echt = jpost; window.__weiter = null; window.__n = 0; \
+         jpost = (url, b) => { if (url.endsWith('/kontoauszug')) { window.__n += 1; \
+           return new Promise((ok) => { window.__weiter = () => ok(window.__echt(url, b)); }); } return window.__echt(url, b); };",
+        &[],
+    );
+    u.s.klick("#konto-uebernehmen");
+    u.s.warte_bis("window.__weiter !== null", 10, "Uebernehmen ist unterwegs");
+    for (id, was) in [("konto-uebernehmen", "Uebernehmen"), ("konto-verwerfen", "Verwerfen"), ("konto-file", "die Dateiwahl")] {
+        assert!(u.s.ausdruck(&format!("document.getElementById('{id}').disabled")) == json!(true), "{was} ist waehrend des Uebernehmens frei");
+    }
+    assert!(
+        u.s.ausdruck("document.querySelector('#konto-vorschau .kv-box').disabled") == json!(true),
+        "ein Kaestchen ist waehrend des Uebernehmens frei"
+    );
+    u.s.skript("document.getElementById('konto-uebernehmen').disabled = false; kontoauszugUebernehmen(); kontoauszugVerwerfen();", &[]);
+    assert_eq!(u.s.ausdruck("window.__n"), json!(1), "der zweite Aufruf sendet den Auszug noch einmal");
+    assert_ne!(u.s.ausdruck("KONTO_LETZTER"), Value::Null, "Verwerfen griff in das laufende Uebernehmen ein");
+    u.s.skript("jpost = window.__echt; window.__weiter();", &[]);
+    warte_status(&u, "als Vorschlag erfasst");
+    u.s.warte_bis("!document.getElementById('konto-file').disabled", 15, "die Dateiwahl ist wieder frei");
+    assert_eq!(ereignisse(&u, &fall, SPENDEN).len(), 1, "der Dienst schrieb nicht genau einmal");
+}
+
+/// Die Abwahl gilt auch fuer die Rueckfrage des Ersetzens (Bankimport S1b, d-63): „Ersetzen“ sendet den Auszug mit denselben Haken und
+/// Abwahlen noch einmal. Ginge die Abwahl verloren, stuende 19,00 statt 16,00 EUR in der Akte.
+#[test]
+fn bank_vorschlaege_pruefen_abwahl_gilt_auch_fuer_die_rueckfrage_des_ersetzens() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let fall = zum_kontoauszug(&u);
+    waehle(&u, "auszug.csv", &["01.03.2025;-4,00;Spende Rotes Kreuz", "02.03.2025;-7,00;Spende Tierheim"]);
+    crate::konto_ersetzen::uebernimm_vorschau(&u);
+    warte_status(&u, "2 von 2 Buchung(en) als Vorschlag erfasst");
+    assert_eq!(ereignisse(&u, &fall, SPENDEN).len(), 1);
+
+    // Zweiter Auszug: 7,00 EUR gibt es schon, dazu 5,00 und 3,00 EUR; die 3,00 EUR (Stelle 2) wählt die Nutzerin ab.
+    waehle(&u, "auszug.csv", &["02.03.2025;-7,00;Spende Tierheim", "03.03.2025;-5,00;Spende Unicef", "04.03.2025;-3,00;Spende Caritas"]);
+    u.s.warte_sichtbar("#konto-vorschau", 15);
+    warte_summe(&u, SPENDEN, "19,00 €");
+    u.s.klick(&box_selektor(SPENDEN, 2));
+    warte_summe(&u, SPENDEN, "16,00 €");
+    crate::konto_ersetzen::uebernimm_vorschau(&u);
+    let status = warte_status(&u, "Ersetzen möglich");
+    assert!(status.contains("16,00 €") && !status.contains("19,00 €"), "{status:?}");
+    u.s.klick("#konto-ersetzen-haken");
+    u.s.klick("#konto-ersetzen-go");
+    warte_status(&u, "Ersetzt:");
+    let ev = ereignisse(&u, &fall, SPENDEN);
+    assert_eq!(ev.iter().map(|e| e["wert"].clone()).collect::<Vec<_>>(), [json!(11_00), json!(16_00)], "die Abwahl ging beim Ersetzen verloren");
+    assert_eq!(ev[1]["signal"]["signal_1"]["posten"].as_array().unwrap().len(), 3);
+}
+
 /// Der Haken `art9` sendet die Vorschau neu, mit denselben Abwahlen (die Kennung haengt nicht vom Haken ab); die Krankenversicherung
 /// steht dann als Feld da, ohne Zweck. „Uebernehmen“ schickt den Haken mit. Der KI-Haken sendet keine neue Vorschau (sie ruft die KI nie),
 /// geht aber beim Uebernehmen mit.
