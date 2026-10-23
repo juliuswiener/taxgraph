@@ -134,3 +134,16 @@ pub async fn kontoauszug(
 ) -> Result<Antwort, ApiFehler> {
     crate::kontoauszug::kontoauszug(&z, &mut fall, &wert)
 }
+
+/// `POST /fall/{id}/bank/vorschau` — Rust-eigen (Bankimport S3), Rumpf in [`crate::bank`]. Rechnet den Auszug auf einer Kopie der
+/// Akte und schreibt nichts: der Fall kommt nur lesend, ohne `mut`.
+///
+/// # Errors
+/// Wie [`kontoauszug`].
+pub async fn bank_vorschau(
+    State(z): State<Zustand>,
+    fall: EigenerFall,
+    Koerper(wert): Koerper,
+) -> Result<Antwort, ApiFehler> {
+    crate::bank::vorschau(&z, &fall, &wert)
+}

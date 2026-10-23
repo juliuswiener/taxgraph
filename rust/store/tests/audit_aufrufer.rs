@@ -490,7 +490,7 @@ const ERLAUBT: &[(&str, &str, &str, &str)] = &[
     (
         "api/src/kontoauszug.rs",
         "anhaengen",
-        "format:transaktionen={transaktionen} verworfen={verworfen} uebernommen={} nachgefragt={} art9_gesperrt={} llm_uebersprungen={} einnahmen={} ohne_stichwort={} partei={} feld_fehlt={} feld_belegt={} anderes_jahr={} datum_unlesbar={} saldo_nicht_positiv={} ersetzbar={} schon_erfasst={} haken_ersetzen={ersetzen} haken_art9={art9} haken_ki_buchungstext={ki_buchungstext} ki_aufrufe={ki_aufrufe}",
+        "format:transaktionen={transaktionen} verworfen={verworfen} uebernommen={} nachgefragt={} art9_gesperrt={} llm_uebersprungen={} einnahmen={} ohne_stichwort={} partei={} feld_fehlt={} feld_belegt={} anderes_jahr={} datum_unlesbar={} saldo_nicht_positiv={} ersetzbar={} schon_erfasst={} abgewaehlt={} haken_ersetzen={ersetzen} haken_art9={art9} haken_ki_buchungstext={ki_buchungstext} ki_aufrufe={ki_aufrufe}",
         "Zaehler des Kontoauszug-Imports (Zahlen) und drei Haken (true/false); kein Buchungstext, kein Betrag, kein Datum",
     ),
     (

@@ -46,7 +46,8 @@ macro_rules! fid {
 
 macro_rules! tabelle {
     ($( ($axum_fn:ident, $methode:literal, $muster:expr, $pfad:literal, $handler:path) ),+ $(,)?) => {
-        /// Alle 25 Routen: die 24 aus Python in Pythons Reihenfolge, dazu `POST /fall/{id}/beleg` (Abweichung Nr. 90).
+        /// Alle 26 Routen: die 24 aus Python in Pythons Reihenfolge, dazu `POST /fall/{id}/beleg` (Abweichung Nr. 90) und
+        /// `POST /fall/{id}/bank/vorschau` (Bankimport S3).
         pub const EINTRAEGE: &[Eintrag] = &[
             $( Eintrag {
                 methode: $methode,
@@ -56,7 +57,7 @@ macro_rules! tabelle {
             } ),+
         ];
 
-        /// Der axum-Router mit allen 25 Routen; Methode und Pfad stehen in [`EINTRAEGE`].
+        /// Der axum-Router mit allen 26 Routen; Methode und Pfad stehen in [`EINTRAEGE`].
         pub fn router() -> Router<Zustand> {
             Router::new()$( .route($pfad, $axum_fn($handler)) )+
         }
@@ -214,6 +215,14 @@ tabelle![
         concat!("^/fall/", id!(), "/beleg$"),
         "/fall/{id}/beleg",
         schreiben::beleg
+    ),
+    // Rust-eigen (Bankimport S3): die Vorschau eines Kontoauszugs, schreibt nichts.
+    (
+        post,
+        "POST",
+        concat!("^/fall/", id!(), "/bank/vorschau$"),
+        "/fall/{id}/bank/vorschau",
+        schreiben::bank_vorschau
     ),
     (
         delete,

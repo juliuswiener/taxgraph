@@ -32,6 +32,7 @@ pub mod flow;
 pub mod fragen;
 pub mod graph;
 pub mod konfig;
+pub mod bank;
 pub mod kontoauszug;
 pub mod lstb_beleg;
 pub mod openapi;

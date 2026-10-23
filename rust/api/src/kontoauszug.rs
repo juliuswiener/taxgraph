@@ -8,22 +8,23 @@
 //! `decisions/kontoauszug-betrag-cent-genau-oder-verworfen`).
 use std::cell::Cell;
 
-use domain::py_strip;
+use domain::{py_strip, PyWert};
 use eingang::bank::regeln::Art;
 use eingang::kontoauszug::{
     aus_json, hinweis_abgleich, hinweis_art9_gesperrt, hinweis_ersetzbar, hinweis_ersetzt,
     hinweis_fremde_zeilen, hinweis_nachfragen, hinweis_nicht_gezaehlt, hinweis_nichts_gelesen,
     hinweis_nichts_uebernommen, hinweis_verworfen, parse_csv_befund, parse_pdf_zeilen,
-    pruefe_buchungsfelder, uebernehme_voll, verwirf_unlesbare_betraege,
-    verwirf_unlesbare_betraege_json, Abgleich, CsvBefund, Ersetzung, Haken, Klassifikator,
-    KontoauszugFehler, Nachfrage, Transaktion, Uebernahme, LLM_AUFRUFE_HOECHSTZAHL,
+    pruefe_buchungsfelder, uebernehme_auswahl, verwirf_unlesbare_betraege,
+    verwirf_unlesbare_betraege_json, Abgleich, CsvBefund, Ergebnis, Ersetzung, FeldErgebnis, Folge,
+    Haken, Klassifikator, KontoauszugFehler, Nachfrage, Transaktion, Uebernahme, KREUZ_ABWAHL,
+    LLM_AUFRUFE_HOECHSTZAHL,
 };
 use eingang::ocr::{lies_kontoauszug_pdf, OcrFehler};
 use eingang::vorschlag::SchreibFehler;
 use llm::pii::Maskiert;
 use serde_json::{json, Map, Value};
 use store::audit::{anhaengen, AuditAktion};
-use store::BindungNachschlag;
+use store::{BindungNachschlag, Store};
 
 use crate::antwort::Antwort;
 use crate::eigener_fall::EigenerFall;
@@ -38,7 +39,7 @@ static NICHTS: Value = Value::Null;
 const PDF_SCHWELLE: f64 = 0.6;
 
 /// Ein Fehler beim Lesen des Auszugs: Pythons Klasse und Text, 500.
-fn lese_fehler(e: &KontoauszugFehler) -> ApiFehler {
+pub(crate) fn lese_fehler(e: &KontoauszugFehler) -> ApiFehler {
     match e {
         KontoauszugFehler::Csv(c) => ApiFehler::unerwartet("Error", c.to_string()),
         KontoauszugFehler::BetragUeberlauf(t) => ApiFehler::unerwartet("OverflowError", t.clone()),
@@ -245,7 +246,7 @@ fn protokolliere_import(
     let nutzer = fall.nutzer().map(auth::Username::as_str);
     // Eine Zeile: das Inventar der Protokoll-Aufrufer (`store/tests/audit_aufrufer.rs`) fuehrt die Vorlage als Schluessel.
     let detail = format!(
-        "transaktionen={transaktionen} verworfen={verworfen} uebernommen={} nachgefragt={} art9_gesperrt={} llm_uebersprungen={} einnahmen={} ohne_stichwort={} partei={} feld_fehlt={} feld_belegt={} anderes_jahr={} datum_unlesbar={} saldo_nicht_positiv={} ersetzbar={} schon_erfasst={} haken_ersetzen={ersetzen} haken_art9={art9} haken_ki_buchungstext={ki_buchungstext} ki_aufrufe={ki_aufrufe}",
+        "transaktionen={transaktionen} verworfen={verworfen} uebernommen={} nachgefragt={} art9_gesperrt={} llm_uebersprungen={} einnahmen={} ohne_stichwort={} partei={} feld_fehlt={} feld_belegt={} anderes_jahr={} datum_unlesbar={} saldo_nicht_positiv={} ersetzbar={} schon_erfasst={} abgewaehlt={} haken_ersetzen={ersetzen} haken_art9={art9} haken_ki_buchungstext={ki_buchungstext} ki_aufrufe={ki_aufrufe}",
         u.uebernommen,
         u.nachgefragt,
         u.art9_gesperrt,
@@ -260,6 +261,7 @@ fn protokolliere_import(
         u.saldo_nicht_positiv,
         u.ersetzbar,
         u.schon_erfasst,
+        u.abgewaehlt,
     );
     let pfad = z.konfig.audit_pfad();
     let fall_id = Some(fall.id().as_str());
@@ -439,13 +441,69 @@ fn s2_melden(
     hinweise.extend(hinweis_abgleich(abgleich));
 }
 
-/// Der Rumpf nach dem Owner-Check: Format, Inhalt, Lesen, Verwerfen, Übernehmen, Speichern.
+/// Das Feld `abgewaehlt` des Rumpfs (Bankimport S3): fehlt es, ist es `None`; sonst eine Liste ganzer Zahlen ab 0. Jede andere Form
+/// ist 400, auch `null`.
+fn abgewaehlt_lesen(b: &Map<String, Value>) -> Result<Option<Vec<usize>>, ApiFehler> {
+    let Some(roh) = b.get("abgewaehlt") else {
+        return Ok(None);
+    };
+    let ungueltig = || ApiFehler::status(400, "abgewaehlt muss eine Liste von Stellen sein (ganze Zahlen ab 0)");
+    let Value::Array(liste) = roh else {
+        return Err(ungueltig());
+    };
+    liste
+        .iter()
+        .map(|stelle| stelle.as_u64().and_then(|n| usize::try_from(n).ok()).ok_or_else(ungueltig))
+        .collect::<Result<Vec<_>, _>>()
+        .map(Some)
+}
+
+/// Jede Stelle von `abgewaehlt` liegt in der gelesenen Liste, und keine steht zweimal da: sonst 400.
+fn abgewaehlt_pruefen(stellen: &[usize], gelesen: usize) -> Result<(), ApiFehler> {
+    for (i, stelle) in stellen.iter().enumerate() {
+        if *stelle >= gelesen {
+            return Err(ApiFehler::status(
+                400,
+                format!("abgewaehlt nennt die Stelle {stelle}, der Auszug hat aber nur {gelesen} Buchung(en)"),
+            ));
+        }
+        if stellen.iter().take(i).any(|vorher| vorher == stelle) {
+            return Err(ApiFehler::status(400, format!("abgewaehlt nennt die Stelle {stelle} zweimal")));
+        }
+    }
+    Ok(())
+}
+
+/// Was `kontoauszug` und die Vorschau (`crate::bank`) aus dem Rumpf lesen: Format, Haken, abgewaehlte Stellen und die Buchungen.
+pub(crate) struct Anfrage {
+    pub(crate) fmt: String,
+    pub(crate) ersetzen: bool,
+    pub(crate) ki_buchungstext: bool,
+    pub(crate) art9: bool,
+    /// `None`: der Rumpf nennt das Feld nicht (die Seite fragt dann nicht nach dem Kreuz).
+    pub(crate) abgewaehlt: Option<Vec<usize>>,
+    pub(crate) tx: Vec<Transaktion>,
+    pub(crate) verworfen: usize,
+    pub(crate) csv_befund: Option<CsvBefund>,
+}
+
+impl Anfrage {
+    /// Die abgewaehlten Stellen; ohne das Feld keine.
+    pub(crate) fn stellen(&self) -> &[usize] {
+        self.abgewaehlt.as_deref().unwrap_or(&[])
+    }
+
+    pub(crate) fn haken(&self) -> Haken {
+        Haken { ersetzen: self.ersetzen, art9: self.art9 }
+    }
+}
+
+/// Der Rumpf in der Reihenfolge der Pruefungen von Python, dann die Pruefungen von Bankimport S3: Form, Format, die drei Haken
+/// (fehlt einer, gilt false; ein anderer Typ als ein Wahrheitswert ist 400), Form von `abgewaehlt`, Lesen, Stellen von `abgewaehlt`.
 ///
 /// # Errors
-/// 400 für Format und Inhalt, 422 für ein PDF, das nicht zu lesen ist, 500 mit der Python-Klasse
-/// für alles, was Python nicht fängt (auch eine Store-Abweisung).
-pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<Antwort, ApiFehler> {
-    let sb = z.scheibe_bindung(fall.store())?;
+/// 400 und 422 wie in [`kontoauszug`], 500 mit der Python-Klasse fuer alles, was Python nicht faengt.
+pub(crate) fn lies_anfrage(body: &Value) -> Result<Anfrage, ApiFehler> {
     let Value::Object(b) = body else {
         return Err(ApiFehler::unerwartet(
             "AttributeError",
@@ -454,69 +512,129 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
     };
     let fmt = format_lesen(b)?;
     // Der Haken der Entscheidung d-63 (Bankimport S1b): fehlt er, ersetzt der Auszug keinen
-    // bisherigen Vorschlag, sondern zeigt ihn nur. Andere Typen als ein Wahrheitswert sind 400.
+    // bisherigen Vorschlag, sondern zeigt ihn nur.
     let ersetzen = haken_lesen(b, "ersetzen")?;
-    // Die Haken der Bankimport-Entscheidungen d-59 (KI auf den Buchungstext) und d-60 (Art.-9-Regeln): fehlt einer, gilt false.
+    // Die Haken der Bankimport-Entscheidungen d-59 (KI auf den Buchungstext) und d-60 (Art.-9-Regeln).
     let ki_buchungstext = haken_lesen(b, "ki_buchungstext")?;
     let art9 = haken_lesen(b, "art9")?;
-    let (tx, n_verworfen, csv_befund) = lies_auszug(&fmt, b.get("inhalt").unwrap_or(&NICHTS))?;
-    let katalog = z.katalog()?;
-    // Das Sprachmodell sieht einen Buchungstext nur mit dem Haken (d-59). Ohne Haken wird die Umgebung nicht einmal gelesen.
-    let basis = if ki_buchungstext { klassifikator() } else { None };
-    let ki_nicht_eingerichtet = ki_buchungstext && basis.is_none();
-    let ki_aufrufe = Cell::new(0_usize);
-    let gezaehlt = |zweck: &Maskiert, betrag: i64| {
-        ki_aufrufe.set(ki_aufrufe.get() + 1);
-        basis.as_deref().and_then(|k| k(zweck, betrag))
-    };
-    let klassifikator = basis.as_ref().map(|_| &gezaehlt as &Klassifikator<'_>);
-    let ergebnis = uebernehme_voll(
-        fall.store_mut(),
-        &tx,
-        BindungNachschlag::neu(&sb.index),
-        klassifikator,
-        None,
-        Some(&katalog),
-        Haken { ersetzen, art9 },
-    )
-    .map_err(|e| lese_fehler(&e))?;
-    let (erg, ersetzungen) = (ergebnis.uebernahme, ergebnis.ersetzungen);
-    store::speichere(fall.pfad(), fall.store().datei())?;
-    protokolliere_import(z, fall, &erg, tx.len(), n_verworfen, (ersetzen, art9, ki_buchungstext), ki_aufrufe.get());
+    let abgewaehlt = abgewaehlt_lesen(b)?;
+    let (tx, verworfen, csv_befund) = lies_auszug(&fmt, b.get("inhalt").unwrap_or(&NICHTS))?;
+    if let Some(stellen) = &abgewaehlt {
+        abgewaehlt_pruefen(stellen, tx.len())?;
+    }
+    Ok(Anfrage { fmt, ersetzen, ki_buchungstext, art9, abgewaehlt, tx, verworfen, csv_befund })
+}
+
+/// Das Eingangskreuz, das dieser Import in Frage stellt (Bankimport S3, [`KREUZ_ABWAHL`]): nur wenn das Grundfeld in diesem Lauf
+/// wirklich einen Vorschlag bekam ([`Folge::Geschrieben`]). Steht das Kreuz schon auf `false` ("ja, gespendet"), widerspricht
+/// nichts, und es gibt keine Zeile. `aktuell` ist `true` ("keine Spenden") oder `null` (nie beantwortet). Der Dienst schreibt das Kreuz
+/// nie: die Antwort der Nutzerin kommt von der Seite.
+pub(crate) fn kreuz_abwahl(store: &Store, felder: &[FeldErgebnis]) -> Option<Value> {
+    let liste: Vec<Value> = KREUZ_ABWAHL
+        .iter()
+        .filter(|(grund, _)| felder.iter().any(|f| f.feld_id == *grund && f.folge == Folge::Geschrieben))
+        .filter_map(|(grund, kreuz)| {
+            let aktuell = match store.aktives(kreuz).map(|e| &e.wert) {
+                Some(PyWert::Bool(false)) => return None,
+                Some(PyWert::Bool(true)) => json!(true),
+                _ => Value::Null,
+            };
+            Some(json!({"feld_id": kreuz, "aktuell": aktuell, "grund_feld": grund}))
+        })
+        .collect();
+    (!liste.is_empty()).then_some(Value::Array(liste))
+}
+
+/// Der Teil der Antwort, den `kontoauszug` und die Vorschau teilen: die Zahlen, die Rueckfrage nach dem Ersetzen (S1b), die
+/// Nachfragen und der Abgleich (S2), dazu die Saetze in der Reihenfolge von Bankimport S2. Jede Route haengt ihre eigenen an.
+pub(crate) fn bericht(a: &Anfrage, erg: &Ergebnis) -> (Map<String, Value>, Vec<String>) {
+    let u = &erg.uebernahme;
     let mut aus = Map::new();
-    aus.insert("uebernommen".into(), json!(erg.uebernommen));
-    aus.insert("transaktionen".into(), json!(tx.len()));
-    aus.insert("verworfen".into(), json!(n_verworfen));
+    aus.insert("uebernommen".into(), json!(u.uebernommen));
+    aus.insert("transaktionen".into(), json!(a.tx.len()));
+    aus.insert("verworfen".into(), json!(a.verworfen));
     let mut hinweise: Vec<String> = Vec::new();
-    if n_verworfen > 0 {
-        hinweise.push(hinweis_verworfen(n_verworfen, &fmt));
+    if a.verworfen > 0 {
+        hinweise.push(hinweis_verworfen(a.verworfen, &a.fmt));
     }
     // Zeilen einer zweiten Tabelle (Depot) hinter den Buchungen: weder Buchung noch „unlesbarer Betrag“, aber genannt.
-    if let Some(befund) = csv_befund.as_ref().filter(|b| b.fremde_zeilen > 0) {
+    if let Some(befund) = a.csv_befund.as_ref().filter(|b| b.fremde_zeilen > 0) {
         hinweise.push(hinweis_fremde_zeilen(befund.fremde_zeilen));
     }
     // Ohne diese Hinweise wäre „0 von 0“ ein Erfolg, den der Nutzer nicht von einem leeren Konto
     // unterscheidet (Ticket `kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`).
     // Nur CSV: Bei JSON und PDF kennt der Nutzer die Spalten nicht, die er hochlud.
     let mut gruende_genannt = false;
-    if let Some(befund) = &csv_befund {
-        if tx.is_empty() && n_verworfen == 0 {
+    if let Some(befund) = &a.csv_befund {
+        if a.tx.is_empty() && a.verworfen == 0 {
             hinweise.push(hinweis_nichts_gelesen(befund));
-        } else if erg.uebernommen == 0 {
-            hinweise.extend(hinweis_nichts_uebernommen(tx.len(), &erg));
+        } else if u.uebernommen == 0 {
+            hinweise.extend(hinweis_nichts_uebernommen(a.tx.len(), u));
             gruende_genannt = true;
         }
     }
     // Buchungen, die wegen Jahr, Datum oder Saldo nicht mitzählten, in jedem Format und auch neben
     // einem Vorschlag; ohne Vorschlag nennt `hinweis_nichts_uebernommen` (nur CSV) dieselben Gründe.
     if !gruende_genannt {
-        hinweise.extend(hinweis_nicht_gezaehlt(&erg));
+        hinweise.extend(hinweis_nicht_gezaehlt(u));
     }
     // Felder mit eigenem Vorschlag aus einem frueheren Auszug (S1b, d-63): ohne Haken die Vorschau,
     // mit Haken das Ersetzte. Die Liste steht auch strukturiert in der Antwort.
-    ersetzungen_melden(&ersetzungen, ersetzen, &mut aus, &mut hinweise);
-    s2_melden(&erg, &ergebnis.nachfragen, &ergebnis.abgleich, &mut aus, &mut hinweise);
-    hinweise.extend(ergebnis.regelhinweise);
+    // ponytail: mit dem Haken nennt auch die Vorschau "Ersetzt: ..." in der Vergangenheit; die Seite schickt den Haken in der Vorschau nie.
+    ersetzungen_melden(&erg.ersetzungen, a.ersetzen, &mut aus, &mut hinweise);
+    s2_melden(u, &erg.nachfragen, &erg.abgleich, &mut aus, &mut hinweise);
+    hinweise.extend(erg.regelhinweise.iter().cloned());
+    (aus, hinweise)
+}
+
+/// Der Rumpf nach dem Owner-Check: Format, Inhalt, Lesen, Verwerfen, Übernehmen, Speichern.
+///
+/// Mit dem Feld `abgewaehlt` (Bankimport S3) gehen die Buchungen an diesen Stellen der gelesenen Liste nicht in die Summe ein, und die
+/// Antwort nennt das Eingangskreuz `keine_spenden`, wenn dieser Lauf `spenden_betrag` schrieb ([`kreuz_abwahl`]).
+///
+/// # Errors
+/// 400 für Format, Inhalt und `abgewaehlt`, 422 für ein PDF, das nicht zu lesen ist, 500 mit der Python-Klasse
+/// für alles, was Python nicht fängt (auch eine Store-Abweisung).
+pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<Antwort, ApiFehler> {
+    let sb = z.scheibe_bindung(fall.store())?;
+    let a = lies_anfrage(body)?;
+    let katalog = z.katalog()?;
+    // Das Sprachmodell sieht einen Buchungstext nur mit dem Haken (d-59). Ohne Haken wird die Umgebung nicht einmal gelesen.
+    let basis = if a.ki_buchungstext { klassifikator() } else { None };
+    let ki_nicht_eingerichtet = a.ki_buchungstext && basis.is_none();
+    let ki_aufrufe = Cell::new(0_usize);
+    let gezaehlt = |zweck: &Maskiert, betrag: i64| {
+        ki_aufrufe.set(ki_aufrufe.get() + 1);
+        basis.as_deref().and_then(|k| k(zweck, betrag))
+    };
+    let klassifikator = basis.as_ref().map(|_| &gezaehlt as &Klassifikator<'_>);
+    let ergebnis = uebernehme_auswahl(
+        fall.store_mut(),
+        &a.tx,
+        a.stellen(),
+        BindungNachschlag::neu(&sb.index),
+        klassifikator,
+        (None, Some(&katalog)),
+        a.haken(),
+    )
+    .map_err(|e| lese_fehler(&e))?;
+    store::speichere(fall.pfad(), fall.store().datei())?;
+    protokolliere_import(
+        z,
+        fall,
+        &ergebnis.uebernahme,
+        a.tx.len(),
+        a.verworfen,
+        (a.ersetzen, a.art9, a.ki_buchungstext),
+        ki_aufrufe.get(),
+    );
+    let (mut aus, mut hinweise) = bericht(&a, &ergebnis);
+    // Nur wenn die Seite die Abwahl verlangte (das Feld steht im Rumpf): eine Antwort ohne das Feld bleibt, wie sie war.
+    if a.abgewaehlt.is_some() {
+        if let Some(kreuz) = kreuz_abwahl(fall.store(), &ergebnis.felder) {
+            aus.insert("kreuz_abwahl".into(), kreuz);
+        }
+    }
     if ki_nicht_eingerichtet {
         hinweise.push(
             "Die KI-Einordnung war angefordert, ist aber nicht eingerichtet (es fehlen die Zugangsdaten). \
@@ -524,14 +642,14 @@ pub fn kontoauszug(z: &Dienst, fall: &mut EigenerFall, body: &Value) -> Result<A
                 .to_owned(),
         );
     }
-    if erg.llm_uebersprungen > 0 {
+    let llm_uebersprungen = ergebnis.uebernahme.llm_uebersprungen;
+    if llm_uebersprungen > 0 {
         // Ohne diesen Hinweis wäre der Deckel eine stille Kürzung.
-        aus.insert("llm_uebersprungen".into(), json!(erg.llm_uebersprungen));
+        aus.insert("llm_uebersprungen".into(), json!(llm_uebersprungen));
         hinweise.push(format!(
-            "{} Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze von {LLM_AUFRUFE_HOECHSTZAHL} \
+            "{llm_uebersprungen} Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze von {LLM_AUFRUFE_HOECHSTZAHL} \
              Klassifikationen je Auszug war erreicht. Bitte diese Buchungen selbst zuordnen oder den \
-             Auszug in kleineren Zeiträumen hochladen.",
-            erg.llm_uebersprungen
+             Auszug in kleineren Zeiträumen hochladen."
         ));
     }
     if !hinweise.is_empty() {

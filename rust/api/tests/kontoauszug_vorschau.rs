@@ -194,30 +194,30 @@ async fn bank_vorschau_antwort_nennt_felder_posten_nachfragen_und_haken() {
         (Some(34_00), Some(2), Some("geschrieben")),
         "{spenden}"
     );
-    let p = posten_eines_felds(&a, "spenden_betrag");
-    assert_eq!(p.len(), 2);
+    let posten = posten_eines_felds(&a, "spenden_betrag");
+    assert_eq!(posten.len(), 2);
     assert_eq!(
-        (p[0]["index"].as_i64(), p[0]["datum"].as_str(), p[0]["betrag_cent"].as_i64(), p[0]["regel_id"].as_str(), p[0]["quelle"].as_str(), p[0]["abgewaehlt"].as_bool()),
+        (posten[0]["index"].as_i64(), posten[0]["datum"].as_str(), posten[0]["betrag_cent"].as_i64(), posten[0]["regel_id"].as_str(), posten[0]["quelle"].as_str(), posten[0]["abgewaehlt"].as_bool()),
         (Some(0), Some("2025-03-01"), Some(-11_00), Some("spende"), Some("stichwort"), Some(false)),
         "{}",
-        p[0]
+        posten[0]
     );
-    assert!(p[0]["zweck_maskiert"].as_str().unwrap().contains("Tierheim"), "{}", p[0]);
-    assert_eq!((p[1]["index"].as_i64(), p[1]["betrag_cent"].as_i64()), (Some(1), Some(-23_00)));
+    assert!(posten[0]["zweck_maskiert"].as_str().unwrap().contains("Tierheim"), "{}", posten[0]);
+    assert_eq!((posten[1]["index"].as_i64(), posten[1]["betrag_cent"].as_i64()), (Some(1), Some(-23_00)));
     let vorsorge = posten_eines_felds(&a, "vor_rv_ausserhalb_lstb");
     assert_eq!((vorsorge[0]["index"].as_i64(), vorsorge[0]["betrag_cent"].as_i64()), (Some(6), Some(-24_00)));
     // Ohne den Haken `art9` gibt es keine Zeile fuer die Krankenversicherung (Stelle 5).
-    assert!(a["felder"].as_array().unwrap().iter().all(|f| f["feld_id"] != "basis_kv"), "{a}");
+    assert!(a["felder"].as_array().unwrap().iter().all(|eintrag| eintrag["feld_id"] != "basis_kv"), "{a}");
     // § 35a: eine Nachfrage, kein Feld.
     let n = a["nachfragen"].as_array().unwrap();
     assert_eq!((n.len(), n[0]["feld_id"].as_str(), n[0]["betrag_cent"].as_i64()), (1, Some("hh_handwerker_betrag"), Some(-73_00)), "{a}");
-    assert!(a["felder"].as_array().unwrap().iter().all(|f| f["feld_id"] != "hh_handwerker_betrag"), "{a}");
+    assert!(a["felder"].as_array().unwrap().iter().all(|eintrag| eintrag["feld_id"] != "hh_handwerker_betrag"), "{a}");
     assert_eq!(a["haken"], json!({"ersetzen": false, "art9": false, "ki_buchungstext": false}), "{a}");
     // Eine Ausgabe ohne Stichwort (Stelle 4): die Seite nennt ihre Zahl neben dem KI-Haken. Die Krankenversicherung ohne Haken
     // zaehlt als gesperrt, nicht als ohne Stichwort.
     assert_eq!(a["ohne_stichwort"], json!(1), "{a}");
     assert_eq!(a["transaktionen"], json!(7), "{a}");
-    assert!(a["hinweis"].as_str().is_some_and(|h| h.contains("§ 35a")), "der Satz zu den Nachfragen fehlt: {a}");
+    assert!(a["hinweis"].as_str().is_some_and(|h| h.contains("Arbeitskosten laut Rechnung")), "der Satz zu den Nachfragen fehlt: {a}");
 }
 
 /// Die Kennung haengt nicht von den Haken ab: mit `art9` kommt die Krankenversicherung als Zeile dazu (Stelle 5, ohne Zweck), die
@@ -252,11 +252,11 @@ async fn bank_vorschau_abgewaehlt_rechnet_der_server_neu() {
     fall_anlegen(&d, "v4").await;
     let (s, a) = sende(&d, "/fall/v4/bank/vorschau", &rumpf(&AUSZUG, &json!({"abgewaehlt": [1]}))).await;
     assert_eq!(s, 200, "{a}");
-    let f = feld_der_antwort(&a, "spenden_betrag");
-    assert_eq!((f["summe_cent"].as_i64(), f["anzahl"].as_i64(), f["folge"].as_str()), (Some(11_00), Some(1), Some("geschrieben")), "{f}");
-    let p = posten_eines_felds(&a, "spenden_betrag");
-    assert_eq!(p.iter().map(|p| p["abgewaehlt"].as_bool().unwrap()).collect::<Vec<_>>(), [false, true]);
-    assert_eq!(p[1]["index"], json!(1), "die abgewaehlte Zeile bleibt in der Liste");
+    let feld = feld_der_antwort(&a, "spenden_betrag");
+    assert_eq!((feld["summe_cent"].as_i64(), feld["anzahl"].as_i64(), feld["folge"].as_str()), (Some(11_00), Some(1), Some("geschrieben")), "{feld}");
+    let posten = posten_eines_felds(&a, "spenden_betrag");
+    assert_eq!(posten.iter().map(|eintrag| eintrag["abgewaehlt"].as_bool().unwrap()).collect::<Vec<_>>(), [false, true]);
+    assert_eq!(posten[1]["index"], json!(1), "die abgewaehlte Zeile bleibt in der Liste");
 
     // Die erste und die letzte Stelle eines Felds.
     let (_, a) = sende(&d, "/fall/v4/bank/vorschau", &rumpf(&AUSZUG, &json!({"abgewaehlt": [0]}))).await;
@@ -266,8 +266,8 @@ async fn bank_vorschau_abgewaehlt_rechnet_der_server_neu() {
 
     // Alle Posten eines Felds abgewaehlt.
     let (_, a) = sende(&d, "/fall/v4/bank/vorschau", &rumpf(&AUSZUG, &json!({"abgewaehlt": [0, 1]}))).await;
-    let f = feld_der_antwort(&a, "spenden_betrag");
-    assert_eq!((f["summe_cent"].as_i64(), f["anzahl"].as_i64(), f["folge"].as_str()), (Some(0), Some(0), Some("abgewaehlt")), "{f}");
+    let feld = feld_der_antwort(&a, "spenden_betrag");
+    assert_eq!((feld["summe_cent"].as_i64(), feld["anzahl"].as_i64(), feld["folge"].as_str()), (Some(0), Some(0), Some("abgewaehlt")), "{feld}");
     assert_eq!(posten_eines_felds(&a, "spenden_betrag").len(), 2);
     assert_eq!(a["uebernommen"], json!(1), "nur die Vorsorge ginge ein: {a}");
 }
@@ -456,7 +456,7 @@ async fn bank_kreuz_abwahl_antwort_nennt_das_kreuz_nur_bei_geschriebenem_spenden
     fall_anlegen(&d, "k6").await;
     let beleg = json!({"feld_id": "spenden_betrag", "wert": 40_00, "zustand": "bestaetigt",
         "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"}, "schreiber": "ui:laie",
-        "signal": {"signal_1": null, "signal_2": null}});
+        "signal": {"signal_1": null, "signal_2": "eingabe@spenden_betrag"}});
     let (s, a) = sende(&d, "/fall/k6/event", &beleg).await;
     assert_eq!(s, 201, "{a}");
     let (_, a) = sende(&d, "/fall/k6/kontoauszug", &rumpf(&[SPENDE_NEU], &json!({"abgewaehlt": []}))).await;

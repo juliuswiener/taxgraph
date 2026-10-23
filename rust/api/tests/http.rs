@@ -236,8 +236,8 @@ async fn jede_route_hat_einen_handler() {
             e.methode
         );
     }
-    // 24 Routen aus Python, dazu `POST /fall/{id}/beleg` (Abweichung Nr. 90).
-    assert_eq!(EINTRAEGE.len(), 25);
+    // 24 Routen aus Python, dazu `POST /fall/{id}/beleg` (Abweichung Nr. 90) und `POST /fall/{id}/bank/vorschau` (Bankimport S3).
+    assert_eq!(EINTRAEGE.len(), 26);
 }
 
 #[tokio::test]
@@ -793,10 +793,10 @@ async fn fall_angelegt_ohne_nutzer() {
 }
 
 /// Die Routen im Router, die das OpenAPI-Dokument ([`api::openapi::ApiDoc`]) noch nicht beschreibt:
-/// 16 von 25. Sie sind portiert; es fehlen ihr `#[utoipa::path]` und ihre Schemas. Die Liste ist
+/// 17 von 26. Sie sind portiert; es fehlen ihr `#[utoipa::path]` und ihre Schemas. Die Liste ist
 /// der Stand, kein Ziel: wer eine Route ins Dokument aufnimmt, streicht sie hier (der Test
 /// verlangt es), und wer eine neue Route baut, ohne sie zu dokumentieren, scheitert am Test.
-const UNDOKUMENTIERT: [(&str, &str); 16] = [
+const UNDOKUMENTIERT: [(&str, &str); 17] = [
     ("GET", "/fall/{id}/fragen"),
     ("GET", "/fall/{id}/stand"),
     ("POST", "/fall/{id}/event"),
@@ -813,6 +813,7 @@ const UNDOKUMENTIERT: [(&str, &str); 16] = [
     ("POST", "/fall/{id}/vorjahr"),
     ("POST", "/fall/{id}/kontoauszug"),
     ("POST", "/fall/{id}/beleg"),
+    ("POST", "/fall/{id}/bank/vorschau"),
 ];
 
 type Route = (String, String);

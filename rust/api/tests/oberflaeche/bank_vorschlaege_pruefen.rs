@@ -372,7 +372,7 @@ fn bank_vorschlaege_pruefen_uebernehmen_ist_gesperrt_solange_eine_anfrage_laeuft
     assert!(uebernehmen_gesperrt(&u), "waehrend die Anfrage laeuft, ist der Knopf frei");
     u.s.auswerten("async () => { document.getElementById('konto-uebernehmen').disabled = false; await kontoauszugUebernehmen(); return true; }", &[]);
     assert!(aufrufe(&u, "/kontoauszug").is_empty(), "ein erzwungener Aufruf sendet, obwohl eine Anfrage laeuft");
-    assert!(ereignisse(&u, &fall, SPENDEN).is_empty());
+    assert_eq!(ereignisse(&u, &fall, SPENDEN), Vec::<Value>::new());
     u.s.skript("window.__halten = false; window.__wartend[0]();", &[]);
     warte_summe(&u, SPENDEN, "7,00 €");
     u.s.warte_bis("!document.getElementById('konto-uebernehmen').disabled", 10, "der Knopf ist wieder frei");
@@ -434,11 +434,11 @@ fn bank_vorschlaege_pruefen_verwerfen_leert_vorschau_und_auszug() {
     u.s.warte_unsichtbar("#konto-vorschau", 10);
     assert_eq!(u.s.ausdruck("KONTO_LETZTER"), Value::Null, "der Auszug ist noch gemerkt");
     assert_eq!(u.s.ausdruck("document.getElementById('konto-file').value"), json!(""), "die Dateiwahl ist nicht geleert");
-    assert!(ereignisse(&u, &fall, SPENDEN).is_empty());
+    assert_eq!(ereignisse(&u, &fall, SPENDEN), Vec::<Value>::new());
     // Ein erzwungenes Uebernehmen ohne Auszug sendet nichts.
     beobachte(&u, false);
     u.s.auswerten("async () => { document.getElementById('konto-uebernehmen').disabled = false; await kontoauszugUebernehmen(); return true; }", &[]);
-    assert!(aufrufe(&u, "/kontoauszug").is_empty());
+    assert_eq!(aufrufe(&u, "/kontoauszug"), Vec::<Value>::new());
     // Dieselbe Datei noch einmal: die Vorschau steht wieder da.
     waehle(&u, "auszug.csv", AUSZUG_A);
     u.s.warte_sichtbar("#konto-vorschau", 15);

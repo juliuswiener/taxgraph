@@ -1362,7 +1362,7 @@ async fn bank_import_audit_nennt_zaehler_und_haken_ohne_text_und_betrag() {
 /// Die Zeile `bank_import` im Wortlaut, jeder Zaehler mit einem eigenen Wert: Wer einen Zaehler vertauscht, auf 0 setzt oder
 /// auslaesst, macht den Test rot (vorher pruefte er `art9_gesperrt=0`, das auch eine feste 0 im Code erfuellt). Auf 0 bleiben
 /// die Zaehler, die dieser Auszug nicht ausloest: `llm_uebersprungen`, `feld_fehlt`, `feld_belegt`, `datum_unlesbar`, `ersetzbar`,
-/// `schon_erfasst`. Weder ein Zweck noch ein Betrag noch ein Datum steht in der Zeile.
+/// `schon_erfasst`, `abgewaehlt`. Weder ein Zweck noch ein Betrag noch ein Datum steht in der Zeile.
 #[tokio::test]
 async fn bank_import_audit_zeile_traegt_jeden_zaehler_mit_seinem_wert() {
     let d = dienst();
@@ -1402,7 +1402,7 @@ async fn bank_import_audit_zeile_traegt_jeden_zaehler_mit_seinem_wert() {
         Some(
             "transaktionen=36 verworfen=1 uebernommen=5 nachgefragt=4 art9_gesperrt=1 llm_uebersprungen=0 einnahmen=3 \
              ohne_stichwort=6 partei=7 feld_fehlt=0 feld_belegt=0 anderes_jahr=8 datum_unlesbar=0 saldo_nicht_positiv=2 \
-             ersetzbar=0 schon_erfasst=0 haken_ersetzen=false haken_art9=false haken_ki_buchungstext=false ki_aufrufe=0"
+             ersetzbar=0 schon_erfasst=0 abgewaehlt=0 haken_ersetzen=false haken_art9=false haken_ki_buchungstext=false ki_aufrufe=0"
         )
     );
     let roh = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap();
