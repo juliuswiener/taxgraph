@@ -74,9 +74,14 @@ fn echtdatei_zweite_tabelle_zaehlt_nicht_als_buchung() {
 /// Eine breite Zeile MITTEN in der Tabelle bleibt eine Buchung wie in Python (`DictReader` wirft das Ueberschussfeld weg).
 #[test]
 fn echtdatei_breiter_datensatz_mitten_im_abschnitt_bleibt_buchung() {
+    // Direkt unter der Kopfzeile ...
     let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler;extra\n02.03.2025;-50,00;Spende\n";
     let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
     assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (2, 0, 0));
+    // ... und nach einer gewoehnlichen Zeile, ohne Leerzeile davor.
+    let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n02.03.2025;-50,00;Spende;extra\n03.03.2025;-7,00;Reinigung\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (3, 0, 0));
 }
 
 /// Eine Leerzeile unter der Kopfzeile oder mitten in der Tabelle trennt keine Tabelle ab: die Zeilen davor und danach bleiben
