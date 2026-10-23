@@ -38,7 +38,7 @@ fn waehle_auszug(u: &Umgebung, zeilen: &[&str]) {
 }
 
 /// Wartet, bis die Statuszeile des Kontoauszugs `text` enthaelt, und liefert sie.
-fn warte_status(u: &Umgebung, text: &str) -> String {
+pub(crate) fn warte_status(u: &Umgebung, text: &str) -> String {
     u.s.warte_bis(
         &format!("document.getElementById('konto-status').textContent.includes({})", serde_json::to_string(text).unwrap()),
         15,
@@ -60,7 +60,7 @@ fn haken_gesetzt(u: &Umgebung) -> bool {
 }
 
 /// Der Fall im Fragebogen, das Feld fuer den Kontoauszug aufgeklappt.
-fn zum_kontoauszug(u: &Umgebung) -> String {
+pub(crate) fn zum_kontoauszug(u: &Umgebung) -> String {
     u.zum_fragebogen_neu();
     u.s.klick("#konto-toggle");
     u.s.warte_sichtbar("#konto-file", 10);

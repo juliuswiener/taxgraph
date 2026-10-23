@@ -80,6 +80,7 @@ mod fluss_i;
 mod lohnersatz_liste;
 mod fluss_j;
 mod konto_ersetzen;
+mod konto_zeichensatz;
 mod seite;
 mod zuordnung;
 
