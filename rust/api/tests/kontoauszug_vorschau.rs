@@ -316,6 +316,20 @@ async fn bank_vorschau_folge_je_feld_nennt_ersetzbar_geschrieben_schon_erfasst_u
     assert_eq!(std::fs::read(akte_pfad(&d, "w1")).unwrap(), akte, "keine Vorschau darf die Akte aendern");
 }
 
+/// Das Feld `hinweis` steht nur in der Antwort, wenn es einen Hinweissatz gibt (Mutant P13: `if true` statt `if !hinweise.is_empty()`):
+/// eine Spende ohne Besonderheit sagt nichts, ein Handwerker (Nachfrage) sagt den Satz zu § 35a.
+#[tokio::test]
+async fn bank_vorschau_ohne_hinweissatz_hat_kein_feld_hinweis() {
+    let d = dienst();
+    fall_anlegen(&d, "h1").await;
+    let (s, a) = sende(&d, "/fall/h1/bank/vorschau", &rumpf(&[SPENDE_NEU], &json!({}))).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["uebernommen"], json!(1), "Kontrolle: die Spende geht ein: {a}");
+    assert!(a.get("hinweis").is_none(), "die Antwort traegt einen leeren Hinweis: {a}");
+    let (_, a) = sende(&d, "/fall/h1/bank/vorschau", &rumpf(&["01.03.2025;-73,00;Maler Huber"], &json!({}))).await;
+    assert!(a["hinweis"].as_str().is_some_and(|h| h.contains("Arbeitskosten laut Rechnung")), "Kontrolle: mit Nachfrage steht der Satz da: {a}");
+}
+
 /// `abgewaehlt` ist eine Liste von Stellen: jede andere Form, eine Stelle jenseits der Liste und eine doppelte Stelle sind 400, in
 /// der Vorschau wie beim Uebernehmen, und nichts wird geschrieben.
 #[tokio::test]
