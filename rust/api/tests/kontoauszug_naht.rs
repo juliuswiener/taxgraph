@@ -321,9 +321,15 @@ async fn json_text_wie_json_loads() {
     }
 }
 
+/// Bankimport, echte Bankdatei (AK2): Ohne KI-Konfiguration (`$LLM_*` fehlt) fragt der Dienst kein Modell. Dann gibt es keinen
+/// Deckel der Aufrufe und keinen Satz darueber: eine Ausgabe ohne Stichwort ist „ohne erkanntes Stichwort“, nie „NICHT
+/// automatisch eingeordnet“. ABWEICHUNG von Python (`api.kontoauszug` zaehlt den Deckel auch ohne Anbieter, Abweichung Nr. 107):
+/// dort meldete die 51. Buchung ohne Stichwort „die Grenze von 50 Klassifikationen … war erreicht“, obwohl nichts klassifiziert
+/// werden konnte. Mit KI gilt der Deckel wie zuvor (`kontoauszug_deckel_hermetisch.rs`).
 #[tokio::test]
-async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
+async fn echtdatei_ohne_ki_kein_deckelhinweis() {
     let d = dienst();
+    // 56 Buchungen ohne Stichwort, eine Spende, ein unlesbarer Betrag: nur der unlesbare Betrag ist einen Satz wert.
     let mut tx: Vec<Value> = (0..56)
         .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
         .collect();
@@ -333,23 +339,10 @@ async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
     assert_eq!(status, 200, "{antwort}");
     assert_eq!(
         antwort,
-        json!({"uebernommen": 1, "transaktionen": 57, "verworfen": 1, "llm_uebersprungen": 6,
-            "hinweis": "1 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen. 6 Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze von 50 Klassifikationen je Auszug war erreicht. Bitte diese Buchungen selbst zuordnen oder den Auszug in kleineren Zeiträumen hochladen."})
+        json!({"uebernommen": 1, "transaktionen": 57, "verworfen": 1,
+            "hinweis": "1 Zeile(n) mit unlesbarem Betrag (keine Zahl oder ab 100 Mio. €) verworfen — bitte manuell prüfen/nachtragen."})
     );
-    // Genau am Deckel: nichts wird übersprungen, und der Schlüssel fehlt.
-    let genau: Vec<Value> = (0..50)
-        .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
-        .collect();
-    let (status, antwort) = auszug(&d, "kd2", json!({"format": "json", "inhalt": genau})).await;
-    assert_eq!(
-        (status, antwort),
-        (
-            200,
-            json!({"uebernommen": 0, "transaktionen": 50, "verworfen": 0})
-        )
-    );
-    // Auftrag k9-2 (Mutant K40): EINE übersprungene Buchung ist schon ein Hinweis wert (Python: `> 0`). Die
-    // Antwort stammt aus `api.kontoauszug` (CPython 3.14), 51 Buchungen ohne Stichwort, kein Schlüssel.
+    // 51 Buchungen ohne Stichwort (JSON): kein Schluessel `llm_uebersprungen`, kein Hinweis.
     let eine: Vec<Value> = (0..51)
         .map(|i| json!({"datum": "01.03.2025", "betrag": -100 - i, "verwendungszweck": format!("Einkauf {i}")}))
         .collect();
@@ -358,10 +351,44 @@ async fn deckel_der_llm_aufrufe_ist_kein_stilles_kuerzen() {
         (status, antwort),
         (
             200,
-            json!({"uebernommen": 0, "transaktionen": 51, "verworfen": 0, "llm_uebersprungen": 1,
-                "hinweis": "1 Buchung(en) wurden NICHT automatisch eingeordnet — die Grenze von 50 Klassifikationen je Auszug war erreicht. Bitte diese Buchungen selbst zuordnen oder den Auszug in kleineren Zeiträumen hochladen."})
+            json!({"uebernommen": 0, "transaktionen": 51, "verworfen": 0})
         )
     );
+    // Der Fall der echten Datei: 62 Ausgaben im CSV, kein Stichwort. Der Hinweis nennt sie ALLE als „ohne erkanntes Stichwort“.
+    let zeilen: Vec<String> = (0..62).map(|i| format!("01.03.2025;-{},00;Einkauf {i}", 3 + i)).collect();
+    let zeilen: Vec<&str> = zeilen.iter().map(String::as_str).collect();
+    let (status, antwort) = auszug(&d, "kd4", csv(&zeilen)).await;
+    assert_eq!(
+        (status, antwort),
+        (
+            200,
+            json!({"uebernommen": 0, "transaktionen": 62, "verworfen": 0,
+                "hinweis": "62 Buchung(en) gelesen, aber kein Vorschlag: 62 Buchung(en) ohne erkanntes Stichwort."})
+        )
+    );
+}
+
+/// Bankimport, echte Bankdatei (AK1): Die Depot-Tabelle hinter den Buchungen ist keine Buchung, auch ueber die Route. Gestalt der
+/// echten Datei (erfunden): Vorspann, Kopfzeile mit sechs Feldern, drei Buchungen, Fusszeile, zweite Kopfzeile mit neun Feldern, drei
+/// Depot-Zeilen, davon eine mit rein numerischer Kennnummer in der Betragsspalte.
+#[tokio::test]
+async fn echtdatei_depot_tabelle_ist_ueber_die_route_keine_buchung() {
+    let d = dienst();
+    let inhalt = "\"Umsätze Girokonto\";\"Zeitraum: 180 Tage\";\r\n\r\n\
+        \"Buchungstag\";\"Wertstellung (Valuta)\";\"Vorgang\";\"Buchungstext\";\"Umsatz in EUR\";\r\n\
+        \"15.03.2025\";\"15.03.2025\";\"Lastschrift\";\"Maler Huber Rechnung\";\"-480,00\";\r\n\
+        \"16.03.2025\";\"16.03.2025\";\"Lastschrift\";\"Einkauf\";\"-12,50\";\r\n\
+        \"17.03.2025\";\"17.03.2025\";\"Gutschrift\";\"Gehalt\";\"2.000,00\";\r\n\r\n\
+        \"Summe Ausgaben\";\"-492,50 EUR\";\r\n\r\n\
+        \"Kaufdatum\";\"Valuta\";\"Stück\";\"Bezeichnung\";\"WKN\";\"Währung\";\"Kurs\";\"Wert\";\r\n\
+        \"01.02.2025\";\"01.02.2025\";\"1,000\";\"Muster Fonds\";\"A1B2C3\";\"EUR\";\"12,34\";\"12,34\";\r\n\
+        \"02.02.2025\";\"02.02.2025\";\"2,000\";\"Muster Aktie\";\"654321\";\"EUR\";\"1,00\";\"2,00\";\r\n\
+        \"03.02.2025\";\"03.02.2025\";\"3,000\";\"Muster Anleihe\";\"D4E5F6\";\"EUR\";\"3,00\";\"9,00\";\r\n";
+    let (status, antwort) = auszug(&d, "kz2", json!({"format": "csv", "inhalt": inhalt})).await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(antwort["transaktionen"], 3, "nur die drei Buchungen der ersten Tabelle: {antwort}");
+    assert_eq!(antwort["verworfen"], 0, "die Depot-Zeilen sind keine Zeilen mit unlesbarem Betrag: {antwort}");
+    assert_eq!(antwort["uebernommen"], 1, "{antwort}");
 }
 
 /// Auftrag k9-2 (Mutant K34): ein CSV, das Python mit `csv.Error` abbricht (ein `\r` mitten im ungequoteten Feld),

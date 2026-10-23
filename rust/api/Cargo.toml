@@ -105,6 +105,10 @@ name = "kette_endstand_hermetisch"
 path = "tests/kette_endstand_hermetisch.rs"
 
 [[test]]
+name = "kontoauszug_deckel_hermetisch"
+path = "tests/kontoauszug_deckel_hermetisch.rs"
+
+[[test]]
 name = "kontoauszug_werkzeug"
 path = "tests/kontoauszug_werkzeug.rs"
 
