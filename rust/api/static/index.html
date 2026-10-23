@@ -107,6 +107,26 @@
         <div id="konto-panel" class="vorjahr-panel" hidden>
           <input id="konto-file" type="file" accept=".csv,.json,.pdf,text/csv,application/json,application/pdf">
           <div id="konto-status" class="maps-status">Ausgaben werden als Vorschläge erfasst — du bestätigst jede neben dem Auszug. IBAN/Kontonummern werden maskiert.</div>
+          <!-- Vorschau vor dem Schreiben (Bankimport S3): der Dienst rechnet den Auszug auf einer Kopie und speichert nichts. Die
+               Nutzerin wählt Posten ab, setzt die zwei Haken und übernimmt. Alles, was hier erscheint, setzt app.js mit textContent
+               ein: ein Zweck ist fremder Text. -->
+          <div id="konto-vorschau" class="kv" hidden>
+            <p class="kv-kopf">Vorschau – es ist noch nichts gespeichert.</p>
+            <div id="konto-felder"></div>
+            <div id="konto-nachfragen"></div>
+            <div id="konto-abgleich"></div>
+            <p id="konto-leer" class="kv-hinweis" hidden>Es gibt nichts zu übernehmen.</p>
+            <label class="kv-haken"><input id="konto-haken-art9" type="checkbox"> Auch Buchungen zu Gesundheit, Gewerkschaft oder Kirche auswerten (sie gehen nie an die KI)</label>
+            <label class="kv-haken"><input id="konto-haken-ki" type="checkbox"> Buchungen ohne Stichwort von der KI einordnen lassen</label>
+            <p id="konto-haken-ki-satz" class="kv-hinweis"></p>
+            <div id="konto-kreuz" class="kv-kreuz" hidden>
+              <label class="kv-haken"><input id="konto-kreuz-box" type="checkbox"> <span id="konto-kreuz-satz"></span></label>
+            </div>
+            <p id="konto-hinweis" class="kv-hinweis"></p>
+            <p class="kv-hinweis">Die Zahl im Ergebnis erscheint erst, wenn du die Vorschläge im Fragebogen bestätigst.</p>
+            <button id="konto-uebernehmen" class="maps-berechnen" type="button" disabled>Übernehmen</button>
+            <button id="konto-verwerfen" class="btn-link" type="button">Verwerfen</button>
+          </div>
           <!-- Rückfrage mit Haken (Bankimport S1b, d-63): ein zweiter Auszug ersetzt den eigenen Vorschlag eines früheren
                erst, wenn der Haken sitzt. Die Zahlen nennt die Statuszeile darüber. -->
           <div id="konto-ersetzen" hidden>

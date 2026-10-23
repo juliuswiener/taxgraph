@@ -2795,7 +2795,156 @@ async function vorjahrUebernehmen() {
   btn.disabled = false;
 }
 
-// --- Kontoauszug-Upload: CSV/JSON/PDF → Transaktion-Vorschläge (herkunft=kontoauszug), Nutzer bestätigt ---
+// --- Kontoauszug-Upload: CSV/JSON/PDF → Vorschau (nichts gespeichert) → Übernehmen → Transaktion-Vorschläge (herkunft=kontoauszug) ---
+//
+// Bankimport S3. Die Dateiwahl sendet den Auszug an `/bank/vorschau`: der Dienst rechnet ihn auf einer Kopie der Akte und schreibt
+// nichts. Die Nutzerin wählt Posten ab (die Stelle in der gelesenen Liste ist die Kennung), setzt die zwei Haken und übernimmt; erst
+// `kontoauszugUebernehmen` sendet an `/kontoauszug`. Die Seite rechnet nie selbst: jede Summe auf dem Schirm kommt aus der Antwort des
+// Dienstes, und „Übernehmen" sendet keinen Betrag, nur die Stellen der abgewählten Posten. Jeder fremde Text (Zweck, Gegenpartei) kommt
+// nur per textContent auf den Schirm, nie als HTML.
+let KONTO_LETZTER = null;          // { format, inhalt } des gewählten Auszugs; null nach Übernehmen, Fehler oder Verwerfen. Die Rückfrage
+                                   // des Ersetzens (Bankimport S1b, d-63) hält ihn, bis sie beantwortet ist.
+let KONTO_OPTIONEN = {};           // Haken und Abwahl, wie „Übernehmen" sie sendete: die Rückfrage sendet sie noch einmal
+let KONTO_ABGEWAEHLT = new Set();  // Stellen der abgewählten Posten
+let KONTO_VORSCHAU = null;         // die jüngste Antwort der Vorschau, die auf dem Schirm steht
+let KONTO_NR = 0;                  // laufende Nummer der Vorschau-Anfragen: nur die Antwort auf die jüngste zählt
+let KONTO_OFFEN = 0;               // Vorschau-Anfragen unterwegs (auch veraltete)
+let KONTO_UEBERNIMMT = false;      // „Übernehmen" läuft
+let KONTO_KREUZ_WAHL = null;       // Häkchen der Nutzerin am Kreuz; null: nicht angefasst, es gilt der Vorgabewert
+let KONTO_KREUZ_AN = false;        // das Häkchen stand beim Übernehmen
+
+const KONTO_FELDNAMEN = {
+  spenden_betrag: "Spenden",
+  vor_rv_ausserhalb_lstb: "Vorsorge (Rente, außerhalb der Lohnsteuerbescheinigung)",
+  basis_kv: "Krankenversicherung (Basisanteil)",
+  basis_pv: "Pflegeversicherung",
+  hh_handwerker_betrag: "Handwerker (§ 35a)",
+  hh_dienstleistung_betrag: "Haushaltsnahe Dienstleistung (§ 35a)",
+  hh_minijob_betrag: "Minijob im Haushalt (§ 35a)",
+};
+const KONTO_FOLGE_TEXT = {
+  geschrieben: "Wird beim Übernehmen als Vorschlag erfasst.",
+  ersetzbar: "Das Feld trägt schon einen Vorschlag aus einem früheren Auszug. Ersetzt wird erst nach deiner Rückfrage.",
+  saldo_nicht_positiv: "Kein Vorschlag: Die Rückbuchungen gleichen die Ausgaben aus.",
+  schon_erfasst: "Kein neuer Vorschlag: Diese Buchungen stehen schon im bisherigen Vorschlag.",
+  abgewaehlt: "Kein Vorschlag: Du hast alle Buchungen abgewählt.",
+};
+const KONTO_OHNE_TEXT = "(Text wird nicht angezeigt)";
+
+const kontoFeldname = (id) => KONTO_FELDNAMEN[id] || id;
+// Cent als „11,00 €" mit gewöhnlichem Leerzeichen (`euro()` setzt ein geschütztes).
+function kontoEuro(cent) {
+  const zahl = (Math.abs(cent) / 100).toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (cent < 0 ? "-" : "") + zahl + " €";
+}
+function kontoDatum(iso) {
+  const t = String(iso).split("-");
+  return t.length === 3 ? `${t[2]}.${t[1]}.${t[0]}` : String(iso);
+}
+function kontoEl(tag, klasse, text) {
+  const e = document.createElement(tag);
+  e.className = klasse;
+  e.textContent = text;
+  return e;
+}
+
+// Ein Feld der Vorschau: Name und Summe aus der Antwort, darunter die Posten, je mit einem Kästchen (angehakt = geht in die Summe ein).
+function kontoFeldZeigen(f) {
+  const feld = document.createElement("div");
+  feld.className = "kv-feld";
+  feld.dataset.feld = f.feld_id;
+  const kopf = document.createElement("div");
+  kopf.className = "kv-feld-kopf";
+  kopf.append(kontoEl("span", "kv-name", kontoFeldname(f.feld_id)), kontoEl("span", "kv-summe", kontoEuro(f.summe_cent)));
+  const liste = document.createElement("ul");
+  liste.className = "kv-posten";
+  for (const p of f.posten) {
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.className = "kv-box";
+    box.dataset.index = String(p.index);
+    box.checked = !p.abgewaehlt;
+    const ausgabe = p.betrag_cent < 0;
+    const label = document.createElement("label");
+    label.append(
+      box,
+      kontoEl("span", "kv-datum", kontoDatum(p.datum)),
+      kontoEl("span", "kv-betrag", ausgabe ? kontoEuro(-p.betrag_cent) : `+${kontoEuro(p.betrag_cent)} (Rückbuchung)`),
+      kontoEl("span", "kv-zweck", p.zweck_maskiert || KONTO_OHNE_TEXT),
+    );
+    const li = document.createElement("li");
+    li.className = "kv-posten-zeile";
+    li.appendChild(label);
+    liste.appendChild(li);
+  }
+  feld.append(kopf, kontoEl("div", "kv-folge", KONTO_FOLGE_TEXT[f.folge] || f.folge), liste);
+  return feld;
+}
+
+// Gibt es etwas zu übernehmen? Nur ein Feld, das geschrieben würde oder dessen Ersetzen die Rückfrage klärt.
+const kontoGibtEsWas = (b) => (b.felder || []).some((f) => f.folge === "geschrieben" || f.folge === "ersetzbar");
+
+function kontoRendern(b) {
+  $("konto-felder").replaceChildren(...b.felder.map(kontoFeldZeigen));
+  $("konto-nachfragen").replaceChildren(...(b.nachfragen || []).map((n) => kontoEl("div", "kv-nachfrage",
+    `${kontoFeldname(n.feld_id)}: ${kontoDatum(n.datum)}, ${kontoEuro(-n.betrag_cent)}, ${n.zweck_maskiert || KONTO_OHNE_TEXT}. `
+    + "Eingetragen wird nur der Anteil der Arbeitskosten laut Rechnung; trage ihn im Fragebogen selbst ein.")));
+  $("konto-abgleich").replaceChildren(...(b.abgleich || []).map((a) => kontoEl("div", "kv-abgleich",
+    `${kontoFeldname(a.feld_id)}: Das Feld hat schon einen Wert (Beleg oder deine Eingabe), der Kontoauszug ändert ihn nicht. `
+    + `Das Konto ergäbe ${kontoEuro(a.summe_cent)} aus ${a.anzahl} Buchung(en).`)));
+  $("konto-leer").hidden = kontoGibtEsWas(b);
+  const n = b.ohne_stichwort || 0;
+  $("konto-haken-ki-satz").textContent = n > 0
+    ? `${n} Buchung(en) ohne Stichwort. Mit dem Haken ordnet die KI sie beim Übernehmen ein; die Vorschau zeigt sie nicht.`
+    : "Keine Buchung ohne Stichwort.";
+  const k = (b.kreuz_abwahl || [])[0];
+  $("konto-kreuz").hidden = !k;
+  if (k) {
+    $("konto-kreuz-satz").textContent = k.aktuell === true
+      ? "Du hattest „keine Spenden“ angekreuzt, der Auszug zeigt aber eine Spende. Das Kreuz abwählen (= ja, ich habe gespendet)."
+      : "Spende gefunden: Das Kreuz „keine Spenden“ abwählen (= ja, ich habe gespendet).";
+    $("konto-kreuz-box").checked = KONTO_KREUZ_WAHL !== null ? KONTO_KREUZ_WAHL : k.aktuell === null;
+  }
+  $("konto-hinweis").textContent = b.hinweis || "";
+  $("konto-vorschau").hidden = false;
+}
+
+// Knöpfe und Kästchen: „Übernehmen" ist gesperrt, solange eine Anfrage der Vorschau läuft (sonst gälte eine Abwahl, die der Schirm noch
+// nicht zeigt), solange „Übernehmen" selbst läuft, und wenn es nichts zu übernehmen gibt.
+function kontoKnoepfe() {
+  $("konto-uebernehmen").disabled = KONTO_OFFEN > 0 || KONTO_UEBERNIMMT || !KONTO_VORSCHAU || !kontoGibtEsWas(KONTO_VORSCHAU);
+  $("konto-verwerfen").disabled = KONTO_UEBERNIMMT;
+  for (const el of document.querySelectorAll("#konto-vorschau input")) el.disabled = KONTO_UEBERNIMMT;
+}
+
+function kontoRueckfrageZu() {
+  $("konto-ersetzen").hidden = true;   // eine offene Rückfrage galt dem alten Auszug; der Haken darf den neuen nicht mitnehmen
+  $("konto-ersetzen-haken").checked = false;
+  $("konto-ersetzen-go").disabled = true;
+}
+
+// Schirm und Wahl der Vorschau leeren, den Auszug nicht. Eine noch laufende Antwort der Vorschau gilt danach nicht mehr.
+function kontoVorschauWeg() {
+  KONTO_NR += 1;
+  KONTO_VORSCHAU = null;
+  KONTO_ABGEWAEHLT = new Set();
+  KONTO_KREUZ_WAHL = null;
+  $("konto-vorschau").hidden = true;
+  for (const id of ["konto-felder", "konto-nachfragen", "konto-abgleich"]) $(id).replaceChildren();
+  $("konto-haken-art9").checked = false;
+  $("konto-haken-ki").checked = false;
+  kontoKnoepfe();
+}
+
+// Auch den Auszug vergessen und die Dateiwahl leeren (dieselbe Datei noch einmal zu wählen löst sonst kein `change` aus).
+function kontoZuruecksetzen() {
+  kontoVorschauWeg();
+  KONTO_LETZTER = null;
+  KONTO_OPTIONEN = {};
+  KONTO_KREUZ_AN = false;
+  $("konto-file").value = "";
+}
+
 async function kontoauszugHochladen(datei) {
   const input = $("konto-file"), st = $("konto-status");
   if (!datei || input.disabled) return;   // Doppel-Submit-Schutz
@@ -2804,32 +2953,113 @@ async function kontoauszugHochladen(datei) {
                : name.endsWith(".pdf") ? "pdf" : null;
   if (!format) { st.textContent = "Bitte eine CSV-, JSON- oder PDF-Datei wählen."; return; }
   input.disabled = true;
-  $("konto-ersetzen").hidden = true;   // eine offene Rückfrage galt dem alten Auszug; der Haken darf den neuen nicht mitnehmen
+  kontoRueckfrageZu();
+  kontoVorschauWeg();   // die Vorschau galt dem alten Auszug
+  KONTO_LETZTER = null;
   st.textContent = "Lese Auszug …";
   const inhalt = format === "pdf" ? await _dateiAlsBase64(datei) : await _dateiAlsText(datei);
   KONTO_LETZTER = { format, inhalt };
-  await kontoauszugSenden(false);
+  await kontoVorschauSenden();
   input.disabled = false;
 }
 
-// Der letzte Auszug bleibt im Speicher, damit die Rückfrage mit Haken ihn ohne neue Dateiwahl noch einmal senden kann
-// (Bankimport S1b, d-63). Ohne Rückfrage wird er verworfen.
-let KONTO_LETZTER = null;
+// Die Vorschau anfordern: der Auszug mit dem Haken `art9` und den abgewählten Stellen. Der KI-Haken geht nicht mit: die Vorschau ruft die
+// KI nie. Jede Anfrage trägt eine laufende Nummer; die Antwort einer älteren Anfrage wird verworfen, sonst überschriebe sie den Stand, den
+// die Nutzerin zuletzt gewählt hat.
+async function kontoVorschauSenden() {
+  if (!KONTO_LETZTER) return;
+  const nr = ++KONTO_NR;
+  KONTO_OFFEN += 1;
+  kontoKnoepfe();
+  const rumpf = { ...KONTO_LETZTER, art9: $("konto-haken-art9").checked, abgewaehlt: [...KONTO_ABGEWAEHLT].sort((a, b) => a - b) };
+  const r = await jpost(`/fall/${FALL}/bank/vorschau`, rumpf);
+  KONTO_OFFEN -= 1;
+  if (nr !== KONTO_NR) { kontoKnoepfe(); return; }   // eine jüngere Anfrage oder „Verwerfen" gilt
+  if (r.status === 200) {
+    KONTO_VORSCHAU = r.body;
+    kontoRendern(r.body);
+    $("konto-status").textContent = `${r.body.transaktionen} Buchung(en) gelesen. Prüfe die Vorschau; erst „Übernehmen“ speichert.`;
+  } else {
+    kontoZuruecksetzen();
+    $("konto-status").textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);
+  }
+  kontoKnoepfe();
+}
 
-// Sendet den letzten Auszug. Trägt ein Feld schon einen eigenen Vorschlag aus einem früheren Auszug, ersetzt der Server ihn
-// nur mit `ersetzen` (dem Haken); ohne Haken antwortet er mit `ersetzbar`, und die Rückfrage erscheint. Jede andere Antwort
-// (auch ein Fehler) schließt die Rückfrage und vergisst den Auszug: der Haken gilt nie für einen Auszug, den die Rückfrage nicht nannte.
+// „Übernehmen": sendet den Auszug mit dem, was auf dem Schirm steht (Haken, abgewählte Stellen), an `/kontoauszug`.
+async function kontoauszugUebernehmen() {
+  // Hinter dem gesperrten Knopf stehen dieselben Sperren: kein Auszug, eine Anfrage der Vorschau läuft noch, „Übernehmen" läuft schon.
+  if (!KONTO_LETZTER || !KONTO_VORSCHAU || KONTO_OFFEN > 0 || KONTO_UEBERNIMMT) return;
+  KONTO_UEBERNIMMT = true;
+  $("konto-file").disabled = true;
+  KONTO_KREUZ_AN = !$("konto-kreuz").hidden && $("konto-kreuz-box").checked;
+  KONTO_OPTIONEN = {
+    art9: $("konto-haken-art9").checked,
+    ki_buchungstext: $("konto-haken-ki").checked,
+    abgewaehlt: [...KONTO_ABGEWAEHLT].sort((a, b) => a - b),
+  };
+  kontoKnoepfe();
+  $("konto-status").textContent = "Übernehme …";
+  try {
+    await kontoauszugSenden(false);
+  } finally {
+    KONTO_UEBERNIMMT = false;
+    $("konto-file").disabled = false;
+    kontoKnoepfe();
+  }
+}
+
+function kontoauszugVerwerfen() {
+  if (KONTO_UEBERNIMMT) return;
+  kontoZuruecksetzen();
+  $("konto-status").textContent = "Auszug verworfen. Es wurde nichts gespeichert.";
+}
+
+// Das Kreuz „keine Spenden“ abwählen: die Antwort der Nutzerin, wie die Ankreuzliste sie schreibt (`screeningWeiter`), `ui:laie`,
+// bestätigt. `false` heißt hier „ja, gespendet“: das Kreuz steht bei diesem Feld umgekehrt (Speicherwert `true` = „keine Spenden“). Hat die
+// Nutzerin das Kreuz selbst gesetzt (`aktuell: true`), ersetzt das neue Ereignis ihre Antwort, mit der Kennung aus /warum.
+async function kontoKreuzAbwaehlen(k) {
+  const ev = {
+    feld_id: k.feld_id, wert: false, zustand: "bestaetigt",
+    herkunft: { herkunft: "laie", pruef_tiefe: "ungeprueft", haftung: "nutzer" },
+    schreiber: "ui:laie",
+    signal: { signal_1: null, signal_2: "screening@" + k.feld_id },
+  };
+  if (k.aktuell !== null) {
+    const j = (await jget(`/fall/${FALL}/feld/${k.feld_id}/warum`)).body.justification || {};
+    if (!j.event_id) return { fehler: "Die bisherige Antwort ist nicht zu finden." };
+    ev.ersetzt = j.event_id;
+    ev.signal.signal_1 = j.event_id;
+  }
+  const r = await jpost(`/fall/${FALL}/event`, ev);
+  return okStatus(r.status) ? { ok: true } : { fehler: (r.body && r.body.fehler) || r.status };
+}
+
+// Sendet den gemerkten Auszug mit den gemerkten Haken und Abwahlen. Trägt ein Feld schon einen eigenen Vorschlag aus einem früheren
+// Auszug, ersetzt der Server ihn nur mit `ersetzen` (dem Haken); ohne Haken antwortet er mit `ersetzbar`, und die Rückfrage erscheint.
+// Jede andere Antwort (auch ein Fehler) schließt die Rückfrage und vergisst den Auszug: der Haken gilt nie für einen Auszug, den die
+// Rückfrage nicht nannte. Das Kreuz schreibt die Seite erst nach einer erfolgreichen Antwort, die es nennt (`kreuz_abwahl`: der Dienst hat
+// wirklich Spenden geschrieben), und nur mit dem Häkchen der Nutzerin.
 async function kontoauszugSenden(ersetzen) {
   const st = $("konto-status");
-  const r = await jpost(`/fall/${FALL}/kontoauszug`, ersetzen ? { ...KONTO_LETZTER, ersetzen: true } : KONTO_LETZTER);
+  const r = await jpost(`/fall/${FALL}/kontoauszug`, { ...KONTO_LETZTER, ...KONTO_OPTIONEN, ...(ersetzen ? { ersetzen: true } : {}) });
   const fragen = r.status === 200 && !!(r.body.ersetzbar && r.body.ersetzbar.length);
+  const kreuzAn = KONTO_KREUZ_AN;
   $("konto-ersetzen-haken").checked = false;
   $("konto-ersetzen-go").disabled = true;
   $("konto-ersetzen").hidden = !fragen;
-  if (!fragen) KONTO_LETZTER = null;
+  kontoVorschauWeg();
+  if (!fragen) kontoZuruecksetzen();
   if (r.status === 200) {
-    st.textContent = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`
+    const satz = `${r.body.uebernommen} von ${r.body.transaktionen} Buchung(en) als Vorschlag erfasst — bitte im Fluss bestätigen.`
       + (r.body.hinweis ? ` ${r.body.hinweis}` : "");
+    st.textContent = satz;
+    const kreuz = (r.body.kreuz_abwahl || [])[0];
+    if (kreuzAn && kreuz) {
+      const f = await kontoKreuzAbwaehlen(kreuz);
+      st.textContent = satz + (f.ok ? " Das Kreuz „keine Spenden“ ist abgewählt."
+        : ` Das Kreuz „keine Spenden“ wurde nicht abgewählt: ${f.fehler}. Du kannst es im Fragebogen selbst ändern.`);
+    }
     await refresh();
   } else {
     st.textContent = "Upload fehlgeschlagen: " + ((r.body && (r.body.vertrag || r.body.fehler)) || r.status);
@@ -2994,6 +3224,17 @@ $("konto-toggle").addEventListener("click", () => { const p = $("konto-panel"); 
 $("konto-file").addEventListener("change", (e) => kontoauszugHochladen(e.target.files[0]));
 $("konto-ersetzen-haken").addEventListener("change", (e) => { $("konto-ersetzen-go").disabled = !e.target.checked; });
 $("konto-ersetzen-go").addEventListener("click", kontoauszugErsetzen);
+$("konto-felder").addEventListener("change", (e) => {
+  const box = e.target.closest(".kv-box");
+  if (!box) return;
+  const stelle = Number(box.dataset.index);
+  if (box.checked) KONTO_ABGEWAEHLT.delete(stelle); else KONTO_ABGEWAEHLT.add(stelle);
+  kontoVorschauSenden();
+});
+$("konto-haken-art9").addEventListener("change", kontoVorschauSenden);
+$("konto-kreuz-box").addEventListener("change", (e) => { KONTO_KREUZ_WAHL = e.target.checked; });
+$("konto-uebernehmen").addEventListener("click", kontoauszugUebernehmen);
+$("konto-verwerfen").addEventListener("click", kontoauszugVerwerfen);
 $("login-go").addEventListener("click", loginGo);
 $("login-umschalten").addEventListener("click", loginModusUmschalten);
 $("logout-btn").addEventListener("click", abmelden);

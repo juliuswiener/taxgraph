@@ -9,6 +9,9 @@
 //! HERKUNFT DER ERWARTUNGSWERTE: Handrechnung. Erster Auszug 4,00 + 7,00 = 11,00 EUR, zweiter 7,00 (dieselbe Buchung) + 5,00:
 //! Vereinigung 4,00 + 7,00 + 5,00 = 16,00 EUR aus 3 Buchungen. Die Saetze der Rueckfrage stehen so in `kontoauszug_naht.rs`.
 //!
+//! Seit Bankimport S3 steht zwischen Dateiwahl und Schreiben die Vorschau (`bank_vorschlaege_pruefen.rs`): `uebernimm_auszug` waehlt
+//! die Datei und klickt „Uebernehmen“, `waehle_auszug` waehlt nur. Die Rueckfrage des Ersetzens kommt weiter erst nach dem Uebernehmen.
+//!
 //! Grenzen: Chromium allein. Die Datei kommt per `DataTransfer` ins Eingabefeld (wie die Dateiwahl sie liefert); der
 //! Dateiwahl-Dialog des Betriebssystems laeuft nicht.
 
@@ -35,6 +38,19 @@ fn waehle_datei(u: &Umgebung, name: &str, inhalt: &str) {
 /// Eine CSV-Datei mit diesen Zeilen.
 fn waehle_auszug(u: &Umgebung, zeilen: &[&str]) {
     waehle_datei(u, "auszug.csv", &format!("datum;betrag;verwendungszweck\n{}\n", zeilen.join("\n")));
+}
+
+/// Die Datei ist gewaehlt, und die Nutzerin uebernimmt die Vorschau, wie sie ist (nichts abgewaehlt, kein Haken).
+fn uebernimm_auszug(u: &Umgebung, zeilen: &[&str]) {
+    waehle_auszug(u, zeilen);
+    uebernimm_vorschau(u);
+}
+
+/// Die Vorschau steht da, und die Nutzerin klickt „Uebernehmen“ (Bankimport S3).
+pub(crate) fn uebernimm_vorschau(u: &Umgebung) {
+    u.s.warte_sichtbar("#konto-vorschau", 15);
+    u.s.warte_bis("!document.getElementById('konto-uebernehmen').disabled", 15, "Uebernehmen ist frei");
+    u.s.klick("#konto-uebernehmen");
 }
 
 /// Wartet, bis die Statuszeile des Kontoauszugs `text` enthaelt, und liefert sie.
@@ -78,14 +94,14 @@ fn zweiter_auszug_fragt_mit_haken_und_ersetzt_erst_danach() {
     let fall = zum_kontoauszug(&u);
 
     // Der erste Auszug schreibt einen Vorschlag; auf ein leeres Feld fragt die Seite nichts.
-    waehle_auszug(&u, ERSTER);
+    uebernimm_auszug(&u, ERSTER);
     let status = warte_status(&u, "2 von 2 Buchung(en) als Vorschlag erfasst");
     assert!(!rueckfrage_offen(&u), "auf ein leeres Feld fragt die Seite nichts; Status {status:?}");
     let erste = u.dienst.ereignisse(&fall, FELD);
     assert_eq!(werte(&erste), [json!(11_00)], "der erste Auszug schreibt 4,00 + 7,00 EUR");
 
     // Der zweite Auszug trifft das belegte Feld: die Rueckfrage nennt alt und neu, der Knopf ist gesperrt, der Fall bleibt, wie er war.
-    waehle_auszug(&u, ZWEITER);
+    uebernimm_auszug(&u, ZWEITER);
     let status = warte_status(&u, "Ersetzen möglich");
     assert!(
         status.contains("spenden_betrag: bisher 11,00 € aus 2 Buchung(en), mit diesem Auszug 16,00 € aus 3 Buchung(en)"),
@@ -125,9 +141,13 @@ fn zweiter_auszug_fragt_mit_haken_und_ersetzt_erst_danach() {
     assert_eq!(jetzt[1]["ersetzt"], erste[0]["event_id"], "das neue Ereignis verweist nicht auf das alte");
     assert_eq!(u.dienst.letzter_wert(&fall, FELD), json!(16_00));
 
-    // Derselbe Auszug noch einmal: nichts Neues, also keine Rueckfrage und kein drittes Ereignis.
+    // Derselbe Auszug noch einmal: die Vorschau sagt, dass nichts Neues kommt, „Uebernehmen“ ist gesperrt, es gibt keine Rueckfrage und
+    // kein drittes Ereignis.
     waehle_auszug(&u, ZWEITER);
-    warte_status(&u, "0 von 2 Buchung(en)");
+    u.s.warte_sichtbar("#konto-vorschau", 15);
+    u.s.warte_bis("document.querySelectorAll('#konto-vorschau .kv-feld').length > 0", 10, "die Vorschau nennt das Feld");
+    assert!(u.s.text("#konto-vorschau").contains("schon im bisherigen Vorschlag"), "{:?}", u.s.text("#konto-vorschau"));
+    assert!(u.s.ausdruck("document.getElementById('konto-uebernehmen').disabled") == json!(true), "es gibt nichts zu uebernehmen");
     assert!(!rueckfrage_offen(&u), "ein unveraenderter Auszug fragt noch einmal");
     assert_eq!(u.dienst.ereignisse(&fall, FELD).len(), 2);
 
@@ -141,9 +161,9 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
     let fall = zum_kontoauszug(&u);
 
-    waehle_auszug(&u, ERSTER);
+    uebernimm_auszug(&u, ERSTER);
     warte_status(&u, "2 von 2 Buchung(en) als Vorschlag erfasst");
-    waehle_auszug(&u, ZWEITER);
+    uebernimm_auszug(&u, ZWEITER);
     warte_status(&u, "Ersetzen möglich");
     assert!(rueckfrage_offen(&u));
     u.s.klick("#konto-ersetzen-haken");
@@ -161,6 +181,7 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
     u.s.warte_bis("window.__weiter !== null", 10, "der dritte Auszug ist unterwegs");
     assert!(!rueckfrage_offen(&u), "waehrend ein neuer Auszug unterwegs ist, steht die alte Rueckfrage noch");
     u.s.skript("jpost = window.__echt; window.__weiter();", &[]);
+    uebernimm_vorschau(&u);
     warte_status(&u, "1 von 1 Buchung(en) als Vorschlag erfasst");
 
     // Die Rueckfrage ist zu, der Haken zurueck, der Knopf gesperrt. Auch ein erzwungener Aufruf ersetzt nichts.
@@ -175,7 +196,7 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
     assert_eq!(u.dienst.ereignisse(&fall, "vor_rv_ausserhalb_lstb").len(), 1, "der dritte Auszug schrieb sein Feld nicht");
 
     // Ein fehlerhafter Auszug (kein lesbares JSON) laesst die Rueckfrage ebenfalls nicht stehen.
-    waehle_auszug(&u, ZWEITER);
+    uebernimm_auszug(&u, ZWEITER);
     warte_status(&u, "Ersetzen möglich");
     u.s.klick("#konto-ersetzen-haken");
     waehle_datei(&u, "kaputt.json", "[{");
@@ -183,10 +204,10 @@ fn der_haken_gilt_nicht_fuer_einen_anderen_auszug_als_den_der_rueckfrage() {
     assert!(!rueckfrage_offen(&u) && !haken_gesetzt(&u) && knopf_gesperrt(&u), "nach einem Fehler steht die Rueckfrage noch");
     assert_eq!(u.dienst.ereignisse(&fall, FELD), erste, "nach dem Fehler wurde ersetzt");
 
-    // Die Konsole meldet genau die eine beabsichtigte 400 des kaputten Auszugs, sonst nichts.
+    // Die Konsole meldet genau die eine beabsichtigte 400 der Vorschau des kaputten Auszugs, sonst nichts.
     let konsole = u.konsolenfehler();
     assert!(
-        konsole.len() == 1 && konsole[0].contains("/kontoauszug - Failed to load resource") && konsole[0].contains("400"),
+        konsole.len() == 1 && konsole[0].contains("/bank/vorschau - Failed to load resource") && konsole[0].contains("400"),
         "Konsolenfehler: {konsole:?}"
     );
 }
@@ -201,9 +222,9 @@ fn der_knopf_ersetzen_sendet_waehrend_der_antwort_nicht_noch_einmal() {
     let u = umgebung_oder_ende!(Start::default(), 1280, 900);
     let fall = zum_kontoauszug(&u);
 
-    waehle_auszug(&u, ERSTER);
+    uebernimm_auszug(&u, ERSTER);
     warte_status(&u, "2 von 2 Buchung(en) als Vorschlag erfasst");
-    waehle_auszug(&u, ZWEITER);
+    uebernimm_auszug(&u, ZWEITER);
     warte_status(&u, "Ersetzen möglich");
     u.s.klick("#konto-ersetzen-haken");
     assert!(haken_gesetzt(&u) && !knopf_gesperrt(&u));

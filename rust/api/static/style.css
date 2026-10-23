@@ -88,6 +88,21 @@ h1,h2,h3{margin:0}
 .vorjahr-panel{background:#12162a;border:1px dashed var(--line);border-radius:12px;padding:12px;margin-top:8px}
 .vorjahr-panel input{width:100%;background:#0f1220;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:10px;margin-bottom:8px;font-size:14px}
 
+/* Kontoauszug: Vorschau vor dem Schreiben (Bankimport S3). Die Kästchen sind klein; `.vorjahr-panel input` machte sie sonst 100 % breit. */
+.kv{margin-top:10px;font-size:13px}
+.kv-kopf{font-weight:600;margin:0 0 8px}
+#konto-vorschau input[type=checkbox]{width:20px;height:20px;flex:none;padding:0;margin:0;accent-color:var(--akzent);cursor:pointer}
+.kv-feld{border-top:1px solid var(--line);padding:6px 0}
+.kv-feld-kopf{display:flex;justify-content:space-between;gap:10px;font-weight:600}
+.kv-folge{color:var(--muted);font-size:12px;margin:2px 0 4px}
+.kv-posten{list-style:none;margin:0;padding:0}
+.kv-posten-zeile label,.kv-haken{display:flex;align-items:center;gap:10px;min-height:36px;cursor:pointer}
+.kv-datum,.kv-betrag{white-space:nowrap}
+.kv-zweck{overflow-wrap:anywhere;color:var(--muted)}
+.kv-nachfrage,.kv-abgleich{border-top:1px solid var(--line);padding:6px 0}
+.kv-hinweis{color:var(--muted);font-size:12px;margin:6px 0}
+.kv-kreuz{border-top:1px solid var(--line);margin-top:6px}
+
 /* Aktionen: Bestätigen + Chat gleichberechtigt (Dim 5, always-on) */
 .aktionen{display:flex;gap:8px}
 .btn{flex:1;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;cursor:pointer}

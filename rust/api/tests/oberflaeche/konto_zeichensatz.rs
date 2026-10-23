@@ -19,7 +19,7 @@
 use serde_json::{json, Value};
 
 use crate::dienst::Start;
-use crate::konto_ersetzen::{warte_status, zum_kontoauszug};
+use crate::konto_ersetzen::{uebernimm_vorschau, warte_status, zum_kontoauszug};
 use crate::seite::Umgebung;
 
 const FELD: &str = "vor_rv_ausserhalb_lstb";
@@ -66,6 +66,7 @@ fn lade(u: &Umgebung, bytes: &[u8]) -> (Value, Value) {
 fn lade_datei(u: &Umgebung, name: &str, bytes: &[u8]) -> (Value, Value) {
     let fall = zum_kontoauszug(u);
     waehle_bytes(u, name, bytes);
+    uebernimm_vorschau(u);
     let status = warte_status(u, "1 von 1 Buchung(en) als Vorschlag erfasst");
     let ev = u.dienst.ereignisse(&fall, FELD);
     assert_eq!(ev.len(), 1, "ein Vorschlag im Feld {FELD}; Status {status:?}");

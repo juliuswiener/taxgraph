@@ -272,6 +272,50 @@ async fn bank_vorschau_abgewaehlt_rechnet_der_server_neu() {
     assert_eq!(a["uebernommen"], json!(1), "nur die Vorsorge ginge ein: {a}");
 }
 
+/// Die Folge je Feld im Wortlaut der Antwort: `ersetzbar` (eigener Vorschlag aus einem frueheren Auszug, ohne Haken), `geschrieben` mit dem
+/// Haken `ersetzen` (der Haken steht in der Antwort), `schon_erfasst` (derselbe Auszug noch einmal) und `saldo_nicht_positiv`
+/// (Rueckbuchung gleicht die Ausgabe aus). Die Vorschau aendert dabei die Akte nie.
+#[tokio::test]
+async fn bank_vorschau_folge_je_feld_nennt_ersetzbar_geschrieben_schon_erfasst_und_saldo() {
+    let d = dienst();
+    fall_anlegen(&d, "w1").await;
+    let erster = ["01.03.2025;-4,00;Spende Tierheim", "02.03.2025;-7,00;Spende Rotes Kreuz"];
+    let (s, a) = sende(&d, "/fall/w1/kontoauszug", &rumpf(&erster, &json!({}))).await;
+    assert_eq!((s, &a["uebernommen"]), (200, &json!(2)), "{a}");
+    let akte = std::fs::read(akte_pfad(&d, "w1")).unwrap();
+    let zweiter = ["02.03.2025;-7,00;Spende Rotes Kreuz", "03.03.2025;-5,00;Spende Unicef"];
+
+    let (s, a) = sende(&d, "/fall/w1/bank/vorschau", &rumpf(&zweiter, &json!({}))).await;
+    assert_eq!(s, 200, "{a}");
+    let feld = feld_der_antwort(&a, "spenden_betrag");
+    assert_eq!(
+        (feld["summe_cent"].as_i64(), feld["anzahl"].as_i64(), feld["folge"].as_str()),
+        (Some(16_00), Some(3), Some("ersetzbar")),
+        "die Summe ist die Vereinigung beider Auszuege: {feld}"
+    );
+    assert_eq!(a["ersetzbar"][0]["bisher_cent"], json!(11_00), "{a}");
+    assert!(a["hinweis"].as_str().is_some_and(|h| h.contains("Ersetzen möglich")), "{a}");
+    assert_eq!(a["haken"]["ersetzen"], json!(false));
+
+    let (_, a) = sende(&d, "/fall/w1/bank/vorschau", &rumpf(&zweiter, &json!({"ersetzen": true}))).await;
+    assert_eq!(feld_der_antwort(&a, "spenden_betrag")["folge"], json!("geschrieben"), "{a}");
+    assert_eq!(a["haken"]["ersetzen"], json!(true), "{a}");
+
+    let (_, a) = sende(&d, "/fall/w1/bank/vorschau", &rumpf(&erster, &json!({}))).await;
+    let feld = feld_der_antwort(&a, "spenden_betrag");
+    assert_eq!((feld["summe_cent"].as_i64(), feld["anzahl"].as_i64(), feld["folge"].as_str()), (Some(11_00), Some(2), Some("schon_erfasst")), "{feld}");
+    assert!(a.get("kreuz_abwahl").is_none(), "nichts wuerde geschrieben, also kein Kreuz: {a}");
+
+    fall_anlegen(&d, "w2").await;
+    let rueck = ["01.03.2025;-30,00;Rentenversicherung Ruerup", "02.03.2025;30,00;Rueckbuchung Rentenversicherung Ruerup"];
+    let (_, a) = sende(&d, "/fall/w2/bank/vorschau", &rumpf(&rueck, &json!({}))).await;
+    let feld = feld_der_antwort(&a, "vor_rv_ausserhalb_lstb");
+    assert_eq!((feld["summe_cent"].as_i64(), feld["anzahl"].as_i64(), feld["folge"].as_str()), (Some(0), Some(2), Some("saldo_nicht_positiv")), "{feld}");
+    assert_eq!(posten_eines_felds(&a, "vor_rv_ausserhalb_lstb")[1]["betrag_cent"], json!(30_00), "die Rueckbuchung traegt ihr positives Vorzeichen");
+    assert_eq!(a["uebernommen"], json!(0), "{a}");
+    assert_eq!(std::fs::read(akte_pfad(&d, "w1")).unwrap(), akte, "keine Vorschau darf die Akte aendern");
+}
+
 /// `abgewaehlt` ist eine Liste von Stellen: jede andere Form, eine Stelle jenseits der Liste und eine doppelte Stelle sind 400, in
 /// der Vorschau wie beim Uebernehmen, und nichts wird geschrieben.
 #[tokio::test]

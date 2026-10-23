@@ -34,15 +34,17 @@ const OBERFLAECHE: &[(&str, &str)] = &[
     // app.js und index.html seit 2026-10-22 (Bankimport S1b, d-63) mit der Rueckfrage samt Haken, bevor ein zweiter Kontoauszug den
     // eigenen Vorschlag eines frueheren ersetzt (`kontoauszugSenden`, `#konto-ersetzen`); Waechter: `oberflaeche/konto_ersetzen.rs`.
     // app.js seit 2026-10-23 (Bankimport, echte Bankdatei AK3) liest eine Kontoauszug-Datei als Bytes: erst strenges UTF-8, sonst
-    // windows-1252 (`_dateiAlsText`); Waechter: `oberflaeche/konto_zeichensatz.rs`.
-    ("app.js", "08fa7d94a60b06ca5b36b2a13d9919cfe29cc64076b70990c1d2d248cb23d9c4"),
+    // windows-1252 (`_dateiAlsText`); Waechter: `oberflaeche/konto_zeichensatz.rs`. app.js, index.html und style.css seit 2026-10-23
+    // (Bankimport S3) mit der Vorschau vor dem Schreiben, den Haken, der Abwahl von Posten und dem Kreuz `keine_spenden`
+    // (`kontoVorschauSenden`, `kontoauszugUebernehmen`, `#konto-vorschau`); Waechter: `oberflaeche/bank_vorschlaege_pruefen.rs`.
+    ("app.js", "31ecdb6f943dbd772b1236dbc368b250a81b077a7f01dd2734ac1c3aea1496b5"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),
     // index.html seit 2026-10-15 (S8, Julius) mit dem Hinweis auf die Namen-Grenze des PII-Filters neben dem KI-Eingabefeld:
     // weicht bewusst von `produkt/haut/static/index.html` ab (Stand 12c0ef31...); Wächter `http.rs::die_startseite_warnt_im_chat_vor_namen`.
-    ("index.html", "bba0d94e09e4be06c79846956cbf5a794d35a647428ba3c7dcc7455df49964bb"),
-    ("style.css", "5570eccf7a6a32ace378a716b888c9d156c53138762d2a314bbd14f75b3e6797"),
+    ("index.html", "3c0088e4fbc45efdc3dfe10e412d632f897d73ac436001cb8c436e9c32d48461"),
+    ("style.css", "388f92863792545b767f0df389c4de905b6e70bc350d2e9bb86695142e58a85e"),
 ];
 
 /// `rust/fixtures/python_bindung_2dd056a6`: der eingefrorene Stand von `produkt/bindung` (alle 28 Dateien).
