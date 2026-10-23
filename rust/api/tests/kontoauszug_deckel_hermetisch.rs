@@ -117,8 +117,8 @@ fn keine_kategorie() -> Aktion {
 
 #[tokio::test]
 async fn mit_ki_gilt_der_deckel_von_50_aufrufen_und_der_hinweis_nennt_ihn() {
-    // Genug Antworten fuer drei Auszuege zu je hoechstens 50 Aufrufen.
-    let stub = Stub::starte((0..150).map(|_| keine_kategorie()).collect());
+    // Genug Antworten fuer drei Auszuege zu je hoechstens 50 Aufrufen und fuer die fuenf der Kontrolle am Ende.
+    let stub = Stub::starte((0..160).map(|_| keine_kategorie()).collect());
     std::env::set_var("LLM_API_BASE", stub.basis(""));
     std::env::set_var("LLM_MODEL", "stub/modell");
     std::env::set_var("LLM_API_KEY", "SYNTHETISCH-LLM-SCHLUESSEL");
@@ -160,4 +160,26 @@ async fn mit_ki_gilt_der_deckel_von_50_aufrufen_und_der_hinweis_nennt_ihn() {
         )
     );
     assert_eq!(stub.anfragen().len(), 150);
+
+    // Bankimport S3: die Vorschau ruft das Modell NIE, auch nicht mit dem Haken (zwei Aufrufe, die zweite Einordnung koennte von der
+    // gezeigten abweichen; die Firmenerkennung braucht spaeter eine Vorschau mit KI-Treffern und eine Zwischenablage je Fall). Sie
+    // nennt die Zahl der Buchungen ohne Stichwort; das Uebernehmen mit demselben Haken fragt das Modell fuer jede.
+    let (status, vorschau) = post(
+        &d,
+        "/fall/kd/bank/vorschau",
+        &json!({"format": "json", "inhalt": einkaeufe(5), "ki_buchungstext": true}),
+    )
+    .await;
+    assert_eq!(status, 200, "{vorschau}");
+    assert_eq!(vorschau["ohne_stichwort"], json!(5), "{vorschau}");
+    assert_eq!(vorschau["haken"]["ki_buchungstext"], json!(true), "{vorschau}");
+    assert_eq!(stub.anfragen().len(), 150, "die Vorschau hat das Modell gefragt");
+    let (status, antwort) = post(
+        &d,
+        "/fall/kd/kontoauszug",
+        &json!({"format": "json", "inhalt": einkaeufe(5), "ki_buchungstext": true}),
+    )
+    .await;
+    assert_eq!(status, 200, "{antwort}");
+    assert_eq!(stub.anfragen().len(), 155, "Kontrolle: das Uebernehmen fragt das Modell fuer jede Buchung ohne Stichwort");
 }
