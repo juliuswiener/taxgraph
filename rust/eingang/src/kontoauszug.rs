@@ -700,6 +700,7 @@ pub fn hinweis_nichts_gelesen(befund: &CsvBefund) -> String {
 ///     schon_erfasst: 0,
 ///     nachgefragt: 0,
 ///     art9_gesperrt: 0,
+///     abgewaehlt: 0,
 /// };
 /// assert_eq!(
 ///     hinweis_nichts_uebernommen(3, &u).as_deref(),
@@ -767,7 +768,7 @@ const GRUND_SALDO: &str = "in einem Feld, dessen Saldo nach Rückbuchungen null 
 ///
 /// ```
 /// use eingang::kontoauszug::{hinweis_nicht_gezaehlt, Uebernahme};
-/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0, ersetzbar: 0, schon_erfasst: 0, nachgefragt: 0, art9_gesperrt: 0 };
+/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0, ersetzbar: 0, schon_erfasst: 0, nachgefragt: 0, art9_gesperrt: 0, abgewaehlt: 0 };
 /// assert_eq!(
 ///     hinweis_nicht_gezaehlt(&u).as_deref(),
 ///     Some("Nicht gezählt: 2 Buchung(en) außerhalb des Veranlagungsjahrs.")
@@ -993,6 +994,49 @@ pub struct Uebernahme {
     /// Der Zweck nennt Gesundheit, Gewerkschaft oder Kirche (Art. 9 DSGVO), keine Regel traf ihn, und der Haken `art9` fehlt: die
     /// Buchung wurde nicht ausgewertet und nie an das Sprachmodell gegeben (d-60).
     pub art9_gesperrt: usize,
+    /// Die Nutzerin hat diese Buchung in der Vorschau abgewaehlt (Bankimport S3): sie haette in die Summe eines Felds
+    /// eingehen koennen und geht nicht ein. Gezaehlt wird nur eine Buchung, die sonst eine [`Zeile`] gewesen waere.
+    pub abgewaehlt: usize,
+}
+
+/// Eine Buchung, die in die Summe eines Zielfelds eingehen kann (Art `summe`, Feld frei oder mit eigenem Vorschlag), mit der
+/// Kennung, unter der die Nutzerin sie abwaehlt (Bankimport S3). `index` ist die Stelle der Buchung in der gelesenen Liste, aus
+/// Datei und Format allein: er haengt weder von den Haken noch von den Regeln ab. Der Zweck steht maskiert da und bleibt leer bei
+/// einer Art.-9-Regel (wie im Posten des Vorschlags).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Zeile {
+    pub index: usize,
+    pub feld_id: &'static str,
+    pub regel_id: &'static str,
+    pub datum: String,
+    /// Mit dem Vorzeichen der Buchung (Ausgabe negativ).
+    pub betrag_cent: i64,
+    pub zweck_maskiert: String,
+    /// Die Buchung kam ueber den Klassifikator, nicht ueber ein Stichwort.
+    pub ueber_ki: bool,
+    pub abgewaehlt: bool,
+}
+
+/// Was aus der Gruppe eines Felds wurde.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Folge {
+    /// Ein Vorschlag wurde geschrieben (in der Vorschau: wuerde geschrieben).
+    Geschrieben,
+    /// Das Feld traegt einen eigenen Vorschlag aus einem frueheren Auszug, und die Rueckfrage der Entscheidung d-63 steht aus.
+    Ersetzbar,
+    /// Die Rueckbuchungen glichen die Ausgaben aus.
+    SaldoNichtPositiv,
+    /// Der eigene Vorschlag des Felds enthaelt diese Buchungen schon.
+    SchonErfasst,
+}
+
+/// Die Summe eines Felds nach diesem Import: bei einem Feld mit eigenem Vorschlag die Vereinigung beider Mengen.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FeldErgebnis {
+    pub feld_id: &'static str,
+    pub summe_cent: i64,
+    pub anzahl: usize,
+    pub folge: Folge,
 }
 
 /// Ein Feld, dessen eigener vorlaeufiger Vorschlag aus einem frueheren Auszug durch die Vereinigung
@@ -1047,6 +1091,10 @@ pub struct Ergebnis {
     pub abgleich: Vec<Abgleich>,
     /// Die Saetze (`hinweis` der Regeln) der Felder, auf die dieser Import einen Vorschlag schrieb, je Regel einmal.
     pub regelhinweise: Vec<String>,
+    /// Jede Buchung, die in eine Summe eingehen kann, mit ihrer Kennung (Bankimport S3).
+    pub zeilen: Vec<Zeile>,
+    /// Die Summe je Feld, das eine Gruppe bekam, mit der Folge.
+    pub felder: Vec<FeldErgebnis>,
 }
 
 /// Alle Buchungen eines Zielfelds, die in EINE Summe eingehen. Eine Rueckbuchung (Betrag > 0)
@@ -1539,7 +1587,29 @@ pub fn uebernehme_voll(
         nachfragen: sammlung.nachfragen,
         abgleich,
         regelhinweise,
+        zeilen: Vec::new(),
+        felder: Vec::new(),
     })
+}
+
+/// Wie [`uebernehme_voll`], und die Buchungen mit diesen Kennungen (Stellen in `transaktionen`) gehen nicht in die Summe eines
+/// Felds ein (Bankimport S3: die Nutzerin hat sie in der Vorschau abgewaehlt). Die Kennungen kommen aus [`Ergebnis::zeilen`]; eine
+/// Kennung ohne [`Zeile`] bleibt ohne Wirkung. `ergebnis.zeilen` nennt auch die abgewaehlten Buchungen, damit die Nutzerin sie
+/// wieder anwaehlen kann.
+///
+/// # Errors
+/// Wie [`uebernehme`].
+pub fn uebernehme_auswahl(
+    store: &mut Store,
+    transaktionen: &[Transaktion],
+    abgewaehlt: &[usize],
+    bindung: BindungNachschlag<'_>,
+    llm_klassifikator: Option<&Klassifikator<'_>>,
+    (ts, katalog): (Option<&str>, Option<&Katalog>),
+    haken: Haken,
+) -> Result<Ergebnis, KontoauszugFehler> {
+    let _ = abgewaehlt;
+    uebernehme_voll(store, transaktionen, bindung, llm_klassifikator, ts, katalog, haken)
 }
 
 /// `neu` bzw. `jetzt` je Feld: `spenden_betrag: bisher 11,00 € aus 2 Buchung(en), <wort> 16,00 € aus 3 Buchung(en)`.
@@ -1803,6 +1873,7 @@ mod tests {
             schon_erfasst: 0,
             nachgefragt: 1,
             art9_gesperrt: 0,
+            abgewaehlt: 0,
         };
         assert_eq!(u, soll);
         assert_eq!(zaehler_summe(&u), buchungen.len());
@@ -1845,6 +1916,7 @@ mod tests {
             schon_erfasst: 0,
             nachgefragt: 0,
             art9_gesperrt: 0,
+            abgewaehlt: 0,
         };
         assert_eq!(hinweis_nichts_uebernommen(2, &nur_deckel), None);
     }
@@ -2451,6 +2523,7 @@ mod tests {
             schon_erfasst: 0,
             nachgefragt: 0,
             art9_gesperrt: 0,
+            abgewaehlt: 0,
         };
         let jahr = "3 Buchung(en) außerhalb des Veranlagungsjahrs";
         let datum = "1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)";
@@ -2868,6 +2941,7 @@ mod tests {
             schon_erfasst: 1,
             nachgefragt: 0,
             art9_gesperrt: 0,
+            abgewaehlt: 0,
         };
         assert_eq!(u, soll);
         assert_eq!(zaehler_summe(&u), buchungen.len());
@@ -2980,6 +3054,7 @@ mod tests {
             schon_erfasst: 3,
             nachgefragt: 0,
             art9_gesperrt: 0,
+            abgewaehlt: 0,
         };
         assert_eq!(
             hinweis_nichts_uebernommen(6, &u).as_deref(),
