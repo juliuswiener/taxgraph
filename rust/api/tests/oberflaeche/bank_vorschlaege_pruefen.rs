@@ -457,6 +457,73 @@ fn bank_vorschlaege_pruefen_abwahl_gilt_auch_fuer_die_rueckfrage_des_ersetzens()
     assert_eq!(ev[1]["signal"]["signal_1"]["posten"].as_array().unwrap().len(), 3);
 }
 
+/// Das Kreuz aendert sich zwischen Vorschau und „Uebernehmen“ (die Nutzerin beantwortet es in einem anderen Fenster mit „ja, gespendet“):
+/// die Antwort des Dienstes nennt kein Kreuz mehr, also schreibt die Seite keins, auch wenn ihr Kaestchen noch angehakt ist. Sonst
+/// kaeme eine zweite Antwort ohne Bezug auf die erste ins Protokoll der Nutzerin oder die Seite meldete einen Fehler, den es nicht gibt.
+#[test]
+fn bank_vorschlaege_pruefen_kreuz_aenderte_sich_nach_der_vorschau_die_seite_schreibt_keins() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let fall = vorschau(&u, AUSZUG_A);
+    assert!(haekchen(&u, "konto-kreuz-box"), "Kontrolle: das Kaestchen steht an");
+    let (s, a) = u.dienst.schreibe(&fall, KREUZ, &json!(false));
+    assert_eq!(s, 201, "{a}");
+    u.s.klick("#konto-uebernehmen");
+    let status = warte_status(&u, "als Vorschlag erfasst");
+    u.s.warte_bis("!document.getElementById('konto-file').disabled", 15, "das Uebernehmen ist zu Ende");
+    let status = format!("{status} || {}", u.s.textinhalt("#konto-status"));
+    assert!(!status.contains("Kreuz"), "die Seite nennt ein Kreuz, das der Dienst nicht nannte: {status:?}");
+    let kreuz = ereignisse(&u, &fall, KREUZ);
+    assert_eq!(kreuz.len(), 1, "nur die Antwort aus dem anderen Fenster; die Seite schrieb ein zweites: {kreuz:?}");
+    assert_eq!(kreuz[0]["schreiber"], json!("ui:laie"));
+    assert_eq!(ereignisse(&u, &fall, SPENDEN).len(), 1, "Kontrolle: der Vorschlag steht");
+}
+
+/// Eine Vorschau, die der Dienst abweist (hier eine JSON-Datei, die kein JSON ist), laesst weder Vorschau noch gemerkten Auszug noch
+/// die Dateiwahl stehen: dieselbe Datei noch einmal zu waehlen loest wieder eine Anfrage aus, und „Uebernehmen“ bleibt gesperrt.
+#[test]
+fn bank_vorschlaege_pruefen_abgewiesene_vorschau_leert_auszug_und_dateiwahl() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let fall = zum_kontoauszug(&u);
+    beobachte(&u, false);
+    let kaputt = |u: &Umgebung| {
+        u.s.warte_bis("!document.getElementById('konto-file').disabled", 15, "das Eingabefeld ist frei");
+        u.s.skript(
+            "const dt = new DataTransfer(); dt.items.add(new File(['[{'], 'kaputt.json')); \
+             const e = document.getElementById('konto-file'); e.files = dt.files; e.dispatchEvent(new Event('change', {bubbles: true}));",
+            &[],
+        );
+    };
+    kaputt(&u);
+    warte_status(&u, "Upload fehlgeschlagen");
+    u.s.warte_bis("!document.getElementById('konto-file').disabled", 15, "das Eingabefeld ist wieder frei");
+    assert_eq!(u.s.ausdruck("KONTO_LETZTER"), Value::Null, "der abgewiesene Auszug ist noch gemerkt");
+    assert_eq!(u.s.ausdruck("document.getElementById('konto-file').value"), json!(""), "die Dateiwahl ist nicht geleert");
+    assert!(!u.s.sichtbar("#konto-vorschau"));
+    assert!(uebernehmen_gesperrt(&u));
+    assert_eq!(aufrufe(&u, "/bank/vorschau").len(), 1);
+    // Dieselbe Datei noch einmal: eine zweite Anfrage geht raus (bliebe die Dateiwahl gefuellt, loeste sie kein `change` aus).
+    kaputt(&u);
+    u.s.warte_bis("window.__log.length === 2", 10, "die zweite Anfrage ist raus");
+    assert_eq!(ereignisse(&u, &fall, SPENDEN), Vec::<Value>::new());
+}
+
+/// Eine Rueckbuchung (Betrag mit Plus, gleiche Kategorie) steht in der Vorschau als Rueckbuchung, nicht als Ausgabe, und die Ausgabe ohne
+/// Vorzeichen; die Summe ist der Saldo (50,00 − 30,00 = 20,00 EUR).
+#[test]
+fn bank_vorschlaege_pruefen_rueckbuchung_steht_als_rueckbuchung_da() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    vorschau(&u, &["01.03.2025;-50,00;Rentenversicherung Ruerup", "02.03.2025;30,00;Rueckbuchung Rentenversicherung Ruerup"]);
+    let feld = "vor_rv_ausserhalb_lstb";
+    assert!(summe(&u, feld).contains("20,00 €"), "der Saldo: {:?}", summe(&u, feld));
+    let ausgabe = u.s.text(&format!("{} .kv-posten-zeile:nth-child(1)", feld_selektor(feld)));
+    let rueck = u.s.text(&format!("{} .kv-posten-zeile:nth-child(2)", feld_selektor(feld)));
+    assert!(ausgabe.contains("50,00 €") && !ausgabe.contains("Rückbuchung") && !ausgabe.contains('+') && !ausgabe.contains('-'), "{ausgabe:?}");
+    assert!(rueck.contains("+30,00 €") && rueck.contains("Rückbuchung"), "{rueck:?}");
+}
+
 /// Der Haken `art9` sendet die Vorschau neu, mit denselben Abwahlen (die Kennung haengt nicht vom Haken ab); die Krankenversicherung
 /// steht dann als Feld da, ohne Zweck. „Uebernehmen“ schickt den Haken mit. Der KI-Haken sendet keine neue Vorschau (sie ruft die KI nie),
 /// geht aber beim Uebernehmen mit.
