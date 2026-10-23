@@ -795,6 +795,8 @@ pub fn hinweis_nicht_gezaehlt(u: &Uebernahme) -> Option<String> {
 /// let satz = eingang::kontoauszug::hinweis_nachfragen(2).unwrap();
 /// assert!(satz.starts_with("2 Zahlung(en) für Handwerker oder Haushaltshilfe wurden nicht eingetragen"));
 /// assert!(satz.contains("Arbeitskosten laut Rechnung") && satz.contains("Rn. 40"));
+/// // Schon EINE Zahlung ist einen Satz wert (nicht erst ab zwei).
+/// assert!(eingang::kontoauszug::hinweis_nachfragen(1).is_some_and(|s| s.starts_with("1 Zahlung(en) für Handwerker")));
 /// assert_eq!(eingang::kontoauszug::hinweis_nachfragen(0), None);
 /// ```
 #[must_use]
@@ -814,6 +816,8 @@ pub fn hinweis_nachfragen(n: usize) -> Option<String> {
 /// ```
 /// let satz = eingang::kontoauszug::hinweis_art9_gesperrt(3).unwrap();
 /// assert!(satz.starts_with("3 Buchung(en) mit Bezug zu Gesundheit, Gewerkschaft oder Kirche wurden nicht ausgewertet"));
+/// // Schon EINE Buchung ist einen Satz wert (nicht erst ab zwei).
+/// assert!(eingang::kontoauszug::hinweis_art9_gesperrt(1).is_some_and(|s| s.starts_with("1 Buchung(en) mit Bezug zu Gesundheit")));
 /// assert_eq!(eingang::kontoauszug::hinweis_art9_gesperrt(0), None);
 /// ```
 #[must_use]

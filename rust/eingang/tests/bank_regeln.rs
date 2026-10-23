@@ -73,13 +73,7 @@ fn bank_regeln_35a_gilt_auch_fuer_einen_ki_treffer() {
 /// still aus der Zahl) bleiben zu. Jedes zugemachte Feld muss in der Registry stehen, sonst waere "nicht erlaubt" leer wahr.
 #[test]
 fn bank_freigabe_kontoauszug_nur_diese_felder() {
-    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let alle: Vec<bindung::Bindung> = bindung::lade_registry_der_wurzel(&wurzel)
-        .unwrap()
-        .dateien
-        .into_iter()
-        .flat_map(|(_, d)| d.bindungen)
-        .collect();
+    let alle = alle_bindungen();
     let katalog = Katalog::aus_bindungen(&alle);
     let mut falsch = Vec::new();
     for feld in ["spenden_betrag", "vor_rv_ausserhalb_lstb", "basis_kv", "basis_pv"] {
@@ -96,6 +90,37 @@ fn bank_freigabe_kontoauszug_nur_diese_felder() {
         }
     }
     assert!(falsch.is_empty(), "{falsch:#?}");
+}
+
+/// Alle Bindungen der Registry der Wurzel (alle Scheiben, alle Dateien).
+fn alle_bindungen() -> Vec<bindung::Bindung> {
+    let wurzel = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    bindung::lade_registry_der_wurzel(&wurzel)
+        .unwrap()
+        .dateien
+        .into_iter()
+        .flat_map(|(_, d)| d.bindungen)
+        .collect()
+}
+
+/// Die Freigabe ist abgeschlossen: von ALLEN Feldern der Registry nimmt genau diese Menge den Kontoauszug an, kein weiteres. Der
+/// Test oben nennt nur die vier offenen und die fuenf zugemachten Felder; ein sechstes Feld, das jemand freigibt (etwa
+/// `ep_oepnv_kosten` oder `vor_an_anteil_rv`), faellt erst hier auf. Die Differenz steht in der Meldung, in beide Richtungen.
+#[test]
+fn bank_freigabe_kontoauszug_nimmt_von_allen_registry_feldern_genau_diese_vier_an() {
+    let alle = alle_bindungen();
+    let katalog = Katalog::aus_bindungen(&alle);
+    let soll: std::collections::BTreeSet<&str> =
+        ["basis_kv", "basis_pv", "spenden_betrag", "vor_rv_ausserhalb_lstb"].into_iter().collect();
+    let registry: std::collections::BTreeSet<&str> = alle.iter().map(|b| b.feld_id.as_str()).collect();
+    let offen: std::collections::BTreeSet<&str> =
+        registry.iter().copied().filter(|f| katalog.erlaubt("kontoauszug", f)).collect();
+    // Kontrolle: die Registry ist gelesen und kennt die vier Felder, sonst waere "genau diese vier" leer wahr.
+    assert!(registry.len() > 100, "nur {} Felder in der Registry gelesen", registry.len());
+    assert!(soll.is_subset(&registry), "nicht in der Registry: {:?}", soll.difference(&registry).collect::<Vec<_>>());
+    let zu_viel: Vec<&&str> = offen.difference(&soll).collect();
+    let fehlt: Vec<&&str> = soll.difference(&offen).collect();
+    assert!(zu_viel.is_empty() && fehlt.is_empty(), "nehmen den Kontoauszug zu Unrecht an: {zu_viel:?}; nehmen ihn nicht an: {fehlt:?}");
 }
 
 /// Beleg schlaegt Konto, Schreib-Seite: steht auf dem Feld ein Ereignis des Belegs, schreibt der Kontoauszug nichts und aendert
@@ -373,4 +398,31 @@ fn bank_art9_wortschatz_text_steht_unter_einer_regel_ohne_art9_nie_im_posten() {
     let akte = serde_json::to_string(&store.events()).unwrap();
     assert!(!akte.contains("Kirchengemeinde"), "der Wortschatz-Text steht in der Akte: {akte}");
     assert!(akte.contains("Tierheim Muster"), "Kontrolle: der Zweck ohne Wortschatz steht im Posten: {akte}");
+}
+
+/// Der Abgleich nennt nur eine Summe ueber null. Steht auf dem Feld ein Beleg und bucht der Auszug dort NUR eine Rueckbuchung (Betrag
+/// ueber null, mit Stichwort), ist die Netto-Summe negativ: das Feld zaehlt als belegt, aber die Antwort nennt keinen Abgleich und
+/// keinen Satz dazu. Kontrolle: mit einer zweiten, echten Ausgabe im selben Auszug erscheint der Abgleich.
+#[test]
+fn bank_beleg_schlaegt_konto_abgleich_nennt_keine_negative_summe() {
+    let nachschlag = nachschlag();
+    let katalog = Katalog::aus_bindungen(nachschlag.alle().map(|(_, b)| b));
+    let mut store = Store::leer(2025, None);
+    VorschlagEvent {
+        quelle: Quelle::Beleg,
+        feld_id: "spenden_betrag".to_owned(),
+        wert: json!(8_00),
+        signal_1: json!({"typ": "beleg"}),
+    }
+    .schreibe(&mut store, Some(&katalog), nachschlag, None)
+    .unwrap();
+    let nur_rueck = [tx("2025-03-12", 19_00, "Rueckbuchung Spende Tierheim")];
+    let e = uebernehme_voll(&mut store, &nur_rueck, nachschlag, None, None, None, Haken::default()).unwrap();
+    assert_eq!((e.uebernahme.feld_belegt, e.uebernahme.uebernommen), (1, 0), "{:?}", e.uebernahme);
+    assert!(e.abgleich.is_empty(), "eine negative Netto-Summe wird nicht genannt: {:?}", e.abgleich);
+    assert_eq!(eingang::kontoauszug::hinweis_abgleich(&e.abgleich), None);
+    // Kontrolle: Ausgabe 31,00 und Rueckbuchung 19,00 ergeben netto 12,00, und die Antwort nennt sie.
+    let beide = [tx("2025-03-13", -31_00, "Spende Unicef"), tx("2025-03-14", 19_00, "Rueckbuchung Spende Tierheim")];
+    let e = uebernehme_voll(&mut store, &beide, nachschlag, None, None, None, Haken::default()).unwrap();
+    assert_eq!(e.abgleich, [Abgleich { feld_id: "spenden_betrag", summe_cent: 12_00, anzahl: 2 }]);
 }

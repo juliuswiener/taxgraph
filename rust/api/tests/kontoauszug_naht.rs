@@ -1358,3 +1358,109 @@ async fn bank_import_audit_nennt_zaehler_und_haken_ohne_text_und_betrag() {
         assert!(!detail.contains(geheim), "{geheim:?} steht im Protokoll: {detail}");
     }
 }
+
+/// Die Zeile `bank_import` im Wortlaut, jeder Zaehler mit einem eigenen Wert: Wer einen Zaehler vertauscht, auf 0 setzt oder
+/// auslaesst, macht den Test rot (vorher pruefte er `art9_gesperrt=0`, das auch eine feste 0 im Code erfuellt). Auf 0 bleiben
+/// die Zaehler, die dieser Auszug nicht ausloest: `llm_uebersprungen`, `feld_fehlt`, `feld_belegt`, `datum_unlesbar`, `ersetzbar`,
+/// `schon_erfasst`. Weder ein Zweck noch ein Betrag noch ein Datum steht in der Zeile.
+#[tokio::test]
+async fn bank_import_audit_zeile_traegt_jeden_zaehler_mit_seinem_wert() {
+    let d = dienst();
+    let mut zeilen: Vec<String> = Vec::new();
+    // (Anzahl, Datum, Betrag, Zweck); der Zaehler, den die Gruppe ausloest, steht darueber.
+    for (n, datum, betrag, zweck) in [
+        // art9_gesperrt: 1
+        (1, "01.03.2025", "-13,00", "Zahnarzt"),
+        // saldo_nicht_positiv: 2 (eine Ausgabe und ihre Rueckbuchung, Summe 0)
+        (1, "02.03.2025", "-30,00", "Rentenversicherung"),
+        (1, "02.03.2025", "30,00", "Rueckbuchung Rentenversicherung"),
+        // einnahmen: 3
+        (3, "03.03.2025", "1.000,00", "Gehalt"),
+        // nachgefragt: 4
+        (4, "04.03.2025", "-71,00", "Maler"),
+        // uebernommen: 5
+        (5, "05.03.2025", "-11,00", "Spende Tierheim"),
+        // ohne_stichwort: 6
+        (6, "06.03.2025", "-5,00", "Supermarkt"),
+        // partei: 7
+        (7, "07.03.2025", "-9,00", "Spende Partei"),
+        // anderes_jahr: 8
+        (8, "08.12.2024", "-4,00", "Supermarkt"),
+    ] {
+        zeilen.extend((0..n).map(|i| format!("{datum};{betrag};{zweck} Quokka {i}")));
+    }
+    zeilen.push("09.03.2025;-abc;Rentenversicherung Quokka".to_owned()); // verworfen: 1
+    let zeilen: Vec<&str> = zeilen.iter().map(String::as_str).collect();
+    let (s, a) = auszug(&d, "bz2", csv(&zeilen)).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!((&a["transaktionen"], &a["verworfen"], &a["uebernommen"]), (&json!(36), &json!(1), &json!(5)), "{a}");
+    let eintraege = store::audit::lies(&d.zustand.konfig.audit_pfad()).unwrap();
+    let import: Vec<_> = eintraege.iter().filter(|e| e.fall_id.as_deref() == Some("bz2") && e.action.als_str() == "bank_import").collect();
+    assert_eq!(import.len(), 1, "genau eine Zeile bank_import");
+    assert_eq!(
+        import[0].detail.as_deref(),
+        Some(
+            "transaktionen=36 verworfen=1 uebernommen=5 nachgefragt=4 art9_gesperrt=1 llm_uebersprungen=0 einnahmen=3 \
+             ohne_stichwort=6 partei=7 feld_fehlt=0 feld_belegt=0 anderes_jahr=8 datum_unlesbar=0 saldo_nicht_positiv=2 \
+             ersetzbar=0 schon_erfasst=0 haken_ersetzen=false haken_art9=false haken_ki_buchungstext=false ki_aufrufe=0"
+        )
+    );
+    let roh = std::fs::read_to_string(d.zustand.konfig.audit_pfad()).unwrap();
+    for geheim in ["Quokka", "Zahnarzt", "Spende", "Gehalt", "Supermarkt", "13,00", "1.000", "2024"] {
+        assert!(!roh.contains(geheim), "{geheim:?} steht im Protokoll");
+    }
+}
+
+/// Schon EINE Buchung ist einen Satz im Hinweis wert (nicht erst ab zwei): genau eine § 35a-Zahlung nennt „1 Zahlung(en)“, genau
+/// eine gesperrte Art.-9-Buchung (ohne den Haken) nennt „1 Buchung(en)“. Der jeweils andere Satz fehlt. Die Texte sind erfunden.
+#[tokio::test]
+async fn bank_hinweise_nennen_schon_eine_einzige_buchung() {
+    let d = dienst();
+    let (s, a) = auszug(&d, "bn1", csv(&["01.03.2025;-73,00;Maler Quokka"])).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["nachfragen"].as_array().map(Vec::len), Some(1), "{a}");
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("1 Zahlung(en) für Handwerker oder Haushaltshilfe wurden nicht eingetragen"), "{hinweis}");
+    assert!(!hinweis.contains("nicht ausgewertet"), "{hinweis}");
+    let (s, a) = auszug(&d, "bn2", csv(&["02.03.2025;-23,00;Zahnarzt Quokka"])).await;
+    assert_eq!(s, 200, "{a}");
+    let hinweis = a["hinweis"].as_str().unwrap_or_else(|| panic!("kein Hinweis: {a}"));
+    assert!(hinweis.contains("1 Buchung(en) mit Bezug zu Gesundheit, Gewerkschaft oder Kirche wurden nicht ausgewertet"), "{hinweis}");
+    assert!(!hinweis.contains("Zahlung(en)"), "{hinweis}");
+}
+
+/// Beleg schlaegt Konto, Rand: steht der Beleg auf dem Feld und der Auszug bringt nur eine Rueckbuchung (Netto-Summe negativ), gibt
+/// es nichts abzugleichen. Die Antwort hat kein Feld `abgleich` und keinen Abgleich-Satz; die Buchung zaehlt als „Feld hat schon
+/// einen Wert“. Kontrolle: zwei Ausgaben und die Rueckbuchung (Summe positiv) ergeben den Abgleich.
+#[tokio::test]
+async fn bank_beleg_schlaegt_konto_antwort_nennt_keinen_abgleich_bei_negativer_summe() {
+    let d = dienst();
+    fall_anlegen(&d, "bb2", "gesamt").await;
+    let (s, _) = sende(
+        &d,
+        "/fall/bb2/event",
+        &json!({"feld_id": "spenden_betrag", "wert": 25_00, "zustand": "vorlaeufig",
+            "herkunft": {"haftung": "nutzer", "herkunft": "beleg_import", "pruef_tiefe": "ungeprueft"},
+            "schreiber": "import:beleg", "signal": {"signal_1": null, "signal_2": null},
+            "ts": "2026-01-01T00:00:00+00:00"}),
+    )
+    .await;
+    assert_eq!(s, 201, "der Beleg-Vorschlag wird angenommen");
+    let (s, a) = sende(&d, "/fall/bb2/kontoauszug", &csv(&["02.03.2025;19,00;Rueckbuchung Spende Tierheim"])).await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["uebernommen"], 0, "{a}");
+    assert!(a.get("abgleich").is_none(), "eine negative Summe ist kein Abgleich: {a}");
+    assert_eq!(
+        a["hinweis"],
+        "1 Buchung(en) gelesen, aber kein Vorschlag: 1 Buchung(en) für ein Feld, das schon einen Wert hat.",
+        "{a}"
+    );
+    let (s, a) = sende(
+        &d,
+        "/fall/bb2/kontoauszug",
+        &csv(&["02.03.2025;19,00;Rueckbuchung Spende Tierheim", "03.03.2025;-31,00;Spende Unicef"]),
+    )
+    .await;
+    assert_eq!(s, 200, "{a}");
+    assert_eq!(a["abgleich"], json!([{"feld_id": "spenden_betrag", "summe_cent": 12_00, "anzahl": 2}]), "{a}");
+}

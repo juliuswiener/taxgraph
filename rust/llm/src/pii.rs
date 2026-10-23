@@ -275,6 +275,76 @@ mod tests {
         }
     }
 
+    /// Jede Alternative des Musters hat ein eigenes Beispiel, das keine andere Alternative trifft: faellt eine Alternative aus dem
+    /// Muster, wird genau ihr Beispiel rot. Die Beispiele stehen in der Reihenfolge des Musters.
+    #[test]
+    fn art9_buchungstext_jede_alternative_des_musters_hat_ein_eigenes_beispiel() {
+        use super::ist_art9_buchungstext;
+        for (alternative, beispiel) in [
+            ("arzt", "Hausarzt Muster"),
+            ("ärzt", "Ärztehaus Muster"),
+            ("aerzt", "Aerztehaus Muster"),
+            ("praxis", "Praxisgebuehr Muster"),
+            ("klinik", "Klinikum Muster"),
+            ("krankenhaus", "Krankenhaus Muster"),
+            ("apotheke", "Apotheke am Markt"),
+            ("physiotherap", "Physiotherapie Muster"),
+            ("psychotherap", "Psychotherapie Muster"),
+            ("heilpraktik", "Heilpraktiker Muster"),
+            ("krankenkasse", "Muster Krankenkasse"),
+            ("krankenversicherung", "Krankenversicherung Beitrag"),
+            ("pflegeversicherung", "Pflegeversicherung Beitrag"),
+            ("pflegekasse", "Pflegekasse Muster"),
+            ("medizin", "Medizintechnik Muster"),
+            ("arznei", "Arzneimittel Muster"),
+            ("gewerkschaft", "Gewerkschaftsbeitrag Muster"),
+            ("ver.di", "ver.di Mitgliedsbeitrag"),
+            ("verdi", "VERDI Mitgliedsbeitrag"),
+            ("ig metall", "IG Metall Beitrag"),
+            ("igmetall", "IGMetall Beitrag"),
+            ("ig bau", "IG Bau Beitrag"),
+            ("ig bce", "IG BCE Beitrag"),
+            ("dgb", "DGB Rechtsschutz"),
+            ("berufsverband", "Berufsverband Muster"),
+            ("kirch", "Kirchensteuer Muster"),
+            ("bistum", "Bistum Muster"),
+            ("diözese", "Diözese Muster"),
+            ("dioezese", "Dioezese Muster"),
+            ("pfarr", "Pfarramt Muster"),
+            ("evangelisch", "Evangelische Gemeinde Muster"),
+            ("katholisch", "Katholische Gemeinde Muster"),
+            ("moschee", "Moscheeverein Muster"),
+            ("synagoge", "Synagoge Muster"),
+        ] {
+            assert!(ist_art9_buchungstext(beispiel), "{alternative:?}: {beispiel:?} muss treffen");
+        }
+    }
+
+    /// Die Grenzen des Wortschatzes: Wortgrenzen bei `ver.di`, `ig metall`, `ig bau`, `ig bce` und `dgb`, dazu Alltag, der einem
+    /// Wortteil gleicht ("Verdienst", "Metallbau") oder einer Kasse ohne eines der Woerter ("AOK", "Barmer", `ponytail` am Muster).
+    #[test]
+    fn art9_buchungstext_trifft_nicht_bei_fehlender_wortgrenze_und_nicht_bei_alltag() {
+        use super::ist_art9_buchungstext;
+        for nein in [
+            "Verdienstausfall",
+            "Zeitig Metall Handel",
+            "IG Metallbau Huber",
+            "Digital Bau Muster",
+            "IG Baumarkt Muster",
+            "IG BCEX Muster",
+            "DGBX Muster",
+            "Adgb Muster",
+            "AOK Beitrag",
+            "Barmer Beitrag",
+            "Tankstelle Muster",
+            "Baeckerei Muster",
+            "Miete Januar",
+            "Stromversorgung Muster",
+        ] {
+            assert!(!ist_art9_buchungstext(nein), "{nein:?} darf nicht treffen");
+        }
+    }
+
     #[test]
     fn iban_vor_steuer_id() {
         let (g, k) = filtere("DE89 3704 0044 0532 0130 00");
