@@ -30,6 +30,7 @@ fn cp1252(text: &str) -> Vec<u8> {
             'ö' => 0xF6,
             'ü' => 0xFC,
             'ß' => 0xDF,
+            '€' => 0x80,
             c if c.is_ascii() => c as u8,
             c => panic!("{c:?} fehlt in cp1252()"),
         })
@@ -55,8 +56,13 @@ fn waehle_bytes(u: &Umgebung, name: &str, bytes: &[u8]) {
 
 /// Laedt `bytes` als CSV-Datei in einen neuen Fall und liefert (Wert des Vorschlags in Cent, gespeicherter Zweck).
 fn lade(u: &Umgebung, bytes: &[u8]) -> (Value, Value) {
+    lade_datei(u, "auszug.csv", bytes)
+}
+
+/// Wie `lade`, mit dem Dateinamen des Nutzers (die Endung waehlt das Format).
+fn lade_datei(u: &Umgebung, name: &str, bytes: &[u8]) -> (Value, Value) {
     let fall = zum_kontoauszug(u);
-    waehle_bytes(u, "auszug.csv", bytes);
+    waehle_bytes(u, name, bytes);
     let status = warte_status(u, "1 von 1 Buchung(en) als Vorschlag erfasst");
     let ev = u.dienst.ereignisse(&fall, FELD);
     assert_eq!(ev.len(), 1, "ein Vorschlag im Feld {FELD}; Status {status:?}");
@@ -90,6 +96,30 @@ fn konto_zeichensatz_utf8_datei_mit_bom_bleibt_unveraendert() {
     let (wert, zweck) = lade(&u, &bytes);
     assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR; der BOM steht nicht im Spaltennamen");
     assert_eq!(zweck, json!(ZWECK));
+}
+
+/// Das Eurozeichen ist in cp1252 das Byte `0x80`; in ISO-8859-15 und ISO-8859-1 (den Zeichensaetzen, die man fuer „westlich“
+/// haelt) steht dort ein Steuerzeichen. Der Rueckfall ist also genau `windows-1252` (Mutante U02 von main ueberlebte: die
+/// Umlaute allein trennen die Zeichensaetze nicht).
+#[test]
+fn konto_zeichensatz_eurozeichen_kommt_als_euro_an() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let (wert, zweck) = lade(&u, &auszug(&cp1252("Maler Huber € Anzahlung")));
+    assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR");
+    assert_eq!(zweck, json!("Maler Huber € Anzahlung"), "0x80 ist in cp1252 das Eurozeichen");
+}
+
+/// Die JSON-Datei geht denselben Weg wie die CSV-Datei (`_dateiAlsText`): eine JSON-Datei in cp1252 liefert den Vorschlag
+/// (Mutante U03 von main ueberlebte: `datei.text()` fuer JSON haette ein U+FFFD im Zweck gelassen). Betrag in Cent.
+#[test]
+fn konto_zeichensatz_json_datei_in_cp1252_liefert_den_vorschlag() {
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let json_text = format!(r#"[{{"datum": "01.03.2025", "betrag": -5000, "verwendungszweck": "{ZWECK}"}}]"#);
+    let (wert, zweck) = lade_datei(&u, "auszug.json", &cp1252(&json_text));
+    assert_eq!(wert, json!(5_000), "Saldo 50,00 EUR");
+    assert_eq!(zweck, json!(ZWECK), "das ä kommt als ä an, nicht als U+FFFD");
 }
 
 /// Das Byte `0x81` ist in cp1252 nicht belegt und kein UTF-8. Die Seite darf daran nicht scheitern: `TextDecoder("windows-1252")`

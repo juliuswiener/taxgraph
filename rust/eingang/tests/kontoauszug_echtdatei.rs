@@ -117,6 +117,35 @@ fn echtdatei_leeres_endfeld_hinter_der_kopfzeile_bleibt_buchung() {
     assert_eq!((tx.len(), verworfen), (2, 0), "leere und blanke Endfelder zaehlen nicht als Ueberschuss");
 }
 
+/// Eine Zeile aus Leerzeichen ist eine Leerzeile und trennt den Abschnitt (die Bank-Datei kennt beides). Ohne `strip` bliebe sie
+/// ein Datensatz, und die zweite Tabelle danach wuerde als Buchungszeilen gelesen (Mutante E01 von main ueberlebte).
+#[test]
+fn echtdatei_zeile_aus_leerzeichen_trennt_wie_eine_leerzeile() {
+    let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n   \n\
+                Kaufdatum;Valuta;Stueck;Bezeichnung\n01.02.2025;01.02.2025;1,000;Muster Fonds\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (1, 0, 2));
+}
+
+/// Ein blankes Feld jenseits der Kopfzeile, am Anfang eines Abschnitts, ist kein Ueberschuss: die Zeile und ihr Abschnitt bleiben
+/// Buchungen (Mutante E02 von main ueberlebte; die Gegenprobe davor prueft das Endfeld nur ohne Leerzeile davor).
+#[test]
+fn echtdatei_blankes_endfeld_am_abschnittsanfang_ist_kein_ueberschuss() {
+    let text = "Buchungstag;Betrag;Verwendungszweck\n01.03.2025;-480,00;Maler\n\n\
+                02.03.2025;-50,00;Spende; \n03.03.2025;-7,00;Reinigung\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (3, 0, 0));
+}
+
+/// Die Breite der Kopfzeile zaehlt auch ihr leeres letztes Feld (Endsemikolon, so liefert es die Bank): ein nicht leeres Feld an
+/// dieser Stelle liegt NICHT jenseits der Kopfzeile (Mutante E03 von main ueberlebte).
+#[test]
+fn echtdatei_leeres_letztes_feld_der_kopfzeile_zaehlt_zur_breite() {
+    let text = "Buchungstag;Betrag;Verwendungszweck;\n01.03.2025;-480,00;Maler;\n\n02.03.2025;-50,00;Spende;Bemerkung\n";
+    let (tx, verworfen, befund) = parse_csv_befund(text).unwrap();
+    assert_eq!((tx.len(), verworfen, befund.fremde_zeilen), (2, 0, 0));
+}
+
 /// Gegenprobe zu AK1: eine Zeile mit WENIGER Feldern bleibt, was sie war: ohne Betragsfeld „ohne Betrag“, mit Betrag eine Buchung.
 #[test]
 fn echtdatei_zeile_mit_weniger_feldern_bleibt_wie_zuvor() {
