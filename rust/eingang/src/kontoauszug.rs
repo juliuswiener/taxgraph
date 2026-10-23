@@ -1503,14 +1503,17 @@ pub fn uebernehme_voll(
             });
             continue;
         }
-        // Der Posten einer Art.-9-Regel traegt keinen Zweck (d-60). Er faellt dadurch in der Mehrmenge von `saldo::vereinige`
-        // mit jedem Posten gleichen Tags und Betrags zusammen.
+        // Der Posten einer Art.-9-Regel traegt keinen Zweck (d-60), und ebensowenig der Posten, dessen Zweck im Wortschatz der
+        // besonderen Kategorien steht, auch unter einer Regel ohne `art9` ("Spende Kirchengemeinde"): der Betrag zaehlt, der Text
+        // steht nie in der Akte. Der Posten faellt dadurch in der Mehrmenge von `saldo::vereinige` mit jedem Posten gleichen Tags
+        // und Betrags zusammen.
         // ponytail: zwei verschiedene Buchungen gleichen Tags und Betrags zaehlen in EINEM Auszug beide, ueber zwei ueberlappende
         // Auszuege aber nur einmal. Upgrade: eine Kennung der Buchung (Gegen-IBAN, Mandat) in den Schluessel, sobald S5 sie liest.
+        let ohne_zweck = regel.art9 || pii::ist_art9_buchungstext(zweck);
         let posten = Posten {
             datum,
             betrag_cent: tx.betrag,
-            zweck_maskiert: if regel.art9 { String::new() } else { maskiert },
+            zweck_maskiert: if ohne_zweck { String::new() } else { maskiert },
         };
         // Beleg schlaegt Konto: ein belegtes Feld bleibt unberuehrt, die Antwort nennt die Summe des Kontos als Abgleich.
         sammlung.ordne(store, &mut u, (regel, det.is_some()), posten);

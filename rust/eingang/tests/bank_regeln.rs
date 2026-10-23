@@ -360,3 +360,17 @@ fn bank_beleg_schlaegt_konto_abgleich_nennt_die_summe_des_kontos() {
     assert_eq!((e.uebernahme.uebernommen, e.uebernahme.feld_belegt, e.uebernahme.anderes_jahr), (0, 5, 1), "{:?}", e.uebernahme);
     assert_eq!(store.events().len(), 2, "kein Ereignis des Kontoauszugs");
 }
+
+/// Ein Zweck aus dem Wortschatz der besonderen Kategorien steht in keinem Posten, auch nicht unter einer Regel ohne `art9`
+/// ("Spende Kirchengemeinde"): der Betrag zaehlt, der Text steht nie in der Akte (d-60). Kontrolle: der Zweck ohne Wortschatz steht
+/// im Posten, sonst waere "steht nirgends" leer wahr.
+#[test]
+fn bank_art9_wortschatz_text_steht_unter_einer_regel_ohne_art9_nie_im_posten() {
+    let mut store = Store::leer(2025, None);
+    let b = [tx("2025-03-10", -21_00, "Spende Kirchengemeinde Muster"), tx("2025-03-11", -33_00, "Spende Tierheim Muster")];
+    let e = uebernehme_voll(&mut store, &b, nachschlag(), None, None, None, Haken::default()).unwrap();
+    assert_eq!((e.uebernahme.uebernommen, wert(&store, "spenden_betrag")), (2, Some(54_00)));
+    let akte = serde_json::to_string(&store.events()).unwrap();
+    assert!(!akte.contains("Kirchengemeinde"), "der Wortschatz-Text steht in der Akte: {akte}");
+    assert!(akte.contains("Tierheim Muster"), "Kontrolle: der Zweck ohne Wortschatz steht im Posten: {akte}");
+}
