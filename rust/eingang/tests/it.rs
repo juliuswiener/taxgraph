@@ -2,6 +2,8 @@
 //! `Cargo.toml`. Neue Testdatei: hier eintragen; `rust/bindung/tests/testbinaries_vollstaendig.rs` schlaegt sonst an.
 //! Aufruf einer Datei: `cargo test -p <crate> --test it <datei>::`.
 
+#[path = "bank_auswahl.rs"]
+mod bank_auswahl;
 #[path = "bank_regeln.rs"]
 mod bank_regeln;
 #[path = "kontoauszug_echtdatei.rs"]
