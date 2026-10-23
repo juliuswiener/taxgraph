@@ -3,31 +3,42 @@
 # gewinnt. Stichwoerter stehen kleingeschrieben.
 #
 #   id          Kennung, eindeutig
-#   feld        Zielfeld der Bindung
+#   feld        Zielfeld der Bindung (das Feld muss den Kontoauszug als Schreiber annehmen: vorschlagbar_von in rust/bindung/daten)
+#   art         summe (Standard): die Summe wird als vorlaeufiger Vorschlag ins Feld geschrieben;
+#               arbeitskosten_nachfragen: kein Betrag ins Feld, die Antwort nennt die Zahlung als Nachfrage (d-61, § 35a)
 #   kategorie   Kategorie der KI-Antwort und des Altbestands (llm::Kategorie); fehlt bei Regeln ohne KI-Weg
+#   art9        true: nur mit dem Haken art9 (Gesundheit, Gewerkschaft, Kirche; Art. 9 DSGVO, d-60); die Posten tragen dann
+#               keinen Zweck. Jedes Stichwort einer solchen Regel steht im Wortschatz llm::pii::ist_art9_buchungstext (Waechter).
 #   stichworte  Teilwoerter des Zwecks
+#   hinweis     Satz fuer die Nutzerin, wenn die Regel einen Vorschlag schreibt
 #   quelle      Datei unter sources/ oder params/, die die Behandlung des Felds traegt
-#   ponytail    Obergrenze und Ausbauweg dort, wo keine Quelle die Regel traegt (ein Waechter verlangt eines von beiden)
+#   ponytail    Obergrenze und Ausbauweg dort, wo keine Quelle die Stichwoerter traegt (ein Waechter verlangt quelle oder ponytail)
 #
 # Das Repo hat keine Quelle fuer Gegenparteinamen oder Branchenwoerter: die Stichwortlisten sind von Hand geschrieben.
 
 - id: handwerker
   feld: hh_handwerker_betrag
+  art: arbeitskosten_nachfragen
   kategorie: handwerker
   stichworte: [maler, "sanitär", elektr, dachdeck, handwerk, installat, klempner, heizung, renovier, modernisier]
+  quelle: sources/bmf/bmf_p35a_2016-11-09.txt
   ponytail: "Stichwortliste von Hand; trifft nur diese Wortanfaenge. Ausbau: ein Verzeichnis von Gewerken, sobald eines im Repo liegt."
 
 - id: dienstleistung
   feld: hh_dienstleistung_betrag
+  art: arbeitskosten_nachfragen
   kategorie: dienstleistung
   stichworte: [reinigung, putzhilfe, gartenpfleg, hausmeister, "gebäudereinig", fensterputz, winterdienst]
+  quelle: sources/bmf/bmf_p35a_2016-11-09.txt
   ponytail: "Stichwortliste von Hand; trifft nur diese Wortanfaenge. Ausbau: ein Verzeichnis haushaltsnaher Dienstleistungen."
 
 - id: minijob
   feld: hh_minijob_betrag
+  art: arbeitskosten_nachfragen
   kategorie: minijob
   stichworte: [minijob, haushaltshilfe, minijob-zentrale]
-  ponytail: "Stichwortliste von Hand. Die Bescheinigung der Minijob-Zentrale ist der Nachweis; bis dahin gilt die Regel wie bei den anderen § 35a-Feldern."
+  quelle: sources/bmf/bmf_p35a_2016-11-09.txt
+  ponytail: "Stichwortliste von Hand. Die Bescheinigung der Minijob-Zentrale ist der Nachweis; bis die Regel dazu steht, gilt sie wie bei den anderen § 35a-Feldern."
 
 - id: spende
   feld: spenden_betrag
@@ -42,3 +53,22 @@
   stichworte: [rentenversicherung, "rürup", basisrente, altersvorsorge, "rürup-rente"]
   quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
   ponytail: "Stichwortliste von Hand; trifft jeden Zweck mit diesen Wortanfaengen."
+
+# Ab hier nur mit dem Haken art9 (Gesundheit). basis_kv und basis_pv sind Kegel-Felder: ein vorlaeufiger Betrag aendert die Zahl
+# nicht (Messung A, Fork bankimport-s2-messung). Kein Eintrag in llm::Kategorie: die KI soll keine dieser Kategorien nennen koennen.
+
+- id: krankenversicherung
+  feld: basis_kv
+  art9: true
+  stichworte: [krankenversicherung, krankenkasse]
+  hinweis: "Der Betrag auf dem Konto ist die ganze Prämie; abziehbar ist nur der Basisanteil laut Beitragsbescheinigung deiner Kasse."
+  quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+  ponytail: "Stichwortliste von Hand; kennt keine Kassennamen ohne diese Woerter. Ausbau: Verzeichnis der Kassen."
+
+- id: pflegeversicherung
+  feld: basis_pv
+  art9: true
+  stichworte: [pflegeversicherung]
+  hinweis: "Der Betrag auf dem Konto ist der ganze Beitrag; abziehbar ist der Pflichtbeitrag laut Beitragsbescheinigung deiner Kasse."
+  quelle: sources/gesetze-im-internet/estg_p10_2026-07-11.txt
+  ponytail: "Stichwortliste von Hand; kennt keine Pflegekassen ohne dieses Wort. Ausbau: Verzeichnis der Kassen."

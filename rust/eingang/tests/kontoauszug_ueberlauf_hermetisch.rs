@@ -123,7 +123,7 @@ fn uebernehme_meldet_ueberlauf_statt_einen_gewickelten_betrag() {
     let tx = Transaktion {
         datum: json!("01.03.2025"),
         betrag: i64::MIN,
-        verwendungszweck: "Malermeister Arbeiten".to_owned(),
+        verwendungszweck: "Rürup Arbeiten".to_owned(),
     };
     let mut store = Store::leer(2025, None);
     let erg = uebernehme(&mut store, &[tx], nachschlag, None, None, None);
@@ -140,7 +140,7 @@ fn uebernehme_meldet_ueberlauf_statt_einen_gewickelten_betrag() {
     let tx2 = Transaktion {
         datum: json!("01.03.2025"),
         betrag: -i64::MAX,
-        verwendungszweck: "Malermeister Arbeiten".to_owned(),
+        verwendungszweck: "Rürup Arbeiten".to_owned(),
     };
     let mut s2 = Store::leer(2025, None);
     let n2 = eingang::doctest_bindung()

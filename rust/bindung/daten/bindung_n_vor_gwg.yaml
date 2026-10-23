@@ -1304,7 +1304,7 @@ bindungen:
   # Feldsplit 2026-08: basis_kv_pv -> basis_kv + basis_pv (slot_beitrag: summand).
   # Kz-Bindung 2026-08: via VERZWEIGUNG (est_mapping), Art-Feld = versicherungsart.
   - feld_id: basis_kv
-    vorschlagbar_von: [beleg]
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
     slot_beitrag: summand
     typ: cent
@@ -1323,7 +1323,7 @@ bindungen:
       zitatanker: "Krankenversicherungen, soweit diese zur Erlangung eines durch das Zwölfte Buch Sozialgesetzbuch bestimmten sozialhilfegleichen Versorgungsniveaus erforderlich sind"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
   - feld_id: basis_pv
-    vorschlagbar_von: [beleg]
+    vorschlagbar_von: [kontoauszug, beleg]
     quelle: {regel_id: p10_1_3_3a_kv_pv, signatur_slot: basis_kv_pv}
     slot_beitrag: summand
     typ: cent

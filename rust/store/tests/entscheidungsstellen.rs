@@ -290,8 +290,8 @@ fn ersetzt_kontoauszug_ersetzt_sein_eigenes_vorlaeufiges_ereignis() {
     for (jahr, feld) in [
         (2024, "spenden_betrag"),
         (2025, "spenden_betrag"),
-        (2024, "hh_handwerker_betrag"),
-        (2025, "hh_handwerker_betrag"),
+        (2024, "vor_rv_ausserhalb_lstb"),
+        (2025, "vor_rv_ausserhalb_lstb"),
     ] {
         let mut s = leerer_store(jahr);
         let a = anhaengen(&mut s, &kontoauszug(feld, 10_000, None)).unwrap();
@@ -403,7 +403,7 @@ fn ersetzt_kontoauszug_ziel_muss_das_aktive_ereignis_desselben_feldes_sein() {
     let a = anhaengen(&mut s, &kontoauszug("spenden_betrag", 10_000, None)).unwrap();
     // Anderes Feld (frei): das Ziel gehoert zu `spenden_betrag`.
     let fehler =
-        anhaengen(&mut s, &kontoauszug("hh_handwerker_betrag", 5_000, Some(a))).unwrap_err();
+        anhaengen(&mut s, &kontoauszug("vor_rv_ausserhalb_lstb", 5_000, Some(a))).unwrap_err();
     assert!(ersetzt_guard(&fehler), "anderes Feld: {fehler:?}");
     // Unbekanntes Ziel.
     let fehler = anhaengen(

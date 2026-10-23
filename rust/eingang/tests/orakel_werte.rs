@@ -163,7 +163,7 @@ fn csv_ergebnis(text: &str) -> Value {
 fn rust_konto(tx: Result<Vec<Transaktion>, KontoauszugFehler>, llm: Option<&[String]>) -> Value {
     let tx = match tx {
         Ok(t) => t,
-        Err(e) => return json!({"r": konto_fehler(&e), "events": []}),
+        Err(e) => return json!({"r": konto_fehler(&e), "events": [], "nachfragen": []}),
     };
     let mut s = Store::leer(2025, None);
     let katalog = store::Katalog::aus_bindungen(bindungen());
@@ -175,19 +175,23 @@ fn rust_konto(tx: Result<Vec<Transaktion>, KontoauszugFehler>, llm: Option<&[Str
         let _ = (z, b);
         llm::kontoauszug::parse_kategorie(&texte.borrow_mut().pop_front().unwrap_or_default())
     };
-    let r = ka::uebernehme(
+    let r = ka::uebernehme_voll(
         &mut s,
         &tx,
         nachschlag(),
         llm.map(|_| &k as &ka::Klassifikator<'_>),
         Some(ts()),
         Some(&katalog),
+        ka::Haken::default(),
     );
-    let r = match r {
-        Ok(u) => json!({"ok": [u.uebernommen, u.llm_uebersprungen]}),
-        Err(e) => konto_fehler(&e),
+    let (r, nachfragen) = match r {
+        Ok(e) => (
+            json!({"ok": [e.uebernahme.uebernommen, e.uebernahme.llm_uebersprungen]}),
+            e.nachfragen.iter().map(|n| json!([n.feld_id, n.betrag_cent.abs()])).collect::<Vec<_>>(),
+        ),
+        Err(e) => (konto_fehler(&e), Vec::new()),
     };
-    json!({"r": r, "events": events(&s)})
+    json!({"r": r, "events": events(&s), "nachfragen": nachfragen})
 }
 
 fn transaktionen(liste: &Value) -> Vec<Transaktion> {
@@ -215,13 +219,13 @@ fn llm_texte(v: &Value) -> Option<Vec<String>> {
 /// Rueckbuchungen ab und liest ein Datum nur in vier Formen (`bank::buchung::Datum`). Von 523 Faellen der Abschnitte
 /// `konto`, `konto_json` und `konto_stichwort` (ohne die 67 Fehlerfaelle) weichen 36 ab: 19 wegen eines Datums, das Rust
 /// nicht liest oder das nicht im Jahr 2025 liegt (leer, `null`, eine Zahl), 17 wegen zweier Buchungen im selben Feld
-/// (Summe) oder einer Rueckbuchung. Die Listen nennen die Fall-Nummern im eingefrorenen Korpus: jeder Fall der Liste
+/// (Summe) oder einer Rueckbuchung. Seit Bankimport S2 (siehe `KONTO_35A_ABWEICHUNG`) stehen davon noch 17 auf den Listen: 19 der
+/// 36 wichen nur wegen eines Python-Ereignisses auf einem § 35a-Feld ab, das Rust nicht mehr schreibt, und sind jetzt gleich.
+/// Die Listen nennen die Fall-Nummern im eingefrorenen Korpus: jeder Fall der Liste
 /// MUSS abweichen (`assert_ne`), jeder andere MUSS gleich sein. Wer das Verhalten an Python angleicht, kuerzt die Listen.
-const KONTO_ABWEICHUNG: [usize; 22] = [
-    21, 24, 27, 56, 62, 64, 66, 67, 81, 86, 108, 131, 132, 143, 165, 168, 188, 204, 216, 219, 241, 243,
-];
-const KONTO_JSON_ABWEICHUNG: [usize; 9] = [9, 27, 50, 84, 93, 107, 116, 135, 141];
-const KONTO_STICHWORT_ABWEICHUNG: [usize; 5] = [140, 183, 184, 185, 186];
+const KONTO_ABWEICHUNG: [usize; 9] = [21, 64, 66, 108, 165, 168, 204, 219, 243];
+const KONTO_JSON_ABWEICHUNG: [usize; 4] = [84, 93, 135, 141];
+const KONTO_STICHWORT_ABWEICHUNG: [usize; 4] = [183, 184, 185, 186];
 
 /// Die Felder einer Uebernahme, in denen Rust und Python gleich sein MUESSEN: Feld, Wert, Zustand, Herkunft,
 /// Schreiber, Kategorie, Quelle und die Zaehler `[uebernommen, llm_uebersprungen]`. `signal_1` fehlt hier mit Absicht:
@@ -274,6 +278,76 @@ fn konto_fall(
     );
     z.faelle += 1;
     true
+}
+
+/// BEKANNTE ABWEICHUNG (Bankimport S2, d-61, Vault `backlog/taxgraph/bankimport-s2-regelkatalog-mit-stufen-35a-ohne-betrag-und-art9-waechter`):
+/// Python schreibt die drei § 35a-Felder (`hh_handwerker_betrag`, `hh_dienstleistung_betrag`, `hh_minijob_betrag`) aus dem Kontoauszug,
+/// Rust nicht mehr: der Rechnungsbetrag ist nicht der Arbeitskostenanteil (BMF-Schreiben 2016-11-09 Rn. 40). 185 von 590 Faellen der
+/// Abschnitte `konto`, `konto_json` und `konto_stichwort` tragen ein solches Python-Ereignis (46, 18 und 121; 24 davon standen schon auf
+/// den Listen oben). In 6 der 18 JSON-Faelle meldet Python einen Fehler (`1,5`, `None`): die API verwirft den Fall, und die Ereignisse
+/// zaehlen nicht. Die Liste der JSON-Faelle unten fuehrt deshalb 12. Verglichen wird Rust gegen die Python-Antwort OHNE diese Ereignisse (`uebernommen` um ihre Zahl gekuerzt): gleich,
+/// oder wie bisher auf der Liste oben. Eine bloesse Abweichungsliste verdeckte jede andere Abweichung dieser Faelle. Dazu gilt fuer
+/// jeden dieser Faelle: Rust schreibt kein § 35a-Ereignis, und ausserhalb der alten Listen steht der Betrag der Python-Buchung in den
+/// Nachfragen der Antwort (so bleiben die Stichwoerter der drei Kategorien gegen Python geprueft). Die Listen nennen die Fall-Nummern;
+/// ein Test prueft, dass sie genau die Faelle mit Python-Ereignis auf einem dieser Felder sind.
+const KONTO_35A_ABWEICHUNG: [usize; 46] = [
+    11, 24, 26, 27, 30, 33, 35, 40, 51, 56, 61, 62, 67, 75, 81, 82, 86, 98, 102, 108, 111, 113, 117, 123, 131, 132, 138, 143, 145,
+    147, 178, 179, 184, 185, 188, 193, 199, 208, 216, 217, 219, 220, 226, 231, 241, 243,
+];
+const KONTO_JSON_35A_ABWEICHUNG: [usize; 12] = [9, 18, 27, 50, 63, 78, 84, 107, 116, 119, 135, 139];
+const KONTO_STICHWORT_35A_ABWEICHUNG: [usize; 121] = [
+    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+    32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61,
+    62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 138, 140, 141, 142, 143, 144, 145, 146, 147,
+    148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171,
+    172, 173, 174, 175, 176, 187, 188, 189,
+];
+
+/// Die 19 Faelle, die vor Bankimport S2 auf den Abweichungslisten oben standen, NUR weil Python ein § 35a-Ereignis schrieb (Datum,
+/// das Rust nicht liest oder das nicht im Jahr liegt). Sie sind jetzt gleich; weil Rust die Buchung dort schon vor der Nachfrage
+/// verwirft, steht ihr Betrag nicht in den Nachfragen.
+const KONTO_35A_DATUM: [usize; 13] = [24, 27, 56, 62, 67, 81, 86, 131, 132, 143, 188, 216, 241];
+const KONTO_JSON_35A_DATUM: [usize; 5] = [9, 27, 50, 107, 116];
+const KONTO_STICHWORT_35A_DATUM: [usize; 1] = [140];
+
+const PY_35A_FELDER: [&str; 3] = ["hh_handwerker_betrag", "hh_dienstleistung_betrag", "hh_minijob_betrag"];
+
+/// Die Python-Antwort ohne die Ereignisse der drei § 35a-Felder (`uebernommen` um deren Zahl gekuerzt: Python zaehlt ein Ereignis je
+/// Feld) und die entfernten Ereignisse als `(Feld, Wert)`.
+fn py_ohne_35a(py: &Value) -> (Value, Vec<(String, i64)>) {
+    let events = py["events"].as_array().unwrap();
+    let ist_35a = |e: &Value| PY_35A_FELDER.contains(&e["feld_id"].as_str().unwrap());
+    let weg: Vec<(String, i64)> = events
+        .iter()
+        .filter(|e| ist_35a(e))
+        .map(|e| (e["feld_id"].as_str().unwrap().to_owned(), e["wert"].as_i64().unwrap()))
+        .collect();
+    let rest: Vec<Value> = events.iter().filter(|e| !ist_35a(e)).cloned().collect();
+    let mut r = py["r"].clone();
+    if let Some(ok) = r.get_mut("ok") {
+        ok[0] = json!(ok[0].as_i64().unwrap() - i64::try_from(weg.len()).unwrap());
+    }
+    (json!({"r": r, "events": rest}), weg)
+}
+
+/// Rust schreibt kein § 35a-Ereignis; ausserhalb der alten Listen steht der Betrag jeder Python-Buchung in den Nachfragen. Gibt
+/// zurueck, ob Python in diesem Fall ein solches Ereignis schrieb.
+fn pruefe_35a(was: &str, rust: &Value, py_35a: &[(String, i64)], auf_alter_liste: bool) -> bool {
+    for e in rust["events"].as_array().unwrap() {
+        let feld = e["feld_id"].as_str().unwrap();
+        assert!(!PY_35A_FELDER.contains(&feld), "{was}: Rust schreibt {feld} aus dem Kontoauszug");
+    }
+    if !auf_alter_liste {
+        for (feld, wert) in py_35a {
+            let da = rust["nachfragen"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|n| n[0] == json!(feld) && n[1] == json!(wert));
+            assert!(da, "{was}: der Betrag {wert} der Python-Buchung auf {feld} steht nicht in den Nachfragen {}", rust["nachfragen"]);
+        }
+    }
+    !py_35a.is_empty()
 }
 
 /// BEKANNTE ABWEICHUNG (Bankimport S0, Vault `backlog/taxgraph/kontoauszug-csv-meldet-bei-echten-bankdateien-still-null-von-null`):
@@ -403,24 +477,30 @@ fn betragsparser_wie_orakel() {
 #[test]
 fn uebernahme_aus_csv_wie_orakel() {
     let mut z = Abgleich::default();
-    let (mut events_n, mut abweichend) = (0, 0);
+    let (mut events_n, mut abweichend, mut mit_35a) = (0, 0, Vec::new());
     for (nr, f) in abschnitt("konto").iter().enumerate() {
         let llm = llm_texte(&f["llm"]);
         let rust = rust_konto(Ok(transaktionen(&f["tx"])), llm.as_deref());
         events_n += rust["events"].as_array().unwrap().len();
         let py = json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]});
+        let (py, py_35a) = py_ohne_35a(&py);
         let fall = (nr, format!("uebernehme {}", f["tx"]));
+        if pruefe_35a(&fall.1, &rust, &py_35a, KONTO_ABWEICHUNG.contains(&nr) || KONTO_35A_DATUM.contains(&nr)) {
+            mit_35a.push(nr);
+        }
         abweichend += usize::from(konto_fall(&mut z, &KONTO_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(mit_35a, KONTO_35A_ABWEICHUNG, "die Faelle mit einem Python-Ereignis auf einem § 35a-Feld");
     assert_eq!(abweichend, KONTO_ABWEICHUNG.len());
-    assert!(events_n >= 50, "nur {events_n} Events verglichen");
+    // Die Schwelle lag vor S2 bei 50: die Ereignisse der drei § 35a-Felder entfallen, es bleiben Spende und Vorsorge (heute 27).
+    assert!(events_n >= 20, "nur {events_n} Events verglichen");
     z.fertig(200);
 }
 
 #[test]
 fn uebernahme_aus_json_wie_orakel() {
     let mut z = Abgleich::default();
-    let mut abweichend = 0;
+    let (mut abweichend, mut mit_35a) = (0, Vec::new());
     for (nr, f) in abschnitt("konto_json").iter().enumerate() {
         let roh = &f["roh"];
         let rust = rust_konto(ka::aus_json(roh), None);
@@ -435,9 +515,14 @@ fn uebernahme_aus_json_wie_orakel() {
             continue;
         }
         let py = json!({"r": py_r, "events": f["py"]["events"]});
+        let (py, py_35a) = py_ohne_35a(&py);
         let fall = (nr, format!("uebernehme json {roh}"));
+        if pruefe_35a(&fall.1, &rust, &py_35a, KONTO_JSON_ABWEICHUNG.contains(&nr) || KONTO_JSON_35A_DATUM.contains(&nr)) {
+            mit_35a.push(nr);
+        }
         abweichend += usize::from(konto_fall(&mut z, &KONTO_JSON_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(mit_35a, KONTO_JSON_35A_ABWEICHUNG, "die Faelle mit einem Python-Ereignis auf einem § 35a-Feld");
     assert_eq!(abweichend, KONTO_JSON_ABWEICHUNG.len());
     z.fertig(150);
 }
@@ -445,17 +530,23 @@ fn uebernahme_aus_json_wie_orakel() {
 #[test]
 fn schluesselwoerter_deckel_und_llm_wie_orakel() {
     let mut z = Abgleich::default();
-    let (mut mit_event, mut abweichend) = (0, 0);
+    let (mut mit_event, mut abweichend, mut mit_35a) = (0, 0, Vec::new());
     for (nr, f) in abschnitt("konto_stichwort").iter().enumerate() {
         let llm = llm_texte(&f["llm"]);
         let rust = rust_konto(Ok(transaktionen(&f["tx"])), llm.as_deref());
         mit_event += usize::from(!rust["events"].as_array().unwrap().is_empty());
         let py = json!({"r": py_fehler_normiert(&f["py"]["r"]), "events": f["py"]["events"]});
+        let (py, py_35a) = py_ohne_35a(&py);
         let fall = (nr, format!("stichwort {}", f["tx"]));
+        if pruefe_35a(&fall.1, &rust, &py_35a, KONTO_STICHWORT_ABWEICHUNG.contains(&nr) || KONTO_STICHWORT_35A_DATUM.contains(&nr)) {
+            mit_35a.push(nr);
+        }
         abweichend += usize::from(konto_fall(&mut z, &KONTO_STICHWORT_ABWEICHUNG, fall, &rust, &py));
     }
+    assert_eq!(mit_35a, KONTO_STICHWORT_35A_ABWEICHUNG, "die Faelle mit einem Python-Ereignis auf einem § 35a-Feld");
     assert_eq!(abweichend, KONTO_STICHWORT_ABWEICHUNG.len());
-    assert!(mit_event >= 100, "nur {mit_event} Faelle mit Event");
+    // Ohne die 121 Faelle der § 35a-Felder (jetzt ohne Ereignis) bleiben die Faelle der uebrigen Kategorien: Spende, Vorsorge.
+    assert!(mit_event >= 30, "nur {mit_event} Faelle mit Event");
     z.fertig(150);
 }
 

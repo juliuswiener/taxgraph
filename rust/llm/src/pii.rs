@@ -27,6 +27,7 @@ const PLATZHALTER: &str = "[PII]";
 struct Muster {
     kategorien: Vec<(&'static str, PyRegex)>,
     art9: PyRegex,
+    art9_buchungstext: PyRegex,
     konto_iban: PyRegex,
     konto_stnr: PyRegex,
     konto_kto: PyRegex,
@@ -67,6 +68,18 @@ static MUSTER: LazyLock<Muster> = LazyLock::new(|| Muster {
          |pflegst|pflege_durch|pflegt die person|hilflos|blind|taubblind|merkzeichen\
          |berufsunfaehig|erwerbsunfaehig|krankheitskosten|heilbehandlung\
          |gewerkschaft|berufsverband",
+    ),
+    // Wortschatz fuer den VERWENDUNGSZWECK einer Buchung (Bankimport S2, d-60): Gesundheit, Gewerkschaft, Kirche (Art. 9 Abs. 1
+    // DSGVO). Er ist grob mit Absicht: ein Treffer zu viel haelt eine Buchung von der KI fern, ein Treffer zu wenig gibt einen Text
+    // aus der besonderen Kategorie weiter. Die Gesundheits- und Kirchen-Woerter sind Wortteile ("arzt" in "Zahnarzt", "kirch" in
+    // "Kirchensteuer"); "ver.di" und "verdi" stehen mit Wortgrenze, sonst traefe "Verdienst".
+    // ponytail: Wortliste von Hand, keine Quelle im Repo; sie kennt keine Namen von Kassen, Praxen oder Gewerkschaften ohne eines
+    // dieser Woerter ("AOK", "Barmer", "GEW"). Ausbau: ein Verzeichnis dieser Namen, sobald eines vorliegt.
+    art9_buchungstext: PyRegex::neu(
+        "(?i)arzt|ärzt|aerzt|praxis|klinik|krankenhaus|apotheke|physiotherap|psychotherap|heilpraktik|krankenkasse\
+         |krankenversicherung|pflegeversicherung|pflegekasse|medizin|arznei\
+         |gewerkschaft|\\bver\\.?di\\b|\\big\\s*metall\\b|\\big\\s*bau\\b|\\big\\s*bce\\b|\\bdgb\\b|berufsverband\
+         |kirch|bistum|diözese|dioezese|pfarr|evangelisch|katholisch|moschee|synagoge",
     ),
     konto_iban: PyRegex::neu(
         r"\b([A-Za-z]{2}\d{2})(?:[A-Za-z0-9]{10,30}|(?:[ -][A-Za-z0-9]{4}){2,7}(?:[ -][A-Za-z0-9]{1,4})?)\b",
@@ -182,6 +195,21 @@ pub fn ist_besondere_kategorie(feld_id: &str, fragetext: &str) -> bool {
     a.sucht(feld_id).unwrap_or(true) || a.sucht(fragetext).unwrap_or(true)
 }
 
+/// Nennt der Verwendungszweck einer Buchung etwas aus einer besonderen Kategorie (Gesundheit, Gewerkschaft, Kirche; Art. 9
+/// DSGVO)? Ein solcher Text geht nie an das Sprachmodell, in keinem Haken-Zustand (Bankimport S2, d-60). Ein Laufzeitfehler des
+/// Musters zaehlt fail-closed als "ja".
+///
+/// ```
+/// assert!(llm::pii::ist_art9_buchungstext("Zahnarzt Dr. Beispiel"));
+/// assert!(llm::pii::ist_art9_buchungstext("ver.di Mitgliedsbeitrag"));
+/// assert!(llm::pii::ist_art9_buchungstext("Kirchensteuer Erzbistum"));
+/// assert!(!llm::pii::ist_art9_buchungstext("Verdienstausfall Muster Einkauf"));
+/// ```
+#[must_use]
+pub fn ist_art9_buchungstext(zweck: &str) -> bool {
+    MUSTER.art9_buchungstext.sucht(zweck).unwrap_or(true)
+}
+
 /// `maskiere(text)` (`kontoauszug_writer.py:155-187`): IBAN auf Laenderkuerzel+Pruefziffer
 /// kuerzen, Steuernummer/IdNr voll verdecken, lange Ziffernlaeufe auf zwei Ziffern kuerzen.
 /// Namen werden bewusst NICHT maskiert (s. Python-Doku).
@@ -218,6 +246,33 @@ mod tests {
     fn plz_vor_euro_bleibt_stehen() {
         assert_eq!(filtere("12345 Euro Gehalt").0.as_str(), "12345 Euro Gehalt");
         assert_eq!(filtere("12345 Europa").0.as_str(), "[PII]");
+    }
+
+    /// Der Wortschatz fuer den Buchungstext (Bankimport S2): Gesundheit, Gewerkschaft und Kirche treffen, Alltagstexte nicht.
+    /// Die Grenze steht fest: ein Name ohne eines dieser Woerter ("AOK", "Barmer") trifft nicht (`ponytail` am Muster).
+    #[test]
+    fn art9_buchungstext_trifft_die_drei_kategorien_und_keinen_alltag() {
+        use super::ist_art9_buchungstext;
+        for ja in [
+            "Zahnarzt Dr. Beispiel",
+            "Arztpraxis Muster",
+            "Apotheke am Markt",
+            "Klinikum Musterstadt",
+            "Techniker Krankenkasse Beitrag",
+            "Pflegeversicherung Beitrag",
+            "ver.di Mitgliedsbeitrag",
+            "VERDI Beitrag",
+            "IG Metall Beitrag",
+            "Gewerkschaft Muster",
+            "Kirchensteuer Erzbistum",
+            "Kirchgeld 2025",
+            "Evangelische Gemeinde Muster",
+        ] {
+            assert!(ist_art9_buchungstext(ja), "{ja:?} muss treffen");
+        }
+        for nein in ["Muster Einkauf 4711", "Verdienstausfall", "Miete Januar", "Spende Tierheim", "Maler Huber", "Barmer Beitrag"] {
+            assert!(!ist_art9_buchungstext(nein), "{nein:?} darf nicht treffen");
+        }
     }
 
     #[test]

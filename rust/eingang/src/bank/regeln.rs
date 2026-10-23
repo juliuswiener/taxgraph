@@ -18,6 +18,17 @@ pub enum Art {
     ArbeitskostenNachfragen,
 }
 
+impl Art {
+    /// Das Wort in der Antwort der Route und in der Regeldatei.
+    #[must_use]
+    pub fn als_str(self) -> &'static str {
+        match self {
+            Self::Summe => "summe",
+            Self::ArbeitskostenNachfragen => "arbeitskosten_nachfragen",
+        }
+    }
+}
+
 /// Eine Regel des Katalogs.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -32,6 +43,9 @@ pub struct Regel {
     #[serde(default)]
     pub art9: bool,
     pub stichworte: Vec<String>,
+    /// Satz fuer die Nutzerin, wenn die Regel einen Vorschlag schreibt.
+    #[serde(default)]
+    pub hinweis: Option<String>,
     #[serde(default)]
     pub quelle: Option<String>,
     #[serde(default)]
@@ -100,6 +114,43 @@ mod tests {
             let n = katalog().iter().filter(|r| r.kategorie == Some(k)).count();
             assert_eq!(n, 1, "{k:?}");
             assert_eq!(regel_fuer(k).unwrap().kategorie, Some(k));
+        }
+    }
+
+    /// Jedes Stichwort einer Art.-9-Regel steht im Wortschatz der KI-Sperre. Fehlte eines, ginge ein Text mit diesem Wort ohne den
+    /// Haken `art9` an das Sprachmodell: die Regel greift nicht (ohne Haken), und die Sperre sieht den Text nicht.
+    #[test]
+    fn bankregeln_jedes_art9_stichwort_steht_im_wortschatz() {
+        let art9: Vec<_> = katalog().iter().filter(|r| r.art9).collect();
+        assert!(art9.len() >= 2, "{art9:?}");
+        for r in art9 {
+            for s in &r.stichworte {
+                assert!(llm::pii::ist_art9_buchungstext(s), "{}: Stichwort {s:?} fehlt im Wortschatz art9_buchungstext", r.id);
+            }
+        }
+    }
+
+    /// Mit und ohne Haken: beide Art.-9-Regeln schlagen ohne den Haken nie an; mit dem Haken gewinnt bei beiden Woertern die erste
+    /// Regel des Katalogs (die Reihenfolge der Datei, vorlaeufig und vom Nutzer zu bestaetigen).
+    #[test]
+    fn bankregeln_art9_regeln_gelten_nur_mit_haken_und_die_erste_gewinnt() {
+        for zweck in ["Techniker Krankenversicherung Beitrag", "AOK Krankenkasse", "Pflegeversicherung Beitrag"] {
+            assert!(treffer(zweck, false).is_none(), "{zweck:?} ohne Haken");
+        }
+        assert_eq!(treffer("Techniker Krankenversicherung Beitrag", true).unwrap().feld, "basis_kv");
+        assert_eq!(treffer("AOK Krankenkasse", true).unwrap().feld, "basis_kv");
+        assert_eq!(treffer("Pflegeversicherung Beitrag", true).unwrap().feld, "basis_pv");
+        assert_eq!(treffer("Krankenversicherung und Pflegeversicherung", true).unwrap().feld, "basis_kv");
+        assert_eq!(treffer("Pflegeversicherung und Krankenversicherung", true).unwrap().feld, "basis_kv");
+    }
+
+    /// § 35a (d-61): die drei Felder tragen die Art "nachfragen", alle anderen Regeln schreiben die Summe.
+    #[test]
+    fn bankregeln_nur_die_35a_felder_fragen_nach() {
+        use super::Art;
+        for r in katalog() {
+            let nachfragen = ["hh_handwerker_betrag", "hh_dienstleistung_betrag", "hh_minijob_betrag"].contains(&r.feld.as_str());
+            assert_eq!(r.art == Art::ArbeitskostenNachfragen, nachfragen, "{}", r.id);
         }
     }
 

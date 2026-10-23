@@ -14,7 +14,7 @@ use serde_json::{json, Value};
 use store::{BindungNachschlag, Katalog, Store};
 
 use crate::bank::buchung::{Datum, Posten};
-use crate::bank::regeln;
+use crate::bank::regeln::{self, Art, Regel};
 use crate::bank::saldo;
 use crate::csv;
 use crate::vorschlag::{Quelle, SchreibFehler, VorschlagEvent};
@@ -698,6 +698,8 @@ pub fn hinweis_nichts_gelesen(befund: &CsvBefund) -> String {
 ///     saldo_nicht_positiv: 0,
 ///     ersetzbar: 0,
 ///     schon_erfasst: 0,
+///     nachgefragt: 0,
+///     art9_gesperrt: 0,
 /// };
 /// assert_eq!(
 ///     hinweis_nichts_uebernommen(3, &u).as_deref(),
@@ -728,6 +730,14 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
             u.schon_erfasst,
             "im bisherigen Vorschlag des Felds schon enthalten",
         ),
+        (
+            u.nachgefragt,
+            "für ein § 35a-Feld (nur der Anteil der Arbeitskosten laut Rechnung zählt, siehe die Nachfrage)",
+        ),
+        (
+            u.art9_gesperrt,
+            "mit Bezug zu Gesundheit, Gewerkschaft oder Kirche, ohne den Haken dafür nicht ausgewertet",
+        ),
         (u.anderes_jahr, GRUND_ANDERES_JAHR),
         (u.datum_unlesbar, GRUND_DATUM_UNLESBAR),
         (u.saldo_nicht_positiv, GRUND_SALDO),
@@ -757,7 +767,7 @@ const GRUND_SALDO: &str = "in einem Feld, dessen Saldo nach Rückbuchungen null 
 ///
 /// ```
 /// use eingang::kontoauszug::{hinweis_nicht_gezaehlt, Uebernahme};
-/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0, ersetzbar: 0, schon_erfasst: 0 };
+/// let u = Uebernahme { uebernommen: 3, llm_uebersprungen: 0, einnahmen: 0, ohne_stichwort: 0, partei: 0, feld_fehlt: 0, feld_belegt: 0, anderes_jahr: 2, datum_unlesbar: 0, saldo_nicht_positiv: 0, ersetzbar: 0, schon_erfasst: 0, nachgefragt: 0, art9_gesperrt: 0 };
 /// assert_eq!(
 ///     hinweis_nicht_gezaehlt(&u).as_deref(),
 ///     Some("Nicht gezählt: 2 Buchung(en) außerhalb des Veranlagungsjahrs.")
@@ -776,6 +786,73 @@ pub fn hinweis_nicht_gezaehlt(u: &Uebernahme) -> Option<String> {
     .map(|(n, text)| format!("{n} Buchung(en) {text}"))
     .collect();
     (!teile.is_empty()).then(|| format!("Nicht gezählt: {}.", teile.join("; ")))
+}
+
+/// Der Satz zu den § 35a-Zahlungen, die der Import nicht ins Feld schrieb (d-61): warum, und was die Nutzerin tut. Nur Zahlen und
+/// die Fundstelle, nie ein Zweck. `None` ohne Zahlung.
+///
+/// ```
+/// let satz = eingang::kontoauszug::hinweis_nachfragen(2).unwrap();
+/// assert!(satz.starts_with("2 Zahlung(en) für Handwerker oder Haushaltshilfe wurden nicht eingetragen"));
+/// assert!(satz.contains("Arbeitskosten laut Rechnung") && satz.contains("Rn. 40"));
+/// assert_eq!(eingang::kontoauszug::hinweis_nachfragen(0), None);
+/// ```
+#[must_use]
+pub fn hinweis_nachfragen(n: usize) -> Option<String> {
+    (n > 0).then(|| {
+        format!(
+            "{n} Zahlung(en) für Handwerker oder Haushaltshilfe wurden nicht eingetragen: Eingetragen wird nur der Anteil der \
+             Arbeitskosten laut Rechnung (BMF-Schreiben vom 09.11.2016, Rn. 40: Eine Schätzung ist nicht zulässig). Trage ihn \
+             je Rechnung selbst ein."
+        )
+    })
+}
+
+/// Der Satz zu den Buchungen mit Bezug zu Gesundheit, Gewerkschaft oder Kirche, die ohne den Haken nicht ausgewertet wurden
+/// (d-60). Nur eine Zahl, nie ein Zweck. `None` ohne Buchung.
+///
+/// ```
+/// let satz = eingang::kontoauszug::hinweis_art9_gesperrt(3).unwrap();
+/// assert!(satz.starts_with("3 Buchung(en) mit Bezug zu Gesundheit, Gewerkschaft oder Kirche wurden nicht ausgewertet"));
+/// assert_eq!(eingang::kontoauszug::hinweis_art9_gesperrt(0), None);
+/// ```
+#[must_use]
+pub fn hinweis_art9_gesperrt(n: usize) -> Option<String> {
+    (n > 0).then(|| {
+        format!(
+            "{n} Buchung(en) mit Bezug zu Gesundheit, Gewerkschaft oder Kirche wurden nicht ausgewertet. Setze den Haken für \
+             besondere Kategorien, damit der Import sie mit seinen Regeln prüft; sie gehen nie an die KI."
+        )
+    })
+}
+
+/// Der Satz zum Abgleich (Beleg schlaegt Konto): fuer welches Feld schon ein Wert gilt und was das Konto ergaebe.
+/// Nur Feldnamen, Summen und Zahlen, nie ein Zweck. `None` ohne Feld.
+///
+/// ```
+/// use eingang::kontoauszug::{hinweis_abgleich, Abgleich};
+/// let a = Abgleich { feld_id: "spenden_betrag", summe_cent: 35_00, anzahl: 2 };
+/// assert_eq!(
+///     hinweis_abgleich(&[a]).as_deref(),
+///     Some("Abgleich: Für spenden_betrag gilt schon ein Wert aus einem Beleg, einer Eingabe oder einem früheren Import. Das Konto zeigt 35,00 € aus 2 Buchung(en); der Kontoauszug schreibt dort nichts.")
+/// );
+/// assert_eq!(hinweis_abgleich(&[]), None);
+/// ```
+#[must_use]
+pub fn hinweis_abgleich(felder: &[Abgleich]) -> Option<String> {
+    let teile: Vec<String> = felder
+        .iter()
+        .map(|a| {
+            format!(
+                "Für {} gilt schon ein Wert aus einem Beleg, einer Eingabe oder einem früheren Import. Das Konto zeigt {} aus {} \
+                 Buchung(en); der Kontoauszug schreibt dort nichts.",
+                a.feld_id,
+                euro_text(a.summe_cent),
+                a.anzahl
+            )
+        })
+        .collect();
+    (!teile.is_empty()).then(|| format!("Abgleich: {}", teile.join(" ")))
 }
 
 static SALDO: LazyLock<PyRegex> =
@@ -879,7 +956,7 @@ pub struct Uebernahme {
     /// halb angesehener Auszug aus wie ein ganz geprüfter.
     pub llm_uebersprungen: usize,
     /// Warum die uebrigen Buchungen keinen Vorschlag wurden. Zusammen mit `uebernommen` und
-    /// `llm_uebersprungen` ergeben diese zehn Zaehler genau die Zahl der Buchungen.
+    /// `llm_uebersprungen` ergeben diese zwoelf Zaehler genau die Zahl der Buchungen.
     /// Betrag 0 oder positiv: keine Ausgabe.
     pub einnahmen: usize,
     /// Weder Stichwort noch Klassifikator ordnete die Ausgabe einer Kategorie zu.
@@ -906,6 +983,12 @@ pub struct Uebernahme {
     /// Der eigene vorlaeufige Vorschlag des Felds enthaelt diese Buchungen schon (derselbe Auszug
     /// noch einmal): keine Rueckfrage, kein neues Ereignis (Bankimport S1b).
     pub schon_erfasst: usize,
+    /// § 35a (d-61): eine Zahlung einer der drei Kategorien, deren Feld keinen Betrag aus dem Kontoauszug bekommt, weil der
+    /// Rechnungsbetrag nicht der Arbeitskostenanteil ist. Die Antwort nennt sie als [`Nachfrage`].
+    pub nachgefragt: usize,
+    /// Der Zweck nennt Gesundheit, Gewerkschaft oder Kirche (Art. 9 DSGVO), keine Regel traf ihn, und der Haken `art9` fehlt: die
+    /// Buchung wurde nicht ausgewertet und nie an das Sprachmodell gegeben (d-60).
+    pub art9_gesperrt: usize,
 }
 
 /// Ein Feld, dessen eigener vorlaeufiger Vorschlag aus einem frueheren Auszug durch die Vereinigung
@@ -920,11 +1003,53 @@ pub struct Ersetzung {
     pub neu_posten: usize,
 }
 
+/// Eine Zahlung, nach der die Nutzerin gefragt wird (§ 35a, d-61): der Import schreibt keinen Betrag ins Feld, denn der
+/// Rechnungsbetrag ist nicht der Arbeitskostenanteil (BMF-Schreiben vom 2016-11-09 Rn. 40: eine Schaetzung ist nicht zulaessig).
+/// Die Zeile steht nur in der Antwort an die Nutzerin, nie in der Akte, im Log oder im Audit. `betrag_cent` mit dem Vorzeichen
+/// der Buchung (Ausgabe negativ), `zweck_maskiert` wie bei den Posten eines Vorschlags.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Nachfrage {
+    pub feld_id: &'static str,
+    pub datum: String,
+    pub betrag_cent: i64,
+    pub zweck_maskiert: String,
+}
+
+/// Beleg schlaegt Konto: das Feld fuehrt schon einen Wert (Beleg, bestaetigte Eingabe oder frueherer Import ohne lesbare Posten),
+/// der Kontoauszug schreibt dort nichts und nennt nur, was er ergaebe. `summe_cent` hat Einheit und Vorzeichen der Summe, die
+/// der Import ins Feld geschrieben haette (Ausgabe positiv, in Cent); eine Summe null oder darunter wird nicht genannt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Abgleich {
+    pub feld_id: &'static str,
+    pub summe_cent: i64,
+    pub anzahl: usize,
+}
+
+/// Die Haken eines Imports. `ersetzen`: der Haken der Entscheidung d-63. `art9`: die Art.-9-Regeln des Katalogs gelten (d-60);
+/// ohne ihn schlagen sie nie an. Das Sprachmodell hat keinen Haken hier: es gibt es, wenn der Aufrufer einen Klassifikator
+/// uebergibt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct Haken {
+    pub ersetzen: bool,
+    pub art9: bool,
+}
+
+/// Alles, was ein Import ergibt.
+#[derive(Debug, Clone)]
+pub struct Ergebnis {
+    pub uebernahme: Uebernahme,
+    pub ersetzungen: Vec<Ersetzung>,
+    pub nachfragen: Vec<Nachfrage>,
+    pub abgleich: Vec<Abgleich>,
+    /// Die Saetze (`hinweis` der Regeln) der Felder, auf die dieser Import einen Vorschlag schrieb, je Regel einmal.
+    pub regelhinweise: Vec<String>,
+}
+
 /// Alle Buchungen eines Zielfelds, die in EINE Summe eingehen. Eine Rueckbuchung (Betrag > 0)
 /// derselben Kategorie steht darin mit ihrem positiven Betrag und mindert den Saldo.
 struct Gruppe {
     feld: &'static str,
-    kategorie: Kategorie,
+    regel: &'static Regel,
     /// Alle Buchungen kamen ueber ein Stichwort, keine ueber die KI.
     nur_stichwort: bool,
     posten: Vec<Posten>,
@@ -1026,7 +1151,7 @@ fn schreibe_gruppen(
     jahr: i64,
     (bindung, katalog, ts): (BindungNachschlag<'_>, &Katalog, Option<&str>),
     ersetzen: bool,
-    u: &mut Uebernahme,
+    (u, regelhinweise): (&mut Uebernahme, &mut Vec<String>),
 ) -> Result<Vec<Ersetzung>, KontoauszugFehler> {
     let ueberlauf = |g: &Gruppe| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld));
     let mut zu_schreiben = Vec::new();
@@ -1069,8 +1194,10 @@ fn schreibe_gruppen(
                     "zweck_maskiert": p.zweck_maskiert})
             })
             .collect();
+        // Die Kategorie des Altbestands, sonst die Kennung der Regel (Regeln ohne Kategorie, etwa `krankenversicherung`).
+        let kategorie = g.regel.kategorie.map_or(g.regel.id.as_str(), Kategorie::als_str);
         let signal_1 = json!({"typ": "kontoauszug", "jahr": jahr, "posten": posten,
-            "summe_cent": saldo, "kategorie": g.kategorie.als_str(),
+            "summe_cent": saldo, "kategorie": kategorie, "regel_id": g.regel.id,
             "quelle": if llm { "llm" } else { "heuristik" }});
         let v = VorschlagEvent {
             quelle: Quelle::Kontoauszug,
@@ -1085,6 +1212,12 @@ fn schreibe_gruppen(
             .and_then(|_| store.aktives(g.feld).map(|e| e.event_id));
         v.schreibe_mit(ersetzt, store, Some(katalog), bindung, ts)?;
         u.uebernommen += g.posten.len();
+        if let Some(satz) = &g.regel.hinweis {
+            let satz = format!("{}: {satz}", g.feld);
+            if !regelhinweise.contains(&satz) {
+                regelhinweise.push(satz);
+            }
+        }
     }
     Ok(ersetzungen)
 }
@@ -1178,6 +1311,52 @@ pub fn uebernehme_mit(
     katalog: Option<&Katalog>,
     ersetzen: bool,
 ) -> Result<(Uebernahme, Vec<Ersetzung>), KontoauszugFehler> {
+    uebernehme_voll(
+        store,
+        transaktionen,
+        bindung,
+        llm_klassifikator,
+        ts,
+        katalog,
+        Haken { ersetzen, art9: false },
+    )
+    .map(|e| (e.uebernahme, e.ersetzungen))
+}
+
+/// Wie [`uebernehme_mit`], mit allen Haken und allen Ausgaben des Bankimports S2.
+///
+/// - **§ 35a (d-61).** Eine Buchung, die eine Regel mit der Art `arbeitskosten_nachfragen` trifft (oder die KI einer solchen
+///   Kategorie zuordnet), schreibt keinen Betrag ins Feld. Sie steht in [`Ergebnis::nachfragen`] und zaehlt in `nachgefragt`.
+/// - **Art. 9 (d-60).** Ein Zweck mit Gesundheits-, Gewerkschafts- oder Kirchenbezug (`llm::pii::ist_art9_buchungstext`), den
+///   keine Regel traf, geht nie an den Klassifikator, in keinem Haken-Zustand: ohne `haken.art9` zaehlt er in `art9_gesperrt`, mit
+///   dem Haken in `ohne_stichwort`. Eine Regel mit `art9` gilt nur mit dem Haken; ihre Posten tragen keinen Zweck.
+/// - **Beleg schlaegt Konto.** Ein Feld mit einem Wert, den dieser Import nicht ersetzen darf, bleibt unberuehrt; die Summe der
+///   Buchungen dafuer steht in [`Ergebnis::abgleich`].
+///
+/// # Errors
+/// Wie [`uebernehme`].
+///
+/// ```
+/// use eingang::kontoauszug::{uebernehme_voll, Haken, Transaktion};
+/// use store::{BindungNachschlag, Store};
+/// let nachschlag = BindungNachschlag::neu(eingang::doctest_bindung().unwrap());
+/// let tx = |tag: &str, cent: i64, zweck: &str| Transaktion { datum: serde_json::json!(tag), betrag: cent, verwendungszweck: zweck.into() };
+/// let mut store = Store::leer(2025, None);
+/// let buchungen = [tx("2025-03-01", -480_00, "Maler Huber"), tx("2025-03-02", -50_00, "Spende Tierheim")];
+/// let e = uebernehme_voll(&mut store, &buchungen, nachschlag, None, None, None, Haken::default()).unwrap();
+/// assert_eq!((e.uebernahme.uebernommen, e.uebernahme.nachgefragt), (1, 1));
+/// assert_eq!(e.nachfragen[0].feld_id, "hh_handwerker_betrag");
+/// assert!(store.aktives("hh_handwerker_betrag").is_none());
+/// ```
+pub fn uebernehme_voll(
+    store: &mut Store,
+    transaktionen: &[Transaktion],
+    bindung: BindungNachschlag<'_>,
+    llm_klassifikator: Option<&Klassifikator<'_>>,
+    ts: Option<&str>,
+    katalog: Option<&Katalog>,
+    haken: Haken,
+) -> Result<Ergebnis, KontoauszugFehler> {
     let eigener;
     let katalog = if let Some(k) = katalog {
         k
@@ -1191,6 +1370,8 @@ pub fn uebernehme_mit(
     let beginn = Instant::now();
     // Zuerst ordnen, dann schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
     let mut gruppen: Vec<Gruppe> = Vec::new();
+    let mut nachfragen: Vec<Nachfrage> = Vec::new();
+    let mut belegt: Vec<(&'static str, Vec<Posten>)> = Vec::new();
     for tx in transaktionen {
         // Betrag 0 ist weder Ausgabe noch Rueckbuchung.
         if tx.betrag == 0 {
@@ -1198,7 +1379,7 @@ pub fn uebernehme_mit(
             continue;
         }
         let zweck = &tx.verwendungszweck;
-        let det = klassifiziere_det(zweck);
+        let det = regeln::treffer(zweck, haken.art9);
         // Ein positiver Betrag zaehlt nur mit Stichwort als Rueckbuchung; sonst ist er eine Einnahme.
         // Die KI sieht ihn nie.
         if tx.betrag > 0 && det.is_none() {
@@ -1217,36 +1398,60 @@ pub fn uebernehme_mit(
             }
             Some(d) => d,
         };
-        let mut kategorie = det;
-        if kategorie.is_none() {
+        let mut regel = det;
+        if regel.is_none() {
+            // Ein Text aus einer besonderen Kategorie, den keine Regel traf, erreicht das Sprachmodell nie (d-60).
+            if pii::ist_art9_buchungstext(zweck) {
+                if haken.art9 {
+                    u.ohne_stichwort += 1;
+                } else {
+                    u.art9_gesperrt += 1;
+                }
+                continue;
+            }
             if let Some(k) = llm_klassifikator {
                 if aufrufe >= LLM_AUFRUFE_HOECHSTZAHL || beginn.elapsed() > LLM_ZEITBUDGET {
                     u.llm_uebersprungen += 1;
                     continue;
                 }
                 aufrufe += 1;
-                kategorie = k(&pii::maskiere(zweck), tx.betrag);
+                regel = k(&pii::maskiere(zweck), tx.betrag).and_then(regeln::regel_fuer);
             }
         }
-        let Some(kategorie) = kategorie else {
+        let Some(regel) = regel else {
             u.ohne_stichwort += 1;
             continue;
         };
         // GEWOLLT ABWEICHEND von Python (Abweichung Nr. 39): Eine Spende, deren Zweck eine Partei nennt, gehoert nicht
         // in `spenden_betrag`. Die Pruefung steht hinter beiden Wegen der Kategorisierung (Schluesselwort und LLM).
-        if kategorie == Kategorie::Spende && nennt_partei(zweck) {
+        if regel.kategorie == Some(Kategorie::Spende) && nennt_partei(zweck) {
             u.partei += 1;
             continue;
         }
-        let feld = zielfeld(kategorie);
+        let feld = regel.feld.as_str();
         if bindung.get(feld).is_none() {
             u.feld_fehlt += 1;
             continue;
         }
+        let maskiert = pii::maskiere(zweck).as_str().to_owned();
+        if regel.art == Art::ArbeitskostenNachfragen {
+            u.nachgefragt += 1;
+            nachfragen.push(Nachfrage {
+                feld_id: feld,
+                datum: datum.als_text(),
+                betrag_cent: tx.betrag,
+                zweck_maskiert: maskiert,
+            });
+            continue;
+        }
+        // Der Posten einer Art.-9-Regel traegt keinen Zweck (d-60). Er faellt dadurch in der Mehrmenge von `saldo::vereinige`
+        // mit jedem Posten gleichen Tags und Betrags zusammen.
+        // ponytail: zwei verschiedene Buchungen gleichen Tags und Betrags zaehlen in EINEM Auszug beide, ueber zwei ueberlappende
+        // Auszuege aber nur einmal. Upgrade: eine Kennung der Buchung (Gegen-IBAN, Mandat) in den Schluessel, sobald S5 sie liest.
         let posten = Posten {
             datum,
             betrag_cent: tx.betrag,
-            zweck_maskiert: pii::maskiere(zweck).as_str().to_owned(),
+            zweck_maskiert: if regel.art9 { String::new() } else { maskiert },
         };
         if let Some(g) = gruppen.iter_mut().find(|g| g.feld == feld) {
             g.nur_stichwort &= det.is_some();
@@ -1258,6 +1463,11 @@ pub fn uebernehme_mit(
         let alt = if store.aktives(feld).is_some() {
             let Some(alt) = bestehendes(store, feld) else {
                 u.feld_belegt += 1;
+                // Beleg schlaegt Konto: der Kontoauszug schreibt nichts, die Antwort nennt seine Summe als Abgleich.
+                match belegt.iter_mut().find(|(f, _)| *f == feld) {
+                    Some((_, liste)) => liste.push(posten),
+                    None => belegt.push((feld, vec![posten])),
+                }
                 continue;
             };
             Some(alt)
@@ -1266,21 +1476,40 @@ pub fn uebernehme_mit(
         };
         gruppen.push(Gruppe {
             feld,
-            kategorie,
+            regel,
             nur_stichwort: det.is_some(),
             posten: vec![posten],
             alt,
         });
     }
+    let mut abgleich = Vec::new();
+    for (feld, posten) in belegt {
+        let summe = saldo::saldo(&posten)
+            .ok_or_else(|| KontoauszugFehler::BetragUeberlauf(format!("Summe {feld}")))?;
+        if summe > 0 {
+            abgleich.push(Abgleich {
+                feld_id: feld,
+                summe_cent: summe,
+                anzahl: posten.len(),
+            });
+        }
+    }
+    let mut regelhinweise = Vec::new();
     let ersetzungen = schreibe_gruppen(
         store,
         gruppen,
         jahr,
         (bindung, katalog, ts),
-        ersetzen,
-        &mut u,
+        haken.ersetzen,
+        (&mut u, &mut regelhinweise),
     )?;
-    Ok((u, ersetzungen))
+    Ok(Ergebnis {
+        uebernahme: u,
+        ersetzungen,
+        nachfragen,
+        abgleich,
+        regelhinweise,
+    })
 }
 
 /// `neu` bzw. `jetzt` je Feld: `spenden_betrag: bisher 11,00 € aus 2 Buchung(en), <wort> 16,00 € aus 3 Buchung(en)`.
@@ -1503,33 +1732,37 @@ mod tests {
             betrag,
             verwendungszweck: zweck.to_owned(),
         };
-        // Eine Bindung ohne `spenden_betrag`: die Spende an das Tierheim hat kein Zielfeld.
+        // Eine Bindung ohne `hh_handwerker_betrag`: der Maler hat kein Zielfeld (die Pruefung steht vor der Nachfrage).
         let mut karte = crate::doctest_bindung().unwrap().clone();
-        karte.remove("spenden_betrag");
+        karte.remove("hh_handwerker_betrag");
         let bindung = store::BindungNachschlag::neu(&karte);
         let mut store = store::Store::leer(2025, None);
-        // Das Feld der Reinigung hat schon einen BESTAETIGTEN Wert (Bankimport S1b: ein eigener
+        // Das Feld der Krankenversicherung hat schon einen BESTAETIGTEN Wert (Bankimport S1b: ein eigener
         // vorlaeufiger Vorschlag aus einem frueheren Import zaehlt seit der Rueckfrage als `ersetzbar`).
-        s1b_mensch(&mut store, bindung, "hh_dienstleistung_betrag", 4_00, None);
+        s1b_mensch(&mut store, bindung, "basis_kv", 4_00, None);
         let buchungen = [
             tx("01.03.2025", 10_000, "Gehalt"),
             tx("01.03.2025", -999, "Einkauf"),
+            tx("01.03.2025", -4_117, "Zahnarzt Dr. Beispiel"),
             tx("01.03.2025", -5_000, "Spende SPD Ortsverband"),
             tx("01.03.2025", -5_000, "Spende Tierheim"),
-            tx("01.03.2025", -10_000, "Maler Huber"),
-            tx("02.03.2025", -20_000, "Maler Meier"),
-            tx("31.12.2024", -3_000, "Maler Vorjahr"),
-            tx("15.03", -3_000, "Maler ohne Jahr"),
-            tx("01.03.2025", -5_000, "Minijob Anna"),
-            tx("02.03.2025", 5_000, "Rueckbuchung Minijob Anna"),
+            tx("02.03.2025", 5_000, "Rueckbuchung Spende Tierheim"),
+            tx("01.03.2025", -10_000, "Rürup Huber"),
+            tx("02.03.2025", -20_000, "Rürup Meier"),
+            tx("31.12.2024", -3_000, "Rürup Vorjahr"),
+            tx("15.03", -3_000, "Rürup ohne Jahr"),
+            tx("01.03.2025", -7_000, "Maler Tischler"),
             tx("01.03.2025", -6_000, "Reinigung Treppenhaus"),
+            tx("01.03.2025", -25_000, "Techniker Krankenversicherung"),
         ];
-        let u = uebernehme(&mut store, &buchungen, bindung, None, None, None).unwrap();
+        let haken = Haken { ersetzen: false, art9: true };
+        let e = uebernehme_voll(&mut store, &buchungen, bindung, None, None, None, haken).unwrap();
+        let u = e.uebernahme;
         let soll = Uebernahme {
             uebernommen: 2,
             llm_uebersprungen: 0,
             einnahmen: 1,
-            ohne_stichwort: 1,
+            ohne_stichwort: 2,
             partei: 1,
             feld_fehlt: 1,
             feld_belegt: 1,
@@ -1538,30 +1771,33 @@ mod tests {
             saldo_nicht_positiv: 2,
             ersetzbar: 0,
             schon_erfasst: 0,
+            nachgefragt: 1,
+            art9_gesperrt: 0,
         };
         assert_eq!(u, soll);
-        let summe = u.uebernommen
-            + u.llm_uebersprungen
-            + u.einnahmen
-            + u.ohne_stichwort
-            + u.partei
-            + u.feld_fehlt
-            + u.feld_belegt
-            + u.anderes_jahr
-            + u.datum_unlesbar
-            + u.saldo_nicht_positiv;
-        assert_eq!(summe, buchungen.len());
+        assert_eq!(zaehler_summe(&u), buchungen.len());
         assert_eq!(
             store
-                .aktives("hh_handwerker_betrag")
+                .aktives("vor_rv_ausserhalb_lstb")
                 .and_then(|e| e.wert.zu_json().ok())
                 .and_then(|v| v.as_i64()),
             Some(30_000),
-            "Maler Huber und Maler Meier ergeben EINEN Vorschlag"
+            "Rürup Huber und Rürup Meier ergeben EINEN Vorschlag"
         );
         assert!(
-            store.aktives("hh_minijob_betrag").is_none(),
+            store.aktives("spenden_betrag").is_none(),
             "Ausgabe und Rueckbuchung gleichen sich aus: kein Vorschlag"
+        );
+        assert_eq!(
+            e.nachfragen.iter().map(|n| (n.feld_id, n.betrag_cent)).collect::<Vec<_>>(),
+            [("hh_dienstleistung_betrag", -6_000)],
+            "die Reinigung steht als Nachfrage, ohne Ereignis"
+        );
+        assert!(store.aktives("hh_dienstleistung_betrag").is_none());
+        assert_eq!(
+            e.abgleich,
+            [Abgleich { feld_id: "basis_kv", summe_cent: 25_000, anzahl: 1 }],
+            "das belegte Feld nennt die Summe des Kontos als Abgleich"
         );
         // Ein Auszug, der nur den Deckel trifft, hat keinen Grund zu nennen (die Route meldet den Deckel selbst).
         let nur_deckel = Uebernahme {
@@ -1577,6 +1813,8 @@ mod tests {
             saldo_nicht_positiv: 0,
             ersetzbar: 0,
             schon_erfasst: 0,
+            nachgefragt: 0,
+            art9_gesperrt: 0,
         };
         assert_eq!(hinweis_nichts_uebernommen(2, &nur_deckel), None);
     }
@@ -1587,6 +1825,24 @@ mod tests {
     // weil die erste Buchung gewinnt, kein Jahr gepraueft wird und das Ereignis nur einen
     // Einzelposten traegt.
     // ---------------------------------------------------------------------------
+
+    /// Die Summe aller zwoelf Zaehler: jede Buchung steht in genau einem.
+    fn zaehler_summe(u: &Uebernahme) -> usize {
+        u.uebernommen
+            + u.llm_uebersprungen
+            + u.einnahmen
+            + u.ohne_stichwort
+            + u.partei
+            + u.feld_fehlt
+            + u.feld_belegt
+            + u.anderes_jahr
+            + u.datum_unlesbar
+            + u.saldo_nicht_positiv
+            + u.ersetzbar
+            + u.schon_erfasst
+            + u.nachgefragt
+            + u.art9_gesperrt
+    }
 
     fn s1_tx(ja: &[(&str, i64, &str)]) -> Vec<Transaktion> {
         ja.iter()
@@ -1663,10 +1919,10 @@ mod tests {
     fn s1_rot_zwei_ausgaben_eines_felds_ergeben_eine_summe() {
         let (wert, uebernommen, ereignisse) = s1_lauf(
             &[
-                ("01.03.2025", -10_000, "Maler Huber"),
-                ("02.03.2025", -20_000, "Maler Meier"),
+                ("01.03.2025", -10_000, "Rürup Huber"),
+                ("02.03.2025", -20_000, "Rürup Meier"),
             ],
-            "hh_handwerker_betrag",
+            "vor_rv_ausserhalb_lstb",
         );
         assert_eq!((wert, uebernommen, ereignisse), (Some(30_000), 2, 1));
     }
@@ -1708,7 +1964,7 @@ mod tests {
     #[test]
     fn s1_rot_zweistelliges_jahr_und_uhrzeit_werden_gelesen() {
         let tx = s1_tx(&[
-            ("15.03.25", -20_00, "Maler Huber"),
+            ("15.03.25", -20_00, "Spende Huber"),
             ("2025-03-15 10:00:05", -25_00, "Basisrente Rürup"),
         ]);
         let mut store = store::Store::leer(2025, None);
@@ -1724,7 +1980,7 @@ mod tests {
         assert_eq!(erg.feld_belegt, 0, "{erg:?}");
         assert_eq!(erg.einnahmen, 0, "keine der beiden Buchungen ist eine Einnahme");
         assert_eq!(
-            store.aktives("hh_handwerker_betrag").and_then(|e| e.wert.zu_json().ok()).and_then(|v| v.as_i64()),
+            store.aktives("spenden_betrag").and_then(|e| e.wert.zu_json().ok()).and_then(|v| v.as_i64()),
             Some(20_00),
             "dd.mm.yy wird 2000 + yy"
         );
@@ -1835,28 +2091,40 @@ mod tests {
         assert_eq!(ev.wert.zu_json().ok().and_then(|v| v.as_i64()), Some(11_00));
     }
 
-    /// Waechter: jedes Zielfeld von `zielfeld` laesst den Kontoauszug als Schreiber zu. Eine
-    /// Store-Abweisung bricht die ganze Uebernahme ab (das `?` in `uebernehme`), und nur diese
-    /// Bindungszeile entscheidet, ob sie ueberhaupt erreichbar ist.
+    /// Waechter: jedes Feld, in das der Import eine Summe schreibt (Regeln der Art `summe`), laesst den Kontoauszug als Schreiber
+    /// zu, und es sind genau diese vier. Eine Store-Abweisung bricht die ganze Uebernahme ab (das `?` in `uebernehme`), und nur
+    /// diese Bindungszeile entscheidet, ob sie ueberhaupt erreichbar ist. Umkehrfall (Bankimport S2): die drei § 35a-Felder (der
+    /// Import schreibt dort nichts, d-61) und die Ring-Kandidaten `kist_*` (Julius entscheidet ueber deren Freigabe) lassen den
+    /// Kontoauszug NICHT zu; eine Regel auf einem solchen Feld wuerde sonst den ganzen Import abbrechen.
     #[test]
     fn jedes_zielfeld_ist_fuer_den_kontoauszug_vorschlagbar() {
+        const SUMMEN: [&str; 4] = ["spenden_betrag", "vor_rv_ausserhalb_lstb", "basis_kv", "basis_pv"];
         let nachschlag = store::BindungNachschlag::neu(crate::doctest_bindung().unwrap());
+        let nimmt_an = |feld: &str| {
+            nachschlag
+                .get(feld)
+                .map(|b| b.vorschlagbar_von.contains(&bindung::VorschlagsSchreiber::Kontoauszug))
+        };
         let mut falsch = Vec::new();
-        for k in [
-            llm::Kategorie::Handwerker,
-            llm::Kategorie::Dienstleistung,
-            llm::Kategorie::Minijob,
-            llm::Kategorie::Spende,
-            llm::Kategorie::Vorsorge,
+        for feld in SUMMEN {
+            if nimmt_an(feld) != Some(true) {
+                falsch.push(format!("{feld}: muss den Kontoauszug annehmen ({:?})", nimmt_an(feld)));
+            }
+        }
+        for r in regeln::katalog().iter().filter(|r| r.art == Art::Summe) {
+            if !SUMMEN.contains(&r.feld.as_str()) {
+                falsch.push(format!("Regel {}: schreibt eine Summe nach {}, das nicht in der Liste steht", r.id, r.feld));
+            }
+        }
+        for feld in [
+            "hh_handwerker_betrag",
+            "hh_dienstleistung_betrag",
+            "hh_minijob_betrag",
+            "kist_gezahlt",
+            "kist_erstattet",
         ] {
-            let feld = super::zielfeld(k);
-            match nachschlag.get(feld) {
-                Some(b) => {
-                    if !b.vorschlagbar_von.contains(&bindung::VorschlagsSchreiber::Kontoauszug) {
-                        falsch.push(format!("{feld}: vorschlagbar_von = {:?}", b.vorschlagbar_von));
-                    }
-                }
-                None => falsch.push(format!("{feld}: fehlt in der Bindung")),
+            if nimmt_an(feld) != Some(false) {
+                falsch.push(format!("{feld}: darf den Kontoauszug nicht annehmen ({:?})", nimmt_an(feld)));
             }
         }
         assert!(falsch.is_empty(), "{falsch:?}");
@@ -1870,6 +2138,7 @@ mod tests {
     use serde_json::json;
 
     use super::{bestehende_posten, hinweis_nicht_gezaehlt};
+    use crate::bank::regeln::{self, Art};
     use crate::bank::{buchung::Posten, saldo};
 
     fn s1_store_mit(ja: &[(&str, i64, &str)]) -> store::Store {
@@ -2080,7 +2349,7 @@ mod tests {
         let erg = uebernehme(
             &mut store,
             &s1_tx(&[
-                ("2025-02-01", -100, "Maler Huber"),
+                ("2025-02-01", -100, "Rürup Huber"),
                 ("2025-02-02", -(i64::MAX - 100), "Spende Rotes Kreuz"),
                 ("2025-02-03", -200, "Spende Tierheim"),
             ]),
@@ -2093,7 +2362,7 @@ mod tests {
             matches!(erg, Err(KontoauszugFehler::BetragUeberlauf(_))),
             "BetragUeberlauf erwartet, gekommen {erg:?}"
         );
-        assert_eq!(store.events().len(), 0, "auch der Maler steht nicht in der Akte");
+        assert_eq!(store.events().len(), 0, "auch die Vorsorge steht nicht in der Akte");
     }
 
     /// Die KI sieht keine Rueckbuchung und keine Buchung ausserhalb des Jahres (das Datum steht
@@ -2150,6 +2419,8 @@ mod tests {
             saldo_nicht_positiv: 2,
             ersetzbar: 0,
             schon_erfasst: 0,
+            nachgefragt: 0,
+            art9_gesperrt: 0,
         };
         let jahr = "3 Buchung(en) außerhalb des Veranlagungsjahrs";
         let datum = "1 Buchung(en) mit einem Datum, das der Leser nicht erkennt (erwartet: TT.MM.JJJJ, TT.MM.JJ, JJJJ-MM-TT)";
@@ -2206,7 +2477,7 @@ mod tests {
     // diese Tests ROT.
     // ---------------------------------------------------------------------------
 
-    use super::{hinweis_ersetzbar, hinweis_ersetzt, uebernehme_mit, Ersetzung};
+    use super::{hinweis_ersetzbar, hinweis_ersetzt, uebernehme_mit, uebernehme_voll, Abgleich, Ersetzung, Haken};
 
     const S1B_ERSTER: [(&str, i64, &str); 2] = [
         ("2025-02-01", -4_00, "Spende Rotes Kreuz"),
@@ -2501,12 +2772,12 @@ mod tests {
         let ja = [
             S1B_ZWEITER[0],
             S1B_ZWEITER[1],
-            ("2025-02-04", -30_000, "Maler Huber"),
+            ("2025-02-04", -30_000, "Rürup Huber"),
         ];
         let (u, liste) = s1b_mit(&mut store, &ja, false);
         assert_eq!((u.uebernommen, u.ersetzbar), (1, 2), "{u:?}");
         assert_eq!(liste, vec![s1b_spenden(11_00, 2, 16_00, 3)]);
-        assert_eq!(s1_wert(&store, "hh_handwerker_betrag"), Some(30_000));
+        assert_eq!(s1_wert(&store, "vor_rv_ausserhalb_lstb"), Some(30_000));
         assert_eq!(s1_wert(&store, "spenden_betrag"), Some(11_00));
         let (u, liste) = s1b_mit(&mut store, &ja, true);
         assert_eq!(
@@ -2523,25 +2794,37 @@ mod tests {
     fn s1b_jede_buchung_zaehlt_in_genau_einem_grund() {
         let bindung = s1b_bindung();
         let mut store = s1_store_mit(&S1B_ERSTER);
-        s1b_mit(&mut store, &[("2025-02-04", -30_000, "Maler Huber")], true);
-        s1b_mensch(&mut store, bindung, "hh_dienstleistung_betrag", 12_00, None);
+        s1b_mit(&mut store, &[("2025-02-04", -30_000, "Rürup Huber")], true);
+        // Das Feld der Krankenversicherung hat einen BESTAETIGTEN Wert, das der Pflegeversicherung gleicht sich aus.
+        s1b_mensch(&mut store, bindung, "basis_kv", 12_00, None);
         let buchungen = [
             S1B_ZWEITER[0],
             S1B_ZWEITER[1],
-            ("2025-02-04", -30_000, "Maler Huber"),
-            ("2025-03-01", -6_000, "Reinigung Treppenhaus"),
-            ("2025-03-01", -5_000, "Minijob Anna"),
-            ("2025-03-02", 5_000, "Rueckbuchung Minijob Anna"),
-            ("2025-03-01", -20_000, "Rentenversicherung Ruerup"),
+            ("2025-02-04", -30_000, "Rürup Huber"),
+            ("2025-03-01", -6_000, "Krankenversicherung Beitrag"),
+            ("2025-03-01", -5_000, "Pflegeversicherung Beitrag"),
+            ("2025-03-02", 5_000, "Erstattung Pflegeversicherung"),
             ("2025-03-01", 100_000, "Gehalt"),
             ("2025-03-01", -999, "Einkauf"),
-            ("2024-12-31", -3_000, "Maler Vorjahr"),
-            ("15.03", -3_000, "Maler ohne Jahr"),
+            ("2024-12-31", -3_000, "Rürup Vorjahr"),
+            ("15.03", -3_000, "Rürup ohne Jahr"),
             ("2025-03-01", -5_000, "Spende SPD Ortsverband"),
         ];
-        let (u, _) = s1b_mit(&mut store, &buchungen, false);
+        let haken = Haken { ersetzen: false, art9: true };
+        let e = uebernehme_voll(
+            &mut store,
+            &s1_tx(&buchungen),
+            bindung,
+            None,
+            Some("2025-03-02T00:00:00+00:00"),
+            None,
+            haken,
+        )
+        .unwrap();
+        let u = e.uebernahme;
+        // `uebernommen` deckt der Test der Naht oben ab; hier zaehlen die zwei Zaehler des Ersetzens.
         let soll = Uebernahme {
-            uebernommen: 1,
+            uebernommen: 0,
             llm_uebersprungen: 0,
             einnahmen: 1,
             ohne_stichwort: 1,
@@ -2553,21 +2836,11 @@ mod tests {
             saldo_nicht_positiv: 2,
             ersetzbar: 2,
             schon_erfasst: 1,
+            nachgefragt: 0,
+            art9_gesperrt: 0,
         };
         assert_eq!(u, soll);
-        let summe = u.uebernommen
-            + u.llm_uebersprungen
-            + u.einnahmen
-            + u.ohne_stichwort
-            + u.partei
-            + u.feld_fehlt
-            + u.feld_belegt
-            + u.anderes_jahr
-            + u.datum_unlesbar
-            + u.saldo_nicht_positiv
-            + u.ersetzbar
-            + u.schon_erfasst;
-        assert_eq!(summe, buchungen.len());
+        assert_eq!(zaehler_summe(&u), buchungen.len());
     }
 
     /// Drei Auszuege nacheinander in einem anderen Veranlagungsjahr und auf einem anderen Feld: jeder
@@ -2576,7 +2849,7 @@ mod tests {
     #[test]
     fn s1b_kette_aus_drei_auszuegen_in_einem_anderen_jahr_und_feld() {
         let mut store = store::Store::leer(2024, None);
-        let feld = "hh_handwerker_betrag";
+        let feld = "vor_rv_ausserhalb_lstb";
         let mut mit = |ja: &[(&str, i64, &str)]| {
             uebernehme_mit(
                 &mut store,
@@ -2589,10 +2862,10 @@ mod tests {
             )
             .unwrap()
         };
-        mit(&[("2024-03-01", -10_000, "Maler Huber")]);
-        let (_, liste) = mit(&[("2024-03-02", -20_000, "Maler Meier")]);
+        mit(&[("2024-03-01", -10_000, "Rürup Huber")]);
+        let (_, liste) = mit(&[("2024-03-02", -20_000, "Rürup Meier")]);
         assert_eq!(liste.len(), 1);
-        let (u, liste) = mit(&[("2024-03-03", -5_000, "Klempner Schulz")]);
+        let (u, liste) = mit(&[("2024-03-03", -5_000, "Altersvorsorge Schulz")]);
         assert_eq!((u.uebernommen, liste.len()), (1, 1), "{u:?}");
         assert_eq!(
             (liste[0].bisher_cent, liste[0].neu_cent, liste[0].neu_posten),
@@ -2606,7 +2879,7 @@ mod tests {
         let s1 = s1b_signal(&store, feld);
         assert_eq!(
             (&s1["jahr"], &s1["kategorie"], &s1["summe_cent"]),
-            (&json!(2024), &json!("handwerker"), &json!(35_000))
+            (&json!(2024), &json!("vorsorge"), &json!(35_000))
         );
         assert_eq!(s1["posten"].as_array().unwrap().len(), 3);
     }
@@ -2675,6 +2948,8 @@ mod tests {
             saldo_nicht_positiv: 0,
             ersetzbar: 2,
             schon_erfasst: 3,
+            nachgefragt: 0,
+            art9_gesperrt: 0,
         };
         assert_eq!(
             hinweis_nichts_uebernommen(6, &u).as_deref(),

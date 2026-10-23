@@ -179,13 +179,14 @@ fn ein_parteiname_mitten_im_wort_loest_nicht_aus() {
     );
 }
 
-/// Die Pruefung gilt nur fuer die Kategorie Spende: "CDU Maler Huber" ist eine Handwerkerbuchung und bleibt eine.
+/// Die Pruefung gilt nur fuer die Kategorie Spende: "Rürup Huber fuer CDU Geschaeftsstelle" ist eine Vorsorgebuchung und bleibt
+/// eine. (Bis Bankimport S2 stand hier eine Handwerkerbuchung; § 35a schreibt seitdem keinen Betrag ins Feld.)
 #[test]
 fn ein_parteiname_in_einer_anderen_kategorie_aendert_nichts() {
     let (n, felder) = lauf(
-        &[tx("Maler Huber fuer CDU Geschaeftsstelle", -48_000)],
+        &[tx("Rürup Huber fuer CDU Geschaeftsstelle", -48_000)],
         None,
     );
     assert_eq!(n, 1, "{felder:?}");
-    assert_eq!(felder, [("hh_handwerker_betrag".to_owned(), json!(48_000))]);
+    assert_eq!(felder, [("vor_rv_ausserhalb_lstb".to_owned(), json!(48_000))]);
 }

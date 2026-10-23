@@ -343,7 +343,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_minijob_betrag
     instanz_gruppe: hh_minijob
-    vorschlagbar_von: [kontoauszug, beleg]
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: minijob_ist_geringfuegige_beschaeftigung_nach_8a_sgb4}
     typ: cent
     nicht_negativ: true
@@ -395,7 +395,7 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_dienstleistung_betrag
     instanz_gruppe: hh_dienstleistung
-    vorschlagbar_von: [kontoauszug, beleg]
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: dienstleistungen_sind_keine_handwerkerleistungen}
     typ: cent
     nicht_negativ: true
@@ -452,7 +452,7 @@ bindungen:
   # in reports/adjudikation/anlage-haushaltsnahe-einzelaufstellung-2026-08-10.md.
   - feld_id: hh_handwerker_betrag
     instanz_gruppe: hh_handwerker
-    vorschlagbar_von: [kontoauszug, beleg]
+    vorschlagbar_von: [beleg]
     quelle: {regel_id: p35a_2_3_haushaltsnahe, geltungsbedingung: handwerker_nur_renovierung_erhaltung_modernisierung}
     typ: cent
     nicht_negativ: true
