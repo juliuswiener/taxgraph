@@ -742,6 +742,7 @@ pub fn hinweis_nichts_uebernommen(gelesen: usize, u: &Uebernahme) -> Option<Stri
         (u.anderes_jahr, GRUND_ANDERES_JAHR),
         (u.datum_unlesbar, GRUND_DATUM_UNLESBAR),
         (u.saldo_nicht_positiv, GRUND_SALDO),
+        (u.abgewaehlt, "von dir abgewählt"),
     ];
     let teile: Vec<String> = gruende
         .iter()
@@ -961,7 +962,7 @@ pub struct Uebernahme {
     /// halb angesehener Auszug aus wie ein ganz geprüfter.
     pub llm_uebersprungen: usize,
     /// Warum die uebrigen Buchungen keinen Vorschlag wurden. Zusammen mit `uebernommen` und
-    /// `llm_uebersprungen` ergeben diese zwoelf Zaehler genau die Zahl der Buchungen.
+    /// `llm_uebersprungen` ergeben diese dreizehn Zaehler genau die Zahl der Buchungen.
     /// Betrag 0 oder positiv: keine Ausgabe.
     pub einnahmen: usize,
     /// Weder Stichwort noch Klassifikator ordnete die Ausgabe einer Kategorie zu.
@@ -998,6 +999,13 @@ pub struct Uebernahme {
     /// eingehen koennen und geht nicht ein. Gezaehlt wird nur eine Buchung, die sonst eine [`Zeile`] gewesen waere.
     pub abgewaehlt: usize,
 }
+
+/// Das Kreuz im Fragebogen, das ein Ereignis des Kontoauszugs in Frage stellt (Bankimport S3): `(Feld des Imports, Feld mit dem
+/// Kreuz)`. Das Kreuz `keine_spenden` steht umgekehrt: `false` heisst "ja, gespendet". Ein Kontoauszug, der `spenden_betrag`
+/// schreibt, widerspricht dem Kreuz `true`, und die Seite bietet an, es abzuwaehlen. Der Dienst schreibt es nie selbst.
+// ponytail: nur dieses eine Paar. Eine Tabelle je Scheibe waere erst noetig, wenn ein zweites Feld ein solches Kreuz bekommt;
+// jede Scheibe mit `spenden_betrag` fuehrt `keine_spenden` (nachgeprueft an `gesamt` und `rentner_gesamt`).
+pub const KREUZ_ABWAHL: [(&str, &str); 1] = [("spenden_betrag", "keine_spenden")];
 
 /// Eine Buchung, die in die Summe eines Zielfelds eingehen kann (Art `summe`, Feld frei oder mit eigenem Vorschlag), mit der
 /// Kennung, unter der die Nutzerin sie abwaehlt (Bankimport S3). `index` ist die Stelle der Buchung in der gelesenen Liste, aus
@@ -1116,17 +1124,24 @@ struct Sammlung {
     nachfragen: Vec<Nachfrage>,
     /// Posten je Feld, das einen Wert traegt, den dieser Import nicht ersetzen darf (Beleg schlaegt Konto).
     belegt: Vec<(&'static str, Vec<Posten>)>,
+    /// Jede Buchung, die in eine Gruppe eingeht oder abgewaehlt wurde, in der Reihenfolge der Liste.
+    zeilen: Vec<Zeile>,
+}
+
+/// Hat das Feld einen Wert, den dieser Import nicht ersetzen darf? (Beleg, Eingabe, anderer Schreiber, Vorschlag ohne lesbare Posten.)
+fn feld_belegt(store: &Store, feld: &str) -> bool {
+    store.aktives(feld).is_some() && bestehendes(store, feld).is_none()
 }
 
 impl Sammlung {
     /// Haengt den Posten an die Gruppe seines Felds; die erste Buchung des Felds in diesem Auszug entscheidet, ob das Feld frei
-    /// ist, einen ersetzbaren eigenen Vorschlag traegt oder belegt bleibt.
-    fn ordne(&mut self, store: &Store, u: &mut Uebernahme, (regel, nur_stichwort): (&'static Regel, bool), posten: Posten) {
+    /// ist, einen ersetzbaren eigenen Vorschlag traegt oder belegt bleibt. `true`: der Posten steht in einer Gruppe (nicht belegt).
+    fn ordne(&mut self, store: &Store, u: &mut Uebernahme, (regel, nur_stichwort): (&'static Regel, bool), posten: Posten) -> bool {
         let feld = regel.feld.as_str();
         if let Some(g) = self.gruppen.iter_mut().find(|g| g.feld == feld) {
             g.nur_stichwort &= nur_stichwort;
             g.posten.push(posten);
-            return;
+            return true;
         }
         let alt = if store.aktives(feld).is_some() {
             let Some(alt) = bestehendes(store, feld) else {
@@ -1135,7 +1150,7 @@ impl Sammlung {
                     Some((_, liste)) => liste.push(posten),
                     None => self.belegt.push((feld, vec![posten])),
                 }
-                return;
+                return false;
             };
             Some(alt)
         } else {
@@ -1148,6 +1163,31 @@ impl Sammlung {
             posten: vec![posten],
             alt,
         });
+        true
+    }
+
+    /// Ordnet die Buchung ein ([`Sammlung::ordne`]) und merkt sie als [`Zeile`]. Beleg schlaegt Konto: ein belegtes Feld bleibt
+    /// unberuehrt und hat keine Zeile, es gibt dort nichts abzuwaehlen. Eine abgewaehlte Buchung eines anderen Felds (Bankimport S3)
+    /// geht in keine Gruppe und zaehlt in `u.abgewaehlt`; ihre Zeile bleibt, damit die Nutzerin sie wieder anwaehlen kann.
+    fn nimm(&mut self, store: &Store, u: &mut Uebernahme, (regel, nur_stichwort): (&'static Regel, bool), posten: Posten, (index, abgewaehlt): (usize, bool)) {
+        let feld = regel.feld.as_str();
+        let abgewaehlt = abgewaehlt && !feld_belegt(store, feld);
+        let zeile = Zeile {
+            index,
+            feld_id: feld,
+            regel_id: regel.id.as_str(),
+            datum: posten.datum.als_text(),
+            betrag_cent: posten.betrag_cent,
+            zweck_maskiert: posten.zweck_maskiert.clone(),
+            ueber_ki: !nur_stichwort,
+            abgewaehlt,
+        };
+        if abgewaehlt {
+            u.abgewaehlt += 1;
+            self.zeilen.push(zeile);
+        } else if self.ordne(store, u, (regel, nur_stichwort), posten) {
+            self.zeilen.push(zeile);
+        }
     }
 
     /// Die Summe je belegtem Feld; eine Summe null oder darunter wird nicht genannt.
@@ -1273,23 +1313,27 @@ fn schreibe_gruppen(
     (bindung, katalog, ts): (BindungNachschlag<'_>, &Katalog, Option<&str>),
     ersetzen: bool,
     (u, regelhinweise): (&mut Uebernahme, &mut Vec<String>),
-) -> Result<Vec<Ersetzung>, KontoauszugFehler> {
+) -> Result<(Vec<Ersetzung>, Vec<FeldErgebnis>), KontoauszugFehler> {
     let ueberlauf = |g: &Gruppe| KontoauszugFehler::BetragUeberlauf(format!("Summe {}", g.feld));
     let mut zu_schreiben = Vec::new();
     let mut ersetzungen = Vec::new();
+    let mut felder = Vec::new();
     for g in gruppen {
         let posten = match &g.alt {
             Some(alt) => saldo::vereinige(&alt.posten, &g.posten),
             None => g.posten.clone(),
         };
         let saldo = saldo::saldo(&posten).ok_or_else(|| ueberlauf(&g))?;
+        let ergebnis = |folge| FeldErgebnis { feld_id: g.feld, summe_cent: saldo, anzahl: posten.len(), folge };
         if saldo <= 0 {
             u.saldo_nicht_positiv += g.posten.len();
+            felder.push(ergebnis(Folge::SaldoNichtPositiv));
             continue;
         }
         if let Some(alt) = &g.alt {
             if posten.len() == alt.posten.len() {
                 u.schon_erfasst += g.posten.len();
+                felder.push(ergebnis(Folge::SchonErfasst));
                 continue;
             }
             ersetzungen.push(Ersetzung {
@@ -1301,9 +1345,11 @@ fn schreibe_gruppen(
             });
             if !ersetzen {
                 u.ersetzbar += g.posten.len();
+                felder.push(ergebnis(Folge::Ersetzbar));
                 continue;
             }
         }
+        felder.push(ergebnis(Folge::Geschrieben));
         zu_schreiben.push((g, posten, saldo));
     }
     for (g, posten, saldo) in zu_schreiben {
@@ -1340,7 +1386,7 @@ fn schreibe_gruppen(
             }
         }
     }
-    Ok(ersetzungen)
+    Ok((ersetzungen, felder))
 }
 
 /// `uebernehme_kontoauszug(store, transaktionen, bindung, llm_klassifikator=, ts=, katalog=)`.
@@ -1478,6 +1524,20 @@ pub fn uebernehme_voll(
     katalog: Option<&Katalog>,
     haken: Haken,
 ) -> Result<Ergebnis, KontoauszugFehler> {
+    rechne(store, transaktionen, &[], bindung, llm_klassifikator, (ts, katalog), haken)
+}
+
+/// Der Rumpf von [`uebernehme_voll`] und [`uebernehme_auswahl`]: ordnen, dann schreiben. `abgewaehlt` nennt Stellen in
+/// `transaktionen`; eine Buchung mit einer solchen Stelle, die sonst in eine Gruppe ginge, geht nicht ein.
+fn rechne(
+    store: &mut Store,
+    transaktionen: &[Transaktion],
+    abgewaehlt: &[usize],
+    bindung: BindungNachschlag<'_>,
+    llm_klassifikator: Option<&Klassifikator<'_>>,
+    (ts, katalog): (Option<&str>, Option<&Katalog>),
+    haken: Haken,
+) -> Result<Ergebnis, KontoauszugFehler> {
     let eigener;
     let katalog = if let Some(k) = katalog {
         k
@@ -1491,7 +1551,7 @@ pub fn uebernehme_voll(
     let beginn = Instant::now();
     // Zuerst ordnen, dann schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
     let mut sammlung = Sammlung::default();
-    for tx in transaktionen {
+    for (index, tx) in transaktionen.iter().enumerate() {
         // Betrag 0 ist weder Ausgabe noch Rueckbuchung.
         if tx.betrag == 0 {
             u.einnahmen += 1;
@@ -1567,13 +1627,12 @@ pub fn uebernehme_voll(
             betrag_cent: tx.betrag,
             zweck_maskiert: if ohne_zweck { String::new() } else { maskiert },
         };
-        // Beleg schlaegt Konto: ein belegtes Feld bleibt unberuehrt, die Antwort nennt die Summe des Kontos als Abgleich.
-        sammlung.ordne(store, &mut u, (regel, det.is_some()), posten);
+        sammlung.nimm(store, &mut u, (regel, det.is_some()), posten, (index, abgewaehlt.contains(&index)));
     }
     // Vor dem Schreiben: ein Ueberlauf der Summe bricht ab, bevor ein Vorschlag steht.
     let abgleich = sammlung.abgleich()?;
     let mut regelhinweise = Vec::new();
-    let ersetzungen = schreibe_gruppen(
+    let (ersetzungen, felder) = schreibe_gruppen(
         store,
         sammlung.gruppen,
         jahr,
@@ -1587,8 +1646,8 @@ pub fn uebernehme_voll(
         nachfragen: sammlung.nachfragen,
         abgleich,
         regelhinweise,
-        zeilen: Vec::new(),
-        felder: Vec::new(),
+        zeilen: sammlung.zeilen,
+        felder,
     })
 }
 
@@ -1608,8 +1667,7 @@ pub fn uebernehme_auswahl(
     (ts, katalog): (Option<&str>, Option<&Katalog>),
     haken: Haken,
 ) -> Result<Ergebnis, KontoauszugFehler> {
-    let _ = abgewaehlt;
-    uebernehme_voll(store, transaktionen, bindung, llm_klassifikator, ts, katalog, haken)
+    rechne(store, transaktionen, abgewaehlt, bindung, llm_klassifikator, (ts, katalog), haken)
 }
 
 /// `neu` bzw. `jetzt` je Feld: `spenden_betrag: bisher 11,00 € aus 2 Buchung(en), <wort> 16,00 € aus 3 Buchung(en)`.
@@ -1928,7 +1986,7 @@ mod tests {
     // Einzelposten traegt.
     // ---------------------------------------------------------------------------
 
-    /// Die Summe aller zwoelf Zaehler: jede Buchung steht in genau einem.
+    /// Die Summe aller dreizehn Zaehler: jede Buchung steht in genau einem.
     fn zaehler_summe(u: &Uebernahme) -> usize {
         u.uebernommen
             + u.llm_uebersprungen
@@ -1944,6 +2002,7 @@ mod tests {
             + u.schon_erfasst
             + u.nachgefragt
             + u.art9_gesperrt
+            + u.abgewaehlt
     }
 
     fn s1_tx(ja: &[(&str, i64, &str)]) -> Vec<Transaktion> {

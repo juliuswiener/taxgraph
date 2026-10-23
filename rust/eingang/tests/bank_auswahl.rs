@@ -93,12 +93,12 @@ fn feld(erg: &Ergebnis, feld_id: &str) -> Option<FeldErgebnis> {
 #[test]
 fn bank_auswahl_index_ist_die_stelle_in_der_liste_bei_haken_an_und_aus() {
     let buchungen = [
-        tx("2025-03-01", 3000_00, "Gehalt Muster GmbH"),
+        tx("2025-03-01", 300_000, "Gehalt Muster GmbH"),
         tx("2025-03-02", -11_00, "Spende Tierheim"),
         tx("2025-03-03", -37_00, "Krankenversicherung Muster Kasse"),
         tx("2025-03-04", -73_00, "Maler Huber"),
         tx("2025-03-05", -23_00, "Spende Unicef"),
-        tx("2025-03-06", -500_00, "Miete Muster"),
+        tx("2025-03-06", -50_000, "Miete Muster"),
     ];
     let (_, ohne) = frisch(&buchungen, &[], Haken { ersetzen: false, art9: false });
     let (_, mit) = frisch(&buchungen, &[], Haken { ersetzen: false, art9: true });
@@ -118,27 +118,27 @@ fn bank_auswahl_index_ist_die_stelle_in_der_liste_bei_haken_an_und_aus() {
 /// Eine abgewaehlte Buchung geht nicht in die Summe ein, die uebrigen schon; die Zeile bleibt mit `abgewaehlt` stehen.
 #[test]
 fn bank_auswahl_abgewaehlter_posten_zaehlt_nicht_in_die_summe() {
-    let (store, erg) = frisch(&spenden(&[100_00, 200_00, 400_00]), &[1], Haken::default());
-    assert_eq!(wert(&store, "spenden_betrag"), Some(500_00), "{erg:?}");
-    assert_eq!(posten_betraege(&store, "spenden_betrag"), [-100_00, -400_00]);
+    let (store, erg) = frisch(&spenden(&[10_000, 20_000, 40_000]), &[1], Haken::default());
+    assert_eq!(wert(&store, "spenden_betrag"), Some(50_000), "{erg:?}");
+    assert_eq!(posten_betraege(&store, "spenden_betrag"), [-10_000, -40_000]);
     assert_eq!((erg.uebernahme.uebernommen, erg.uebernahme.abgewaehlt), (2, 1), "{:?}", erg.uebernahme);
     let flags: Vec<(usize, bool)> = erg.zeilen.iter().map(|z| (z.index, z.abgewaehlt)).collect();
     assert_eq!(flags, [(0, false), (1, true), (2, false)]);
     let f = feld(&erg, "spenden_betrag").unwrap();
-    assert_eq!((f.summe_cent, f.anzahl, f.folge), (500_00, 2, Folge::Geschrieben));
+    assert_eq!((f.summe_cent, f.anzahl, f.folge), (50_000, 2, Folge::Geschrieben));
 }
 
 /// Die Raender: die erste und die letzte Stelle gelten wie jede andere (Mutant: eine Schleife, die bei 1 beginnt oder vor dem Ende
 /// aufhoert).
 #[test]
 fn bank_auswahl_erste_und_letzte_stelle_sind_abwaehlbar() {
-    let buchungen = spenden(&[100_00, 200_00, 400_00]);
+    let buchungen = spenden(&[10_000, 20_000, 40_000]);
     let (erste, _) = frisch(&buchungen, &[0], Haken::default());
-    assert_eq!(wert(&erste, "spenden_betrag"), Some(600_00));
+    assert_eq!(wert(&erste, "spenden_betrag"), Some(60_000));
     let (letzte, _) = frisch(&buchungen, &[2], Haken::default());
-    assert_eq!(wert(&letzte, "spenden_betrag"), Some(300_00));
+    assert_eq!(wert(&letzte, "spenden_betrag"), Some(30_000));
     let (beide, _) = frisch(&buchungen, &[0, 2], Haken::default());
-    assert_eq!(wert(&beide, "spenden_betrag"), Some(200_00));
+    assert_eq!(wert(&beide, "spenden_betrag"), Some(20_000));
 }
 
 /// Genau eine Buchung im Feld: ohne Abwahl ein Vorschlag, mit Abwahl keiner (die Gruppe ist leer, nichts wird geschrieben).
@@ -167,7 +167,7 @@ fn bank_auswahl_genau_ein_posten_und_alle_abgewaehlt_schreiben_nichts() {
 fn bank_auswahl_kennung_ohne_zeile_bleibt_ohne_wirkung() {
     let buchungen = [
         tx("2025-03-01", -73_00, "Maler Huber"),
-        tx("2025-03-02", 900_00, "Gehalt Muster GmbH"),
+        tx("2025-03-02", 90_000, "Gehalt Muster GmbH"),
         tx("2025-03-03", -41_00, "Miete Muster"),
         tx("2025-03-04", -9_00, "Spende Tierheim"),
     ];
@@ -238,7 +238,7 @@ fn bank_auswahl_jede_buchung_zaehlt_in_genau_einem_grund() {
     let buchungen = [
         tx("2025-03-01", -11_00, "Spende Tierheim"),
         tx("2025-03-02", -12_00, "Spende Unicef"),
-        tx("2025-03-03", 700_00, "Gehalt Muster GmbH"),
+        tx("2025-03-03", 70_000, "Gehalt Muster GmbH"),
         tx("2025-03-04", -73_00, "Maler Huber"),
         tx("2025-03-05", -5_00, "Miete Muster"),
         tx("2024-03-05", -6_00, "Spende Tierheim"),
