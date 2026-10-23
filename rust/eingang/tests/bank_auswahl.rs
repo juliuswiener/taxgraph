@@ -296,4 +296,6 @@ fn bank_auswahl_zeile_nennt_ob_die_ki_die_buchung_einordnete() {
     assert_eq!(aufrufe.get(), 1, "nur die Buchung ohne Stichwort geht an den Klassifikator");
     let ueber_ki: Vec<(usize, bool)> = erg.zeilen.iter().map(|z| (z.index, z.ueber_ki)).collect();
     assert_eq!(ueber_ki, [(0, false), (1, true)]);
+    // Beide Zeilen tragen die Kennung der Regel, die sie ordnete (die der KI-Kategorie ist die Regel `spende`).
+    assert_eq!(erg.zeilen.iter().map(|z| z.regel_id).collect::<Vec<_>>(), ["spende", "spende"]);
 }
