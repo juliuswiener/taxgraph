@@ -33,7 +33,9 @@ const OBERFLAECHE: &[(&str, &str)] = &[
     // die leere Antwort eines Textfelds mit `leer_erlaubt` zu (Hausnummernzusatz, BIC); Waechter: `oberflaeche/fluss_j.rs`.
     // app.js und index.html seit 2026-10-22 (Bankimport S1b, d-63) mit der Rueckfrage samt Haken, bevor ein zweiter Kontoauszug den
     // eigenen Vorschlag eines frueheren ersetzt (`kontoauszugSenden`, `#konto-ersetzen`); Waechter: `oberflaeche/konto_ersetzen.rs`.
-    ("app.js", "9e38b13055fa950017e688291110ea4dc4a70c45bbc184e3f87172325555cb62"),
+    // app.js seit 2026-10-23 (Bankimport, echte Bankdatei AK3) liest eine Kontoauszug-Datei als Bytes: erst strenges UTF-8, sonst
+    // windows-1252 (`_dateiAlsText`); Waechter: `oberflaeche/konto_zeichensatz.rs`.
+    ("app.js", "08fa7d94a60b06ca5b36b2a13d9919cfe29cc64076b70990c1d2d248cb23d9c4"),
     ("graph.css", "19db5b44291a8a6d22a93bc325b711b68f2adf181f0c63d091ac44f5fb71b60e"),
     ("graph.html", "234fc3db33fb9e036daee3c6a4a8cec959b0f3c4a5061419d7a02fba32929f5f"),
     ("graph.js", "a305763b18fc3bd907f6cf937279e2cf0587867d67c574518f85454c4c498bc9"),
