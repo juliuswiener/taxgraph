@@ -2246,6 +2246,37 @@ async fn hh_betrag_vorlaeufig_zweites_objekt() {
     }
 }
 
+/// Waechter: jede Instanz-Gruppe der Bindung steht in `HINWEIS_GRUPPEN` (ihre nicht bestaetigten Felder stehen in `offen`)
+/// oder hier mit Grund. Eine neue Gruppe faellt nicht still aus der Meldung.
+#[test]
+fn instanz_gruppen_vollstaendig() {
+    /// Gruppen ohne Hinweis in `offen`: ihre Summenfelder sind Ring-Kandidaten (`konstanten.rs`), ein vorlaeufiger Betrag
+    /// sperrt (`ring_betrag_vorlaeufig`) statt still aus der Zahl zu fallen.
+    const AUSNAHMEN: [(&str, &str); 3] = [
+        ("vv_objekt", "Anlage V: vv_einnahmen bis vv_entgelt_quote_prozent sind Ring-Kandidaten, vorlaeufig sperrt"),
+        ("rente", "Anlage R: rentner_renten_art, -jahresrente, -beginn_jahr und -alter sind Ring-Kandidaten, vorlaeufig sperrt"),
+        ("rente_av_bav", "Anlage R-AV/bAV: eine vorlaeufige Mitteilung sperrt mit RavBavAngabenOffen (rav_bav.rs)"),
+    ];
+    let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let registry = bindung::lade_registry_der_wurzel(&wurzel).expect("Registry laedt");
+    let gruppen: Vec<&str> = registry
+        .dateien
+        .iter()
+        .flat_map(|(_, d)| d.instanz_gruppen.iter())
+        .map(|g| g.gruppe.as_str())
+        .collect();
+    // Blindheitskontrolle: eine Registry ohne Gruppen liesse jede Schleife unten leer durchlaufen.
+    assert!(gruppen.len() >= 9, "die Bindung nennt nur {} Instanz-Gruppen: {gruppen:?}", gruppen.len());
+    for g in &gruppen {
+        let hinweis = api::ergebnis::HINWEIS_GRUPPEN.contains(g);
+        let ausnahme = AUSNAHMEN.iter().any(|(a, _)| a == g);
+        assert!(hinweis != ausnahme, "Gruppe `{g}` muss in HINWEIS_GRUPPEN ODER in AUSNAHMEN stehen (hinweis={hinweis}, ausnahme={ausnahme})");
+    }
+    for g in api::ergebnis::HINWEIS_GRUPPEN.iter().chain(AUSNAHMEN.iter().map(|(a, _)| a)) {
+        assert!(gruppen.contains(g), "`{g}` steht in der Liste, die Bindung kennt die Gruppe nicht");
+    }
+}
+
 /// Auch das Textfeld einer Instanz meldet: ein vorlaeufiges `*_art` neben einem bestaetigten Betrag macht die ganze Instanz
 /// vorlaeufig (`Instanz::zustand` ist der meet aller Felder), der Betrag zaehlt dann nicht -- gemessen: die Zahl bleibt
 /// auf dem Stand ohne Posten. Darum steht das Textfeld in `offen`; ein Filter auf Betragsfelder liesse die Zahl ohne Hinweis
