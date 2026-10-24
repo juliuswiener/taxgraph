@@ -78,6 +78,8 @@ mod p34_partner_fragen_hermetisch;
 mod p34c_fiktive_steuer_frage_hermetisch;
 #[path = "p34c_staat_folgefrage_hermetisch.rs"]
 mod p34c_staat_folgefrage_hermetisch;
+#[path = "p35a_frage_nur_fuer_alleinstehende.rs"]
+mod p35a_frage_nur_fuer_alleinstehende;
 #[path = "parteispenden_hermetisch.rs"]
 mod parteispenden_hermetisch;
 #[path = "partner_sonstige_waechter_hermetisch.rs"]
