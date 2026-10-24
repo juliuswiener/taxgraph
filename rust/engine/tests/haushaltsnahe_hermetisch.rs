@@ -35,7 +35,7 @@ use domain::Euro;
 use engine::zugriff::teil1::ermaessigungen::{p35a_haushaltsnahe, P35aHaushaltsnaheEingabe};
 
 /// Ein handgebauter Fall; `erwartet` in EUR ist die Ausgabe des Python-Orakels.
-// Sieben unabhaengige Eingaben, wie `P35aHaushaltsnaheEingabe`; kein Zustandsautomat.
+// Acht unabhaengige Eingaben, wie `P35aHaushaltsnaheEingabe`; kein Zustandsautomat.
 #[allow(clippy::struct_excessive_bools)]
 struct Zeile {
     gruppe: &'static str,
@@ -47,6 +47,8 @@ struct Zeile {
     unbar: bool,
     gefoerdert: bool,
     mitveranlagt: bool,
+    /// Zusammenveranlagt: die Antwort auf `mitveranlagt` zaehlt dann nicht (Ehepaar teilt nie).
+    zusammen: bool,
     erwartet: i64,
 }
 
@@ -61,6 +63,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1700,
     },
     Zeile {
@@ -73,6 +76,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -85,6 +89,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -97,6 +102,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -109,6 +115,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1100,
     },
     Zeile {
@@ -121,6 +128,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1600,
     },
     Zeile {
@@ -133,6 +141,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 700,
     },
     Zeile {
@@ -145,6 +154,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -157,6 +167,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: true,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -169,6 +180,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -181,6 +193,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 0,
     },
     Zeile {
@@ -193,6 +206,7 @@ const FAELLE: &[Zeile] = &[
         unbar: false,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 100,
     },
     Zeile {
@@ -205,6 +219,7 @@ const FAELLE: &[Zeile] = &[
         unbar: false,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 100,
     },
     Zeile {
@@ -217,6 +232,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: true,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1100,
     },
     Zeile {
@@ -229,6 +245,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 1700,
     },
     Zeile {
@@ -241,6 +258,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 2,
     },
     Zeile {
@@ -253,7 +271,60 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 855,
+    },
+    Zeile {
+        gruppe: "ehepaar",
+        name: "Ehepaar, Antwort ja (gespeichert), BMF-Beispiel 9: Minijob 2.800 -> 510, Handwerker 4.500 -> 900 = 1.410",
+        minijob: 2800,
+        dienstleistungen: 0,
+        handwerker: 4500,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: true,
+        erwartet: 1410,
+    },
+    Zeile {
+        gruppe: "ehepaar",
+        name: "Ehepaar, Antwort nein: 1.410",
+        minijob: 2800,
+        dienstleistungen: 0,
+        handwerker: 4500,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: false,
+        zusammen: true,
+        erwartet: 1410,
+    },
+    Zeile {
+        gruppe: "ehepaar",
+        name: "Ehepaar, Antwort ja, nur Dienstleistungen 30.000: voller Deckel 4.000, nicht 2.000",
+        minijob: 0,
+        dienstleistungen: 30_000,
+        handwerker: 0,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: true,
+        erwartet: 4000,
+    },
+    Zeile {
+        gruppe: "ehepaar",
+        name: "Ehepaar, Antwort ja, alle drei am vollen Deckel: 5.710, nicht 2.855",
+        minijob: 3000,
+        dienstleistungen: 30_000,
+        handwerker: 10_000,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: true,
+        erwartet: 5710,
     },
     Zeile {
         gruppe: "halbierung",
@@ -265,6 +336,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1410,
     },
     Zeile {
@@ -277,6 +349,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 1000,
     },
     Zeile {
@@ -289,6 +362,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 2000,
     },
     Zeile {
@@ -301,6 +375,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 600,
     },
     Zeile {
@@ -313,6 +388,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 254,
     },
     Zeile {
@@ -325,6 +401,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 255,
     },
     Zeile {
@@ -337,6 +414,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 255,
     },
     Zeile {
@@ -349,6 +427,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 1999,
     },
     Zeile {
@@ -361,6 +440,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 2000,
     },
     Zeile {
@@ -373,6 +453,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 599,
     },
     Zeile {
@@ -385,6 +466,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 600,
     },
     Zeile {
@@ -397,6 +479,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: true,
+        zusammen: false,
         erwartet: 2855,
     },
     Zeile {
@@ -409,6 +492,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 2,
     },
     Zeile {
@@ -421,6 +505,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1200,
     },
     Zeile {
@@ -433,6 +518,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 510,
     },
     Zeile {
@@ -445,6 +531,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 510,
     },
     Zeile {
@@ -457,6 +544,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 509,
     },
     Zeile {
@@ -469,6 +557,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 4000,
     },
     Zeile {
@@ -481,6 +570,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 1200,
     },
     Zeile {
@@ -493,6 +583,7 @@ const FAELLE: &[Zeile] = &[
         unbar: true,
         gefoerdert: false,
         mitveranlagt: false,
+        zusammen: false,
         erwartet: 5710,
     },
 ];
@@ -506,6 +597,7 @@ fn rechne(z: &Zeile) -> i64 {
         hh_rechnung_unbar: z.unbar,
         hh_handwerker_gefoerdert: z.gefoerdert,
         p35a_mitveranlagung: z.mitveranlagt,
+        zusammenveranlagt: z.zusammen,
     };
     p35a_haushaltsnahe(&e).unwrap().get()
 }
@@ -563,4 +655,10 @@ fn gates_und_halbierung() {
 #[test]
 fn alleinstehende_teilen_die_hoechstbetraege_nicht_die_summe() {
     pruefe("halbierung");
+}
+
+/// Ein zusammenveranlagtes Ehepaar teilt nie, auch mit gespeichertem "ja" (BMF Rz. 53 Beispiel 9: 510 + 900 = 1.410). Plan Nr. 116.
+#[test]
+fn ehepaar_teilt_die_hoechstbetraege_nie() {
+    pruefe("ehepaar");
 }

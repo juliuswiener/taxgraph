@@ -348,6 +348,8 @@ pub fn p35a_haushaltsnahe(args: &[Value]) -> R<P35aHaushaltsnaheEingabe> {
         hh_rechnung_unbar: rechnung,
         hh_handwerker_gefoerdert: gefoerdert,
         p35a_mitveranlagung: mitveranlagung,
+        // Python kannte den Slot nicht (die Summe wurde bei "ja" halbiert); fehlt er, ist es false.
+        zusammenveranlagt: wert_ist(s, "zusammenveranlagt", true)?,
     })
 }
 

@@ -5,8 +5,9 @@
 Materialisierung des verifizierten Snapshots `pipeline/snapshots/p35a_2_3_haushaltsnahe.json`
 (historisch: `pipeline/` fiel mit L4 am 2026-10-19, der Snapshot ist im Baum nicht mehr prüfbar;
 module Haushaltsnahe, verified_bedingt, offene Discoveries = 0, sha256 `7d084e5a77c438b8dc4e7530940bd179d64e9dae15336fddb67b03ec52c4ebf6`).
-Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); ergänzt sind nur der
-Module-Header und die Grenzfall-Seeds. Kein Pipeline-Re-Run.
+Die scope-Logik unten war BYTE-GLEICH aus `catala_a` übernommen; ergänzt waren nur der Module-Header und
+die Grenzfall-Seeds. Seit Plan Nr. 116 (2026-10-24) kommt die Eingabe `hoechstbetraege_geteilt` mit dem
+Anteil 0,50 an den drei Höchstbeträgen dazu (Abs. 5 S. 4, siehe unten); sonst unverändert. Kein Pipeline-Re-Run.
 
 Drei getrennte 20-%-Töpfe mit eigenem Jahreshöchstbetrag, additiv:
 Zitatanker § 35a EStG (`sources/gesetze-im-internet/estg_p35a_2026-07-09.txt`, typ gesetz):
@@ -17,30 +18,45 @@ höchstens jedoch um" 1 200 Euro. Die Töpfe werden getrennt gekappt und summier
 die gemeinsame Verrechnung gegen die festzusetzende ESt (§ 2 Abs. 6 → p32a input steuerermaessigungen)
 ist Andockung (dev-1-Accessor / Integration), nicht Teil dieser reinen Teilregel.
 
+Zwei Alleinstehende im selben Haushalt (Abs. 5 S. 4: "Leben zwei Alleinstehende in einem Haushalt
+zusammen, können sie die Höchstbeträge nach den Absätzen 1 bis 3 insgesamt jeweils nur einmal in
+Anspruch nehmen."): jeder rechnet 20 % seiner eigenen Aufwendungen gegen die HALBEN Höchstbeträge
+(BMF-Schreiben vom 2016-11-09 Rz. 53, `sources/bmf/bmf_p35a_2016-11-09.txt:809-817`: "bis zur Höhe des
+hälftigen Abzugshöchstbetrages"). Das ist die Eingabe `hoechstbetraege_geteilt`. Die Summe wird nicht
+halbiert, und ein zusammenveranlagtes Ehepaar teilt nichts (Rz. 53 Beispiel 9, `:819-831`): beides
+entscheidet der Aufrufer, nicht diese Regel (Plan Nr. 116, Julius d-67 am 2026-10-24).
+
 ```catala
 declaration scope Haushaltsnahe:
   input minijob_aufwendungen content money
   input haushaltsnahe_dienstleistungen content money
   input handwerker_arbeitskosten content money
+  input hoechstbetraege_geteilt content boolean
+  internal anteil_hoechstbetrag content decimal
   internal ermaessigung_abs1 content money
   internal ermaessigung_abs2 content money
   internal ermaessigung_abs3 content money
   output steuerermaessigung content money
 
 scope Haushaltsnahe:
+  definition anteil_hoechstbetrag equals
+    if hoechstbetraege_geteilt
+    then 0.50
+    else 1.00
+
   definition ermaessigung_abs1 equals
-    if minijob_aufwendungen * 0.20 > $510.00
-    then $510.00
+    if minijob_aufwendungen * 0.20 > $510.00 * anteil_hoechstbetrag
+    then $510.00 * anteil_hoechstbetrag
     else minijob_aufwendungen * 0.20
 
   definition ermaessigung_abs2 equals
-    if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00
-    then $4,000.00
+    if haushaltsnahe_dienstleistungen * 0.20 > $4,000.00 * anteil_hoechstbetrag
+    then $4,000.00 * anteil_hoechstbetrag
     else haushaltsnahe_dienstleistungen * 0.20
 
   definition ermaessigung_abs3 equals
-    if handwerker_arbeitskosten * 0.20 > $1,200.00
-    then $1,200.00
+    if handwerker_arbeitskosten * 0.20 > $1,200.00 * anteil_hoechstbetrag
+    then $1,200.00 * anteil_hoechstbetrag
     else handwerker_arbeitskosten * 0.20
 
   definition steuerermaessigung equals
@@ -59,7 +75,8 @@ scope TestMinijobDeckel:
   definition r equals output of Haushaltsnahe with {
     -- minijob_aufwendungen: $2,800.00
     -- haushaltsnahe_dienstleistungen: $0.00
-    -- handwerker_arbeitskosten: $0.00 }
+    -- handwerker_arbeitskosten: $0.00
+    -- hoechstbetraege_geteilt: false }
   definition g equals r.steuerermaessigung
   assertion g = $510.00
 ```
@@ -74,7 +91,8 @@ scope TestHandwerkerDeckel:
   definition r equals output of Haushaltsnahe with {
     -- minijob_aufwendungen: $0.00
     -- haushaltsnahe_dienstleistungen: $0.00
-    -- handwerker_arbeitskosten: $10,000.00 }
+    -- handwerker_arbeitskosten: $10,000.00
+    -- hoechstbetraege_geteilt: false }
   definition g equals r.steuerermaessigung
   assertion g = $1,200.00
 ```
@@ -89,7 +107,8 @@ scope TestSummeDreiToepfe:
   definition r equals output of Haushaltsnahe with {
     -- minijob_aufwendungen: $2,800.00
     -- haushaltsnahe_dienstleistungen: $0.00
-    -- handwerker_arbeitskosten: $10,000.00 }
+    -- handwerker_arbeitskosten: $10,000.00
+    -- hoechstbetraege_geteilt: false }
   definition g equals r.steuerermaessigung
   assertion g = $1,710.00
 ```
@@ -104,7 +123,8 @@ scope TestDienstleistungUnterDeckel:
   definition r equals output of Haushaltsnahe with {
     -- minijob_aufwendungen: $0.00
     -- haushaltsnahe_dienstleistungen: $3,000.00
-    -- handwerker_arbeitskosten: $0.00 }
+    -- handwerker_arbeitskosten: $0.00
+    -- hoechstbetraege_geteilt: false }
   definition g equals r.steuerermaessigung
   assertion g = $600.00
 ```
@@ -119,7 +139,76 @@ scope TestNullAufwand:
   definition r equals output of Haushaltsnahe with {
     -- minijob_aufwendungen: $0.00
     -- haushaltsnahe_dienstleistungen: $0.00
-    -- handwerker_arbeitskosten: $0.00 }
+    -- handwerker_arbeitskosten: $0.00
+    -- hoechstbetraege_geteilt: false }
   definition g equals r.steuerermaessigung
   assertion g = $0.00
+```
+
+## Zwei Alleinstehende im selben Haushalt (Plan Nr. 116, Abs. 5 S. 4, BMF Rz. 53)
+
+Von Hand aus dem Gesetz gerechnet: 20 % der eigenen Kosten, gedeckelt bei 255 / 2.000 / 600 EUR.
+
+```catala
+#[test]
+declaration scope TestAlleinstehendeBeispiel9:
+  # BMF Rz. 53 Beispiel 9 für zwei Alleinstehende: Minijob 2800 -> 560 > 255 -> 255; Handwerker 4500 -> 900 > 600 -> 600; Summe 855.
+  internal r content Haushaltsnahe
+  output g content money
+scope TestAlleinstehendeBeispiel9:
+  definition r equals output of Haushaltsnahe with {
+    -- minijob_aufwendungen: $2,800.00
+    -- haushaltsnahe_dienstleistungen: $0.00
+    -- handwerker_arbeitskosten: $4,500.00
+    -- hoechstbetraege_geteilt: true }
+  definition g equals r.steuerermaessigung
+  assertion g = $855.00
+```
+
+```catala
+#[test]
+declaration scope TestAlleinstehendeDienstleistungUnterHalbemDeckel:
+  # Dienstleistungen 5000 -> 20 % = 1000 <= 2000 (halber Deckel) -> ungekürzt; die halbe Summe wären nur 500.
+  internal r content Haushaltsnahe
+  output g content money
+scope TestAlleinstehendeDienstleistungUnterHalbemDeckel:
+  definition r equals output of Haushaltsnahe with {
+    -- minijob_aufwendungen: $0.00
+    -- haushaltsnahe_dienstleistungen: $5,000.00
+    -- handwerker_arbeitskosten: $0.00
+    -- hoechstbetraege_geteilt: true }
+  definition g equals r.steuerermaessigung
+  assertion g = $1,000.00
+```
+
+```catala
+#[test]
+declaration scope TestAlleinstehendeAlleDreiAmHalbenDeckel:
+  # Alle drei über dem halben Deckel: 255 + 2000 + 600 = 2855 (die Hälfte von 510 + 4000 + 1200 = 5710).
+  internal r content Haushaltsnahe
+  output g content money
+scope TestAlleinstehendeAlleDreiAmHalbenDeckel:
+  definition r equals output of Haushaltsnahe with {
+    -- minijob_aufwendungen: $3,000.00
+    -- haushaltsnahe_dienstleistungen: $30,000.00
+    -- handwerker_arbeitskosten: $10,000.00
+    -- hoechstbetraege_geteilt: true }
+  definition g equals r.steuerermaessigung
+  assertion g = $2,855.00
+```
+
+```catala
+#[test]
+declaration scope TestOhneTeilungBeispiel9:
+  # Dieselben Kosten ohne Teilung (Ehepaar, BMF Beispiel 9): 510 + 900 = 1410.
+  internal r content Haushaltsnahe
+  output g content money
+scope TestOhneTeilungBeispiel9:
+  definition r equals output of Haushaltsnahe with {
+    -- minijob_aufwendungen: $2,800.00
+    -- haushaltsnahe_dienstleistungen: $0.00
+    -- handwerker_arbeitskosten: $4,500.00
+    -- hoechstbetraege_geteilt: false }
+  definition g equals r.steuerermaessigung
+  assertion g = $1,410.00
 ```

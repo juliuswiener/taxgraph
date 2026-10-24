@@ -831,6 +831,7 @@ fn run(fnname: &str, w: &[Eingabe]) -> Result<i128, String> {
             hh_rechnung_unbar: wa(w, "hh_rechnung_unbar"),
             hh_handwerker_gefoerdert: wa(w, "hh_handwerker_gefoerdert"),
             p35a_mitveranlagung: wa(w, "p35a_mitveranlagung"),
+            zusammenveranlagt: wa(w, "zusammenveranlagt"),
         })),
         "kist" => c(kist(&KistEingabe {
             konfession: te(w, "konfession"),

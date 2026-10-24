@@ -506,6 +506,8 @@ fn steuerermaessigungen(
         // Abs. 3 S. 2: nur ein explizites False heisst "gefoerdert".
         hh_handwerker_gefoerdert: ist_false(wert(f, "hh_handwerker_keine_foerderung")),
         p35a_mitveranlagung: ist_true(wert(f, "p35a_mitveranlagung")),
+        // § 35a Abs. 5 S. 4 teilt die Hoechstbetraege nur fuer zwei Alleinstehende; ein Ehepaar teilt nie (Plan Nr. 116, Julius d-67).
+        zusammenveranlagt: veranlagung == Veranlagung::Zusammen,
     })?;
     // § 35c Abs. 3 S. 2: bestaetigt-False heisst "es gibt eine Doppelfoerderung" -> beide Toepfe 0.
     let doppelt = ist_false(wert(f, "p35c_keine_doppelfoerderung"));

@@ -488,16 +488,20 @@ bindungen:
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: p35a_mitveranlagung
     quelle: {regel_id: p35a_2_3_haushaltsnahe, signatur_slot: mitveranlagung}
+    # Plan Nr. 116 (Julius d-67, 2026-10-24): § 35a Abs. 5 S. 4 teilt die Hoechstbetraege nur fuer zwei ALLEINSTEHENDE im selben Haushalt.
+    # Ein zusammenveranlagtes Ehepaar teilt nichts (BMF-Schreiben vom 2016-11-09 Rz. 53 Beispiel 9), die Frage steht ihm nicht. Solange
+    # `veranlagung` fehlt, bleibt sie stehen (`wert_nicht`: ein fehlender Wert schliesst nicht aus). Kein Kegel-Feld, keine Sperre.
+    feld_bedingung: {feld: veranlagung, wert_nicht: zusammen, grund: "§ 35a Abs. 5 S. 4 EStG teilt die Hoechstbetraege nur, wenn zwei Alleinstehende in einem Haushalt zusammenleben. Ein zusammenveranlagtes Ehepaar teilt nichts (BMF-Schreiben vom 2016-11-09 Rz. 53 Beispiel 9) und darf diese Frage nicht sehen. Solange die Veranlagungsart unbeantwortet ist, bleibt die Frage stehen."}
     typ: bool
     einheit: null
     askable: true
     vorjahr: uebernehmbar
-    fragetext_laie: "Wollt ihr die Kosten für Handwerker und Haushaltshilfe gemeinsam geltend machen?"
-    hilfe_kurz: "Bei Zusammenveranlagung wird der Höchstbetrag für haushaltsnahe Leistungen nur einmal gewährt und der Abzugsbetrag geteilt."
+    fragetext_laie: "Lebst du mit einer anderen alleinstehenden Person im selben Haushalt?"
+    hilfe_kurz: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge insgesamt jeweils nur einmal in Anspruch nehmen (§ 35a Abs. 5 S. 4 EStG). Bei „Ja“ teilt die Rechnung jeden der drei Höchstbeträge je zur Hälfte."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
-    elster_kz_grund: "Kein spezifisches Kz für Mitveranlagung im §35a-Kontext. Reine Ring-Logik zur Halbierung des Abzugs."
+    elster_kz_grund: "Kein spezifisches Kz für den gemeinsamen Haushalt zweier Alleinstehender im §35a-Kontext. Reine Ring-Logik zur Teilung der Höchstbeträge."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
       quelle: "§ 35a Abs. 5 EStG"

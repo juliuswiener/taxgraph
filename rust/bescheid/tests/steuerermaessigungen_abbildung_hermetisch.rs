@@ -585,12 +585,8 @@ fn faelle() -> Vec<Fall> {
     ]
 }
 
-/// `steuerermaessigungen` (EUR) fuer den Fall bei Einzelveranlagung, ueber den oeffentlichen Weg `shared_steuer_sonder_agb`.
-fn rechne(fall: &Fall) -> i64 {
-    rechne_mit(fall, Veranlagung::Einzel)
-}
-
-/// Dasselbe mit der Veranlagungsart des Aufrufers (`steuerermaessigungen` bekommt sie von `shared_steuer_sonder_agb`).
+/// `steuerermaessigungen` (EUR) fuer den Fall, ueber den oeffentlichen Weg `shared_steuer_sonder_agb`, mit der Veranlagungsart des
+/// Aufrufers (`steuerermaessigungen` bekommt sie von `shared_steuer_sonder_agb`).
 fn rechne_mit(fall: &Fall, veranlagung: Veranlagung) -> i64 {
     let st = store(&fall.events);
     // Bei `nur_bestaetigt` ist `f` schon auf bestaetigte Felder gefiltert (`bescheid_zweige.py:1487`,

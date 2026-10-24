@@ -338,6 +338,7 @@ const SPECS: &[Spec] = &[
             ("minijob_aufwendungen", Art::Geld),
             ("haushaltsnahe_dienstleistungen", Art::Geld),
             ("handwerker_arbeitskosten", Art::Geld),
+            ("hoechstbetraege_geteilt", Art::Wahr),
         ],
         ausgaben: &["steuerermaessigung"],
         zufall: 300,

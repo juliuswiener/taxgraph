@@ -461,12 +461,13 @@ static void *tg_run_haushaltsnahe(void) {
 }
 
 int tg_haushaltsnahe(long minijob_cents, long dienstleistungen_cents, long handwerker_cents,
-                     TgAusgabe *out) {
+                     int hoechstbetraege_geteilt, TgAusgabe *out) {
   catala_init();
   tg_haushaltsnahe_in.Haushaltsnahe__minijob_aufwendungen_in = catala_new_money(minijob_cents);
   tg_haushaltsnahe_in.Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
       catala_new_money(dienstleistungen_cents);
   tg_haushaltsnahe_in.Haushaltsnahe__handwerker_arbeitskosten_in = catala_new_money(handwerker_cents);
+  tg_haushaltsnahe_in.Haushaltsnahe__hoechstbetraege_geteilt_in = catala_new_bool(hoechstbetraege_geteilt);
   const Haushaltsnahe__Haushaltsnahe *r = catala_do(tg_run_haushaltsnahe);
   if (!r) {
     catala_free_all();
