@@ -82,6 +82,8 @@ mod p34c_staat_folgefrage_hermetisch;
 mod parteispenden_hermetisch;
 #[path = "partner_sonstige_waechter_hermetisch.rs"]
 mod partner_sonstige_waechter_hermetisch;
+#[path = "partnerzeilen_warten_auf_veranlagung.rs"]
+mod partnerzeilen_warten_auf_veranlagung;
 #[path = "preflight_pflichtfelder.rs"]
 mod preflight_pflichtfelder;
 #[path = "rav_bav_waechter_hermetisch.rs"]

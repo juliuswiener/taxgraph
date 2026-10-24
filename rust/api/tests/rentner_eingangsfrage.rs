@@ -757,7 +757,15 @@ async fn die_neuen_kreuze_sind_invertierte_ankreuzfragen_der_liste() {
         assert_eq!(q["frage_invertiert"], json!(true), "{kreuz}: das Feld nennt die Abwesenheit");
         assert_eq!(q["screening"], json!(true), "{kreuz}: die Ankreuzliste zeigt es");
         assert!(q["fragetext_laie"].as_str().is_some_and(|t| !t.is_empty()), "{kreuz}: ohne Fragetext");
+        // Die Zeile des Ehegatten nennt, worauf sie wartet (F5); die sechs Kreuze von Person A tragen den Schluessel nicht.
+        let wartet = (kreuz == "kein_gewinn_partner").then(|| json!({"feld": "veranlagung", "wert": "zusammen"}));
+        assert_eq!(q.get("wartet_auf"), wartet.as_ref(), "{kreuz}: wartet_auf");
     }
+    // Genau die drei Zeilen des Ehegatten der Rentner-Liste warten auf die Veranlagung; die vierte der Scheibe `gesamt`
+    // (`keine_behinderung_pflege_partner`) steht hier nicht, und keine andere Frage der Liste traegt den Schluessel.
+    let wartende: std::collections::BTreeSet<&str> =
+        liste.iter().filter(|q| q.get("wartet_auf").is_some()).filter_map(|q| q["feld_id"].as_str()).collect();
+    assert_eq!(wartende, std::collections::BTreeSet::from(["kein_gewinn_partner", "kein_kap_partner", "kein_sonstige_partner"]));
 }
 
 /// Die Zeile des Ehegatten steht bei Zusammenveranlagung und solange `veranlagung` offen ist (fail-closed, wie in `gesamt`: die
