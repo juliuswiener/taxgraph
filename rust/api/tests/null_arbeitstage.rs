@@ -297,21 +297,38 @@ async fn die_zahl_kommt_bei_null_tagen_ohne_die_weg_fragen_und_ist_dieselbe_wie_
         let e = ergebnis(&fall("an_gesamt", &eigen).await).await;
         assert_eq!(e["zahl_cent"], abgeleitet["zahl_cent"], "{name}: eigene Antworten bei 0 Tagen aendern die Steuer: {e}");
     }
-    // (b) Fahrkarten, die der Nutzer selbst eintraegt: davor, danach und als einzige Weg-Antwort. Immer dieselbe Zahl wie heute.
+    // (b) Fahrkarten, die der Nutzer selbst eintraegt: davor, danach und als einzige Weg-Antwort. Die Regel zieht bei 0 Tagen nichts ab
+    // (d-56): immer dieselbe Zahl wie ohne Fahrkarten.
     let explizit = ergebnis(&fall("an_gesamt", &plus(basis(), &[("ep_arbeitstage", json!(0)), (OEPNV, json!(138_000)), ("ep_entfernung_km", json!(0)), ("ep_eigenes_kfz", json!(false))])).await).await;
-    assert_eq!(explizit["zahl_cent"], json!(STEUER_NULL_TAGE_FAHRKARTEN), "Kontrolle, die Zahl mit Fahrkarten ist eine andere: {explizit}");
+    assert_eq!(explizit["zahl_cent"], json!(STEUER_NULL_TAGE), "Fahrkarten bei 0 Tagen ziehen ab: {explizit}");
     for (name, paare) in [
         ("Fahrkarten vor der 0", plus(basis(), &[(OEPNV, json!(138_000)), ("ep_arbeitstage", json!(0))])),
         ("Fahrkarten nach der 0", plus(basis(), &[("ep_arbeitstage", json!(0)), (OEPNV, json!(138_000))])),
     ] {
         let e = ergebnis(&fall("an_gesamt", &paare).await).await;
-        assert_eq!((e["grund"].clone(), e["zahl_cent"].clone()), (json!("bestaetigt"), json!(STEUER_NULL_TAGE_FAHRKARTEN)), "{name}: {e}");
+        assert_eq!((e["grund"].clone(), e["zahl_cent"].clone()), (json!("bestaetigt"), json!(STEUER_NULL_TAGE)), "{name}: {e}");
     }
+    // KONTROLLE (sonst waere (b) auch gruen, wenn die Fahrkarten gar nicht bis zur Zahl kaemen): dieselben Antworten mit 1 Tag. Die
+    // Pauschale ist bei 0 km 0, also gilt die Fahrkartensumme, und die Zahl ist die mit abgezogenen Fahrkarten.
+    let ein_tag = ergebnis(&fall("an_gesamt", &plus(basis(), &[("ep_arbeitstage", json!(1)), (OEPNV, json!(138_000)), ("ep_entfernung_km", json!(0)), ("ep_eigenes_kfz", json!(false))])).await).await;
+    assert_eq!(ein_tag["zahl_cent"], json!(STEUER_NULL_TAGE_FAHRKARTEN), "Kontrolle, bei 1 Tag ziehen die Fahrkarten ab: {ein_tag}");
     // Die Sperre bleibt: bei 220 Tagen leitet der Store nichts ab, und die drei Antworten fehlen.
     let viele = ergebnis(&fall("an_gesamt", &plus(basis(), &[("ep_arbeitstage", json!(220))])).await).await;
     assert_eq!(viele["grund"], "input_kegel_nicht_bestaetigt", "{viele}");
     assert_eq!(kegel_offen(&viele), vec!["ep_eigenes_kfz".to_owned(), "ep_entfernung_km".to_owned(), OEPNV.to_owned()], "{viele}");
     assert!(viele["zahl_cent"].is_null(), "{viele}");
+}
+
+/// Der Schreibweg weist negative Tage ab (`bereich` 0 bis 366 an `ep_arbeitstage`), die Regel `arbeitstage <= 0` (d-56) sieht also nie
+/// ein negatives Ereignis aus der Oberflaeche. KONTROLLE: 0 und 366 gehen durch. Ein Fall je Wert, weil das zweite Ereignis auf dasselbe
+/// Feld ohne `ersetzt` abgewiesen wird.
+#[tokio::test]
+async fn negative_und_zu_viele_tage_werden_abgewiesen() {
+    for (wert, soll) in [(-1, 422), (367, 422), (0, 201), (366, 201)] {
+        let d = fall("an_gesamt", &[]).await;
+        let (status, antwort) = sende(&d, "POST", "/fall/nz/event", Some(&ereignis("ep_arbeitstage", &json!(wert), true))).await;
+        assert_eq!(status, soll, "ep_arbeitstage = {wert}: {antwort}");
+    }
 }
 
 /// AK4: Der Neutralwert ist abgeleitet und bestaetigt; eine bestaetigte Antwort des Nutzers davor bleibt stehen, eine danach ersetzt ihn
@@ -473,6 +490,24 @@ async fn vorschlaege_auf_abgeleitete_felder_geben_eine_abweisung_und_nie_einen_s
             assert!((400..500).contains(&status), "{schreiber} auf {feld}: Status {status}: {antwort}");
             assert_eq!(im_stand(&d, feld).await.map(|s| s.1), Some("bestaetigt".to_owned()), "{schreiber} auf {feld}: der Neutralwert gilt nicht mehr");
         }
+    }
+}
+
+/// MESSUNG (Regelfix d-56): was die Erklaerung (`GET /deklaration`) und die Zahl bei eigener Fahrkartensumme zeigen, je nach Tagen.
+/// Zeilen `E0203*` und `E0205*` der Erklaerung, `grund` und `zahl_cent` des Ergebnisses. Kein Beleg.
+#[tokio::test]
+#[ignore = "Messung fuer den Bericht, kein Beleg"]
+async fn messung_erklaerung_fahrkarten_nach_tagen() {
+    for (name, tage, oepnv) in [("0 Tage, Fahrkarten 0", 0, 0), ("0 Tage, Fahrkarten 1.380 EUR", 0, 138_000), ("1 Tag, Fahrkarten 1.380 EUR", 1, 138_000)] {
+        let paare = plus(basis(), &[("ep_arbeitstage", json!(tage)), (OEPNV, json!(oepnv)), ("ep_entfernung_km", json!(0)), ("ep_eigenes_kfz", json!(false))]);
+        let d = fall("an_gesamt", &paare).await;
+        let e = ergebnis(&d).await;
+        let (status, dekl) = sende(&d, "GET", "/fall/nz/deklaration", None).await;
+        let kz: Vec<String> = dekl["deklaration"]
+            .as_object()
+            .map(|o| o.iter().filter(|(k, _)| k.starts_with("E0203") || k.starts_with("E0205")).map(|(k, v)| format!("{k}={v}")).collect())
+            .unwrap_or_default();
+        println!("MESSUNG erklaerung [{name}]: grund={} zahl_cent={} erklaerung {status} {kz:?}", e["grund"], e["zahl_cent"]);
     }
 }
 

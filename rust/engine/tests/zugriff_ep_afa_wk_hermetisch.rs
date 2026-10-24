@@ -15,7 +15,8 @@
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: jede Zahl der Tabellen unten ist die Ausgabe des Python-Orakels (`runner.catala_*`, mit
 //! leerer Wegwerf-Datenwurzel) auf denselben Eingaben; Orakel-Skript und Lauf: Anlagen zum Bericht. Kein Wert ist aus dem
-//! Rust-Code abgelesen. 70 der 72 Faelle stimmen ausserdem mit einer unabhaengigen Rechnung aus den Quellen im Baum ueberein:
+//! Rust-Code abgelesen (AUSNAHME: die zwei Zeilen mit 1.380 EUR `OePNV` in `EP`, siehe dort: Handrechnung nach Gesetz und d-56,
+//! das Python-Orakel gibt bei 0 Arbeitstagen 1.380 EUR). 70 der 72 Faelle stimmen ausserdem mit einer unabhaengigen Rechnung aus den Quellen im Baum ueberein:
 //! Entfernungspauschale 0,30 EUR (bis 20 km) und 0,38 EUR (ab dem 21. km; ab VZ 2026 durchgehend 0,38 EUR), nur volle
 //! Kilometer, Deckel 4.500 EUR ohne Kfz, `OePNV` nur soweit er die Pauschale uebersteigt (§ 9 Abs. 1 S. 3 Nr. 4, Abs. 2 `EStG`,
 //! `estg_p9_abs1nr4_abs2_2026-07-09.txt`), `AfA` linear mit Zwoelftelung im Anschaffungsjahr (§ 7 Abs. 1 S. 1 und 4 `EStG`,
@@ -180,6 +181,28 @@ const EP: &[(&str, Vz, &str, i64, bool, i64, i64)] = &[
         false,
         0,
         0,
+    ),
+    // Die zwei Zeilen unten stammen NICHT aus dem Python-Orakel, sondern aus der Handrechnung nach Gesetz und d-56 (Julius,
+    // 2026-10-22): ohne Wege zur ersten Taetigkeitsstaette gibt es in diesem Block keinen Fahrkartenabzug (§ 9 Abs. 2 `EStG`, BMF
+    // 18.11.2021 Rz. 2). 0 Tage: Pauschale 0 und Fahrkarten 1.380 EUR ziehen nichts ab. 1 Tag (Kontrolle, die Zeile bleibt wie vor
+    // dem Regelfix): Pauschale 9,80 EUR je Tag, Fahrkarten 1.380 EUR sind groesser, also gilt die Summe.
+    (
+        "VZ 2025, 30 km, 0 Arbeitstage, Kfz nein, OePNV 1380 EUR",
+        Vz::Vz2025,
+        "30",
+        0,
+        false,
+        1380,
+        0,
+    ),
+    (
+        "VZ 2025, 30 km, 1 Arbeitstag, Kfz nein, OePNV 1380 EUR",
+        Vz::Vz2025,
+        "30",
+        1,
+        false,
+        1380,
+        1380,
     ),
     (
         "VZ 2025, 0 km, 220 Arbeitstage, Kfz nein, OePNV 0 EUR",
