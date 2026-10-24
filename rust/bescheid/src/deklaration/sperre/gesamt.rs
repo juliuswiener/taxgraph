@@ -54,6 +54,7 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
         sperre!(versorgung_stimmig(k, true));
     }
     sperre!(behinderung_wahlrecht(k));
+    sperre_o!(p33a_unterhalt(k));
     sperre!(p35a_p35c(k));
     sperre!(gwg(k));
     sperre!(kinderbetreuung(k));
@@ -311,6 +312,26 @@ fn behinderung_wahlrecht(k: &K<'_>) -> Grund {
         && positiv(f, "behinderungsbedingte_aufwendungen_partner")
         && !bestaetigt(f, "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner"))
     .then_some(Sperrgrund::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen))
+}
+
+/// Der Wert von `p33a_unterstuetzungszeitraum` fuer "das ganze Jahr" (der `standardwert` der Frage). Jeder andere Text ist ein Teiljahr.
+const GANZES_JAHR: &str = "01.01-31.12";
+
+/// § 33a Abs. 1 `EStG` (Julius-Regel "erst Sperren, dann Rechnungen", 2026-10-08): Unterhalt fuer einen Teil des Jahres (Abs. 3 S. 1: ein
+/// Zwoelftel weniger je Monat ohne Unterstuetzung) oder mit einer weiteren Person (Abs. 1 S. 7: der Betrag wird geteilt). Die Rechnung kennt
+/// beides nicht (`p33a_unterhalt` nimmt weder Zeitraum noch weitere Person) und zoege den vollen Hoechstbetrag ab: zu wenig Steuer.
+///
+/// Nur mit einem Unterhaltsbetrag > 0 (auch vorlaeufig, wie `positiv`), sonst sperrte jede Antwort auf die Folgefragen. Der Guard liest die
+/// Roh-Felder: auch ein VORLAEUFIGER Zeitraum oder eine vorlaeufige weitere Person (Vorjahreswert, KI-Vorschlag) sperrt, damit eine Zahl nicht
+/// den Normalfall vortaeuscht, den der Vorschlag verneint. Ein unbeantworteter Zeitraum zaehlt als das ganze Jahr (der Standardwert der Frage).
+/// Nicht gemeint: der Ausbildungsfreibetrag nach Abs. 2 (Haelfte je Elternteil, S. 4), der keine Antwort darauf hat.
+fn p33a_unterhalt(k: &K<'_>) -> Option<Sperrgrund> {
+    let f = k.f;
+    if !positiv(f, "p33a_unterhalt_aufwendungen") {
+        return None;
+    }
+    let teiljahr = matches!(wert(f, "p33a_unterstuetzungszeitraum"), Some(PyWert::Text(z)) if z != GANZES_JAHR);
+    (teiljahr || ist_true(wert(f, "p33a_weitere_person_beteiligt"))).then_some(Sperrgrund::P33aUnterhaltNichtGerechnet)
 }
 
 /// `_hh_instanz_positiv`: irgendeine Instanz mit Betrag > 0 (jeder Zustand); ohne Store/Bindung der
