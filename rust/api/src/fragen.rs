@@ -188,15 +188,21 @@ pub(crate) fn frage_metadaten(
     if let (true, Some(m)) = (b.leer_erlaubt, frage.as_object_mut()) {
         m.insert("leer_erlaubt".into(), json!(true));
     }
-    // Rust-eigen (F5): eine Zeile der Ankreuzliste, die an EINEM Antwortwert eines anderen Felds haengt, nennt ihn. So graut die Seite sie aus, bis die
-    // Antwort (`veranlagung = zusammen`) da ist. Nur die einfache Bedingung `wert`: mit `und`, `oder` oder `beleg` bleibt der Schluessel weg, weil ein
-    // Feld-Wert-Paar sie nicht beschreibt.
-    if let (Some(true), Some(fb)) = (b.screening, &b.feld_bedingung) {
-        if let (Some(wert), None, None, false, Some(m)) = (&fb.wert, &fb.und, &fb.oder, fb.beleg, frage.as_object_mut()) {
-            m.insert("wartet_auf".into(), json!({"feld": fb.feld, "wert": wert}));
-        }
+    if let (Some(wartet), Some(m)) = (wartet_auf(b), frage.as_object_mut()) {
+        m.insert("wartet_auf".into(), wartet);
     }
     Ok(frage)
+}
+
+/// Rust-eigen (F5): eine Zeile der Ankreuzliste, die an EINEM Antwortwert eines anderen Felds haengt, nennt ihn (`{feld, wert}`). So graut die Seite
+/// sie aus, bis die Antwort (`veranlagung = zusammen`) da ist. Nur die einfache Bedingung `wert`: mit `und`, `oder` oder `beleg` ist der Schluessel
+/// weg, weil ein Feld-Wert-Paar sie nicht beschreibt (die Registry hat heute keine solche Zeile; die Seite behandelt eine Zeile ohne Schluessel wie bisher).
+fn wartet_auf(b: &Bindung) -> Option<Value> {
+    let fb = b.feld_bedingung.as_ref().filter(|_| b.screening == Some(true))?;
+    match (&fb.wert, &fb.und, &fb.oder, fb.beleg) {
+        (Some(wert), None, None, false) => Some(json!({"feld": fb.feld, "wert": wert})),
+        _ => None,
+    }
 }
 
 /// `api.frage_einzeln(fall_id, feld_id)` (`api.py:361`) nach dem Owner-Check: die Frage zu EINEM
@@ -362,5 +368,46 @@ mod tests {
         );
         let frage = frage_metadaten("bruttoarbeitslohn", &sb, &store).unwrap();
         assert_eq!(frage["feld_id"], json!("bruttoarbeitslohn"));
+    }
+
+    /// Eine Zeile der Ankreuzliste mit der Bedingung `feld_bedingung` aus `bedingung` (und `screening`).
+    fn zeile(screening: Option<bool>, bedingung: Value) -> Bindung {
+        serde_json::from_value(json!({
+            "feld_id": "kein_x_partner", "quelle": {"regel_id": "r", "signatur_slot": "s"}, "typ": "bool", "askable": false,
+            "hilfe_kurz": "Tipp", "beispielwert": false, "vz_gueltigkeit": [2025],
+            "anker_ref": {"quelle": "Q", "zitatanker": "Zit"}, "screening": screening, "feld_bedingung": bedingung,
+        }))
+        .unwrap()
+    }
+
+    /// `wartet_auf` nennt Feld und Wert der EINFACHEN Bedingung einer Zeile der Ankreuzliste und sonst nichts: jede andere Art, `und`, `oder`
+    /// und `beleg` lassen den Schluessel weg, ebenso eine Frage, die nicht in der Ankreuzliste steht.
+    #[test]
+    fn wartet_auf_nennt_nur_die_einfache_wert_bedingung_einer_ankreuzzeile() {
+        let grund = "Begruendung fuer den Test mit mehr als vierzig Zeichen";
+        let einfach = json!({"feld": "veranlagung", "wert": "zusammen", "grund": grund});
+        assert_eq!(
+            wartet_auf(&zeile(Some(true), einfach.clone())),
+            Some(json!({"feld": "veranlagung", "wert": "zusammen"}))
+        );
+        assert_eq!(wartet_auf(&zeile(Some(false), einfach.clone())), None, "keine Zeile der Ankreuzliste");
+        assert_eq!(wartet_auf(&zeile(None, einfach.clone())), None, "screening fehlt");
+        let mit = |zusatz: Value| {
+            let mut b = einfach.clone();
+            b.as_object_mut().unwrap().extend(zusatz.as_object().unwrap().clone());
+            zeile(Some(true), b)
+        };
+        let weitere = json!({"feld": "anderes", "groesser_als": 0, "grund": grund});
+        assert_eq!(wartet_auf(&mit(json!({"und": weitere}))), None, "und");
+        assert_eq!(wartet_auf(&mit(json!({"oder": weitere}))), None, "oder");
+        assert_eq!(wartet_auf(&mit(json!({"beleg": true}))), None, "beleg");
+        let andere_art = |art: Value| {
+            let mut b = json!({"feld": "veranlagung", "grund": grund});
+            b.as_object_mut().unwrap().extend(art.as_object().unwrap().clone());
+            wartet_auf(&zeile(Some(true), b))
+        };
+        assert_eq!(andere_art(json!({"wert_nicht": "zusammen"})), None, "wert_nicht");
+        assert_eq!(andere_art(json!({"groesser_als": 0})), None, "groesser_als");
+        assert_eq!(wartet_auf(&zeile(Some(true), Value::Null)), None, "ohne feld_bedingung");
     }
 }
