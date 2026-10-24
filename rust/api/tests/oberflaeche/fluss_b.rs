@@ -170,3 +170,66 @@ fn fluss_b_auswahl_buttons() {
     pp!("B.lange_auswahl_bleibt_ein_dropdown", u.rendere_frage("dba_staat"), "dba_staat ist in der Scheibe nicht offen");
     pp!("B.lange_auswahl_bleibt_ein_dropdown", s.anzahl("#eingabe select") > 0, "16 Staaten werden als Button-Reihe gerendert");
 }
+
+/// Ticket „Einzelnutzer sieht vier Partner-Zeilen vor der Frage allein oder gemeinsam“ (Julius d-66, 2026-10-23: „die Untergruppe ausgrauen,
+/// wenn jemand Einzelveranlagung angibt“). Die Listenseite fragt oben allein oder gemeinsam (`#screening-veranlagung`, die Buttons `.wahl-opt`
+/// des Fragebogens); die vier Partner-Zeilen bleiben sichtbar, sind aber ausgegraut (Kaestchen `disabled`, der Satz „gilt nur bei
+/// gemeinsamer Erklärung“), solange die Wahl fehlt oder „allein“ ist. Die Wahl schreibt `veranlagung`; der Fragebogen fragt sie danach nicht
+/// noch einmal, und eine ausgegraute Zeile schreibt nichts.
+#[test]
+fn partnerzeilen_erst_nach_der_veranlagung() {
+    const PARTNER: [&str; 4] = ["kein_kap_partner", "kein_gewinn_partner", "kein_sonstige_partner", "keine_behinderung_pflege_partner"];
+    let _sperre = crate::browser::seriell();
+    let u = umgebung_oder_ende!(Start::default(), 1280, 900);
+    let s = &u.s;
+    neuer_fall(&u, "fragebogen", 1280, 900);
+    s.warte_sichtbar("#screening", 8);
+
+    // Die Zeilen, deren Kaestchen ausgegraut sind, und ob jede den Satz traegt.
+    let ausgegraut = || -> (Vec<String>, bool) {
+        let z = s.ausdruck(
+            "[...document.querySelectorAll('#screening-liste .sc-zeile')].filter(z => z.querySelector('.sc-box').disabled).map(z => \
+             [z.querySelector('.sc-box').dataset.feld, z.textContent.includes('gilt nur bei gemeinsamer Erklärung')])",
+        );
+        let z = z.as_array().cloned().unwrap_or_default();
+        let mut felder: Vec<String> = z.iter().map(|e| e[0].as_str().unwrap_or_default().to_owned()).collect();
+        felder.sort();
+        (felder, z.iter().all(|e| e[1] == json!(true)))
+    };
+    let mut soll: Vec<String> = PARTNER.iter().map(|f| (*f).to_owned()).collect();
+    soll.sort();
+    let sichtbar = s.anzahl("#screening-liste .sc-zeile");
+
+    // Vor der Wahl: alle vier Zeilen stehen in der Liste und sind ausgegraut, mit dem Satz; keine andere Zeile ist es.
+    for f in PARTNER {
+        pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", s.finde(&format!("#screening-liste .sc-box[data-feld=\"{f}\"]")).is_some(), "{f} steht nicht in der Liste (sie sollen sichtbar bleiben)");
+    }
+    let (g, satz) = ausgegraut();
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", g == soll && satz, "vor der Wahl sind ausgegraut: {g:?} (Satz bei jeder: {satz}), erwartet genau {soll:?}");
+    // Allein: bleibt ausgegraut. Gemeinsam: frei. Zurueck auf allein: wieder ausgegraut, ein gesetztes Kreuz ist weg.
+    s.klick("#screening-veranlagung .wahl-opt[data-wert=\"einzel\"]");
+    let (g, _) = ausgegraut();
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", g == soll, "bei „allein“ sind ausgegraut: {g:?}");
+    s.klick("#screening-veranlagung .wahl-opt[data-wert=\"zusammen\"]");
+    let (g, _) = ausgegraut();
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", g.is_empty(), "bei „gemeinsam“ sind noch ausgegraut: {g:?}");
+    s.klick("#screening-liste .sc-box[data-feld=\"kein_kap_partner\"]");
+    s.klick("#screening-veranlagung .wahl-opt[data-wert=\"einzel\"]");
+    let (g, _) = ausgegraut();
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", g == soll, "nach dem Rueckwechsel auf „allein“ sind ausgegraut: {g:?}");
+    let haken = s.ausdruck("document.querySelector('#screening-liste .sc-box[data-feld=\"kein_kap_partner\"]').checked");
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", haken == json!(false), "ein ausgegrautes Kaestchen bleibt angekreuzt: {haken}");
+    pp!("B.die_partnerzeilen_sind_ausgegraut_bis_zusammen", s.anzahl("#screening-liste .sc-zeile") == sichtbar, "die Zeilenzahl der Liste hat sich geaendert");
+
+    // Weiter: `veranlagung` steht im Fall, keine Partner-Zeile hat ein Ereignis, und der Fragebogen fragt die Veranlagung nicht noch einmal.
+    let fall = u.fall();
+    s.klick("#screening-weiter");
+    s.warte_unsichtbar("#screening", 8);
+    let felder = u.stand_felder(&fall);
+    pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", felder["veranlagung"]["wert"] == json!("einzel"), "veranlagung im Fall: {}", felder["veranlagung"]["wert"]);
+    for f in PARTNER {
+        pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", felder.get(f).is_none_or(|e| e.is_null()), "{f} wurde geschrieben: {}", felder[f]);
+    }
+    let offen = u.offene(&fall);
+    pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", !offen.iter().any(|f| f == "veranlagung"), "der Fragebogen fragt die Veranlagung noch einmal");
+}
