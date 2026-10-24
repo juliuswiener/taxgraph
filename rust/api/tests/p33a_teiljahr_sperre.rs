@@ -277,16 +277,28 @@ async fn messung_teiljahr_euro() {
 #[ignore = "Messung fuer den Bericht, kein Beleg"]
 async fn messung_kreuz_nein_neben_unterhalt() {
     for (name, extra) in [
-        ("Kreuz nein, Betrag, halbes Jahr", vec![("kein_unterhalt", json!(true)), (UNTERHALT, json!(BETRAG)), (ZEITRAUM, json!("01.01-30.06"))]),
-        ("Kreuz nein, Betrag, weitere Person", vec![("kein_unterhalt", json!(true)), (UNTERHALT, json!(BETRAG)), (WEITERE, json!(true))]),
-        ("Kreuz nein, Betrag, nichts weiter", vec![("kein_unterhalt", json!(true)), (UNTERHALT, json!(BETRAG))]),
-        ("Kreuz ja, Betrag, halbes Jahr", vec![("kein_unterhalt", json!(false)), (UNTERHALT, json!(BETRAG)), (ZEITRAUM, json!("01.01-30.06"))]),
+        ("Kreuz gesetzt (keine Unterhaltszahlung), Betrag, halbes Jahr", vec![(UNTERHALT, json!(BETRAG)), (ZEITRAUM, json!("01.01-30.06")), ("kein_unterhalt", json!(true))]),
+        ("Kreuz gesetzt, Betrag, weitere Person", vec![(UNTERHALT, json!(BETRAG)), (WEITERE, json!(true)), ("kein_unterhalt", json!(true))]),
+        ("Kreuz gesetzt, Betrag, nichts weiter", vec![(UNTERHALT, json!(BETRAG)), ("kein_unterhalt", json!(true))]),
+        ("Kreuz abgewaehlt (Unterhalt gezahlt), Betrag, halbes Jahr", vec![(UNTERHALT, json!(BETRAG)), (ZEITRAUM, json!("01.01-30.06")), ("kein_unterhalt", json!(false))]),
+        ("Kreuz abgewaehlt, Betrag, nichts weiter", vec![(UNTERHALT, json!(BETRAG)), ("kein_unterhalt", json!(false))]),
+        ("kein Kreuz, Betrag, halbes Jahr", vec![(UNTERHALT, json!(BETRAG)), (ZEITRAUM, json!("01.01-30.06"))]),
     ] {
         let d = fall_mit(&mit(kegel_gesamt(), extra)).await;
         let e = ergebnis(&d).await;
         let f = fragen(&d).await;
         let ids = fragen_ids(&f);
-        let p33a: Vec<&String> = ids.iter().filter(|i| i.starts_with("p33a_")).collect();
-        println!("MESSUNG [{name}]: grund={} zahl_cent={} ring_gesperrt={} p33a-Fragen in der Liste: {p33a:?}", e["grund"], e["zahl_cent"], f["ring_gesperrt"]);
+        let p33a: Vec<&String> = ids.iter().filter(|i| i.starts_with("p33a_") || i.as_str() == "kein_unterhalt").collect();
+        let (_, stand) = sende(&d, "GET", "/fall/pt/stand", None).await;
+        let mut regeln = Vec::new();
+        for fid in [ZEITRAUM, WEITERE, "kein_unterhalt"] {
+            let (_, frage) = sende(&d, "GET", &format!("/fall/pt/feld/{fid}/frage"), None).await;
+            let regel = frage["frage"]["regel_id"].as_str().unwrap_or("?").to_owned();
+            regeln.push(format!("{fid}: {regel} = {}", stand["relevanz"][&regel]["status"]));
+        }
+        println!(
+            "MESSUNG [{name}]: grund={} zahl_cent={} Fragen {p33a:?}; Regelstatus {regeln:?}",
+            e["grund"], e["zahl_cent"]
+        );
     }
 }
