@@ -563,6 +563,17 @@ fn kv_pv_gemeinsamer_hoechstbetrag_gesamt_zusammen() {
             ],
             55_428,
         ),
+        // Kind-KV 3.000 (zaehlt zu Person A, § 10 Abs. 1 Nr. 3 S. 2) bricht allein durch (3.000 > 2.800); B weitere 2.800: Basis 3.000 +
+        // weitere 2.800 = 5.800 > 5.600, Basis 3.000 darunter, also 5.600 (je Person: 3.000 + 2.800 = 5.800, zvE 54.128)
+        fall(
+            "Kind-KV 3.000 bei A, B weitere 2.800",
+            &[
+                ("kind_idnr", json!("12345678901")),
+                kv("kind_kv", 3_000),
+                kv("vorsorge_arbeitslosenversicherung_partner", 2_800),
+            ],
+            54_328,
+        ),
         fall(
             "beide am eigenen Deckel (Kontrolle)",
             &[
