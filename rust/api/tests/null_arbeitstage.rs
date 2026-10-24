@@ -13,9 +13,9 @@
 //! (3) Die Unfallkosten fallen ueber die vorhandene `feld_bedingung` an der Entfernung mit weg. `agb_notwendig_angemessen` bleibt. (4)
 //! `ep_arbeitstage` ist `eingangsfrage`, sonst stuenden Ziel und Adresse (Vordruck-Reihenfolge nach Kennzahl) davor.
 //!
-//! **Bekannte Grenze.** Eine EIGENE bestaetigte Antwort des Nutzers auf Bus und Bahn (vor oder nach der 0) bleibt stehen und wird weiter
-//! abgezogen: der Rechenkern kennt die Tage dort nicht (`abziehbarer_betrag = oepnv_kosten_jahr`, wenn sie ueber der Pauschale liegen).
-//! Die Steuer ist dann dieselbe wie heute (`die_zahl_...`, Teil b). Der Regelfix ist ein eigenes Ticket.
+//! **Regelfix (d-56, 2026-10-24).** Eine EIGENE bestaetigte Antwort des Nutzers auf Bus und Bahn (vor oder nach der 0) bleibt gespeichert,
+//! zieht aber nichts mehr ab: die Catala-Regel `abziehbarer_betrag` ist bei `arbeitstage <= 0` gleich 0 (vorher: die Fahrkartensumme, wenn
+//! sie ueber der Pauschale lag, also immer). Die Steuer ist dann dieselbe wie ohne Fahrkarten (`die_zahl_...`, Teil b).
 //!
 //! **Belegt wird** Frage fuer Frage ueber `POST /event`, `GET /fragen`, `GET /ergebnis`, `GET /stand` und `GET /deklaration`, so wie die
 //! Oberflaeche sie sieht. Die Messungen gegen `bb12df08` stehen in den `messung_*` (`--ignored`).
@@ -46,7 +46,8 @@ const OEPNV: &str = "ep_oepnv_kosten";
 /// 40.000 EUR Lohn, einzeln, alle Kreuze "nein", 0 Tage, Bus und Bahn 0: Steuer in Cent, gemessen auf `bb12df08` (Entfernung 30 km mit
 /// Auto, 0 km ohne Auto und 30 km ohne Auto liefern dieselbe Zahl).
 const STEUER_NULL_TAGE: i64 = 691_900;
-/// Dieselbe Basis mit 1.380 EUR Fahrkarten, die der Nutzer selbst eintraegt: Steuer in Cent. Die Differenz zu `STEUER_NULL_TAGE` (6.500
+/// Dieselbe Basis mit 1.380 EUR Fahrkarten, die abgezogen werden (Kontrolle mit 1 Tag und 0 km; bei 0 Tagen ziehen sie seit dem Regelfix
+/// nichts ab): Steuer in Cent. Die Differenz zu `STEUER_NULL_TAGE` (6.500
 /// Cent) ist Grenzsatz mal Mehrabzug: 1.380 EUR Fahrkarten plus 56 EUR Verpflegung der Basis ergeben 1.436 EUR Werbungskosten, 206 EUR
 /// ueber dem Arbeitnehmer-Pauschbetrag (`messung_kurve_fahrkarten`).
 const STEUER_NULL_TAGE_FAHRKARTEN: i64 = 685_400;
@@ -284,8 +285,9 @@ async fn ohne_bestaetigte_null_wird_nichts_abgeleitet() {
 /// AK3 und AK-Euro, zweigeteilt (main, 2026-10-22). (a) Bei bestaetigten 0 Tagen ohne eingetragene Fahrkartenkosten kommt die Zahl, ohne
 /// dass Entfernung, Auto und Bus und Bahn beantwortet sind, und sie ist auf den Cent dieselbe wie mit eigenen Antworten (30 km mit Auto,
 /// 0 km ohne Auto, 30 km ohne Auto; Bus und Bahn 0) und dieselbe wie auf `bb12df08`. (b) Mit Fahrkartenkosten, die der Nutzer selbst
-/// eintraegt, bleibt der Wert stehen (vor der 0 wie danach) und die Zahl bleibt wie heute: die BEKANNTE GRENZE des Rechenkerns, der
-/// die Tage dort nicht kennt. Die Sperre `input_kegel_nicht_bestaetigt` bleibt: 220 Tage ohne die drei Antworten nennen alle drei.
+/// eintraegt, bleibt der Wert stehen (vor der 0 wie danach), aber die Regel zieht bei 0 Tagen nichts ab (Regelfix d-56, 2026-10-24; bis
+/// dahin war (b) die BEKANNTE GRENZE: 685.400 statt 691.900 Cent): die Zahl ist dieselbe wie ohne Fahrkarten. KONTROLLE: mit 1 Tag ziehen
+/// dieselben Fahrkarten ab. Die Sperre `input_kegel_nicht_bestaetigt` bleibt: 220 Tage ohne die drei Antworten nennen alle drei.
 #[tokio::test]
 async fn die_zahl_kommt_bei_null_tagen_ohne_die_weg_fragen_und_ist_dieselbe_wie_mit_eigenen_antworten() {
     // (a) Nichts eingetragen.
