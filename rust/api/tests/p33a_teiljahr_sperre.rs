@@ -381,6 +381,21 @@ async fn das_kreuz_verbirgt_die_ursache_nicht_vor_dem_nutzer() {
     assert_eq!(ergebnis(&d).await["grund"], "bestaetigt");
     let ids = fragen_ids(&fragen(&d).await);
     assert!(!ids.iter().any(|i| i == ZEITRAUM || i == WEITERE), "Kreuz ohne Ursache: {ids:?}");
+    // KONTROLLE 3: ein VORLAEUFIGES Kreuz verbirgt nichts (die Regeln sind nicht `ausgeschlossen`), die bestaetigte Ursache steht nicht
+    // noch einmal in der Liste.
+    let d = fall_mit(&mit_unterhalt(vec![(ZEITRAUM, json!("01.01-30.06"))])).await;
+    schreibe(&d, kreuz.0, kreuz.1.clone(), false).await;
+    assert_ne!(regelstatus(&d, ZEITRAUM).await, json!("ausgeschlossen"), "ein vorlaeufiges Kreuz schliesst die Regel aus: der Helfer braucht die Bedingung nicht mehr");
+    assert_eq!(ergebnis(&d).await["grund"], GRUND);
+    let ids = fragen_ids(&fragen(&d).await);
+    assert!(!ids.iter().any(|i| i == ZEITRAUM), "vorlaeufiges Kreuz: die Ursache steht noch einmal in der Liste: {ids:?}");
+    // KONTROLLE 4: verlangt ein ANDERER Grund die Sperre (hier die Lohnersatzleistungen ohne Betrag, sie stehen im Guard davor), gehoeren
+    // die Ursachen des § 33a nicht in die Liste: der Helfer nennt nur die Fragen des aktiven Grunds.
+    let d = fall_mit(&mit_unterhalt(vec![(ZEITRAUM, json!("01.01-30.06")), kreuz.clone(), ("keine_lohnersatzleistungen", json!(false))])).await;
+    let e = ergebnis(&d).await;
+    assert_eq!(e["grund"], "lohnersatz_betrag_offen", "der andere Grund gewinnt vor § 33a: {e}");
+    let ids = fragen_ids(&fragen(&d).await);
+    assert!(!ids.iter().any(|i| i == ZEITRAUM), "anderer Grund aktiv: die Ursache des § 33a steht in der Liste: {ids:?}");
 }
 
 /// MESSUNG (kein Beleg): die Zahl in Cent bei 15.000 EUR Unterhalt im ganzen Jahr, im halben Jahr (heute dieselbe Zahl) und bei dem
