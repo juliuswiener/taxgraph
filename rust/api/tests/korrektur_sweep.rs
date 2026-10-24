@@ -13,14 +13,17 @@
 //! zwischen K und F (Ergebnis, Steuer, Sperre, Feldwerte und -zustaende) ist ein Fund. Art 2: `f` steht nicht in `B`; K schreibt
 //! erst `v1`, korrigiert auf `v2`, F schreibt gleich `v2`. Art 3 (Nutzerpfad, nur an Gate-Feldern): K wird nach der Korrektur zu Ende
 //! befragt, F ist ein frischer Fragenlauf mit dem Endwert; so zeigt sich, ob ein verborgener Block weiter zaehlt (Klasse K2). Art 4
-//! (nur an Gate-Feldern): zweimal korrigiert (`v0 -> v1 -> v2`) gegen frischen Fall mit `v2`.
+//! (nur an Gate-Feldern): zweimal korrigiert (`v0 -> v1 -> v2`) gegen frischen Fall mit `v2`. Art 5 (Vorjahr-Weg, nur an Gate-Feldern):
+//! K entsteht ueber `POST /fall/{ziel}/vorjahr` aus einer Quelle im Vorjahr, wird zu Ende befragt und dann korrigiert; F ist der
+//! frische Fall mit `v2`. Die Herkunft der Werte unterscheidet K von F (Klasse STAND); ein Euro-Unterschied waere ein Fund.
 //!
 //! **Aufruf** (nie im Gate, darum `#[ignore]`): `TAXGRAPH_KORREKTUR_LOG=<datei> cargo test -p api --test it korrektur_sweep:: -- --ignored
 //! --nocapture`. Weitere Schalter: `TAXGRAPH_KORREKTUR_BASEN=a,b` (Namen der Ausgangsfaelle), `TAXGRAPH_KORREKTUR_FELDER=f1,f2`,
-//! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|123|…` (Standard 1234), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
+//! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|5|123|…` (Standard 12345), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
-//! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
+//! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“. Was kein
+//! Ausgangsfall je beantwortet, nennt das Log selbst: je Scheibe `ABDECKUNG` (fragbar, nie beantwortet) und je Feld `NIE_BEANTWORTET`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -31,7 +34,7 @@
     clippy::print_stderr
 )]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -41,6 +44,8 @@ use api::{app, Zustand};
 use auth::Auth;
 use axum::body::Body;
 use axum::http::Request;
+use bescheid::deklaration::Cfg;
+use domain::Scheibe;
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -187,7 +192,12 @@ impl Dienst {
 
     /// Ein Fall aus den Ereignissen; `ersetze` tauscht den Wert eines Feldes (Art 1), `haenge_an` schreibt am Ende (Art 2).
     async fn baue(&self, b: &Basis, ersetze: Option<(&str, &Value)>) -> String {
-        let fall = self.neuer_fall(b.scheibe, b.vz).await;
+        self.baue_vz(b, b.vz, ersetze).await
+    }
+
+    /// Wie `baue`, aber im Veranlagungsjahr `vz` (Art 5: die Quelle ist das Vorjahr).
+    async fn baue_vz(&self, b: &Basis, vz: i64, ersetze: Option<(&str, &Value)>) -> String {
+        let fall = self.neuer_fall(b.scheibe, vz).await;
         for e in &b.ereignisse {
             let mut e = e.clone();
             if let Some((f, w)) = ersetze {
@@ -199,10 +209,22 @@ impl Dienst {
                 continue;
             }
             let (status, antwort) = self.schreibe_robust(&fall, &mut e, false).await;
-            assert!(status == 201, "{}: {} = {} wurde abgewiesen: {status} {antwort}", b.name, e.feld, e.wert);
+            assert!(status == 201, "{}: {} = {} wurde abgewiesen ({vz}): {status} {antwort}", b.name, e.feld, e.wert);
         }
         fall
     }
+}
+
+/// Art 5, der Weg „Vorjahr uebernehmen“: die Quelle ist die Basis als Fall des Vorjahres, das Ziel ein neuer Fall; `POST
+/// /fall/{ziel}/vorjahr` legt die Werte vorlaeufig ab (Muster `vorjahr_naht.rs`), danach beantwortet der Fragenlauf, was die Oberflaeche
+/// weiter fragt (Gate, Ausloeser einer Ableitung, Pflicht-Kegel, Ring-Betraege) und bestaetigt Vorschlaege. Das ist K.
+async fn baue_ueber_vorjahr(d: &Dienst, b: &Basis, ctx: &Kontext<'_>) -> String {
+    let quelle = d.baue_vz(b, b.vz - 1, None).await;
+    let ziel = d.neuer_fall(b.scheibe, b.vz).await;
+    let (s, a) = d.sende("POST", &format!("/fall/{ziel}/vorjahr"), Some(&json!({"vorjahr_fall_id": quelle}))).await;
+    assert_eq!(s, 200, "{}: Vorjahr-Uebernahme abgewiesen: {a}", b.name);
+    fragenlauf_ab(d, &ziel, b.name, ctx.tabelle, ctx.kreuze, &[], Vec::new()).await;
+    ziel
 }
 
 struct Messung {
@@ -317,7 +339,7 @@ fn rente(partner: bool, beginn: &'static str, euro: &'static str) -> Tabelle {
 }
 
 /// (Name, Scheibe, Antworten, Kreuze der Ankreuzliste, Beschreibung). Kreuz heisst „ja, das gab es“.
-fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'static str])> {
+fn ausgangsfaelle() -> Vec<Ausgangsfall> {
     let einzel = |gd: &'static str, konf: &'static str| {
         let mut t = person_a(gd);
         t.push(("veranlagung", Gib::Wahl("einzel")));
@@ -353,7 +375,38 @@ fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'sta
         }
         t
     };
+    // Fuenf Themen mit gespeichertem Betrag (Einzelnutzer 1985 wie `einzel_1985`): das Kreuz der Ankreuzliste steht auf „ja, das gab es“,
+    // der Betrag steht im Fall. Ein Euro-Effekt zeigt sich nur dort, wo die Basis einen Betrag traegt (Auftrag `korrektur-sweep-erweitern`).
+    let thema = |plus: &[(&'static str, Gib)]| einzel_mit("keine", &[], plus);
+    let unterhalt = thema(&[("p33a_unterhalt_aufwendungen", Gib::Euro("3000"))]);
+    let ausland = thema(&[
+        ("dba_staat", Gib::Wahl("Frankreich")),
+        ("dba_einkunftsart", Gib::Wahl("dividenden")),
+        ("dba_methode", Gib::Wahl("kein_dba")),
+        ("dba_auslaendische_einkuenfte", Gib::Euro("5000")),
+        ("dba_gezahlte_auslaendische_steuer", Gib::Euro("1000")),
+    ]);
+    let vermietung = thema(&[
+        ("vv_anzahl_objekte", Gib::Euro("1")),
+        ("vv_einnahmen", Gib::Euro("12000")),
+        ("vv_gebaeude_afa", Gib::Euro("2000")),
+        ("vv_schuldzinsen", Gib::Euro("1000")),
+        ("vv_erhaltungsaufwand", Gib::Euro("500")),
+        ("vv_sonstige_wk", Gib::Euro("500")),
+    ]);
+    let kapital = thema(&[("kap_kapitalertraege", Gib::Euro("5000"))]);
+    let gewerbe = thema(&[
+        ("gewinn_betriebsart", Gib::Wahl("gewerbe")),
+        ("betriebseinnahmen", Gib::Euro("30000")),
+        ("sonstige_betriebsausgaben", Gib::Euro("5000")),
+        ("afa_jahresbetrag", Gib::Euro("1000")),
+    ]);
     vec![
+        ("einzel_unterhalt", "gesamt", unterhalt, &["kein_unterhalt"]),
+        ("einzel_ausland", "gesamt", ausland, &["keine_auslandseinkuenfte"]),
+        ("einzel_vermietung", "gesamt", vermietung, &["kein_vuv"]),
+        ("einzel_kapital", "gesamt", kapital, &["kein_kap"]),
+        ("einzel_gewerbe", "gesamt", gewerbe, &["kein_gewinn"]),
         ("einzel_zwei_kinder", "gesamt", kinder(einzel("15.03.1985", "keine")), &["kein_kind"]),
         ("ehepaar_zwei_kinder", "gesamt", kinder(paar("keine", "keine")), &["kein_kind"]),
         ("einzel_1955", "gesamt", einzel("15.03.1955", "keine"), &[]),
@@ -539,7 +592,7 @@ struct Kontext<'a> {
 async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, dritte: Option<&Value>, z: &mut Zaehler, log: &mut Log) {
     z.versuche += 1;
     // K: Ausgangsfall mit dem alten Wert (Art 1/3: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
-    let k_fall = d.baue(b, None).await;
+    let k_fall = if art == 5 { baue_ueber_vorjahr(d, b, ctx).await } else { d.baue(b, None).await };
     if art == 2 {
         let e = Ereignis { feld: feld.to_owned(), wert: alt.clone(), signal_2: format!("ok@{feld}"), art: Art::Antwort };
         let (s, _) = d.schreibe(&k_fall, &e).await;
@@ -573,7 +626,7 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         let fall = d.neuer_fall(b.scheibe, b.vz).await;
         fragenlauf_ab(d, &fall, b.name, ctx.tabelle, ctx.kreuze, &[(feld, neu.clone())], Vec::new()).await;
         fall
-    } else if art == 1 || art == 4 {
+    } else if art == 1 || art == 4 || art == 5 {
         d.baue(b, Some((feld, endwert))).await
     } else {
         let fall = d.baue(b, None).await;
@@ -615,6 +668,24 @@ fn liste_aus_env(name: &str) -> Option<Vec<String>> {
     std::env::var(name).ok().filter(|v| !v.is_empty()).map(|v| v.split(',').map(str::to_owned).collect())
 }
 
+/// Was ein Lauf variiert: die Arten (Standard 1234), nur diese Felder, hoechstens `grenze` Felder je Ausgangsfall und Art.
+struct Einstellung {
+    arten: String,
+    nur: Option<Vec<String>>,
+    grenze: usize,
+}
+
+impl Einstellung {
+    fn aus_env() -> Self {
+        Self {
+            arten: std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "12345".to_owned()),
+            nur: liste_aus_env("TAXGRAPH_KORREKTUR_FELDER"),
+            grenze: std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX),
+        }
+    }
+}
+
+/// Ein Ausgangsfall: Sweep und die Namen der Felder, die sein Fragenlauf beantwortet hat (ohne `__n` der Instanzen).
 async fn sweep_basis(
     name: &'static str,
     scheibe: &'static str,
@@ -622,7 +693,8 @@ async fn sweep_basis(
     kreuze: &'static [&'static str],
     bindungen: &BTreeMap<String, bindung::Bindung>,
     log_pfad: Option<String>,
-) -> Zaehler {
+    einst: &Einstellung,
+) -> (Zaehler, BTreeSet<String>) {
     let d = Dienst::neu();
     let vz = 2025;
     let b = fragenlauf(&d, name, scheibe, vz, &tabelle, kreuze).await;
@@ -636,16 +708,14 @@ async fn sweep_basis(
         basis_messung.grund(),
         basis_messung.ergebnis.as_object().map_or_else(String::new, |o| o.keys().cloned().collect::<Vec<_>>().join(","))
     ));
-    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "1234".to_owned());
-    let nur = liste_aus_env("TAXGRAPH_KORREKTUR_FELDER");
-    let grenze: usize = std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX);
+    let (arten, nur, grenze) = (&einst.arten, &einst.nur, einst.grenze);
     let mut z = Zaehler::default();
     let mut nicht_variiert: Vec<String> = Vec::new();
     let ctx = Kontext { tabelle: &tabelle, kreuze };
     let gates = gate_felder(bindungen);
     // Art 1, 3 und 4: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert. Art 3 und 4 nur an Feldern, an denen andere Fragen
     // haengen oder aus denen etwas abgeleitet wird.
-    for art in [1_u8, 3, 4] {
+    for art in [1_u8, 3, 4, 5] {
         if !arten.contains(char::from(b'0' + art)) {
             continue;
         }
@@ -717,7 +787,19 @@ async fn sweep_basis(
     for f in &nicht_variiert {
         log.zeile(&format!("NICHT_VARIIERT\t{name}\t{f}"));
     }
-    z
+    (z, b.ereignisse.iter().map(|e| basisname(&e.feld).to_owned()).collect())
+}
+
+/// Was der Lauf nicht pruefen konnte (AK3): je Scheibe die Zahl der fragbaren Felder und der Felder, die keine Basis dieser Scheibe je
+/// beantwortet hat. Eine Zeile `ABDECKUNG\t<scheibe>\tfragbar N\tnie_beantwortet M`, danach je Feld `NIE_BEANTWORTET\t<feld>\t<scheibe>`.
+/// Fuer ein solches Feld heisst „kein Fund“ „nicht geprueft“.
+fn abdeckung(scheibe: &str, bindungen: &BTreeMap<String, bindung::Bindung>, beantwortet: &BTreeSet<String>) -> Vec<String> {
+    let liste = Cfg::fuer(scheibe.parse::<Scheibe>().unwrap()).felder_roh().unwrap_or_else(|| panic!("{scheibe} traegt keine eigene Feldliste"));
+    let fragbar: Vec<&str> = liste.iter().copied().filter(|f| bindungen.get(*f).is_some_and(|b| b.askable)).collect();
+    let nie: Vec<&str> = fragbar.iter().copied().filter(|f| !beantwortet.contains(*f)).collect();
+    let mut zeilen = vec![format!("ABDECKUNG\t{scheibe}\tfragbar {}\tnie_beantwortet {}", fragbar.len(), nie.len())];
+    zeilen.extend(nie.iter().map(|f| format!("NIE_BEANTWORTET\t{f}\t{scheibe}")));
+    zeilen
 }
 
 /// Felder, an denen andere Fragen haengen: Gates, Kreuze der Ankreuzliste, Quellen einer Ableitung und jedes Feld, das eine
@@ -744,7 +826,38 @@ fn lade_bindungen() -> BTreeMap<String, bindung::Bindung> {
     reg.dateien.into_iter().flat_map(|(_, d)| d.bindungen).map(|b| (b.feld_id.clone(), b)).collect()
 }
 
-/// Der Sweep ueber alle Ausgangsfaelle (oder die, die `TAXGRAPH_KORREKTUR_BASEN` nennt), je Ausgangsfall ein Thread.
+type Ausgangsfall = (&'static str, &'static str, Tabelle, &'static [&'static str]);
+
+/// Der Sweep ueber `faelle`, je Ausgangsfall ein Thread; danach je Scheibe die Abdeckung (`abdeckung`) ins Log.
+fn sweep_alle(faelle: Vec<Ausgangsfall>, einst: &Einstellung, log_pfad: Option<String>, bindungen: &BTreeMap<String, bindung::Bindung>) -> Vec<(&'static str, Zaehler)> {
+    let ergebnisse: Vec<(&str, &str, Zaehler, BTreeSet<String>)> = std::thread::scope(|s| {
+        let hs: Vec<_> = faelle
+            .into_iter()
+            .map(|(name, scheibe, tabelle, kreuze)| {
+                let log_pfad = log_pfad.clone();
+                s.spawn(move || {
+                    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+                    let (z, beantwortet) = rt.block_on(sweep_basis(name, scheibe, tabelle, kreuze, bindungen, log_pfad, einst));
+                    (name, scheibe, z, beantwortet)
+                })
+            })
+            .collect();
+        hs.into_iter().map(|h| h.join().unwrap()).collect()
+    });
+    let mut je_scheibe: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+    for (_, scheibe, _, beantwortet) in &ergebnisse {
+        je_scheibe.entry(scheibe).or_default().extend(beantwortet.iter().cloned());
+    }
+    let mut log = Log(log_pfad.map(|p| std::fs::OpenOptions::new().create(true).append(true).open(p).unwrap()));
+    for (scheibe, beantwortet) in &je_scheibe {
+        for zeile in abdeckung(scheibe, bindungen, beantwortet) {
+            log.zeile(&zeile);
+        }
+    }
+    ergebnisse.into_iter().map(|(name, _, z, _)| (name, z)).collect()
+}
+
+/// Der Sweep ueber alle Ausgangsfaelle (oder die, die `TAXGRAPH_KORREKTUR_BASEN` nennt).
 #[test]
 #[ignore = "Messung: TAXGRAPH_KORREKTUR_LOG=<datei> setzen und mit --ignored aufrufen"]
 fn korrektur_sweep_ueber_alle_ausgangsfaelle() {
@@ -753,19 +866,7 @@ fn korrektur_sweep_ueber_alle_ausgangsfaelle() {
     let log_pfad = std::env::var("TAXGRAPH_KORREKTUR_LOG").ok();
     let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| nur.as_ref().is_none_or(|l| l.iter().any(|x| x == n))).collect();
     assert!(!faelle.is_empty(), "kein Ausgangsfall gewaehlt");
-    let summe: Vec<(&str, Zaehler)> = std::thread::scope(|s| {
-        let hs: Vec<_> = faelle
-            .into_iter()
-            .map(|(name, scheibe, tabelle, kreuze)| {
-                let (bindungen, log_pfad) = (&bindungen, log_pfad.clone());
-                s.spawn(move || {
-                    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
-                    (name, rt.block_on(sweep_basis(name, scheibe, tabelle, kreuze, bindungen, log_pfad)))
-                })
-            })
-            .collect();
-        hs.into_iter().map(|h| h.join().unwrap()).collect()
-    });
+    let summe = sweep_alle(faelle, &Einstellung::aus_env(), log_pfad, &bindungen);
     for (name, z) in &summe {
         eprintln!("ENDE {name}: Versuche {}, abgewiesen {}, gleich {}, nur Stand {}, EUR/Sperre {}", z.versuche, z.abgewiesen, z.gleich, z.stand_nur, z.euro);
     }
@@ -797,6 +898,140 @@ fn kontrolle_geburtsdatum_1955_auf_1985() {
             mf.felder.get("geburtsjahr")
         );
         assert_eq!(mf.zahl(), Some(1_392_400), "der frische Fall 1985 ist die Handrechnung aus Fluss I");
+    });
+}
+
+/// Blindheitskontrolle des Sweeps (AK1). Seit `7c23f673` gibt es keinen Defekt der Klasse mehr, den der Sweep sucht; die Kontrolle
+/// oben prueft nur noch den frischen Fall und wuerde auch bei einem leeren Vergleich gruen bleiben. Hier schleppt der Test den
+/// alten Fehler ueber die oeffentliche Schnittstelle ein: ein vom Nutzer bestaetigtes `geburtsjahr` 1955, VOR dem Geburtsdatum
+/// geschrieben (danach liefe `schreibe_robust` in den Zweig „bestaetigt, bleibt“ und verwuerfe es). Die Antwort des Nutzers am
+/// Ziel bleibt stehen, auch wenn das Geburtsdatum auf 1985 korrigiert wird; K rechnet mit 1955 (1.363.200 Cent), der frische Fall
+/// F ohne dieses Ereignis mit 1985 (1.392.400 Cent). `versuche` (Art 3, Nutzerpfad) muss das als Euro-Fund zaehlen und loggen.
+/// Die Mutante `mk.zahl() != mf.zahl() || …` -> `false` in `versuche` faerbt den Test rot.
+#[test]
+fn eingeschleppter_altwert_wird_als_euro_fund_gesehen() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        let d = Dienst::neu();
+        let (_, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == "einzel_1955").unwrap();
+        let mut b = fragenlauf(&d, "einzel_1955", scheibe, 2025, &tabelle, kreuze).await;
+        let stelle = b.ereignisse.iter().position(|e| e.feld == "stammdaten_geburtsdatum").unwrap();
+        b.ereignisse.insert(stelle, Ereignis { feld: "geburtsjahr".to_owned(), wert: json!(1955), signal_2: "ok@geburtsjahr".to_owned(), art: Art::Antwort });
+        let ctx = Kontext { tabelle: &tabelle, kreuze };
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let mut log = Log(Some(datei.reopen().unwrap()));
+        let mut z = Zaehler::default();
+        versuche(&d, &b, &ctx, 3, "stammdaten_geburtsdatum", &json!("15.03.1955"), &json!("15.03.1985"), None, &mut z, &mut log).await;
+        let text = std::fs::read_to_string(datei.path()).unwrap();
+        assert_eq!((z.versuche, z.euro, z.gleich, z.stand_nur), (1, 1, 0, 0), "der eingeschleppte Altwert wurde nicht als Euro-Fund gezaehlt: {text}");
+        assert!(text.contains("\tEUR\tK Some(1363200)\tF Some(1392400)\tdelta -29200\t"), "die Fundzeile nennt nicht die 292,00 EUR: {text}");
+    });
+}
+
+/// Abdeckung (AK3): der Lauf nennt selbst, was er nicht pruefen konnte. Ohne Versuche (`arten` leer) laeuft nur der Fragenlauf der Basis
+/// und das Log bekommt je Scheibe `ABDECKUNG` und je nie beantwortetes Feld `NIE_BEANTWORTET`. Eine Basis allein laesst das Thema
+/// Kapital offen; kommt `einzel_kapital` dazu, ist `kap_kapitalertraege` beantwortet (die Menge gilt je Scheibe, nicht je Basis).
+#[test]
+fn abdeckung_nennt_nie_beantwortete_felder() {
+    let bindungen = lade_bindungen();
+    let einst = Einstellung { arten: String::new(), nur: None, grenze: usize::MAX };
+    let lauf = |namen: &[&str]| -> String {
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| namen.contains(n)).collect();
+        assert_eq!(faelle.len(), namen.len(), "Ausgangsfall fehlt: {namen:?}");
+        sweep_alle(faelle, &einst, Some(datei.path().to_str().unwrap().to_owned()), &bindungen);
+        std::fs::read_to_string(datei.path()).unwrap()
+    };
+    let zahlen = |text: &str| -> (usize, usize) {
+        let z = text.lines().find(|l| l.starts_with("ABDECKUNG\tgesamt\t")).unwrap_or_else(|| panic!("keine Zeile ABDECKUNG fuer gesamt: {text}"));
+        let teile: Vec<usize> = z.split('\t').skip(2).map(|t| t.rsplit(' ').next().unwrap().parse().unwrap()).collect();
+        (teile[0], teile[1])
+    };
+    let allein = lauf(&["einzel_1985"]);
+    let (fragbar, nie) = zahlen(&allein);
+    let nie_zeilen = allein.lines().filter(|l| l.starts_with("NIE_BEANTWORTET\t")).count();
+    assert_eq!(nie_zeilen, nie, "die Zahl in ABDECKUNG und die Zeilen NIE_BEANTWORTET gehen auseinander");
+    assert!(nie > 0 && nie < fragbar, "fragbar {fragbar}, nie beantwortet {nie}: die Abdeckung unterscheidet nichts");
+    assert!(allein.contains("NIE_BEANTWORTET\tkap_kapitalertraege\tgesamt\n"), "Kapital ist in einzel_1985 nie beantwortet: {allein}");
+    assert!(!allein.contains("NIE_BEANTWORTET\tstammdaten_nachname\t"), "ein beantwortetes Feld steht als nie beantwortet");
+    // Die Menge gilt je Scheibe: zwei Basen, die je ein anderes Thema beantworten, decken beide Themen ab (nicht nur die erste oder letzte).
+    assert!(allein.contains("NIE_BEANTWORTET\tp33a_unterhalt_aufwendungen\tgesamt\n"), "Unterhalt ist in einzel_1985 nie beantwortet: {allein}");
+    let zusammen = lauf(&["einzel_unterhalt", "einzel_kapital"]);
+    let (fragbar2, nie2) = zahlen(&zusammen);
+    assert_eq!(fragbar2, fragbar, "die Zahl der fragbaren Felder haengt von den Basen ab");
+    for feld in ["kap_kapitalertraege", "p33a_unterhalt_aufwendungen"] {
+        assert!(!zusammen.contains(&format!("NIE_BEANTWORTET\t{feld}\t")), "{feld} ist beantwortet, steht aber als nie beantwortet: {zusammen}");
+    }
+    assert!(nie2 < nie, "zwei Basen mit Themen decken nicht mehr ab als eine ohne ({nie2} gegen {nie})");
+    // Was nicht fragbar ist, steht nie in der Liste.
+    for z in zusammen.lines().filter(|l| l.starts_with("NIE_BEANTWORTET\t")) {
+        let feld = z.split('\t').nth(1).unwrap();
+        assert!(bindungen.get(feld).is_some_and(|b| b.askable), "{feld} ist nicht beantwortbar und steht trotzdem in der Liste");
+    }
+}
+
+/// Art 5, der Vorjahr-Weg (AK4). K entsteht ueber `POST /fall/{ziel}/vorjahr` aus einer Quelle im Vorjahr 2024. Der Test belegt
+/// zuerst, dass K wirklich ueber diesen Weg entstand (Ereignisse mit Schreiber `import:vorjahr` in der Akte des Ziels) und dieselbe
+/// Steuer traegt wie der direkt gebaute Fall (Fluss J: die Uebernahme aendert keine Zahl); dann, dass `versuche` die Art 5 zaehlt
+/// (vorher 0: das Wort „vorjahr“ stand in der Datei nie).
+#[test]
+fn vorjahr_weg_hat_versuche() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        let d = Dienst::neu();
+        let (_, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == "einzel_1985").unwrap();
+        let b = fragenlauf(&d, "einzel_1985", scheibe, 2025, &tabelle, kreuze).await;
+        let ctx = Kontext { tabelle: &tabelle, kreuze };
+        let ziel = baue_ueber_vorjahr(&d, &b, &ctx).await;
+        let akte: Value = serde_json::from_slice(&std::fs::read(d.zustand.konfig.faelle.join(format!("{ziel}.json"))).unwrap()).unwrap();
+        let aus_vorjahr: Vec<&Value> = akte["events"].as_array().unwrap().iter().filter(|e| e["schreiber"] == "import:vorjahr").collect();
+        assert!(aus_vorjahr.len() > 20, "K entstand nicht ueber die Vorjahr-Uebernahme: nur {} Ereignisse mit Schreiber import:vorjahr", aus_vorjahr.len());
+        assert!(aus_vorjahr.iter().all(|e| e["signal"]["signal_1"]["vz"] == 2024), "die Quelle der Uebernahme ist nicht das Vorjahr 2024");
+        let (ueber_vorjahr, direkt) = (d.messe(&ziel).await, d.messe(&d.baue(&b, None).await).await);
+        assert!(ueber_vorjahr.zahl().is_some() && ueber_vorjahr.grund() == "bestaetigt", "der Vorjahr-Weg endet nicht in einer Zahl: {}", ueber_vorjahr.ergebnis);
+        assert_eq!((ueber_vorjahr.zahl(), ueber_vorjahr.kist()), (direkt.zahl(), direkt.kist()), "die Vorjahr-Uebernahme aendert die Zahl");
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let mut log = Log(Some(datei.reopen().unwrap()));
+        let mut z = Zaehler::default();
+        versuche(&d, &b, &ctx, 5, "stammdaten_geburtsdatum", &json!("15.03.1985"), &json!("15.03.1955"), None, &mut z, &mut log).await;
+        let text = std::fs::read_to_string(datei.path()).unwrap();
+        assert_eq!(z.versuche, 1, "Art 5 zaehlt keinen Versuch");
+        assert_eq!(z.abgewiesen, 0, "die Korrektur auf dem Vorjahr-Weg wurde abgewiesen");
+        // K (ueber das Vorjahr) und F (direkt) tragen dieselbe Zahl, aber nicht dieselbe Herkunft der Werte: ein Fund der Klasse STAND.
+        // Waere K direkt gebaut (Art 5 laeuft den Art-1-Weg), stuende hier `gleich`.
+        assert_eq!((z.gleich, z.stand_nur, z.euro), (0, 1, 0), "Art 5 ist nicht der Vorjahr-Weg, oder er zeigt einen Euro-Fund (ein Befund fuer main, kein Bau): {text}");
+        assert!(text.contains("herkunft/herkunft"), "der Unterschied zwischen K und F ist nicht die Herkunft der Werte: {text}");
+        // Der Sweep selbst ruft die Art 5: ein Gate-Feld, ein anderer Wert, ein Versuch.
+        let bindungen = lade_bindungen();
+        let einst = Einstellung { arten: "5".to_owned(), nur: Some(vec!["kein_kap".to_owned()]), grenze: usize::MAX };
+        let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| *n == "einzel_1985").collect();
+        let summe = std::thread::spawn(move || sweep_alle(faelle, &einst, None, &bindungen)).join().unwrap();
+        assert_eq!(summe[0].1.versuche, 1, "der Sweep zaehlt keinen Versuch der Art 5 (heute vor dem Bau: 0)");
+    });
+}
+
+/// Die fuenf Themenbasen (AK2). Jede muss in einer Zahl enden, die von der Basis ohne das Thema (`einzel_1985`) abweicht, mit
+/// `grund = bestaetigt`; sonst traegt ihr Betrag nichts bei und der Sweep waere dort blind. Der Test druckt je Basis eine Zeile `THEMA`.
+#[test]
+fn ausgangsfall_mit_thema_rechnet_anders_als_ohne() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        async fn basis_messung(name: &str) -> Messung {
+            let d = Dienst::neu();
+            let (n, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == name).unwrap();
+            let b = fragenlauf(&d, n, scheibe, 2025, &tabelle, kreuze).await;
+            d.messe(&d.baue(&b, None).await).await
+        }
+        let ohne = basis_messung("einzel_1985").await;
+        let mut blind = Vec::new();
+        for name in ["einzel_unterhalt", "einzel_ausland", "einzel_vermietung", "einzel_kapital", "einzel_gewerbe"] {
+            let m = basis_messung(name).await;
+            eprintln!("THEMA\t{name}\tSteuer {:?}\tohne das Thema {:?}\tgrund {}", m.zahl(), ohne.zahl(), m.grund());
+            if m.grund() != "bestaetigt" || m.zahl().is_none() || m.zahl() == ohne.zahl() {
+                blind.push(format!("{name}: Steuer {:?} gegen {:?}, grund {}", m.zahl(), ohne.zahl(), m.grund()));
+            }
+        }
+        assert!(blind.is_empty(), "Basen, die nicht anders rechnen als ohne das Thema (der Sweep waere dort blind): {blind:?}");
     });
 }
 
