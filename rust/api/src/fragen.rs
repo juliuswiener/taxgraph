@@ -5,7 +5,7 @@
 //! Queue, Metadaten, Mitschnitt. Ein Fehler an einer frueheren Stelle verdeckt jeden spaeteren.
 use std::collections::HashMap;
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_frage_felder, sperrgrund_klartext};
+use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_frage_felder, sperrgrund_klartext, sperrgrund_ursache_felder};
 use bescheid::zweige::Umgebung;
 use bescheid::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 use bindung::{Bindung, Vorjahr};
@@ -252,6 +252,9 @@ pub fn fragen(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, A
     // die Sperre bleibt). Ohne sie bliebe die Zahl gesperrt und der Nutzer sah keine Frage dazu.
     let sperrfragen = sperrgrund_frage_felder(gesperrt, &queue);
     queue.extend(sperrfragen);
+    // Dasselbe fuer die Antworten, die die Sperre selbst ausloesen und die ein Kreuz verbirgt (§ 33a: Teiljahr, weitere Person).
+    let ursachen = sperrgrund_ursache_felder(gesperrt, &felder, &queue);
+    queue.extend(ursachen);
     let out: Vec<Value> = queue
         .iter()
         .map(|fid| frage_metadaten(fid, &sb, store))

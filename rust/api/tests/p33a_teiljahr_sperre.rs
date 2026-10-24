@@ -85,8 +85,12 @@ async fn schreibe(d: &Dienst, feld: &str, wert: Value, bestaetigt: bool) {
 }
 
 async fn fall_mit(paare: &[(&'static str, Value)]) -> Dienst {
+    fall_in("gesamt", paare).await
+}
+
+async fn fall_in(scheibe: &str, paare: &[(&'static str, Value)]) -> Dienst {
     let d = dienst();
-    let kopf = json!({"fall_id": "pt", "scheibe": "gesamt", "veranlagungszeitraum": 2025});
+    let kopf = json!({"fall_id": "pt", "scheibe": scheibe, "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
     assert_eq!(status, 201, "POST /fall: {antwort}");
     for (feld, wert) in paare {
@@ -152,6 +156,41 @@ fn kegel_gesamt() -> Paare {
     ]
 }
 
+/// Pflichtfelder der Scheibe `rentner_gesamt` (wie `kein_kind_sperre::kegel_rentner`).
+fn kegel_rentner() -> Paare {
+    vec![
+        ("rentner_renten_art", json!("gesetzliche_rente")),
+        ("rentner_jahresrente", json!(2_000_000)),
+        ("rentner_renten_beginn_jahr", json!(2_025)),
+        ("rentner_alter_bei_rentenbeginn", json!(65)),
+        ("rentner_grad_der_behinderung", json!(0)),
+        ("rentner_hilflos_blind_taubblind", json!(false)),
+        ("rentner_pflegegrad", json!(0)),
+        ("rentner_gepflegter_hilflos", json!(false)),
+        ("rentner_hinterbliebenenbezuege", json!(false)),
+        ("veranlagung", json!("einzel")),
+        ("kein_gewinn", json!(true)),
+        ("kein_kap", json!(true)),
+        ("kein_vuv", json!(true)),
+        ("kein_sonstige", json!(false)),
+        ("vor_an_anteil_rv", json!(0)),
+        ("vor_ag_anteil_rv", json!(0)),
+        ("vor_rv_ausserhalb_lstb", json!(0)),
+        ("versicherungsart", json!("gesetzlich_an")),
+        ("basis_kv", json!(0)),
+        ("basis_pv", json!(0)),
+        ("vorsorge_arbeitslosenversicherung", json!(0)),
+        ("vorsorge_erwerbsunfaehigkeit", json!(0)),
+        ("vorsorge_unfall_haftpflicht", json!(0)),
+        ("vorsorge_rv_alt_mit_ueberschuss", json!(0)),
+        ("vorsorge_rv_alt_ohne_ueberschuss", json!(0)),
+        ("mit_anspruch_auf_zuschuss", json!(false)),
+        ("agb_zwangslaeufig", json!(true)),
+        ("agb_notwendig_angemessen", json!(true)),
+        ("rentner_rentenfreibetrag", json!(0)),
+    ]
+}
+
 fn mit(mut basis: Paare, mehr: Paare) -> Paare {
     basis.extend(mehr);
     basis
@@ -197,6 +236,27 @@ async fn teiljahr_und_weitere_person_halten_die_zahl_zurueck() {
     }
 }
 
+/// AK1b: dieselbe Sperre in der Scheibe `rentner_gesamt` (der `gesamt_guard`-Zweig gilt fuer beide Scheiben). Kontrolle je Fall: ganzes
+/// Jahr und keine weitere Person rechnen.
+#[tokio::test]
+async fn die_rentner_scheibe_sperrt_ebenso() {
+    let basis = |extra: Paare| mit(mit(kegel_rentner(), vec![(UNTERHALT, json!(BETRAG))]), extra);
+    for (name, extra, gesperrt) in [
+        ("ganzes Jahr", vec![(ZEITRAUM, json!(GANZES_JAHR)), (WEITERE, json!(false))], false),
+        ("halbes Jahr", vec![(ZEITRAUM, json!("01.01-30.06"))], true),
+        ("weitere Person ja", vec![(WEITERE, json!(true))], true),
+    ] {
+        let e = ergebnis(&fall_in("rentner_gesamt", &basis(extra)).await).await;
+        if gesperrt {
+            assert_eq!(e["grund"], GRUND, "rentner_gesamt, {name}: {e}");
+            assert!(e["zahl_cent"].is_null(), "rentner_gesamt, {name}: {e}");
+        } else {
+            assert_eq!(e["grund"], "bestaetigt", "rentner_gesamt, {name}: {e}");
+            assert!(zahl(&e).is_some(), "rentner_gesamt, {name}: {e}");
+        }
+    }
+}
+
 /// AK2 (enge Sperre): ohne Unterhaltsbetrag aendern Teiljahr und weitere Person nichts, sonst sperrte jeder Fall mit einer Antwort auf die
 /// Folgefragen. KONTROLLE im selben Test: dieselben Antworten MIT Betrag sperren.
 #[tokio::test]
@@ -222,7 +282,7 @@ async fn die_fragenliste_nennt_grund_und_klartext_und_die_antwort_laesst_sich_ae
     let f = fragen(&d).await;
     assert_eq!(f["ring_gesperrt"], GRUND, "{f}");
     let klartext = f["ring_gesperrt_klartext"].as_str().unwrap();
-    for muss in ["Unterhalt", "Zwölftel", "weitere"] {
+    for muss in ["Unterhalt", "Zwölftel", "weitere", "ändere deine Antwort"] {
         assert!(klartext.contains(muss), "Klartext nennt {muss:?} nicht: {klartext}");
     }
     // Nur das Zeitraum-Feld zurueck: die weitere Person sperrt weiter.
@@ -249,6 +309,78 @@ async fn eine_vorlaeufige_antwort_sperrt_und_die_frage_bleibt_in_der_liste() {
         schreibe(&d, feld, if feld == ZEITRAUM { json!(GANZES_JAHR) } else { json!(false) }, true).await;
         assert_eq!(ergebnis(&d).await["grund"], "bestaetigt", "{feld} bestaetigt mit dem Normalwert");
     }
+}
+
+/// Der Status der Regel, an der das Feld haengt (`ausgeschlossen`, `relevant`, ...), wie die Oberflaeche ihn aus `/stand` und der Frage liest.
+async fn regelstatus(d: &Dienst, feld: &str) -> Value {
+    let (_, frage) = sende(d, "GET", &format!("/fall/pt/feld/{feld}/frage"), None).await;
+    let regel = frage["frage"]["regel_id"].as_str().unwrap_or("?").to_owned();
+    let (_, stand) = sende(d, "GET", "/fall/pt/stand", None).await;
+    stand["relevanz"][&regel]["status"].clone()
+}
+
+/// AK5 (Julius, 2026-10-22: "Haelt eine Sperre die Zahl zurueck, muss die zugehoerige Frage sichtbar sein"): das Kreuz `kein_unterhalt` ("ich
+/// zahle keinen Unterhalt") verbirgt den Unterhaltsblock, ein gespeicherter Betrag gewinnt trotzdem (Entscheidung vom 2026-10-09). Dann
+/// steht die Frage, deren Antwort die Sperre ausloest, in der Liste, und genau sie: nicht die andere. Nach der Antwort faellt die Sperre.
+/// Vorbedingung im Test: die Regel der Frage ist `ausgeschlossen` (sonst waere der Test auch ohne den Helfer gruen). KONTROLLEN: ohne
+/// Kreuz steht die bestaetigte Antwort nicht noch einmal in der Liste; mit Kreuz, aber ohne Ursache, gibt es weder Sperre noch Frage.
+#[tokio::test]
+async fn das_kreuz_verbirgt_die_ursache_nicht_vor_dem_nutzer() {
+    let kreuz = ("kein_unterhalt", json!(true));
+    // (Name, Antworten, Ursachen in der Liste, Ursachen NICHT in der Liste, Antworten, die die Sperre aufloesen)
+    let faelle: Vec<(&str, Paare, Vec<&str>, Vec<&str>, Paare)> = vec![
+        ("Teiljahr", vec![(ZEITRAUM, json!("01.01-30.06"))], vec![ZEITRAUM], vec![WEITERE], vec![(ZEITRAUM, json!(GANZES_JAHR))]),
+        ("weitere Person", vec![(WEITERE, json!(true))], vec![WEITERE], vec![ZEITRAUM], vec![(WEITERE, json!(false))]),
+        (
+            "beides",
+            vec![(ZEITRAUM, json!("01.01-30.06")), (WEITERE, json!(true))],
+            vec![ZEITRAUM, WEITERE],
+            vec![],
+            vec![(ZEITRAUM, json!(GANZES_JAHR)), (WEITERE, json!(false))],
+        ),
+    ];
+    for (name, antworten, in_liste, nicht_in_liste, aufloesung) in faelle {
+        let d = fall_mit(&mit_unterhalt(antworten.clone())).await;
+        // Erst das Kreuz: davor ist der Block sichtbar, die Antworten stehen als Belegt-Zeilen.
+        schreibe(&d, kreuz.0, kreuz.1.clone(), true).await;
+        for feld in [ZEITRAUM, WEITERE] {
+            assert_eq!(regelstatus(&d, feld).await, json!("ausgeschlossen"), "{name}: das Kreuz verbirgt {feld} nicht, der Test misst nichts");
+        }
+        let e = ergebnis(&d).await;
+        assert_eq!(e["grund"], GRUND, "{name}: {e}");
+        let ids = fragen_ids(&fragen(&d).await);
+        for feld in &in_liste {
+            assert!(ids.iter().any(|i| i == feld), "{name}: die Frage {feld} fehlt in der Liste: {ids:?}");
+        }
+        for feld in &nicht_in_liste {
+            assert!(!ids.iter().any(|i| i == feld), "{name}: {feld} steht in der Liste, obwohl er die Sperre nicht ausloest: {ids:?}");
+        }
+        // Die Antwort aendern, wie die Oberflaeche es tut (`ersetzt` auf das aktive Ereignis): die Sperre faellt Antwort fuer Antwort.
+        let anzahl = aufloesung.len();
+        for (i, (feld, wert)) in aufloesung.into_iter().enumerate() {
+            schreibe(&d, feld, wert, true).await;
+            let e = ergebnis(&d).await;
+            if i + 1 < anzahl {
+                assert_eq!(e["grund"], GRUND, "{name}: nach {feld} sperrt noch die zweite Ursache: {e}");
+                assert!(!fragen_ids(&fragen(&d).await).iter().any(|i| i == feld), "{name}: {feld} steht nach der Antwort noch in der Liste");
+            } else {
+                assert_eq!(e["grund"], "bestaetigt", "{name}: nach der letzten Antwort faellt die Sperre nicht: {e}");
+                assert!(zahl(&e).is_some(), "{name}: {e}");
+            }
+        }
+        let ids = fragen_ids(&fragen(&d).await);
+        assert!(!ids.iter().any(|i| i == ZEITRAUM || i == WEITERE), "{name}: nach der Aufloesung stehen die Fragen wieder in der Liste: {ids:?}");
+    }
+    // KONTROLLE 1: ohne Kreuz steht die bestaetigte Ursache nicht noch einmal in der Liste (die Zeile steht unter "Schon beantwortet").
+    let d = fall_mit(&mit_unterhalt(vec![(ZEITRAUM, json!("01.01-30.06")), (WEITERE, json!(true))])).await;
+    assert_eq!(ergebnis(&d).await["grund"], GRUND);
+    let ids = fragen_ids(&fragen(&d).await);
+    assert!(!ids.iter().any(|i| i == ZEITRAUM || i == WEITERE), "ohne Kreuz: die Antworten stehen noch einmal in der Liste: {ids:?}");
+    // KONTROLLE 2: Kreuz und Betrag, aber keine Ursache: keine Sperre, keine Frage.
+    let d = fall_mit(&mit_unterhalt(vec![kreuz.clone()])).await;
+    assert_eq!(ergebnis(&d).await["grund"], "bestaetigt");
+    let ids = fragen_ids(&fragen(&d).await);
+    assert!(!ids.iter().any(|i| i == ZEITRAUM || i == WEITERE), "Kreuz ohne Ursache: {ids:?}");
 }
 
 /// MESSUNG (kein Beleg): die Zahl in Cent bei 15.000 EUR Unterhalt im ganzen Jahr, im halben Jahr (heute dieselbe Zahl) und bei dem
