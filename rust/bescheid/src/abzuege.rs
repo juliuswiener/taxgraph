@@ -622,6 +622,9 @@ fn kv_pv_beitraege(f: &Felder, suffix: &str, kind_kv_pv: i64) -> Result<(i64, i6
 ///
 /// Der EINE Rechenpfad fuer `an_gesamt` (`zweige/an_gesamt.rs`), `gesamt` und `rentner_gesamt`; `kind_kv_pv` (Cent) gehoert zu Person A.
 ///
+/// ponytail: die Cent-Betraege beider Ehegatten werden addiert und erst danach auf volle Euro abgerundet (vorher je Person abgerundet, bis
+/// 1 Euro weniger Abzug bei Cent-Betraegen). Das Gesetz nennt keine Rundung der Vorsorge. Upgrade: je Person abrunden, wenn eine Quelle es verlangt.
+///
 /// # Errors
 /// [`BescheidFehler::Ueberlauf`] bei einer Summe jenseits von `i64`, Fehler der Engine.
 pub(crate) fn kv_pv_vorsorge(
