@@ -600,7 +600,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an gemeinnützige Vereine, Stiftungen oder Kirchen gespendet (Geldspenden mit Spendenquittung, ohne Spenden an Parteien und Wählervereinigungen)?"
-    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Nur Spenden an inländische Empfänger. Spenden und Mitgliedsbeiträge an Parteien und Spenden an unabhängige Wählervereinigungen gibst du in eigenen Fragen an, denn sie mindern die Steuer anders."
+    hilfe_kurz: "Der Betrag steht auf der Zuwendungsbestätigung (Spendenquittung). Empfänger sind meist inländische Organisationen; Empfänger in der EU und im EWR zählen nur unter den Voraussetzungen von § 10b Abs. 1 S. 2 bis 6 EStG. Spenden und Mitgliedsbeiträge an Parteien und Spenden an unabhängige Wählervereinigungen gibst du in eigenen Fragen an, denn sie mindern die Steuer anders."
     beispielwert: 30000
     herkunft_slots: ["Zuwendungsbestätigung: Betrag"]
     elster_kz: E0108105
