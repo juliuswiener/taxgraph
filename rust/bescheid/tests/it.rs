@@ -112,6 +112,8 @@ mod scheiben_tabellen_konsistenz;
 mod slot_waechter;
 #[path = "sonderausgaben_agb_abbildung_hermetisch.rs"]
 mod sonderausgaben_agb_abbildung_hermetisch;
+#[path = "sperre_mutanten_luecken.rs"]
+mod sperre_mutanten_luecken;
 #[path = "sperre_scheiben_hermetisch.rs"]
 mod sperre_scheiben_hermetisch;
 #[path = "sperrgrund_kreuz_sweep.rs"]
