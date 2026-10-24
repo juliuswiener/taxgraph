@@ -1,6 +1,6 @@
 # Bindungstabelle — §35c EStG Steuerermäßigung energetische Sanierungsmassnahmen
 # Abs.1: 7%/7%/6%-Staffel über 3 Förderjahre mit Jahresdeckeln 14k/14k/12k und
-# 40k-Lebensdauer-Objektdeckel. Abs.1a: 50% Energieberater-Sondersatz.
+# 40k-Lebensdauer-Objektdeckel. Abs. 1 S. 4: 50% Energieberater-Sondersatz.
 # Diese Bindung: Sanierungsaufwendungen + Flagge für Jahr-Diskrimination.
 # Energieberater getrennte Bindung (p35c_energieberater).
 # Task A10, Stand 2026-07-22.
@@ -16,7 +16,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie hoch sind die GESAMTEN Aufwendungen für die energetische Sanierung (Material + Arbeitsleistung + Bescheinigung)?"
-    hilfe_kurz: "Alle Kosten für die Wärmedämmung, Fenster-/Türenerneuerung, Lüftung, Heizung oder digitale Optimierung (ohne MwSt., falls gezogen). EINSCHL. Kosten der amtl. Bescheinigung und ggfs. BAFA-Energieberater-Kosten (falls diese im selben Jahr durchgeführt)."
+    hilfe_kurz: "Alle Kosten für die Wärmedämmung, Fenster-/Türenerneuerung, Lüftung, Heizung oder digitale Optimierung (ohne MwSt., falls gezogen). EINSCHL. Kosten der amtl. Bescheinigung. Die Kosten eines BAFA-Energieberaters trägst du nicht hier ein, sondern bei der Frage zum Energieberater: Dafür gelten 50 Prozent der Kosten (§ 35c Abs. 1 S. 4 EStG)."
     beispielwert: 3000000
     herkunft_slots: null
     # E10/EM_35c/Obj/Aufw/Massn/Sum — "Summe der Aufwendungen für energetische Maßnahmen".
