@@ -512,3 +512,58 @@ async fn die_rueckkorrektur_einer_zeile_und_der_veranlagung_gibt_die_zahl_wieder
     assert!(vorhandene(&ids, &[ZEILEN[0].0, ZEILEN[1].0]).is_empty(), "die Zeilen des Ehegatten stehen bei Einzelveranlagung noch in der Liste: {ids:?}");
     assert_eq!(ergebnis(&d).await["grund"], json!("partner_konsistenz_offen"), "Einzelveranlagung mit gespeicherter Ehegatten-Rente");
 }
+
+// ---------------------------------------------------------------- das EIGENE Kreuz: der Weg aus der Sperre ---------------------------
+
+/// Das Kreuz von Person A (`kein_sonstige`) steht wie das des Ehegatten in `FLAG_NEGIERT`: "keine sonstigen Einkuenfte" neben der
+/// gespeicherten Rente (`rentner_jahresrente`) sperrt mit `flag_konsistenz_offen`, ohne Zahl. `sperr_felder` ist hier leer, die Sperranzeige
+/// bietet also kein Feld an; der Weg hinaus ist allein die Belegt-Zeile des Kreuzes ("Schon beantwortet"). Gemessen am Dienst und im Browser
+/// (2026-10-24, HEAD `dc37d630`): im Zustand "nein" ist die Regel des Kreuzes (`p2_einkunftsart_sonstige`) `relevant`, der Klick setzt
+/// `AKTUELL` und `KORREKTUR_FID` auf das Kreuz und zeigt kein Banner; die Antwort "ja" gibt die Zahl von vorher. Dieser Test prueft nur
+/// diese Richtung (aus der Sperre heraus), nicht den Wechsel aus dem Zustand "ja" auf "nein".
+#[tokio::test]
+async fn das_eigene_kreuz_sperrt_neben_der_rente_und_die_zeile_ist_ueber_schon_beantwortet_erreichbar() {
+    for veranlagung in ["einzel", "zusammen"] {
+        // Bei Zusammenveranlagung verneinen beide Zeilen des Ehegatten, sonst stuende dort eine eigene offene Frage.
+        let basis = if veranlagung == "zusammen" {
+            mit(rentner(veranlagung), vec![("kein_kap_partner", json!(true)), ("kein_sonstige_partner", json!(true))])
+        } else {
+            rentner(veranlagung)
+        };
+        let d = fall_mit(&basis).await;
+        let vorher = ergebnis(&d).await;
+        assert_eq!(vorher["grund"], json!("bestaetigt"), "{veranlagung}, Kreuz = ja (Kontrolle): {vorher}");
+        assert!(vorher["zahl_cent"].is_i64(), "{veranlagung}, Kontrolle: keine Zahl: {vorher}");
+
+        antworte(&d, "kein_sonstige", json!(true)).await;
+        let e = ergebnis(&d).await;
+        assert_eq!(e["grund"], json!("flag_konsistenz_offen"), "{veranlagung}, Kreuz = keine neben der Rente: {e}");
+        assert!(e["zahl_cent"].is_null(), "{veranlagung}: trotz Sperre eine Zahl: {e}");
+        belegt_zeile_ist_erreichbar(&d, "kein_sonstige").await;
+
+        antworte(&d, "kein_sonstige", json!(false)).await;
+        let e = ergebnis(&d).await;
+        assert_eq!(e["grund"], json!("bestaetigt"), "{veranlagung}, Weg hinaus: {e}");
+        assert_eq!(e["zahl_cent"], vorher["zahl_cent"], "{veranlagung}, Weg hinaus: die Zahl weicht von der vor dem Kreuz ab: {e}");
+    }
+}
+
+/// Die zwei anderen eigenen Kreuze der Rentner-Scheibe, `keine_behinderung_pflege` und `keine_energetische_sanierung`, stehen nicht in
+/// `FLAG_NEGIERT`: "nein" sperrt nicht und laesst die Zahl, wie sie ist (gespeicherte Werte rechnen weiter, siehe
+/// `ein_gespeicherter_wert_zaehlt_trotz_nein_weiter_in_jedem_neuen_block`). Ihre Belegt-Zeile ist im Zustand "nein" erreichbar: die Regel
+/// des Kreuzes ist dort nicht `ausgeschlossen` (Messung 2026-10-24, auch im Browser).
+#[tokio::test]
+async fn die_kreuze_behinderung_und_sanierung_sind_im_zustand_nein_ueber_schon_beantwortet_erreichbar() {
+    for kreuz in ["keine_behinderung_pflege", "keine_energetische_sanierung"] {
+        let d = fall_mit(&rentner("einzel")).await;
+        let vorher = ergebnis(&d).await;
+        assert_eq!(vorher["grund"], json!("bestaetigt"), "{kreuz} offen (Kontrolle): {vorher}");
+        assert!(vorher["zahl_cent"].is_i64(), "{kreuz}, Kontrolle: keine Zahl: {vorher}");
+
+        antworte(&d, kreuz, json!(true)).await;
+        let e = ergebnis(&d).await;
+        assert_eq!(e["grund"], json!("bestaetigt"), "{kreuz} = nein: {e}");
+        assert_eq!(e["zahl_cent"], vorher["zahl_cent"], "{kreuz} = nein: das Kreuz hat die Rechnung geaendert: {e}");
+        belegt_zeile_ist_erreichbar(&d, kreuz).await;
+    }
+}
