@@ -97,16 +97,19 @@ fn melde(z: &Zustand, fall_id: &FallId, mut obj: Map<String, Value>) -> Antwort 
 
 /// Die Instanz-Gruppen, deren nicht bestaetigte Felder [`offene_instanzfelder`] meldet. Der Ring zaehlt nur eine Instanz,
 /// deren Felder alle bestaetigt sind (`Instanzquelle::zaehlt`): ein vorlaeufiges Feld, auch ein Textfeld, nimmt die ganze
-/// Instanz aus der Zahl, und `grund` heisst trotzdem `bestaetigt`. Jede Gruppe der Bindung steht hier oder, mit Grund, in der
+/// Instanz aus der Zahl, und `grund` heisst trotzdem `bestaetigt`. Bei `vv_objekt` und `rente` trifft das nur Instanz 1: ab Index 2
+/// sperren `gesamt` und `rentner_gesamt` schon (`vv_instanz_offen`, `rente_instanz_offen`). Jede Gruppe der Bindung steht hier oder, mit Grund, in der
 /// Ausnahmeliste des Waechters `instanz_gruppen_vollstaendig` (`tests/kette_endstand_hermetisch.rs`): eine neue Gruppe
 /// faellt nicht still heraus.
-pub const HINWEIS_GRUPPEN: [&str; 6] = [
+pub const HINWEIS_GRUPPEN: [&str; 8] = [
     "gwg",
     "kind",
     "p23_veraeusserung",
     "hh_handwerker",
     "hh_dienstleistung",
     "hh_minijob",
+    "vv_objekt",
+    "rente",
 ];
 
 /// Die Basis-Felder der Instanzen der [`HINWEIS_GRUPPEN`], die nicht bestaetigt sind, dazu das offen gelassene Gate von

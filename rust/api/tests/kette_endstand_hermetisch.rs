@@ -2250,12 +2250,11 @@ async fn hh_betrag_vorlaeufig_zweites_objekt() {
 /// oder hier mit Grund. Eine neue Gruppe faellt nicht still aus der Meldung.
 #[test]
 fn instanz_gruppen_vollstaendig() {
-    /// Gruppen ohne Hinweis in `offen`: ihre Summenfelder sind Ring-Kandidaten (`konstanten.rs`), ein vorlaeufiger Betrag
-    /// sperrt (`ring_betrag_vorlaeufig`) statt still aus der Zahl zu fallen.
-    const AUSNAHMEN: [(&str, &str); 3] = [
-        ("vv_objekt", "Anlage V: vv_einnahmen bis vv_entgelt_quote_prozent sind Ring-Kandidaten, vorlaeufig sperrt"),
-        ("rente", "Anlage R: rentner_renten_art, -jahresrente, -beginn_jahr und -alter sind Ring-Kandidaten, vorlaeufig sperrt"),
-        ("rente_av_bav", "Anlage R-AV/bAV: eine vorlaeufige Mitteilung sperrt mit RavBavAngabenOffen (rav_bav.rs)"),
+    /// Gruppen ohne Hinweis in `offen`. `vv_objekt` und `rente` stehen nicht mehr hier: nur ihre Ring-Kandidaten (`konstanten.rs`)
+    /// sperren, wenn sie vorlaeufig sind (`ring_betrag_vorlaeufig`); ein vorlaeufiges Text-, Bool- oder Nebenfeld nahm die Instanz
+    /// still aus der Zahl (Messung vorjahr-instanz, `kette_vv_objekt_*` und `kette_rente_*` unten halten die Meldung am Aufrufort).
+    const AUSNAHMEN: [(&str, &str); 1] = [
+        ("rente_av_bav", "Anlage R-AV/bAV: eine vorlaeufige Mitteilung sperrt mit RavBavAngabenOffen (rav_bav.rs); ungemessen, die Basis rentner_einzel zaehlt die Instanz nicht"),
     ];
     let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     let registry = bindung::lade_registry_der_wurzel(&wurzel).expect("Registry laedt");
@@ -2296,6 +2295,102 @@ async fn hh_betrag_vorlaeufig_text_feld_macht_die_instanz_vorlaeufig() {
         );
         assert_eq!(offene_felder(&vorl), [art], "{art} vorlaeufig steht in offen: {vorl}");
     }
+}
+
+// ---- Vermietung und Rente: ein nur vorlaeufiges Feld steht in `offen`, die Zahl und der Grund bleiben ----------------
+//
+// Der Vorjahr-Weg legt die Felder der Gruppen `vv_objekt` und `rente` vorlaeufig ab, und der Fluss fragt sie nie. Ein vorlaeufiges
+// Feld, das kein Ring-Kandidat ist (Text, Bool, Freibetrag), sperrt nicht, nimmt aber die ganze Instanz aus der Zahl: ohne die Meldung
+// stand die kleinere Zahl mit `grund = bestaetigt` und leerem `offen` da. Keine neue Sperre: Zahl und Grund sind die der Instanz-ohne-Feld.
+
+/// Ein Objekt der Anlage V mit 20.000 EUR Einnahmen neben dem Lohn, das Textfeld der Wohneinheit gesetzt.
+fn vermietung_ein_objekt() -> Paare {
+    mit(
+        kegel_gesamt(),
+        vec![
+            ("bruttoarbeitslohn", json!(4_000_000)),
+            ("kein_vuv", json!(false)),
+            ("vv_einnahmen", json!(2_000_000)),
+            ("vv_wohneinheit_bezeichnung", json!("EG links")),
+        ],
+    )
+}
+
+/// Das Textfeld der Wohneinheit vorlaeufig: das Objekt zaehlt nicht, die Zahl steht auf dem Stand ohne Vermietung, `grund` heisst
+/// `bestaetigt`, aber `offen` nennt das Textfeld. Kontrolle im selben Test: bestaetigt zaehlt das Objekt und `offen` bleibt leer.
+#[tokio::test]
+async fn kette_vv_objekt_textfeld_vorlaeufig_steht_in_offen() {
+    let ohne = ergebnis("gesamt", &mit(kegel_gesamt(), vec![("bruttoarbeitslohn", json!(4_000_000))])).await;
+    let paare = vermietung_ein_objekt();
+    let fest = ergebnis("gesamt", &paare).await;
+    assert_eq!(fest["grund"], "bestaetigt", "Kontrolle bestaetigt: {fest}");
+    assert_ne!(fest["zahl_cent"], ohne["zahl_cent"], "Kontrolle: die Vermietung zaehlt in der Zahl: {fest} gegen {ohne}");
+    assert!(offene_felder(&fest).is_empty(), "Kontrolle bestaetigt: nichts offen: {fest}");
+    let vorl = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung"]).await;
+    assert_eq!(vorl["grund"], "bestaetigt", "vorlaeufig: keine Sperre: {vorl}");
+    assert_eq!(vorl["zahl_cent"], ohne["zahl_cent"], "vorlaeufig: das Objekt zaehlt nicht: {vorl} gegen {ohne}");
+    assert_eq!(offene_felder(&vorl), ["vv_wohneinheit_bezeichnung"], "vorlaeufig steht in offen: {vorl}");
+}
+
+/// Das zweite Objekt (`__2`) braucht keinen Hinweis: ein vorlaeufiges Feld darin sperrt schon (`vv_instanz_offen`, `sperre/gesamt.rs`),
+/// die Antwort mit Zahl traegt also nie ein unbestaetigtes zweites Objekt. Der Test haelt das fest; faellt die Sperre, muss `offen`
+/// das Objekt melden.
+#[tokio::test]
+async fn kette_vv_objekt_zweites_objekt_vorlaeufig_sperrt_schon() {
+    let eins = ergebnis("gesamt", &vermietung_ein_objekt()).await;
+    let paare = mit(
+        vermietung_ein_objekt(),
+        vec![
+            ("vv_anzahl_objekte", json!(2)),
+            ("vv_einnahmen__2", json!(1_000_000)),
+            ("vv_wohneinheit_bezeichnung__2", json!("OG rechts")),
+        ],
+    );
+    let beide = ergebnis("gesamt", &paare).await;
+    assert_ne!(beide["zahl_cent"], eins["zahl_cent"], "Kontrolle: das zweite Objekt zaehlt bestaetigt mit: {beide} gegen {eins}");
+    assert!(offene_felder(&beide).is_empty(), "Kontrolle: beide bestaetigt, nichts offen: {beide}");
+    let vorl = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung__2"]).await;
+    assert_eq!(vorl["grund"], "vv_instanz_offen", "das vorlaeufige zweite Objekt sperrt: {vorl}");
+    assert!(vorl["zahl_cent"].is_null(), "gesperrt: keine Zahl: {vorl}");
+}
+
+/// Der Rentenfreibetrag vorlaeufig (Cent, aber kein Ring-Kandidat): die Rente zaehlt nicht, die Zahl steht auf dem Stand ohne Rente,
+/// `grund` heisst `bestaetigt`, `offen` nennt das Feld. Kontrolle: bestaetigt zaehlt die Rente und `offen` bleibt leer.
+#[tokio::test]
+async fn kette_rente_freibetrag_vorlaeufig_steht_in_offen() {
+    let ohne = ergebnis("rentner_gesamt", &mit(kegel_rentner(), vec![("rentner_jahresrente", json!(0))])).await;
+    let paare = kegel_rentner();
+    let fest = ergebnis("rentner_gesamt", &paare).await;
+    assert_eq!(fest["grund"], "bestaetigt", "Kontrolle bestaetigt: {fest}");
+    assert_ne!(fest["zahl_cent"], ohne["zahl_cent"], "Kontrolle: die Rente zaehlt in der Zahl: {fest} gegen {ohne}");
+    assert!(offene_felder(&fest).is_empty(), "Kontrolle bestaetigt: nichts offen: {fest}");
+    let vorl = ergebnis_vorlaeufig("rentner_gesamt", &paare, &["rentner_rentenfreibetrag"]).await;
+    assert_eq!(vorl["grund"], "bestaetigt", "vorlaeufig: keine Sperre: {vorl}");
+    assert_eq!(vorl["zahl_cent"], ohne["zahl_cent"], "vorlaeufig: die Rente zaehlt nicht: {vorl} gegen {ohne}");
+    assert_eq!(offene_felder(&vorl), ["rentner_rentenfreibetrag"], "vorlaeufig steht in offen: {vorl}");
+}
+
+/// Die zweite Rente (`__2`) braucht keinen Hinweis: ein vorlaeufiges Feld darin sperrt schon (`rente_instanz_offen`, `sperre/gesamt.rs`).
+/// Der Test haelt das fest; faellt die Sperre, muss `offen` die Rente melden.
+#[tokio::test]
+async fn kette_rente_zweite_rente_vorlaeufig_sperrt_schon() {
+    let eins = ergebnis("rentner_gesamt", &kegel_rentner()).await;
+    let paare = mit(
+        kegel_rentner(),
+        vec![
+            ("rentner_renten_art__2", json!("gesetzliche_rente")),
+            ("rentner_jahresrente__2", json!(5_000_000)),
+            ("rentner_renten_beginn_jahr__2", json!(2_025)),
+            ("rentner_alter_bei_rentenbeginn__2", json!(65)),
+            ("rentner_rentenfreibetrag__2", json!(0)),
+        ],
+    );
+    let beide = ergebnis("rentner_gesamt", &paare).await;
+    assert_ne!(beide["zahl_cent"], eins["zahl_cent"], "Kontrolle: die zweite Rente zaehlt bestaetigt mit: {beide} gegen {eins}");
+    assert!(offene_felder(&beide).is_empty(), "Kontrolle: beide bestaetigt, nichts offen: {beide}");
+    let vorl = ergebnis_vorlaeufig("rentner_gesamt", &paare, &["rentner_rentenfreibetrag__2"]).await;
+    assert_eq!(vorl["grund"], "rente_instanz_offen", "die vorlaeufige zweite Rente sperrt: {vorl}");
+    assert!(vorl["zahl_cent"].is_null(), "gesperrt: keine Zahl: {vorl}");
 }
 
 // ---- § 10 Abs. 1 Nr. 5: das offen gelassene Gate der Kinderbetreuung steht in `offen`, die Zahl kommt --------------
