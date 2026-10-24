@@ -107,6 +107,14 @@ async fn die_ehegatten_zeilen_warten_auf_die_veranlagung() {
         .map(|q| q["feld_id"].as_str().unwrap())
         .collect();
     assert_eq!(wartende, PARTNERZEILEN.into_iter().collect::<BTreeSet<_>>(), "wartet_auf steht nicht an genau den vier Partnerzeilen");
+    // Die Frage, auf die sie warten, steht mit Werten und Beschriftungen in derselben Liste (nicht als Zeile der Ankreuzliste): daraus baut die Seite
+    // die Wahl allein/gemeinsam, ohne `veranlagung` fest zu verdrahten.
+    let wahl = liste.iter().find(|q| q["feld_id"] == json!("veranlagung")).expect("veranlagung fehlt in der Fragenliste eines frischen Falls");
+    assert_eq!(wahl["screening"], json!(false), "veranlagung ist keine Zeile der Ankreuzliste");
+    assert_eq!(wahl["enum_werte"], json!(["einzel", "zusammen"]), "Werte der Wahl: {wahl}");
+    for wert in ["einzel", "zusammen"] {
+        assert!(wahl["enum_labels"][wert].as_str().is_some_and(|t| !t.is_empty()), "{wert}: ohne Beschriftung: {wahl}");
+    }
 }
 
 /// Schreibt eine bestaetigte Antwort; hat das Feld schon ein aktives Ereignis, ersetzt die Antwort es (wie die Oberflaeche).
