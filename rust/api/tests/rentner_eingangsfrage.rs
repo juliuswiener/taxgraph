@@ -149,20 +149,40 @@ async fn aendere(d: &Dienst, feld: &str, wert: Value) {
     assert_eq!(status, 201, "POST (aendern) {feld}: {antwort}");
 }
 
-async fn neuer_fall() -> Dienst {
+/// Schreibt eine VORLAEUFIGE Antwort (ohne zweites Signal), wie ein Vorjahreswert oder ein KI-Vorschlag. Das Feld hat noch kein Ereignis.
+async fn vorlaeufig(d: &Dienst, feld: &str, wert: Value) {
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "vorlaeufig", "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": Value::Null},
+        "ts": "2026-01-01T00:00:00+00:00",
+    });
+    let (status, antwort) = sende(d, "POST", "/fall/reh/event", Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST (vorlaeufig) {feld}: {antwort}");
+}
+
+async fn neuer_fall_in(scheibe: &str) -> Dienst {
     let d = dienst();
-    let kopf = json!({"fall_id": "reh", "scheibe": "rentner_gesamt", "veranlagungszeitraum": 2025});
+    let kopf = json!({"fall_id": "reh", "scheibe": scheibe, "veranlagungszeitraum": 2025});
     let (status, antwort) = sende(&d, "POST", "/fall", Some(&kopf)).await;
     assert_eq!(status, 201, "POST /fall: {antwort}");
     d
 }
 
-async fn fall_mit(paare: &[(&'static str, Value)]) -> Dienst {
-    let d = neuer_fall().await;
+async fn neuer_fall() -> Dienst {
+    neuer_fall_in("rentner_gesamt").await
+}
+
+async fn fall_in(scheibe: &str, paare: &[(&'static str, Value)]) -> Dienst {
+    let d = neuer_fall_in(scheibe).await;
     for (feld, wert) in paare {
         antworte(&d, feld, wert.clone()).await;
     }
     d
+}
+
+async fn fall_mit(paare: &[(&'static str, Value)]) -> Dienst {
+    fall_in("rentner_gesamt", paare).await
 }
 
 async fn fragen(d: &Dienst) -> Vec<Value> {
@@ -177,6 +197,13 @@ async fn fragen_ids(d: &Dienst) -> Vec<String> {
         .iter()
         .map(|q| q["feld_id"].as_str().unwrap().to_owned())
         .collect()
+}
+
+/// Der Sperrgrund, den `GET /fragen` meldet (`null`, wenn der Guard nicht sperrt).
+async fn ring_gesperrt(d: &Dienst) -> Value {
+    let (status, antwort) = sende(d, "GET", "/fall/reh/fragen", None).await;
+    assert_eq!(status, 200, "GET /fragen: {antwort}");
+    antwort["ring_gesperrt"].clone()
 }
 
 async fn ergebnis(d: &Dienst) -> Value {
@@ -905,4 +932,78 @@ async fn ja_auf_behinderung_und_pflege_fragt_die_fahrtkosten_und_gibt_dann_eine_
     let e = ergebnis(&d).await;
     assert!(e["zahl_cent"].is_i64(), "keine Zahl nach 'ja' und beantworteten Fahrtkostenfragen: {e}");
     assert_eq!(e["grund"], json!("bestaetigt"), "{e}");
+}
+
+// ---------------------------------------------------------------- die Sperrfrage hinter dem Kreuz -------------------------
+
+/// Ein gespeicherter Wert widerspricht dem Kreuz "nein" und loest eine Sperre aus, deren Frage das Kreuz verbirgt. Der Wert gewinnt
+/// (Entscheidung vom 2026-10-09, Punkt 3), die Sperre bleibt, und die Frage, die sie verlangt, steht trotzdem in der Fragenliste
+/// (Julius, 2026-10-22: "Haelt eine Sperre die Zahl zurueck, muss die zugehoerige Frage sichtbar sein"). Gemessen am Dienst, in
+/// `rentner_gesamt` und in `gesamt`: erst ohne Kreuz (die Sperre haelt, die Frage steht in der Liste), dann mit Kreuz (die Sperre haelt,
+/// die Frage steht einmal in der Liste), dann nach einer vorlaeufigen Antwort (die Sperre haelt, die Frage bleibt: vorlaeufig ist offen),
+/// dann nach der bestaetigten Antwort (die Sperre ist weg, die Frage kommt nicht wieder).
+/// `basis` traegt die Antworten des Falls ohne Kreuz; das Kreuz kommt als letztes (der Wert steht VOR dem Kreuz).
+async fn sperrfrage_bleibt_trotz_kreuz_nein(scheibe: &str, basis: Paare, kreuz: &str, frage: &str, grund: &str) -> Dienst {
+    let d = fall_in(scheibe, &basis).await;
+    assert_eq!(ring_gesperrt(&d).await, json!(grund), "{scheibe}: ohne Kreuz sperrt der gespeicherte Wert nicht mit {grund}");
+    let vorher = fragen_ids(&d).await.iter().filter(|i| *i == frage).count();
+    assert_eq!(vorher, 1, "{scheibe}: ohne Kreuz steht die Frage {frage} {vorher}-mal in der Liste (erwartet: einmal)");
+    antworte(&d, kreuz, json!(true)).await;
+    assert_eq!(ring_gesperrt(&d).await, json!(grund), "{scheibe}: der gespeicherte Wert gewinnt gegen das Kreuz, die Sperre bleibt");
+    let ids = fragen_ids(&d).await;
+    assert_eq!(
+        ids.iter().filter(|i| *i == frage).count(),
+        1,
+        "{scheibe}: die Sperre {grund} verlangt {frage}, die Liste stellt sie nicht genau einmal (Kreuz {kreuz} = nein)"
+    );
+    // Eine vorlaeufige Antwort (Vorjahr, KI-Vorschlag) loest die Sperre nicht und ist keine Antwort: die Frage bleibt sichtbar.
+    vorlaeufig(&d, frage, json!(true)).await;
+    assert_eq!(ring_gesperrt(&d).await, json!(grund), "{scheibe}: eine vorlaeufige Antwort auf {frage} loest die Sperre {grund}");
+    let ids = fragen_ids(&d).await;
+    assert_eq!(
+        ids.iter().filter(|i| *i == frage).count(),
+        1,
+        "{scheibe}: nach einer vorlaeufigen Antwort steht {frage} nicht genau einmal in der Liste (Sperre {grund})"
+    );
+    aendere(&d, frage, json!(true)).await;
+    assert_ne!(ring_gesperrt(&d).await, json!(grund), "{scheibe}: die Antwort auf {frage} loest die Sperre {grund} nicht");
+    assert!(!fragen_ids(&d).await.iter().any(|i| i == frage), "{scheibe}: {frage} wird nach der Antwort noch einmal gefragt");
+    d
+}
+
+/// Die bestaetigte Zahl nach der Antwort: in `rentner_gesamt` ist der Kegel beantwortet, dort gibt es sie.
+async fn zahl_ist_bestaetigt(d: &Dienst) {
+    let e = ergebnis(d).await;
+    assert!(e["zahl_cent"].is_i64(), "keine Zahl nach der Antwort auf die Sperrfrage: {e}");
+    assert_eq!(e["grund"], json!("bestaetigt"), "{e}");
+}
+
+/// AK1 (S1, `behinderungsbedingte_aufwendungen_wahlrecht_offen`): ein gespeicherter Grad der Behinderung ab 20 mit behinderungsbedingten
+/// Aufwendungen verlangt die Wahl zwischen Pauschbetrag und Einzelnachweis; das Kreuz `keine_behinderung_pflege` = nein verbirgt die Frage.
+#[tokio::test]
+async fn sperrfrage_bleibt_trotz_kreuz_nein_behinderung() {
+    const KREUZ: &str = "keine_behinderung_pflege";
+    const FRAGE: &str = "behinderungsbedingte_aufwendungen_wahlrecht_pb";
+    const GRUND: &str = "behinderungsbedingte_aufwendungen_wahlrecht_offen";
+    let werte: Paare = vec![("rentner_grad_der_behinderung", json!(100)), ("behinderungsbedingte_aufwendungen", json!(200_000))];
+    let rentner_fall = ueberschreibe(rentner(4_000_000, "einzel"), werte.clone());
+    let d = sperrfrage_bleibt_trotz_kreuz_nein("rentner_gesamt", rentner_fall, KREUZ, FRAGE, GRUND).await;
+    zahl_ist_bestaetigt(&d).await;
+    let gesamt_fall = mit(vec![("veranlagung", json!("einzel"))], werte);
+    sperrfrage_bleibt_trotz_kreuz_nein("gesamt", gesamt_fall, KREUZ, FRAGE, GRUND).await;
+}
+
+/// AK2 (S2, `p35c_doppelfoerderung_offen`): gespeicherte Energieberater-Aufwendungen ohne Antwort zur Doppelfoerderung; das Kreuz
+/// `keine_energetische_sanierung` = nein verbirgt die Frage `p35c_keine_doppelfoerderung`.
+#[tokio::test]
+async fn sperrfrage_bleibt_trotz_kreuz_nein_energetische_sanierung() {
+    const KREUZ: &str = "keine_energetische_sanierung";
+    const FRAGE: &str = "p35c_keine_doppelfoerderung";
+    const GRUND: &str = "p35c_doppelfoerderung_offen";
+    let werte: Paare = vec![("p35c_energieberater_aufwendungen", json!(500_000))];
+    let rentner_fall = ueberschreibe(rentner(4_000_000, "einzel"), werte.clone());
+    let d = sperrfrage_bleibt_trotz_kreuz_nein("rentner_gesamt", rentner_fall, KREUZ, FRAGE, GRUND).await;
+    zahl_ist_bestaetigt(&d).await;
+    let gesamt_fall = mit(vec![("veranlagung", json!("einzel"))], werte);
+    sperrfrage_bleibt_trotz_kreuz_nein("gesamt", gesamt_fall, KREUZ, FRAGE, GRUND).await;
 }
