@@ -2297,3 +2297,51 @@ async fn hh_betrag_vorlaeufig_text_feld_macht_die_instanz_vorlaeufig() {
         assert_eq!(offene_felder(&vorl), [art], "{art} vorlaeufig steht in offen: {vorl}");
     }
 }
+
+// ---- § 10 Abs. 1 Nr. 5: das offen gelassene Gate der Kinderbetreuung steht in `offen`, die Zahl kommt --------------
+//
+// `ergebnis::offene_instanzfelder` haengt `bescheid::abzuege::p10_1_5_gate_fehlend` an die Instanzfelder an. Die Funktion
+// selbst pruefen die Tests in `bescheid`; dieser Test haelt den AUFRUFORT: ohne ihn bliebe die Meldung im Ergebnis aus, und
+// kein API-Test merkte es.
+
+const GATE_KIND_UNTER_14: &str = "kind_unter_14_haushaltszugehoerig";
+
+/// Kosten ohne Antwort auf das Gate: die Kosten zaehlen nicht (das Gate ist nicht `ja`), es sperrt auch nichts
+/// (`sperre/gesamt.rs::kinderbetreuung` prueft nur bestaetigte Kinder), die Zahl kommt, und `offen` nennt das Gate. Mit
+/// Antwort -- `nein`, oder `ja` samt beider Folgeantworten -- nennt `offen` es nicht.
+#[tokio::test]
+async fn kinderbetreuung_gate_offen_steht_in_offen() {
+    let basis = kegel_gesamt();
+    let ohne = ergebnis("gesamt", &basis).await;
+    assert_eq!(ohne["grund"], "bestaetigt", "Positivkontrolle ohne Kosten: {ohne}");
+    let ohne_zahl = ohne["zahl_cent"].as_i64().unwrap();
+    assert!(offene_felder(&ohne).is_empty(), "ohne Kosten nichts offen: {ohne}");
+
+    let kosten = ("kinderbetreuungskosten", json!(300_000));
+    let a = ergebnis("gesamt", &mit(basis.clone(), vec![kosten.clone()])).await;
+    assert_eq!(a["grund"], "bestaetigt", "Kosten ohne Gate: keine Sperre, die Zahl kommt: {a}");
+    assert_eq!(a["zahl_cent"].as_i64(), Some(ohne_zahl), "Kosten ohne Gate zaehlen nicht: {a}");
+    assert_eq!(offene_felder(&a), [GATE_KIND_UNTER_14], "Kosten ohne Gate: das Gate steht in offen: {a}");
+
+    let nein = ergebnis("gesamt", &mit(basis.clone(), vec![kosten.clone(), (GATE_KIND_UNTER_14, json!(false))])).await;
+    assert_eq!(nein["grund"], "bestaetigt", "Gate nein: die Zahl kommt: {nein}");
+    assert_eq!(nein["zahl_cent"].as_i64(), Some(ohne_zahl), "Gate nein: die Kosten zaehlen nicht: {nein}");
+    assert!(offene_felder(&nein).is_empty(), "Gate beantwortet (nein): nichts offen: {nein}");
+
+    let ja = mit(
+        basis,
+        vec![
+            kosten,
+            (GATE_KIND_UNTER_14, json!(true)),
+            ("kind_betreuung_reine_betreuung", json!(true)),
+            ("kind_betreuung_rechnung_ueberweisung", json!(true)),
+        ],
+    );
+    let ja = ergebnis("gesamt", &ja).await;
+    assert_eq!(ja["grund"], "bestaetigt", "Gate ja mit Folgeantworten: die Zahl kommt: {ja}");
+    assert!(
+        ja["zahl_cent"].as_i64().unwrap() < ohne_zahl,
+        "Gate ja: die Kosten mindern die Steuer: {ja}"
+    );
+    assert!(offene_felder(&ja).is_empty(), "Gate beantwortet (ja): nichts offen: {ja}");
+}
