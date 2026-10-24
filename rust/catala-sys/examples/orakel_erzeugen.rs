@@ -34,6 +34,12 @@ enum Art {
     /// Ganze Zahl von 0 bis zur Obergrenze.
     Ganz(i64),
     Wahr,
+    /// Wie `Wahr`, aber aus einem eigenen Strom (Fallnummer, Eingabenummer): der Hauptstrom behaelt seine
+    /// Ziehungen, die Zeilen der Nachfolger-Scopes aendern sich nicht. Fuer Eingaben, die einem
+    /// bestehenden Scope nachtraeglich zuwachsen (`kranken_pflege_vorsorge`, Abweichung Nr. 115).
+    /// ponytail: kein Zusammenhang mit den uebrigen Eingaben des Falls; Upgrade: neue Eingaben ans Ende
+    /// von `SPECS` als eigener Scope, wenn die Nachfolger neu gezogen werden duerfen.
+    WahrNebenstrom,
     Vz,
     /// Bruch `zaehler / nenner` (Catala-`decimal`), Wert 0 bis 150.
     Bruch,
@@ -275,8 +281,8 @@ const SPECS: &[Spec] = &[
             ("basis_kv_pv", Art::Geld),
             ("weitere_vorsorgeaufwendungen", Art::Geld),
             ("mit_anspruch_auf_zuschuss", Art::Wahr),
-            ("zusammenveranlagt", Art::Wahr),
-            ("mit_anspruch_auf_zuschuss_ehegatte", Art::Wahr),
+            ("zusammenveranlagt", Art::WahrNebenstrom),
+            ("mit_anspruch_auf_zuschuss_ehegatte", Art::WahrNebenstrom),
         ],
         ausgaben: &["abziehbare_kv_pv_vorsorge"],
         zufall: 300,
@@ -509,13 +515,14 @@ fn geld_bis(rng: &mut Rng, max: i64) -> i64 {
     }
 }
 
-fn wert(rng: &mut Rng, art: Art) -> Wert {
+fn wert(rng: &mut Rng, art: Art, neben: u64) -> Wert {
     match art {
         Art::Geld => Wert::Geld(geld(rng, false)),
         Art::GeldMitMinus => Wert::Geld(geld(rng, true)),
         Art::GeldBis(max) => Wert::Geld(geld_bis(rng, max)),
         Art::Ganz(max) => Wert::Ganz(rng.zwischen(0, max)),
         Art::Wahr => Wert::Wahr(rng.unter(2) == 1),
+        Art::WahrNebenstrom => Wert::Wahr(Rng(neben).unter(2) == 1),
         Art::Vz => Wert::Vz(2024 + u16::try_from(rng.unter(3)).unwrap_or(0)),
         Art::Bruch => {
             let nenner = rng.zwischen(1, 100);
@@ -548,8 +555,15 @@ fn faelle(spec: &Spec, rng: &mut Rng) -> Vec<Vec<Wert>> {
             betrag += schritt;
         }
     }
-    for _ in 0..spec.zufall {
-        alle.push(spec.eingaben.iter().map(|&(_, art)| wert(rng, art)).collect());
+    for fall in 0..spec.zufall {
+        let fall = u64::try_from(fall).unwrap_or(0);
+        alle.push(
+            spec.eingaben
+                .iter()
+                .zip(0_u64..)
+                .map(|(&(_, art), nr)| wert(rng, art, SEED ^ (fall << 8) ^ nr))
+                .collect(),
+        );
     }
     alle
 }
