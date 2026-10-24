@@ -341,15 +341,17 @@ fn ohne_kfz_ist_ein_nullfaktor_kein_grund_fuer_einen_fehler() {
 }
 
 /// Gegenprobe zur alten Vorab-Rechnung `gesamt_pruefen` (Zweig `!positiv`): ein NEGATIVER Faktor (negative Tage oder km) ist KEIN Grund
-/// fuer einen Fehler. Der Scope nimmt `abziehbarer_betrag = if oepnv > entfernungspauschale then oepnv else entfernungspauschale`;
-/// ein negativer, ausserhalb `i64` liegender `entfernungspauschale`-Wert aendert den abziehbaren Betrag nicht (= OePNV-Kosten, hier 0).
+/// fuer einen Fehler. Der Scope nimmt `abziehbarer_betrag = if arbeitstage <= 0 then 0 else if oepnv > entfernungspauschale then oepnv
+/// else entfernungspauschale` (der erste Zweig seit d-56); ein negativer, ausserhalb `i64` liegender `entfernungspauschale`-Wert
+/// aendert den abziehbaren Betrag nicht (negative Tage: 0; negative km oder Saetze: die OePNV-Kosten, hier 0).
 /// Die alte Rechnung lehnte diese Faelle mit 422 ab, Python rechnet 0 bzw. die OePNV-Kosten: ueberstreng. Der Guard prueft nur das
 /// FELD, das gelesen wird (`abziehbarer_betrag`), und das passt in `i64`.
 /// Lazy-Beleg: am selben Ergebnis ist `entfernungspauschale_cent()` (nicht gelesen, ausserhalb `i64`) ein Ueberlauf, `abziehbarer_betrag_cent()` ein Wert.
 /// Gegenfall mit positivem Ueberlauf: negativer Satz bis 20 km mal positive Tage -> `entfernungspauschale` positiv und gross.
 /// HERKUNFT: Python-Orakel `orakel_neg.py` -> `orakel_neg.out` (Anlagen zu h8-ep-fenster, Catala-Scope `EP.berechnung` direkt):
 /// `tage_neg` (km 10, Tage -(2^63-1)): `entfernungspauschale_ct` -2767011611056432742100, `abziehbarer_ct` 0, mit und ohne Kfz;
-/// `km_neg` (km -10^18, 366 Tage): -10980000000000000000000 / 0; `tage_neg_oepnv_gross` (`OePNV` 10^12 EUR): abziehbar 100000000000000;
+/// `km_neg` (km -10^18, 366 Tage): -10980000000000000000000 / 0; `tage_neg_oepnv_gross` (`OePNV` 10^12 EUR): abziehbar 100000000000000
+/// (Orakel; seit dem Regelfix d-56 gilt 0, siehe die Zeile in `faelle`);
 /// `satz_bis_neg_pro_tag_pos` (km 100, Tage 2^63-1, Satz bis 20 km -30): ohne Kfz 450000 / 450000, mit Kfz 22505027769925652969080 (ausserhalb `i64`).
 #[test]
 fn ep_negativer_faktor_ist_ok() {
@@ -384,9 +386,17 @@ fn ep_negativer_faktor_ist_ok() {
             lauf(-1_000_000_000_000_000_000, 366, true, 0, 30),
             "Ok(0)",
         ),
+        // Regelfix d-56 (2026-10-24): negative Tage sind keine Wege, der Betrag ist 0 (das Python-Orakel gab die OePNV-Kosten,
+        // 100000000000000; die Zeile ist die einzige dieser Tabelle, die sich dadurch aendert).
         (
             "tage_neg, OePNV 10^12 EUR",
             lauf(10, -m, true, 100_000_000_000_000, 30),
+            "Ok(0)",
+        ),
+        // KONTROLLE zur Zeile davor: mit 1 Tag gelten dieselben OePNV-Kosten (sie uebersteigen die Pauschale).
+        (
+            "1 Tag, OePNV 10^12 EUR",
+            lauf(10, 1, true, 100_000_000_000_000, 30),
             "Ok(100000000000000)",
         ),
         (

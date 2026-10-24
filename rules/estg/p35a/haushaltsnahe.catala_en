@@ -3,10 +3,10 @@
 > Module Haushaltsnahe
 
 Materialisierung des verifizierten Snapshots `pipeline/snapshots/p35a_2_3_haushaltsnahe.json`
-(module Haushaltsnahe, verified_bedingt, offene Discoveries = 0, sha256
-`7d084e5a77c438b8dc4e7530940bd179d64e9dae15336fddb67b03ec52c4ebf6`). Die scope-Logik unten ist
-BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); nur der Module-Header + die Grenzfall-Seeds
-sind ergänzt. Kein Pipeline-Re-Run.
+(historisch: `pipeline/` fiel mit L4 am 2026-10-19, der Snapshot ist im Baum nicht mehr prüfbar;
+module Haushaltsnahe, verified_bedingt, offene Discoveries = 0, sha256 `7d084e5a77c438b8dc4e7530940bd179d64e9dae15336fddb67b03ec52c4ebf6`).
+Die scope-Logik unten ist BYTE-GLEICH aus `catala_a` übernommen (keine Änderung); ergänzt sind nur der
+Module-Header und die Grenzfall-Seeds. Kein Pipeline-Re-Run.
 
 Drei getrennte 20-%-Töpfe mit eigenem Jahreshöchstbetrag, additiv:
 Zitatanker § 35a EStG (`sources/gesetze-im-internet/estg_p35a_2026-07-09.txt`, typ gesetz):
