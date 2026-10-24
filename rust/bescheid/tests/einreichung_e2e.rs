@@ -119,7 +119,8 @@ fn instanzen() {
 /// Empfaengerland und Jahr des Falls erreichen das XML: `einreichungs_xml` reicht beides an den Writer durch, statt dessen Vorgabe
 /// (`BY`, 2025) zu lassen. Alle eingefrorenen Faelle sind BY und 2025; dort faellt ein Weglassen der beiden Felder nicht auf (gefunden
 /// vom `cargo-mutants`-Lauf 2026-10-24: `delete field vz` und `delete field empfaenger_land` blieben gruen). Der Fall `arbeitnehmer` mit
-/// Jahr 2024 und Land `HE`; ohne Schema laeuft nur der Zweig, der den fehlenden Writer meldet.
+/// Jahr 2024 und Land `HE`. Ohne Schema meldet der Writer die fehlende `E10-<jahr>.xsd` und nennt das Jahr: so faellt das
+/// Weglassen von `vz` auch ohne Schema auf, das von `empfaenger_land` erst mit Schema (steht erst im XML-Kopf).
 #[test]
 fn empfaenger_land_und_jahr_des_falls_erreichen_das_xml() {
     let mut datei = store::lade(&fixture("arbeitnehmer.json")).unwrap();
@@ -128,7 +129,7 @@ fn empfaenger_land_und_jahr_des_falls_erreichen_das_xml() {
     let ergebnis = einreichungs_xml(&st, index(), params(), "HE", Some("74931".to_owned()));
     if !schemas_da(st.veranlagungszeitraum()) {
         assert!(
-            matches!(&ergebnis, Err(EinreichFehler::XmlNichtBaubar(f)) if f.0.contains("nicht gefunden")),
+            matches!(&ergebnis, Err(EinreichFehler::XmlNichtBaubar(f)) if f.0.contains("E10-2024.xsd nicht gefunden")),
             "{ergebnis:?}"
         );
         return;
