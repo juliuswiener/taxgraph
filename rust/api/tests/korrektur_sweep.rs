@@ -1112,7 +1112,9 @@ fn messung_fragenzahl_und_steuer() {
 /// denselben Antworten ohne Vorjahr. Erlaubt ist, was den Nutzer nicht taeuscht: entweder steht die Direktzahl da, oder `offen` nennt
 /// mindestens ein `vv_`-Feld (Hinweis), oder die Zahl ist gesperrt. NIE erlaubt: eine kleinere Zahl mit `grund = bestaetigt` und leerem `offen`.
 /// Vor der Meldung der Gruppe `vv_objekt` ROT (Commit 07a1fb34): K 1.392.400 gegen Direktzahl 1.712.100 Cent (3.197 EUR Vermietungsueberschuss
-/// fehlen), `offen = []`, 21 Felder vorlaeufig. Seither nennt `offen` die vorlaeufigen `vv_`-Felder; die Zahl bleibt die niedrigere.
+/// fehlen), `offen = []`, 21 Felder vorlaeufig. Schritt 1 (d-68) liess `offen` die `vv_`-Felder nennen, die Zahl blieb die niedrigere.
+/// Schritt 2 (d-68, Option 2): die Vermietung sperrt (`vv_objekt_unbestaetigt`) und `/fragen` fragt die Felder; der Fragenlauf beantwortet
+/// sie, und die Zahl ist die Direktzahl. Die Sperre mit `offen` und Frage prueft `kette_vv_objekt_vorjahr_weg_sperrt_und_fragt`.
 #[test]
 fn vorjahr_weg_vermietung_laesst_die_zahl_nie_still_niedriger() {
     let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();

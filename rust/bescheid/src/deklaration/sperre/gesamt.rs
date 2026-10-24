@@ -81,7 +81,12 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
         return Ok(Some(Sperrgrund::PartnerEinkunftsartNichtRingFaehig));
     }
     // dHf/Verpflegung sind auch im gesamt/rentner-WK-Pfad verdrahtet.
-    werbungskosten::dhf_vpf_grund(k)
+    sperre!(werbungskosten::dhf_vpf_grund(k));
+    // d-68 Schritt 2: als LETZTE Sperre, damit kein bisheriger Grund hinter diesem verschwindet.
+    if !vv_objekt_vorschlaege(k.f, cfg, k.q)?.is_empty() {
+        return Ok(Some(Sperrgrund::VvObjektUnbestaetigt));
+    }
+    Ok(None)
 }
 
 /// Multi-Objekt § 21 (#5): jede WEITERE `vv_objekt`-Instanz (Index ≥ 2) vollstaendig und bestaetigt.
@@ -99,6 +104,39 @@ fn multi_objekt(k: &K<'_>, cfg: &Cfg) -> Grund {
         }
     }
     Ok(None)
+}
+
+/// Die Felder des ERSTEN Objekts der Vermietung, die nur ein Vorschlag sind (nicht `Bestaetigt`), sortiert. d-68 Schritt 2: der Ring zaehlt
+/// eine Instanz nur, wenn alle ihre Felder bestaetigt sind, also nimmt schon ein vorlaeufiges Text- oder Bool-Feld (Vorjahr-Uebernahme)
+/// die Mieteinkuenfte aus der Zahl, und `grund` hiesse trotzdem `bestaetigt`. Die sechs Kegel-/Ring-Felder ([`VV_GESAMT_FELDER`]) fehlen
+/// hier mit Absicht: ein vorlaeufiger Betrag davon sperrt ohnehin (`ring_betrag_vorlaeufig`, `input_kegel_nicht_bestaetigt`), der Grund
+/// bliebe sonst nicht der alte. Leer bei "keine Vermietung" bestaetigt (`kein_vuv`): dann fehlt kein Einkommen.
+///
+/// Ein Feld OHNE Ereignis steht hier nicht: der Store kennt es nicht, und ob die Frage dazu gilt, sagt nur der Fragenfluss (`vv_wohnzwecke` etwa
+/// gehoert zur Gruppe, wird aber nur bei Gate gefragt).
+///
+/// # Errors
+/// Snapshot- und Bindungsfehler der Instanz-Naht.
+pub fn vv_objekt_vorschlaege(
+    f: &Felder,
+    cfg: &Cfg,
+    q: &Instanzquelle<'_>,
+) -> Result<Vec<String>, BescheidFehler> {
+    let (Some(gruppe), Some(_)) = (cfg.multi_objekt, q.beide()) else {
+        return Ok(Vec::new());
+    };
+    if bestaetigt(f, "kein_vuv") && ist_true(wert(f, "kein_vuv")) {
+        return Ok(Vec::new());
+    }
+    Ok(q.instanzen(gruppe)?
+        .into_iter()
+        .filter(|inst| inst.index == 1)
+        .flat_map(|inst| inst.felder)
+        .filter(|(fid, fw)| {
+            fw.zustand != domain::Zustand::Bestaetigt && !VV_GESAMT_FELDER.contains(&fid.as_str())
+        })
+        .map(|(fid, _)| fid)
+        .collect())
 }
 
 /// § 22 aa (`art in RENTNER_AA_ARTEN`) und bb (Leibrente), `beginn` ganzzahlig (Python-`bool`

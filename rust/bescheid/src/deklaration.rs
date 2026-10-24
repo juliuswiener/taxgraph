@@ -28,7 +28,7 @@ use store::Store;
 pub use einreichung::{einreichungs_xml, EinreichFehler, Einreichung};
 pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
 pub use ring_werte::mit_ring_werten;
-pub use sperre::an_gesamt_sperrgrund;
+pub use sperre::{an_gesamt_sperrgrund, vv_objekt_vorschlaege};
 
 use ring_werte::berechnet_herkunft;
 

@@ -2297,11 +2297,60 @@ async fn hh_betrag_vorlaeufig_text_feld_macht_die_instanz_vorlaeufig() {
     }
 }
 
-// ---- Vermietung und Rente: ein nur vorlaeufiges Feld steht in `offen`, die Zahl und der Grund bleiben ----------------
+// ---- Vermietung und Rente: ein nur vorlaeufiges Feld ---------------------------------------------------------------
 //
 // Der Vorjahr-Weg legt die Felder der Gruppen `vv_objekt` und `rente` vorlaeufig ab, und der Fluss fragt sie nie. Ein vorlaeufiges
-// Feld, das kein Ring-Kandidat ist (Text, Bool, Freibetrag), sperrt nicht, nimmt aber die ganze Instanz aus der Zahl: ohne die Meldung
-// stand die kleinere Zahl mit `grund = bestaetigt` und leerem `offen` da. Keine neue Sperre: Zahl und Grund sind die der Instanz-ohne-Feld.
+// Feld, das kein Ring-Kandidat ist (Text, Bool, Freibetrag), nimmt die ganze Instanz aus der Zahl. Schritt 1 (d-68) meldet es in
+// `offen`. Schritt 2 (d-68, Option 2): die Vermietung SPERRT dazu (`vv_objekt_unbestaetigt`) und fragt die Felder; die Rente bleibt
+// bei der Meldung (nicht entschieden), die Kinder auch (dort ist die Zahl zu hoch).
+
+/// Schreibt ein Feld ueber `POST /event`: `vorlaeufig` ohne `signal_2`, sonst bestaetigt (`ts` waehlbar, damit eine Bestaetigung nach dem
+/// Vorschlag steht).
+async fn schreibe(d: &Dienst, fall: &str, feld: &str, wert: &Value, vorlaeufig: bool, ts: &str) {
+    let (zustand, signal_2) = if vorlaeufig { ("vorlaeufig", Value::Null) } else { ("bestaetigt", json!(format!("ok@{feld}"))) };
+    let rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": zustand, "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": signal_2},
+        "ts": ts,
+    });
+    let (status, antwort) = sende(d, "POST", &format!("/fall/{fall}/event"), Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST /event {feld}: {antwort}");
+}
+
+/// Die Antwort des Nutzers auf ein Feld, das schon ein Ereignis hat (Vorschlag, Vorjahreswert): ein bestaetigtes Ereignis mit `ersetzt` auf das
+/// aktive, wie die Oberflaeche es schreibt. Ohne Ereignis ein gewoehnliches bestaetigtes.
+async fn bestaetige(d: &Dienst, fall: &str, feld: &str, wert: &Value) {
+    let (_, stand) = sende(d, "GET", &format!("/fall/{fall}/stand"), None).await;
+    let alt = stand["felder"][feld]["event_id"].clone();
+    let mut rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": alt.clone(), "signal_2": format!("ok@{feld}")},
+        "ts": "2026-01-02T00:00:00+00:00",
+    });
+    if !alt.is_null() {
+        rumpf["ersetzt"] = alt;
+    }
+    let (status, antwort) = sende(d, "POST", &format!("/fall/{fall}/event"), Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST /event {feld} (bestaetigen): {antwort}");
+}
+
+async fn lege_an(d: &Dienst, fall: &str, vz: i64) {
+    let kopf = json!({"fall_id": fall, "scheibe": "gesamt", "veranlagungszeitraum": vz});
+    let (status, antwort) = sende(d, "POST", "/fall", Some(&kopf)).await;
+    assert_eq!(status, 201, "POST /fall {fall}: {antwort}");
+}
+
+/// `GET /fall/kette/ergebnis` und `GET /fall/kette/fragen` in einem Zug: (Ergebnis, Feldkennungen der Fragenliste, `ring_gesperrt`).
+async fn ergebnis_und_fragen(d: &Dienst) -> (Value, Vec<String>, Value) {
+    let (status, e) = sende(d, "GET", "/fall/kette/ergebnis", None).await;
+    assert_eq!(status, 200, "GET /ergebnis: {e}");
+    let (status, f) = sende(d, "GET", "/fall/kette/fragen", None).await;
+    assert_eq!(status, 200, "GET /fragen: {f}");
+    let ids = f["fragen"].as_array().unwrap().iter().map(|q| q["feld_id"].as_str().unwrap().to_owned()).collect();
+    (e, ids, f["ring_gesperrt"].clone())
+}
 
 /// Ein Objekt der Anlage V mit 20.000 EUR Einnahmen neben dem Lohn, das Textfeld der Wohneinheit gesetzt.
 fn vermietung_ein_objekt() -> Paare {
@@ -2316,20 +2365,117 @@ fn vermietung_ein_objekt() -> Paare {
     )
 }
 
-/// Das Textfeld der Wohneinheit vorlaeufig: das Objekt zaehlt nicht, die Zahl steht auf dem Stand ohne Vermietung, `grund` heisst
-/// `bestaetigt`, aber `offen` nennt das Textfeld. Kontrolle im selben Test: bestaetigt zaehlt das Objekt und `offen` bleibt leer.
+/// Ohne Vorjahr: das Textfeld der Wohneinheit nur vorlaeufig (ein Textfeld ist kein Ring-Kandidat und nahm die Instanz still aus der
+/// Zahl). Jetzt: `vv_objekt_unbestaetigt`, keine Zahl, `offen` nennt das Feld, `/fragen` fragt es und meldet dieselbe Sperre.
+/// Kontrolle im selben Test: bestaetigt der Nutzer das Feld, entfaellt die Sperre und die Direktzahl steht da.
 #[tokio::test]
-async fn kette_vv_objekt_textfeld_vorlaeufig_steht_in_offen() {
+async fn kette_vv_objekt_textfeld_vorlaeufig_sperrt_und_fragt() {
     let ohne = ergebnis("gesamt", &mit(kegel_gesamt(), vec![("bruttoarbeitslohn", json!(4_000_000))])).await;
     let paare = vermietung_ein_objekt();
-    let fest = ergebnis("gesamt", &paare).await;
-    assert_eq!(fest["grund"], "bestaetigt", "Kontrolle bestaetigt: {fest}");
-    assert_ne!(fest["zahl_cent"], ohne["zahl_cent"], "Kontrolle: die Vermietung zaehlt in der Zahl: {fest} gegen {ohne}");
-    assert!(offene_felder(&fest).is_empty(), "Kontrolle bestaetigt: nichts offen: {fest}");
-    let vorl = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung"]).await;
-    assert_eq!(vorl["grund"], "bestaetigt", "vorlaeufig: keine Sperre: {vorl}");
-    assert_eq!(vorl["zahl_cent"], ohne["zahl_cent"], "vorlaeufig: das Objekt zaehlt nicht: {vorl} gegen {ohne}");
-    assert_eq!(offene_felder(&vorl), ["vv_wohneinheit_bezeichnung"], "vorlaeufig steht in offen: {vorl}");
+    let direkt = ergebnis("gesamt", &paare).await;
+    assert_eq!(direkt["grund"], "bestaetigt", "Kontrolle ohne Vorschlag: {direkt}");
+    assert_ne!(direkt["zahl_cent"], ohne["zahl_cent"], "Kontrolle: die Vermietung zaehlt in der Zahl: {direkt} gegen {ohne}");
+    assert!(offene_felder(&direkt).is_empty(), "Kontrolle ohne Vorschlag: nichts offen: {direkt}");
+
+    let d = dienst();
+    lege_an(&d, "kette", 2025).await;
+    for (feld, wert) in &paare {
+        schreibe(&d, "kette", feld, wert, *feld == "vv_wohneinheit_bezeichnung", "2026-01-01T00:00:00+00:00").await;
+    }
+    let (e, fragen, ring) = ergebnis_und_fragen(&d).await;
+    assert_eq!(e["grund"], "vv_objekt_unbestaetigt", "vorlaeufig: die Zahl ist gesperrt: {e}");
+    assert!(e["zahl_cent"].is_null(), "gesperrt: keine Zahl: {e}");
+    assert_eq!(offene_felder(&e), ["vv_wohneinheit_bezeichnung"], "offen nennt das Feld: {e}");
+    assert!(fragen.iter().any(|f| f == "vv_wohneinheit_bezeichnung"), "die Frage dazu steht in /fragen: {fragen:?}");
+    assert_eq!(ring, "vv_objekt_unbestaetigt", "/fragen meldet dieselbe Sperre");
+
+    bestaetige(&d, "kette", "vv_wohneinheit_bezeichnung", &json!("EG links")).await;
+    let (e, fragen, ring) = ergebnis_und_fragen(&d).await;
+    assert_eq!(e["grund"], "bestaetigt", "bestaetigt: keine Sperre: {e}");
+    assert_eq!(e["zahl_cent"], direkt["zahl_cent"], "bestaetigt: die Direktzahl: {e}");
+    assert!(offene_felder(&e).is_empty(), "bestaetigt: nichts offen: {e}");
+    assert!(ring.is_null(), "/fragen: keine Sperre mehr");
+    assert!(!fragen.iter().any(|f| f == "vv_wohneinheit_bezeichnung"), "bestaetigt: die Frage steht nicht mehr da: {fragen:?}");
+}
+
+/// Mit Vorjahr-Weg: das Vorjahr traegt Strasse und Wohneinheit, `POST /vorjahr` legt sie vorlaeufig ab, der Nutzer beantwortet alles, was
+/// `/fragen` stellt (Kegel, Betraege, Kreuze), aber die zwei Textfelder stellt der Fluss nicht (`vorjahr: uebernehmbar`). Heute: gesperrt,
+/// `offen` und `/fragen` nennen beide. Kontrolle: beide bestaetigt, dann die Direktzahl des Falls ohne Vorjahr.
+#[tokio::test]
+async fn kette_vv_objekt_vorjahr_weg_sperrt_und_fragt() {
+    let quelle = mit(vermietung_ein_objekt(), vec![("vv_objekt_strasse", json!("Musterweg 1"))]);
+    let direkt = ergebnis("gesamt", &quelle).await;
+    assert_eq!(direkt["grund"], "bestaetigt", "Kontrolle ohne Vorjahr: {direkt}");
+
+    let d = dienst();
+    lege_an(&d, "quelle", 2024).await;
+    for (feld, wert) in &quelle {
+        schreibe(&d, "quelle", feld, wert, false, "2025-01-01T00:00:00+00:00").await;
+    }
+    lege_an(&d, "kette", 2025).await;
+    let (status, a) = sende(&d, "POST", "/fall/kette/vorjahr", Some(&json!({"vorjahr_fall_id": "quelle"}))).await;
+    assert_eq!(status, 200, "Vorjahr-Uebernahme: {a}");
+    let textfelder = ["vv_objekt_strasse", "vv_wohneinheit_bezeichnung"];
+    for (feld, wert) in quelle.iter().filter(|(f, _)| !textfelder.contains(f)) {
+        bestaetige(&d, "kette", feld, wert).await;
+    }
+    let (e, fragen, ring) = ergebnis_und_fragen(&d).await;
+    assert_eq!(e["grund"], "vv_objekt_unbestaetigt", "nach dem Vorjahr-Weg: die Zahl ist gesperrt: {e}");
+    assert!(e["zahl_cent"].is_null(), "gesperrt: keine Zahl: {e}");
+    assert_eq!(offene_felder(&e), textfelder, "offen nennt beide Felder: {e}");
+    for f in textfelder {
+        assert!(fragen.iter().any(|q| q == f), "die Frage zu {f} steht in /fragen: {fragen:?}");
+    }
+    assert_eq!(ring, "vv_objekt_unbestaetigt", "/fragen meldet dieselbe Sperre");
+
+    for f in textfelder {
+        let wert = &quelle.iter().find(|(n, _)| *n == f).unwrap().1;
+        bestaetige(&d, "kette", f, wert).await;
+    }
+    let (e, _, ring) = ergebnis_und_fragen(&d).await;
+    assert_eq!(e["grund"], "bestaetigt", "beide bestaetigt: keine Sperre: {e}");
+    assert_eq!(e["zahl_cent"], direkt["zahl_cent"], "beide bestaetigt: die Direktzahl: {e} gegen {direkt}");
+    assert!(offene_felder(&e).is_empty() && ring.is_null(), "beide bestaetigt: nichts offen: {e}");
+}
+
+/// Messung "unbeantwortet" (ohne Ereignis, nicht vorlaeufig): die Felder der Gruppe, die der Nutzer nie beantwortet hat, nimmt der Store
+/// nicht wahr, also zaehlt die Instanz mit den Feldern, die da sind, und die Zahl steht ohne Sperre. Die Fragenliste fragt sie.
+/// ponytail: Standard A (d-68 Schritt 2); "unbeantwortet sperrt" braucht den Fragenfluss als Relevanz-Orakel in `ergebnis.rs`.
+#[tokio::test]
+async fn kette_vv_objekt_unbeantwortetes_feld_sperrt_heute_nicht() {
+    let paare = mit(kegel_gesamt(), vec![("bruttoarbeitslohn", json!(4_000_000)), ("kein_vuv", json!(false)), ("vv_einnahmen", json!(2_000_000))]);
+    let d = dienst();
+    lege_an(&d, "kette", 2025).await;
+    for (feld, wert) in &paare {
+        schreibe(&d, "kette", feld, wert, false, "2026-01-01T00:00:00+00:00").await;
+    }
+    let (e, fragen, ring) = ergebnis_und_fragen(&d).await;
+    for f in ["vv_objekt_strasse", "vv_objekt_plz", "vv_objekt_ort", "vv_wohneinheit_bezeichnung"] {
+        assert!(fragen.iter().any(|q| q == f), "die Frage zu {f} steht in /fragen: {fragen:?}");
+    }
+    assert_eq!(e["grund"], "bestaetigt", "unbeantwortet: keine Sperre: {e}");
+    assert!(e["zahl_cent"].is_i64(), "unbeantwortet: die Zahl steht da: {e}");
+    assert!(ring.is_null(), "/fragen: keine Sperre");
+}
+
+/// Die Sperre gilt nur, wo Vermietung geltend gemacht wird: ist "keine Vermietung" (`kein_vuv`) bestaetigt, fehlt kein Einkommen, und ein
+/// vorlaeufiges Feld der Gruppe (Rest des Vorjahrs) sperrt nicht.
+#[tokio::test]
+async fn kette_vv_objekt_kein_vuv_bestaetigt_sperrt_nicht() {
+    let paare = mit(kegel_gesamt(), vec![("vv_wohneinheit_bezeichnung", json!("EG links"))]);
+    let e = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung"]).await;
+    assert_eq!(e["grund"], "bestaetigt", "keine Vermietung bestaetigt: keine Sperre: {e}");
+    assert!(e["zahl_cent"].is_i64(), "keine Vermietung bestaetigt: die Zahl steht da: {e}");
+}
+
+/// Ein vorlaeufiger Betrag der Vermietung (Kegel-/Ring-Feld) behaelt seinen alten Grund: die neue Sperre nimmt die sechs Felder von
+/// `VV_GESAMT_FELDER` aus, sonst schluckte sie `input_kegel_nicht_bestaetigt` (und `ring_betrag_vorlaeufig`).
+#[tokio::test]
+async fn kette_vv_objekt_betragsfeld_vorlaeufig_behaelt_den_alten_grund() {
+    let e = ergebnis_vorlaeufig("gesamt", &vermietung_ein_objekt(), &["vv_einnahmen"]).await;
+    assert_eq!(e["grund"], "input_kegel_nicht_bestaetigt", "der alte Grund bleibt: {e}");
+    assert!(e["zahl_cent"].is_null(), "gesperrt: keine Zahl: {e}");
+    assert_eq!(offene_felder(&e), ["vv_einnahmen"], "offen nennt den Betrag: {e}");
 }
 
 /// Das zweite Objekt (`__2`) braucht keinen Hinweis: ein vorlaeufiges Feld darin sperrt schon (`vv_instanz_offen`, `sperre/gesamt.rs`),
