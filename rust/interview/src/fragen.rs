@@ -374,9 +374,10 @@ fn nach_themen<'r>(
 ///
 /// Das Ziel bleibt eine Frage; nur seine STELLE aendert sich: direkt hinter den letzten Ausloeser,
 /// der noch weiter hinten steht. Mehrere Nachzuegler hinter demselben Ausloeser behalten ihre
-/// Reihenfolge, die Menge bleibt gleich. Ein Ausloeser mit eigener `ableitung` zaehlt nicht (keine
-/// Ketten; er koennte selbst nachruecken und seinen Nachzuegler verlieren), ebenso wenig einer, der
-/// nicht in der Gruppe steht (anderes Thema, schon beantwortet).
+/// Reihenfolge, die Menge bleibt gleich. Ein Ausloeser mit eigener `ableitung` zaehlt nicht, ebenso
+/// wenig einer, der selbst nachrueckt (keine Ketten; sein Nachzuegler stuende hinter einem Platz, den
+/// er verlaesst, und ginge verloren), und keiner, der nicht in der Gruppe steht (anderes Thema, schon
+/// beantwortet).
 // ponytail: nur Ausloeser derselben Gruppe. Liegt ein `und_feld` in einem anderen Thema, ordnet
 // `themen_folge` es nicht vor (dort gilt nur `aus`); heute gibt es keinen solchen Fall.
 fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
@@ -385,33 +386,59 @@ fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
         .enumerate()
         .map(|(i, b)| (b.feld_id.as_str(), i))
         .collect();
+    // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`- oder `wert`-Bedingung: die Antwort auf die
+    // IBAN entscheidet, ob der BIC noch gefragt wird, die Art der Versorgung, ob das Alter bei Versorgungsbeginn gefragt wird; also
+    // steht das Ziel dahinter.
+    // ponytail: nur diese beiden Arten. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland stand vor der Konfession,
+    // an der seine `wert_nicht`-Bedingung haengt, Fluss I Befund B; seit B1 ordnet die Eingangsfrage die Konfession davor, nicht die
+    // Bedingung); wer sie auch ordnen will, entscheidet das je Feld.
+    let ausloeser: Vec<Vec<&str>> = gruppe
+        .iter()
+        .map(|b| {
+            let mut x: Vec<&str> = b
+                .ableitung
+                .iter()
+                .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
+                .flatten()
+                .collect();
+            x.extend(
+                b.feld_bedingung
+                    .iter()
+                    .flat_map(FeldBedingung::und_glieder)
+                    .filter(|g| g.praefix_nicht.is_some() || g.wert.is_some())
+                    .map(|g| g.feld.as_str()),
+            );
+            x
+        })
+        .collect();
+    // Je Feld der Index des letzten Ausloesers, der weiter hinten steht und zaehlt; `zaehlt_nicht` sind die Felder, die selbst rueckten.
+    let ziele = |zaehlt_nicht: &HashSet<usize>| -> Vec<Option<usize>> {
+        ausloeser
+            .iter()
+            .enumerate()
+            .map(|(i, xs)| {
+                xs.iter()
+                    .filter_map(|x| ort.get(x).copied())
+                    .filter(|&j| {
+                        j > i
+                            && !zaehlt_nicht.contains(&j)
+                            && gruppe.get(j).is_some_and(|a| a.ableitung.is_none())
+                    })
+                    .max()
+            })
+            .collect()
+    };
+    // Zwei Durchgaenge: erst, wer ueberhaupt nachrueckt, dann ohne diese Felder als Ausloeser. Die Nachrueckenden des zweiten sind
+    // eine Teilmenge des ersten, also steht kein Ausloeser des zweiten unter ihnen.
+    let rueckt: HashSet<usize> = ziele(&HashSet::new())
+        .iter()
+        .enumerate()
+        .filter_map(|(i, j)| j.map(|_| i))
+        .collect();
     // Index des Ausloesers -> Indizes seiner Nachzuegler, in Gruppenordnung.
     let mut hinter: HashMap<usize, Vec<usize>> = HashMap::new();
-    for (i, b) in gruppe.iter().enumerate() {
-        // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`-Bedingung: die Antwort auf die IBAN
-        // entscheidet, ob der BIC noch gefragt wird, also steht er dahinter.
-        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland stand vor der
-        // Konfession, an der seine Bedingung haengt, Fluss I Befund B; seit B1 ordnet die Eingangsfrage die Konfession davor, nicht
-        // die Bedingung); wer sie auch ordnen will, entscheidet das je Feld.
-        let mut ausloeser: Vec<&str> = b
-            .ableitung
-            .iter()
-            .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
-            .flatten()
-            .collect();
-        ausloeser.extend(
-            b.feld_bedingung
-                .iter()
-                .flat_map(FeldBedingung::und_glieder)
-                .filter(|g| g.praefix_nicht.is_some())
-                .map(|g| g.feld.as_str()),
-        );
-        let weiter_hinten = ausloeser
-            .into_iter()
-            .filter_map(|x| ort.get(x).copied())
-            .filter(|&j| j > i && gruppe.get(j).is_some_and(|a| a.ableitung.is_none()))
-            .max();
-        if let Some(j) = weiter_hinten {
+    for (i, j) in ziele(&rueckt).into_iter().enumerate() {
+        if let Some(j) = j {
             hinter.entry(j).or_default().push(i);
         }
     }
@@ -687,8 +714,10 @@ mod tests {
 
     /// Fluss J F4: Das Feld einer `praefix_nicht`-Bedingung steht vor dem Feld, das an ihr haengt (die IBAN vor dem BIC). In der
     /// Vordruck-Ordnung stand der BIC (Kz `E0102201`) vor der IBAN (kein Kz), und die Frage nach ihm kam, bevor die IBAN sie
-    /// erledigen konnte. KONTROLLE: jede andere Art von `feld_bedingung` ordnet nichts um (das Bundesland stand vor der Konfession,
-    /// an der seine Bedingung haengt, Fluss I Befund B; seit B1 steht die Konfession als Eingangsfrage davor).
+    /// erledigen konnte. Dasselbe gilt fuer das Feld einer `wert`-Bedingung (Vault: `decisions/eine-folgefrage-mit-wert-bedingung-
+    /// steht-hinter-ihrem-ausloeser-im-selben-thema`): das Alter bei Versorgungsbeginn steht hinter der Art. KONTROLLE: jede andere
+    /// Art von `feld_bedingung` ordnet nichts um (das Bundesland stand vor der Konfession, an der seine `wert_nicht`-Bedingung
+    /// haengt, Fluss I Befund B; seit B1 steht die Konfession als Eingangsfrage davor).
     #[test]
     fn das_feld_einer_praefix_bedingung_steht_vor_dem_feld_das_an_ihr_haengt() {
         let mut bic = feld("bic", None);
@@ -698,9 +727,29 @@ mod tests {
         // Steht schon alles richtig, aendert sich nichts. Fehlt das Feld der Bedingung in der Gruppe, bleibt der BIC stehen.
         assert_eq!(ids(&nach_ausloesern(vec![&iban, &bic, &v])), ["iban", "bic", "v"]);
         assert_eq!(ids(&nach_ausloesern(vec![&bic, &v])), ["bic", "v"]);
+        // `wert`: das Ziel rueckt hinter den Ausloeser; steht schon alles richtig oder fehlt der Ausloeser, bleibt es stehen.
         let mut land = feld("land", None);
         land.feld_bedingung = Some(bedingung("iban", None, Some(serde_json::json!("x"))));
-        assert_eq!(ids(&nach_ausloesern(vec![&land, &v, &iban])), ["land", "v", "iban"]);
+        assert_eq!(ids(&nach_ausloesern(vec![&land, &v, &iban])), ["v", "iban", "land"]);
+        assert_eq!(ids(&nach_ausloesern(vec![&iban, &land, &v])), ["iban", "land", "v"]);
+        assert_eq!(ids(&nach_ausloesern(vec![&land, &v])), ["land", "v"]);
+        // KONTROLLE `wert_nicht`: ordnet nichts um.
+        let mut nicht = feld("nicht", None);
+        let mut bed = bedingung("iban", None, None);
+        bed.wert_nicht = Some(serde_json::json!("x"));
+        nicht.feld_bedingung = Some(bed);
+        assert_eq!(ids(&nach_ausloesern(vec![&nicht, &v, &iban])), ["nicht", "v", "iban"]);
+    }
+
+    /// Keine Ketten (Entscheidung Punkt 3): Ein Ausloeser, der selbst hinter einen anderen rueckt, zaehlt nicht. Sonst stuende sein
+    /// Nachzuegler hinter einem Platz, den der Ausloeser verlaesst, und ginge verloren. `a` haengt per `wert` an `b`, `b` an `c`:
+    /// nur `b` rueckt hinter `c`, `a` bleibt stehen, alle drei Felder bleiben in der Gruppe.
+    #[test]
+    fn ein_wert_ausloeser_der_selbst_nachrueckt_zaehlt_nicht() {
+        let (mut a, mut b, c) = (feld("a", None), feld("b", None), feld("c", None));
+        a.feld_bedingung = Some(bedingung("b", None, Some(serde_json::json!("x"))));
+        b.feld_bedingung = Some(bedingung("c", None, Some(serde_json::json!("x"))));
+        assert_eq!(ids(&nach_ausloesern(vec![&a, &b, &c])), ["a", "c", "b"]);
     }
 
     /// Ein Ereignis fuer `feld_id` mit dem rohen Wert `wert`, am Store vorbei geschrieben (die Bindung prueft hier nichts).
@@ -743,6 +792,12 @@ mod tests {
     /// Wie [`frage_steht_bei`], aber die Scheibe fragt das Feld `ohne` nicht: ihre Sicht laesst es weg. Eine Antwort darauf kann
     /// trotzdem im Store stehen (Seitenkanal, von Hand geaenderte Akte).
     fn frage_steht_in_sicht(feld: &str, ohne: Option<&str>, antworten: Vec<(&str, PyWert, bool)>) -> bool {
+        queue_in_sicht(ohne, antworten).iter().any(|f| f == feld)
+    }
+
+    /// Die ganze Queue (VZ 2025, in der Reihenfolge von [`naechste_fragen`]) eines Falls, der nur diese `antworten` kennt; die
+    /// Scheibe fragt das Feld `ohne` nicht.
+    fn queue_in_sicht(ohne: Option<&str>, antworten: Vec<(&str, PyWert, bool)>) -> Vec<String> {
         let reg = crate::doctest_registry().expect("registry");
         let g = Graph::aus_registry(&reg);
         let sicht = Sicht::aus(g.alle().iter().filter(|b| Some(b.feld_id.as_str()) != ohne));
@@ -761,7 +816,32 @@ mod tests {
             vorjahr_referenz: None,
         });
         let ohne_beitrag: Option<&HashMap<String, i64>> = None;
-        naechste_fragen(&s, &sicht, &g, ohne_beitrag).contains(&feld)
+        naechste_fragen(&s, &sicht, &g, ohne_beitrag)
+            .into_iter()
+            .map(str::to_owned)
+            .collect()
+    }
+
+    /// Die Frage nach dem Alter bei Versorgungsbeginn des Partners hing an der Art (`wert`: `altersgrenze_sonstige`), stand aber
+    /// DAVOR (Fragen-Golden Fall 3 und 8): wer der Liste folgte, beantwortete sie zu frueh und bei den drei anderen Arten umsonst.
+    /// Am Aufrufort: `naechste_fragen` mit der echten Registry, Zusammenveranlagung bestaetigt (Entscheidung `eine-folgefrage-mit-
+    /// wert-bedingung-steht-hinter-ihrem-ausloeser-im-selben-thema`, Punkt 5). Die Menge der Fragen aendert sich nicht.
+    #[test]
+    fn folgefrage_steht_hinter_ihrem_ausloeser() {
+        const ART: &str = "versorgung_art_partner";
+        const ALTER: &str = "versorgung_alter_bei_beginn_partner";
+        let zusammen = || ("veranlagung", PyWert::Text("zusammen".to_owned()), true);
+        let art = |w: &str| (ART, PyWert::Text(w.to_owned()), true);
+        let ort = |q: &[String], f: &str| q.iter().position(|x| x == f).unwrap_or_else(|| panic!("{f} fehlt in der Queue"));
+
+        let q = queue_in_sicht(None, vec![zusammen()]);
+        assert!(ort(&q, ART) < ort(&q, ALTER), "die Art steht vor dem Alter, das an ihr haengt");
+        assert_eq!(q.iter().filter(|f| *f == ALTER).count(), 1, "das Alter steht genau einmal");
+        // KONTROLLE: die Art ist eine Frage und schaltet das Alter nur bei `altersgrenze_sonstige` frei.
+        let q = queue_in_sicht(None, vec![zusammen(), art("altersgrenze_sonstige")]);
+        assert!(q.iter().any(|f| f == ALTER), "bei altersgrenze_sonstige bleibt das Alter eine Frage");
+        let q = queue_in_sicht(None, vec![zusammen(), art("beamtenrechtlich")]);
+        assert!(!q.iter().any(|f| f == ALTER), "bei einer anderen Art entfaellt das Alter");
     }
 
     /// `feld_bedingung.alter_im_vz` (Abweichung Nr. 32): die Frage nach dem 55. Geburtstag steht nur, wenn das BESTAETIGTE
