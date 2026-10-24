@@ -105,3 +105,53 @@ async fn die_ehegatten_zeilen_warten_auf_die_veranlagung() {
         .collect();
     assert_eq!(wartende, PARTNERZEILEN.into_iter().collect::<BTreeSet<_>>(), "wartet_auf steht nicht an genau den vier Partnerzeilen");
 }
+
+/// Schreibt eine bestaetigte Antwort; hat das Feld schon ein aktives Ereignis, ersetzt die Antwort es (wie die Oberflaeche).
+async fn schreibe(d: &Dienst, feld: &str, wert: Value) {
+    let (_, stand) = sende(d, "GET", "/fall/pz/stand", None).await;
+    let mut rumpf = json!({
+        "feld_id": feld, "wert": wert, "zustand": "bestaetigt", "schreiber": "ui:laie",
+        "herkunft": {"herkunft": "laie", "pruef_tiefe": "ungeprueft", "haftung": "nutzer"},
+        "signal": {"signal_1": null, "signal_2": format!("ok@{feld}")},
+        "ts": "2026-01-01T00:00:00+00:00",
+    });
+    if let Some(id) = stand["felder"][feld]["event_id"].as_str() {
+        rumpf["ersetzt"] = json!(id);
+    }
+    let (status, antwort) = sende(d, "POST", "/fall/pz/event", Some(&rumpf)).await;
+    assert_eq!(status, 201, "POST {feld}: {antwort}");
+}
+
+/// Wechsel von gemeinsam auf allein (Messung 2026-10-24, `gesamt`, VZ 2025; gruen vor dem Bau, muss gruen bleiben): was der Nutzer zu den
+/// Partner-Zeilen gespeichert hat, wird unter Einzelveranlagung nie still mitgerechnet. Ein gespeicherter BETRAG des Partners sperrt laut
+/// (`partner_konsistenz_offen`, Zahl null, die Zeilen und Felder des Partners stehen nicht mehr in der Liste); ein gespeichertes „ja“ der
+/// Zeile ohne Betrag (`kein_sonstige_partner`) wird ignoriert und sperrt nicht.
+#[tokio::test]
+async fn der_wechsel_auf_allein_laesst_gespeicherte_partnerzeilen_nie_still_mitrechnen() {
+    let faelle: [(&str, Vec<(&str, Value)>, Value); 4] = [
+        ("ja und Betrag", vec![("kein_kap_partner", json!(false)), ("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
+        ("Zeile offen, Betrag", vec![("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
+        ("nein und Betrag", vec![("kein_kap_partner", json!(true)), ("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
+        ("ja ohne Betrag (sonstige)", vec![("kein_sonstige_partner", json!(false))], Value::Null),
+    ];
+    for (name, paare, erwartet) in faelle {
+        let d = neuer_fall("gesamt").await;
+        schreibe(&d, "veranlagung", json!("zusammen")).await;
+        for (feld, wert) in paare {
+            schreibe(&d, feld, wert).await;
+        }
+        schreibe(&d, "veranlagung", json!("einzel")).await;
+        let antwort = fragen_voll(&d).await;
+        assert_eq!(antwort["ring_gesperrt"], erwartet, "{name}: ring_gesperrt nach dem Wechsel auf allein: {antwort}");
+        let ids: Vec<&str> = antwort["fragen"].as_array().unwrap().iter().map(|q| q["feld_id"].as_str().unwrap()).collect();
+        for zeile in PARTNERZEILEN {
+            assert!(!ids.contains(&zeile), "{name}: {zeile} steht unter Einzelveranlagung in der Liste");
+        }
+        if erwartet.is_string() {
+            let (status, e) = sende(&d, "GET", "/fall/pz/ergebnis", None).await;
+            assert_eq!(status, 200, "{name}: {e}");
+            assert_eq!(e["grund"], erwartet, "{name}: /ergebnis nennt einen anderen Grund als /fragen: {e}");
+            assert!(e["zahl_cent"].is_null(), "{name}: trotz Sperre eine Zahl: {e}");
+        }
+    }
+}
