@@ -12,7 +12,8 @@
 //! niedrig in der Steuer, und kein Test faende es.
 //!
 //! **Wo es sitzt.** `deklaration/sperre/werbungskosten.rs` (dHf, Verpflegung, Uebernachtung, Arbeitsmittel) und
-//! `deklaration/sperre/einkunft.rs` (`p16_4`, `realsplitting_fahrtkosten`).
+//! `deklaration/sperre/einkunft.rs` (`p16_4`, `realsplitting_fahrtkosten`), dazu `deklaration/sperre/gesamt.rs`
+//! (`versorgung_von`) und `deklaration.rs` (`c2`, `sperrgrund_felder`).
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: aus den Regeln, die die Guards selbst in ihren Kommentaren nennen ("BESTAETIGT", "ein
 //! vorlaeufiger Wert urteilt nicht", "Naht-Fix: nicht nur is True auf dem Rohwert", Python `sum(wert or 0)` mit `TypeError`).
@@ -30,10 +31,10 @@
 
 use std::sync::OnceLock;
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, Cfg};
+use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_felder, Cfg};
 use bescheid::testhilfe::{felder, index, store};
 use bescheid::{BescheidFehler, BindungIndex, Instanzquelle};
-use domain::{Scheibe, Sperrgrund, Vz};
+use domain::{PyWert, Scheibe, Sperrgrund, Vz};
 use serde_json::{json, Value};
 
 /// Ein Event `(feld_id, wert, bestaetigt)`.
@@ -448,4 +449,28 @@ fn realsplitting_verlangt_zustimmung_und_betrag_bestaetigt() {
             fall("Zustimmung nein bestaetigt: die Regel ist aus, der Betrag wird nicht verlangt", rs(Some((false, true)), None), None),
         ],
     );
+}
+
+/// `sperrgrund_felder` (die Angaben hinter einer Sperre, Feld `sperr_felder` der Antwort): nur `partner_konsistenz_offen` nennt
+/// sie. Bei Einzelveranlagung und einem bestaetigten Grad der Behinderung des Partners steht genau diese Angabe mit ihrem Klartext
+/// in der Liste; derselbe Fall mit einem anderen Grund oder ohne Grund liefert nichts (Gegenprobe). Ein `cargo-mutants`-Lauf
+/// (2026-10-24) zeigte: weder `vec![]` noch `==` -> `!=` fiel einem Test auf, weil die API-Tests nur `grund` pruefen.
+#[test]
+fn sperrgrund_felder_nennt_die_partnerangaben_nur_beim_partner_grund() {
+    let st = store(&[
+        w("veranlagung", json!("einzel"), true),
+        z("rentner_grad_der_behinderung_partner", 30, true),
+    ]);
+    let f = felder(&st);
+    let offen = sperrgrund_felder(Some(Sperrgrund::PartnerKonsistenzOffen), &f);
+    let [angabe] = offen.as_slice() else {
+        panic!("genau eine Angabe des Partners erwartet: {offen:?}");
+    };
+    assert_eq!(angabe.feld_id, "rentner_grad_der_behinderung_partner");
+    assert_eq!(angabe.wert, PyWert::Ganz(30));
+    assert_eq!(angabe.veranlagung, PyWert::Text("einzel".to_owned()));
+    assert!(angabe.grund.contains("Grad der Behinderung des Partners"), "{}", angabe.grund);
+    for anderer in [Some(Sperrgrund::DhfTatbestandOffen), None] {
+        assert!(sperrgrund_felder(anderer, &f).is_empty(), "{anderer:?}: kein Partner-Grund, keine Angaben");
+    }
 }
