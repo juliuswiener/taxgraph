@@ -218,6 +218,25 @@ fn liste_und_objekt_als_tage_sind_ein_typfehler_nur_wenn_sie_nicht_leer_sind() {
     }
 }
 
+/// Python `int(wert or 0)` (`c2`): ein leerer Text, eine leere Liste und ein leeres Objekt sind 0, kein Fehler. Der Guard liest so den
+/// Veraeusserungsgewinn fuer die 5-Mio-Grenze des § 34 Abs. 3; ein nicht leerer Text dort ist ein `ValueError`. Gefunden vom
+/// Mutanten `match guard v.truthy() -> true`: er machte aus dem leeren Text einen Fehler.
+#[test]
+fn leerer_wert_als_veraeusserungsgewinn_ist_null_und_kein_fehler() {
+    let mit_gewinn = |wert: Value| {
+        guard(
+            Scheibe::RentnerGesamt,
+            &[b("antrag_ermaessigter_satz", true, true), b("dauernd_berufsunfaehig", true, true), w("rentner_veraeusserungsgewinn", wert, true)],
+        )
+    };
+    for leer in [json!(""), json!([]), json!({}), json!(null), json!(false), json!(0)] {
+        let r = mit_gewinn(leer.clone());
+        assert!(r.is_ok(), "{leer}: {r:?}");
+    }
+    let r = mit_gewinn(json!("abc"));
+    assert!(matches!(r, Err(BescheidFehler::Python { klasse: "ValueError", .. })), "nicht numerischer Text: {r:?}");
+}
+
 /// Uebernachtung (§ 9 Abs. 1 Nr. 5a): Ort (ein Bool, bestaetigt), die drei Bedingungen und beide Zeitangaben (ganze Zahlen, bestaetigt)
 /// muessen da sein; jede einzelne, die fehlt oder nur vorlaeufig ist, sperrt.
 #[test]
@@ -323,6 +342,71 @@ fn arbeitsmittel_sofortabzug_nur_bestaetigt_gewaehlt_und_null_ist_kein_arbeitsmi
                 Some("arbeitsmittel_afa_ueber_gwg_offen"),
             ),
             fall("Kosten 0: kein Arbeitsmittel, keine Sperre", vec![z("am_anschaffungskosten", 0, true)], None),
+        ],
+    );
+}
+
+// ---------------------------------------------------------------- GWG (§ 6 Abs. 2 und § 9 Abs. 1 Nr. 7 EStG)
+
+/// Geringwertige Wirtschaftsgueter: die Grenzen der Sperre liegen bei 250,00 EUR (Verzeichnis, ab dann "ueber") und 800,00 EUR
+/// (Sofortabzug, ab dann "ueber"); genau auf der Grenze gilt noch die untere Regel. Dazu: von den zwei Tatbestandsfragen reicht eine
+/// beantwortete nicht. Die Tabellen in `offene_defekte.rs` pruefen die Fachfaelle (Python-Tests), nicht die Grenzwerte (Mutanten `>`
+/// -> `>=` auf 25.000 und 80.000 Cent, `||` -> `&&` bei den zwei Tatbestandsfragen).
+#[test]
+fn gwg_grenzen_250_und_800_euro_und_beide_tatbestandsfragen() {
+    let gwg = |betrag: i64, nutzbar: Option<bool>, netto: Option<bool>, ohne_abzug: Option<bool>, verzeichnis: Option<bool>| {
+        let mut e = vec![z("gwg_anschaffungskosten_netto", betrag, true)];
+        for (feld, wert) in [
+            ("gwg_bewegliches_selbstaendig_nutzbar", nutzbar),
+            ("gwg_netto_ohne_vorsteuer", netto),
+            ("gwg_ohne_vorsteuerabzug", ohne_abzug),
+            ("gwg_verzeichnis_ab_250", verzeichnis),
+        ] {
+            if let Some(w) = wert {
+                e.push(b(feld, w, true));
+            }
+        }
+        e
+    };
+    let ja = Some(true);
+    pruefe(
+        Scheibe::Gesamt,
+        vec![
+            fall("800,00 EUR netto, alles beantwortet: noch Sofortabzug (Gegenprobe)", gwg(80_000, ja, ja, None, ja), None),
+            fall("800,01 EUR netto, keine AfA-Angaben: ueber der Grenze", gwg(80_001, ja, ja, None, ja), Some("gwg_abschreibung_offen")),
+            fall("800,00 EUR brutto, Kleinunternehmer (ja): noch Sofortabzug (Gegenprobe)", gwg(80_000, ja, Some(false), ja, ja), None),
+            fall("800,01 EUR brutto, Kleinunternehmer (ja): ueber der Grenze, der Nettobetrag fehlt", gwg(80_001, ja, Some(false), ja, ja), Some("gwg_mehrwertsteuer_offen")),
+            fall("nur die Nutzbarkeit beantwortet", gwg(10_000, ja, None, None, None), Some("gwg_tatbestand_offen")),
+            fall("nur die Netto-Frage beantwortet", gwg(10_000, None, ja, None, None), Some("gwg_tatbestand_offen")),
+            fall("250,00 EUR, Verzeichnis nicht beantwortet: noch kein Verzeichnis noetig (Gegenprobe)", gwg(25_000, ja, ja, None, None), None),
+            fall("250,01 EUR, Verzeichnis nicht beantwortet", gwg(25_001, ja, ja, None, None), Some("gwg_tatbestand_offen")),
+        ],
+    );
+}
+
+// ---------------------------------------------------------------- Versorgungsfreibetrag (§ 19 Abs. 2)
+
+/// Versorgungsbezug: Beginnjahr UND Bemessungsgrundlage muessen BESTAETIGT und ueber 0 sein (Python `isinstance(x, int) and x > 0`).
+/// Eine 0 ist keine Angabe, ein vorlaeufiger Wert auch nicht. Die Tabelle in `sperre_scheiben_hermetisch.rs` kennt "fehlt" und "alles da",
+/// nicht diese Mitte (Mutanten `>` -> `>=` auf Beginnjahr und Bemessungsgrundlage, `&&` -> `||` auf der Bemessungsgrundlage).
+#[test]
+fn versorgungsbezug_braucht_beginnjahr_und_bemessungsgrundlage_ueber_null_und_bestaetigt() {
+    let bezug = |beginn: i64, beginn_bestaetigt: bool, bmg: i64, bmg_bestaetigt: bool| {
+        vec![
+            z("bruttoarbeitslohn", 1_800_000, true),
+            z("versorgung_jahresrente", 1_800_000, true),
+            z("versorgung_beginn_jahr", beginn, beginn_bestaetigt),
+            z("versorgung_bemessungsgrundlage", bmg, bmg_bestaetigt),
+        ]
+    };
+    let offen = Some("versorgungsfreibetrag_offen");
+    pruefe(
+        Scheibe::RentnerGesamt,
+        vec![
+            fall("Beginnjahr und Bemessungsgrundlage bestaetigt (Gegenprobe)", bezug(2020, true, 1_500_000, true), None),
+            fall("Beginnjahr 0 bestaetigt", bezug(0, true, 1_500_000, true), offen),
+            fall("Bemessungsgrundlage 0 bestaetigt", bezug(2020, true, 0, true), offen),
+            fall("Bemessungsgrundlage ueber 0 nur vorlaeufig", bezug(2020, true, 1_500_000, false), offen),
         ],
     );
 }
