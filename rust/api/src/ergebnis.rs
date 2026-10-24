@@ -95,9 +95,23 @@ fn melde(z: &Zustand, fall_id: &FallId, mut obj: Map<String, Value>) -> Antwort 
     Antwort::neu(200, Value::Object(obj))
 }
 
-/// Die Basis-Felder der Instanzen von `gwg`, `kind` und `p23_veraeusserung`, die nicht bestaetigt
-/// sind, dazu das offen gelassene Gate von § 10 Abs. 1 Nr. 5, sortiert (`api.py:628`). Die Zahl
-/// bleibt die gefilterte; das hier ist der Hinweis darauf, was sie nicht kennt.
+/// Die Instanz-Gruppen, deren nicht bestaetigte Felder [`offene_instanzfelder`] meldet. Der Ring zaehlt nur eine Instanz,
+/// deren Felder alle bestaetigt sind (`Instanzquelle::zaehlt`): ein vorlaeufiges Feld, auch ein Textfeld, nimmt die ganze
+/// Instanz aus der Zahl, und `grund` heisst trotzdem `bestaetigt`. Jede Gruppe der Bindung steht hier oder, mit Grund, in der
+/// Ausnahmeliste des Waechters `instanz_gruppen_vollstaendig` (`tests/kette_endstand_hermetisch.rs`): eine neue Gruppe
+/// faellt nicht still heraus.
+pub const HINWEIS_GRUPPEN: [&str; 6] = [
+    "gwg",
+    "kind",
+    "p23_veraeusserung",
+    "hh_handwerker",
+    "hh_dienstleistung",
+    "hh_minijob",
+];
+
+/// Die Basis-Felder der Instanzen der [`HINWEIS_GRUPPEN`], die nicht bestaetigt sind, dazu das offen gelassene Gate von
+/// § 10 Abs. 1 Nr. 5, sortiert (`api.py:628`). Die Zahl bleibt die gefilterte; das hier ist der Hinweis darauf, was sie nicht
+/// kennt.
 fn offene_instanzfelder(
     store: &Store,
     index: &bescheid::BindungIndex<'_>,
@@ -108,7 +122,7 @@ fn offene_instanzfelder(
         nur_bestaetigt: false,
     };
     let mut offen = std::collections::BTreeSet::new();
-    for gruppe in ["gwg", "kind", "p23_veraeusserung"] {
+    for gruppe in HINWEIS_GRUPPEN {
         for inst in q.instanzen(gruppe).map_err(|e| bescheid_fehler(&e))? {
             offen.extend(
                 inst.felder

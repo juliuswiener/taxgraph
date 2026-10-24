@@ -2157,3 +2157,191 @@ async fn kist_an_gesamt_beitrag_von_person_b_mindert_nur_ihre_einkuenfte() {
 async fn kist_an_gesamt_ohne_antwort_zu_person_b_rechnet_wie_bisher() {
     erwarte_kist_an_gesamt(&[("B unbeantwortet", 2_000_000, "evangelisch", None, "nordrhein_westfalen", 1_383_800, 124_542)]).await;
 }
+
+// ---- § 35a: ein nur vorlaeufiger Betrag steht in `offen`, die Zahl und der Grund bleiben ----------------
+//
+// Entscheidung `vorlaeufiger-betrag-bei-haushaltsnahen-feldern-wird-gemeldet-nicht-gesperrt`: keine Sperre, nur der
+// Hinweis. Die Erwartung ist die Ermaessigung nach § 35a EStG (20 % der Arbeitskosten): 1.000 EUR bestaetigt senken
+// die Steuer um 200 EUR, weit unter den Hoechstbetraegen der drei Toepfe (510 / 4.000 / 1.200 EUR).
+
+/// Die Folgeantworten, ohne die § 35a sperrt: unbar bezahlt, im EU/EWR-Raum, keine Foerderung.
+fn hh_folgeantworten() -> Paare {
+    vec![
+        ("hh_hat_aufwendungen", json!(true)),
+        ("hh_rechnung_unbar", json!(true)),
+        ("hh_in_eu_ewr", json!(true)),
+        ("hh_handwerker_keine_foerderung", json!(true)),
+    ]
+}
+
+/// Die drei Toepfe: Betragsfeld, dasselbe Feld im zweiten Objekt, Textfeld derselben Instanz, Zaehlfeld der Gruppe.
+const HH_TOEPFE: [(&str, &str, &str, &str); 3] = [
+    ("hh_handwerker_betrag", "hh_handwerker_betrag__2", "hh_handwerker_art", "hh_anzahl_handwerker"),
+    ("hh_dienstleistung_betrag", "hh_dienstleistung_betrag__2", "hh_dienstleistung_art", "hh_anzahl_dienstleistungen"),
+    ("hh_minijob_betrag", "hh_minijob_betrag__2", "hh_minijob_art", "hh_anzahl_minijobs"),
+];
+
+/// `offen` einer Antwort als Liste von Feldnamen.
+fn offene_felder(a: &Value) -> Vec<String> {
+    a["offen"]
+        .as_array()
+        .unwrap_or_else(|| panic!("offen fehlt oder ist keine Liste: {a}"))
+        .iter()
+        .map(|f| f.as_str().unwrap().to_owned())
+        .collect()
+}
+
+/// Ein Posten je Topf, 1.000 EUR: bestaetigt senkt er die Zahl um 200 EUR und `offen` bleibt leer; nur vorlaeufig bleibt die
+/// Zahl (der Betrag zaehlt nicht) und `grund` heisst `bestaetigt`, aber `offen` nennt das Betragsfeld.
+#[tokio::test]
+async fn hh_betrag_vorlaeufig() {
+    let basis = mit(kegel_gesamt(), hh_folgeantworten());
+    let ohne = ergebnis("gesamt", &basis).await;
+    assert_eq!(ohne["grund"], "bestaetigt", "Positivkontrolle ohne Betrag: {ohne}");
+    let ohne_zahl = ohne["zahl_cent"].as_i64().unwrap();
+    assert!(offene_felder(&ohne).is_empty(), "ohne Betrag nichts offen: {ohne}");
+    for (feld, _zweites, _art, anzahl) in HH_TOEPFE {
+        let paare = mit(basis.clone(), vec![(feld, json!(100_000)), (anzahl, json!(1))]);
+        let fest = ergebnis("gesamt", &paare).await;
+        assert_eq!(fest["grund"], "bestaetigt", "{feld} bestaetigt: {fest}");
+        assert_eq!(
+            fest["zahl_cent"].as_i64(),
+            Some(ohne_zahl - 20_000),
+            "{feld} bestaetigt senkt die Zahl um 200 EUR: {fest}"
+        );
+        assert!(offene_felder(&fest).is_empty(), "{feld} bestaetigt: nichts offen: {fest}");
+        let vorl = ergebnis_vorlaeufig("gesamt", &paare, &[feld]).await;
+        assert_eq!(vorl["grund"], "bestaetigt", "{feld} vorlaeufig: der Grund bleibt, keine Sperre: {vorl}");
+        assert_eq!(
+            vorl["zahl_cent"].as_i64(),
+            Some(ohne_zahl),
+            "{feld} vorlaeufig: die Zahl bleibt, der Betrag zaehlt nicht: {vorl}"
+        );
+        assert_eq!(offene_felder(&vorl), [feld], "{feld} vorlaeufig steht in offen: {vorl}");
+    }
+}
+
+/// Das zweite Objekt (`__2`) einer Gruppe meldet wie das erste: das erste bestaetigt, das zweite vorlaeufig, die Zahl
+/// zaehlt nur das erste, `offen` nennt das Betragsfeld (die Instanz ist auf die Basis-Kennung normiert).
+#[tokio::test]
+async fn hh_betrag_vorlaeufig_zweites_objekt() {
+    let basis = mit(kegel_gesamt(), hh_folgeantworten());
+    let ohne_zahl = ergebnis("gesamt", &basis).await["zahl_cent"].as_i64().unwrap();
+    for (feld, zweites, _art, anzahl) in HH_TOEPFE {
+        let paare = mit(basis.clone(), vec![(feld, json!(100_000)), (zweites, json!(100_000)), (anzahl, json!(2))]);
+        let beide = ergebnis("gesamt", &paare).await;
+        assert_eq!(
+            beide["zahl_cent"].as_i64(),
+            Some(ohne_zahl - 40_000),
+            "{feld}: beide bestaetigt senken die Zahl um 400 EUR: {beide}"
+        );
+        assert!(offene_felder(&beide).is_empty(), "{feld}: beide bestaetigt, nichts offen: {beide}");
+        let vorl = ergebnis_vorlaeufig("gesamt", &paare, &[zweites]).await;
+        assert_eq!(
+            vorl["zahl_cent"].as_i64(),
+            Some(ohne_zahl - 20_000),
+            "{feld}: das vorlaeufige zweite Objekt zaehlt nicht: {vorl}"
+        );
+        assert_eq!(offene_felder(&vorl), [feld], "{feld}: das zweite Objekt steht in offen: {vorl}");
+    }
+}
+
+/// Waechter: jede Instanz-Gruppe der Bindung steht in `HINWEIS_GRUPPEN` (ihre nicht bestaetigten Felder stehen in `offen`)
+/// oder hier mit Grund. Eine neue Gruppe faellt nicht still aus der Meldung.
+#[test]
+fn instanz_gruppen_vollstaendig() {
+    /// Gruppen ohne Hinweis in `offen`: ihre Summenfelder sind Ring-Kandidaten (`konstanten.rs`), ein vorlaeufiger Betrag
+    /// sperrt (`ring_betrag_vorlaeufig`) statt still aus der Zahl zu fallen.
+    const AUSNAHMEN: [(&str, &str); 3] = [
+        ("vv_objekt", "Anlage V: vv_einnahmen bis vv_entgelt_quote_prozent sind Ring-Kandidaten, vorlaeufig sperrt"),
+        ("rente", "Anlage R: rentner_renten_art, -jahresrente, -beginn_jahr und -alter sind Ring-Kandidaten, vorlaeufig sperrt"),
+        ("rente_av_bav", "Anlage R-AV/bAV: eine vorlaeufige Mitteilung sperrt mit RavBavAngabenOffen (rav_bav.rs)"),
+    ];
+    let wurzel = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let registry = bindung::lade_registry_der_wurzel(&wurzel).expect("Registry laedt");
+    let gruppen: Vec<&str> = registry
+        .dateien
+        .iter()
+        .flat_map(|(_, d)| d.instanz_gruppen.iter())
+        .map(|g| g.gruppe.as_str())
+        .collect();
+    // Blindheitskontrolle: eine Registry ohne Gruppen liesse jede Schleife unten leer durchlaufen.
+    assert!(gruppen.len() >= 9, "die Bindung nennt nur {} Instanz-Gruppen: {gruppen:?}", gruppen.len());
+    for g in &gruppen {
+        let hinweis = api::ergebnis::HINWEIS_GRUPPEN.contains(g);
+        let ausnahme = AUSNAHMEN.iter().any(|(a, _)| a == g);
+        assert!(hinweis != ausnahme, "Gruppe `{g}` muss in HINWEIS_GRUPPEN ODER in AUSNAHMEN stehen (hinweis={hinweis}, ausnahme={ausnahme})");
+    }
+    for g in api::ergebnis::HINWEIS_GRUPPEN.iter().chain(AUSNAHMEN.iter().map(|(a, _)| a)) {
+        assert!(gruppen.contains(g), "`{g}` steht in der Liste, die Bindung kennt die Gruppe nicht");
+    }
+}
+
+/// Auch das Textfeld einer Instanz meldet: ein vorlaeufiges `*_art` neben einem bestaetigten Betrag macht die ganze Instanz
+/// vorlaeufig (`Instanz::zustand` ist der meet aller Felder), der Betrag zaehlt dann nicht -- gemessen: die Zahl bleibt
+/// auf dem Stand ohne Posten. Darum steht das Textfeld in `offen`; ein Filter auf Betragsfelder liesse die Zahl ohne Hinweis
+/// um 200 EUR zu hoch stehen.
+#[tokio::test]
+async fn hh_betrag_vorlaeufig_text_feld_macht_die_instanz_vorlaeufig() {
+    let basis = mit(kegel_gesamt(), hh_folgeantworten());
+    let ohne_zahl = ergebnis("gesamt", &basis).await["zahl_cent"].as_i64().unwrap();
+    for (feld, _zweites, art, anzahl) in HH_TOEPFE {
+        let paare = mit(basis.clone(), vec![(feld, json!(100_000)), (art, json!("Beispiel")), (anzahl, json!(1))]);
+        let vorl = ergebnis_vorlaeufig("gesamt", &paare, &[art]).await;
+        assert_eq!(vorl["grund"], "bestaetigt", "{art} vorlaeufig: keine Sperre: {vorl}");
+        assert_eq!(
+            vorl["zahl_cent"].as_i64(),
+            Some(ohne_zahl),
+            "{art} vorlaeufig: die Instanz zaehlt nicht, der bestaetigte Betrag faellt mit heraus: {vorl}"
+        );
+        assert_eq!(offene_felder(&vorl), [art], "{art} vorlaeufig steht in offen: {vorl}");
+    }
+}
+
+// ---- § 10 Abs. 1 Nr. 5: das offen gelassene Gate der Kinderbetreuung steht in `offen`, die Zahl kommt --------------
+//
+// `ergebnis::offene_instanzfelder` haengt `bescheid::abzuege::p10_1_5_gate_fehlend` an die Instanzfelder an. Die Funktion
+// selbst pruefen die Tests in `bescheid`; dieser Test haelt den AUFRUFORT: ohne ihn bliebe die Meldung im Ergebnis aus, und
+// kein API-Test merkte es.
+
+const GATE_KIND_UNTER_14: &str = "kind_unter_14_haushaltszugehoerig";
+
+/// Kosten ohne Antwort auf das Gate: die Kosten zaehlen nicht (das Gate ist nicht `ja`), es sperrt auch nichts
+/// (`sperre/gesamt.rs::kinderbetreuung` prueft nur bestaetigte Kinder), die Zahl kommt, und `offen` nennt das Gate. Mit
+/// Antwort -- `nein`, oder `ja` samt beider Folgeantworten -- nennt `offen` es nicht.
+#[tokio::test]
+async fn kinderbetreuung_gate_offen_steht_in_offen() {
+    let basis = kegel_gesamt();
+    let ohne = ergebnis("gesamt", &basis).await;
+    assert_eq!(ohne["grund"], "bestaetigt", "Positivkontrolle ohne Kosten: {ohne}");
+    let ohne_zahl = ohne["zahl_cent"].as_i64().unwrap();
+    assert!(offene_felder(&ohne).is_empty(), "ohne Kosten nichts offen: {ohne}");
+
+    let kosten = ("kinderbetreuungskosten", json!(300_000));
+    let a = ergebnis("gesamt", &mit(basis.clone(), vec![kosten.clone()])).await;
+    assert_eq!(a["grund"], "bestaetigt", "Kosten ohne Gate: keine Sperre, die Zahl kommt: {a}");
+    assert_eq!(a["zahl_cent"].as_i64(), Some(ohne_zahl), "Kosten ohne Gate zaehlen nicht: {a}");
+    assert_eq!(offene_felder(&a), [GATE_KIND_UNTER_14], "Kosten ohne Gate: das Gate steht in offen: {a}");
+
+    let nein = ergebnis("gesamt", &mit(basis.clone(), vec![kosten.clone(), (GATE_KIND_UNTER_14, json!(false))])).await;
+    assert_eq!(nein["grund"], "bestaetigt", "Gate nein: die Zahl kommt: {nein}");
+    assert_eq!(nein["zahl_cent"].as_i64(), Some(ohne_zahl), "Gate nein: die Kosten zaehlen nicht: {nein}");
+    assert!(offene_felder(&nein).is_empty(), "Gate beantwortet (nein): nichts offen: {nein}");
+
+    let ja = mit(
+        basis,
+        vec![
+            kosten,
+            (GATE_KIND_UNTER_14, json!(true)),
+            ("kind_betreuung_reine_betreuung", json!(true)),
+            ("kind_betreuung_rechnung_ueberweisung", json!(true)),
+        ],
+    );
+    let ja = ergebnis("gesamt", &ja).await;
+    assert_eq!(ja["grund"], "bestaetigt", "Gate ja mit Folgeantworten: die Zahl kommt: {ja}");
+    assert!(
+        ja["zahl_cent"].as_i64().unwrap() < ohne_zahl,
+        "Gate ja: die Kosten mindern die Steuer: {ja}"
+    );
+    assert!(offene_felder(&ja).is_empty(), "Gate beantwortet (ja): nichts offen: {ja}");
+}
