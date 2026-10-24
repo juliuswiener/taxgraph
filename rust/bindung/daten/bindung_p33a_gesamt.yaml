@@ -14,7 +14,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viel hast du im vergangenen Jahr für Unterhalt und Berufsausbildung der unterhaltsberechtigten Person tatsächlich gezahlt?"
-    hilfe_kurz: "Nur tatsächlich geleistete Zahlungen an die unterhaltsberechtigte Person (z. B. monatliche Überweisungen, Mietzahlungen direkt). Maximal abziehbar ist der Grundfreibetrag (~12.348€, plus KV/PV-Beiträge)."
+    hilfe_kurz: "Nur tatsächlich geleistete Zahlungen an die unterhaltsberechtigte Person (z. B. monatliche Überweisungen). Geld muss auf das Konto der unterstützten Person überwiesen werden (§ 33a Abs. 1 S. 12 EStG). Maximal abziehbar ist der Grundfreibetrag des Veranlagungsjahres, plus KV/PV-Beiträge."
     beispielwert: 1000000
     herkunft_slots: null
     # E10/ESt1A_U/Ang_HH_unt_P_Unt_Leist/AW_U/U_Ztr — "Höhe der Unterhaltszahlung
@@ -369,7 +369,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Wie viele deiner volljährigen Kinder sind in auswärtiger Berufsausbildung UND du hast Anspruch auf Kindergeld oder den Kinderfreibetrag für sie?"
-    hilfe_kurz: "1.200€ Freibetrag JE Kind. Nur für Kinder zählen, für die dir der VOLLE Jahresbetrag zusteht (keine Elternteil-Hälftelung in Stufe-1). Monats-Zwölftelung bei nicht-ganzjähriger Ausbildung = Stufe-2-Backlog."
+    hilfe_kurz: "1.200€ Freibetrag JE Kind. Zähle nur Kinder, für die dir der VOLLE Jahresbetrag zusteht. Die App rechnet 1.200€ je Kind, teilt den Betrag aber nicht zwischen den Eltern (grundsätzlich steht jedem Elternteil die Hälfte zu, § 33a Abs. 2 S. 4 EStG) und kürzt ihn nicht für Monate ohne Ausbildung (ein Zwölftel je Monat, § 33a Abs. 3 S. 1 EStG)."
     beispielwert: 1
     herkunft_slots: null
     elster_kz: null

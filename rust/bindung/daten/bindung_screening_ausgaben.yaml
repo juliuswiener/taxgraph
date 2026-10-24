@@ -212,7 +212,7 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
     fragetext_laie: "Hast du dieses Jahr an gemeinnützige Vereine, Stiftungen, Kirchen, Parteien oder unabhängige Wählervereinigungen gespendet?"
-    hilfe_kurz: "Zum Beispiel eine Dauerspende, eine Fluthilfe oder der Mitgliedsbeitrag an einen gemeinnützigen Verein. Ohne Spendenquittung geht es meist nicht."
+    hilfe_kurz: "Zum Beispiel eine Dauerspende, eine Fluthilfe oder der Mitgliedsbeitrag an einen gemeinnützigen Verein. Nicht abziehbar sind Mitgliedsbeiträge an Vereine für Sport, kulturelle Freizeitgestaltung, Heimatpflege und ähnliche Zwecke (§ 10b Abs. 1 S. 8 EStG). Ohne Spendenquittung geht es meist nicht."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
@@ -442,7 +442,7 @@ bindungen:
     elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 35a Abs. 2 EStG"
+      quelle: "§ 35a Abs. 5 S. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
 

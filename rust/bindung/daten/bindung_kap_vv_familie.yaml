@@ -733,7 +733,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Bist du alleinerziehend (du wohnst mit deinem Kind zusammen, aber ohne einen anderen Erwachsenen im Haushalt)?"
-    hilfe_kurz: "Es darf keine andere erwachsene Person mit im Haushalt leben (außer eigene Kinder)."
+    hilfe_kurz: "Es darf keine andere volljährige Person mit im Haushalt leben. Ausgenommen sind nur Personen, für die dir Kindergeld oder ein Kinderfreibetrag zusteht (§ 24b Abs. 3 S. 1 EStG)."
     beispielwert: true
     herkunft_slots: null
     elster_kz: null
