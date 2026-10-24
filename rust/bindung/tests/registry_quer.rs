@@ -327,7 +327,7 @@ fn kein_fragbares_bool_gate_auf_einem_sammel_scope() {
 
 /// `(Ort, Text)` einer festen Jahreszahl, die kein VZ-Bezug ist; der Grund steht daneben. Wer eine neue
 /// Ausnahme braucht, traegt sie hier mit Grund ein, statt den Test zu lockern.
-const JAHR_AUSNAHMEN: [(&str, &str, &str); 5] = [
+const JAHR_AUSNAHMEN: [(&str, &str, &str); 9] = [
     (
         "kind_geburtsdatum",
         "hilfe_kurz",
@@ -352,6 +352,26 @@ const JAHR_AUSNAHMEN: [(&str, &str, &str); 5] = [
         "p23_afa",
         "hilfe_kurz",
         "Rechtstatsache (Anleitung Anlage SO: Anschaffung nach dem 31.12.2008, Abschreibung bei den sonstigen Einkuenften), kein VZ-Bezug.",
+    ),
+    (
+        "vorsorge_rv_alt_mit_ueberschuss",
+        "fragetext_laie",
+        "Rechtstatsache (§ 10 Abs. 1 Nr. 3a EStG: Laufzeit vor dem 1. Januar 2005), kein VZ-Bezug.",
+    ),
+    (
+        "vorsorge_rv_alt_mit_ueberschuss",
+        "hilfe_kurz",
+        "Rechtstatsache (§ 10 Abs. 1 Nr. 3a EStG: Laufzeit vor dem 1. Januar 2005, Beitrag bis 31. Dezember 2004), kein VZ-Bezug.",
+    ),
+    (
+        "vorsorge_rv_alt_ohne_ueberschuss",
+        "fragetext_laie",
+        "Rechtstatsache (§ 10 Abs. 1 Nr. 3a EStG: Laufzeit vor dem 1. Januar 2005), kein VZ-Bezug.",
+    ),
+    (
+        "vorsorge_rv_alt_ohne_ueberschuss",
+        "hilfe_kurz",
+        "Rechtstatsache (§ 10 Abs. 1 Nr. 3a EStG: Laufzeit vor dem 1. Januar 2005, Beitrag bis 31. Dezember 2004), kein VZ-Bezug.",
     ),
 ];
 

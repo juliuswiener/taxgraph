@@ -233,7 +233,7 @@ bindungen:
     vorjahr: vorschlag
     frage_invertiert: true   # Feld benennt die Abwesenheit, die Frage fragt nach der Anwesenheit
     fragetext_laie: "Hattest du dieses Jahr Kosten für deine eigene erste Berufsausbildung oder ein Erststudium?"
-    hilfe_kurz: "Gemeint ist die ERSTE Ausbildung oder das erste Studium — zum Beispiel Studiengebühren, Fachbücher, Fahrten zur Hochschule. Eine Fortbildung im schon erlernten Beruf gehört nicht hierher, sie zählt als Werbungskosten."
+    hilfe_kurz: "Gemeint ist die ERSTE Ausbildung oder das erste Studium — zum Beispiel Studiengebühren, Fachbücher, Fahrten zur Hochschule. Eine Fortbildung im schon erlernten Beruf gehört nicht hierher, sie zählt als Werbungskosten. Nach § 9 Abs. 6 EStG sind Kosten für eine Berufsausbildung oder ein Studium nur dann Werbungskosten, wenn du vorher schon eine Erstausbildung abgeschlossen hast oder die Ausbildung im Rahmen eines Dienstverhältnisses stattfindet. Kosten, die du als Werbungskosten angesetzt hast, trägst du hier nicht noch einmal ein."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null

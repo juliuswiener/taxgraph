@@ -389,12 +389,12 @@ instanz_gruppen:
     anzahl_feld: hh_anzahl_handwerker
     etikett: "Handwerkerleistung"
     max: 9
-    grund: "§ 35a Abs. 3 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Leistung; ohne Zaehlfeld war nur eine erfassbar."
+    grund: "§ 35a Abs. 3 EStG ermaessigt die Steuer um 20 % der Aufwendungen, nach Abs. 5 S. 2 gilt der Abzug nur fuer Arbeitskosten. Art und Betrag gehoeren zu je einer Leistung; ohne Zaehlfeld war nur eine erfassbar."
   - gruppe: hh_dienstleistung
     anzahl_feld: hh_anzahl_dienstleistungen
     etikett: "Dienstleistung"
     max: 9
-    grund: "§ 35a Abs. 2 EStG ermaessigt die Steuer um 20 % der Arbeitskosten. Art und Betrag gehoeren zu je einer Dienstleistung; ohne Zaehlfeld war nur eine erfassbar."
+    grund: "§ 35a Abs. 2 EStG ermaessigt die Steuer um 20 % der Aufwendungen, nach Abs. 5 S. 2 gilt der Abzug nur fuer Arbeitskosten. Art und Betrag gehoeren zu je einer Dienstleistung; ohne Zaehlfeld war nur eine erfassbar."
   - gruppe: hh_minijob
     anzahl_feld: hh_anzahl_minijobs
     etikett: "Minijob"

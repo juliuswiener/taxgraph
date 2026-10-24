@@ -118,7 +118,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Hast du ausländische Einkünfte aus mehr als einem Staat?"
-    hilfe_kurz: "Die DBA-Anrechnung ist in Stufe-1 auf EINEN Staat beschränkt. Bei mehreren Staaten brauchst du eine Steuerberatung."
+    hilfe_kurz: "Die Anrechnung ausländischer Steuer nach dem Doppelbesteuerungsabkommen (DBA) rechnet die App nur für EINEN Staat. Bei mehreren Staaten brauchst du eine Steuerberatung."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null

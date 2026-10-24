@@ -184,7 +184,6 @@ fn die_pruefung_meldet_fehlende_und_verbotene_teile() {
 /// § 35c Abs. 1 S. 4: Die Kosten des Energieberaters haben ein EIGENES Feld (50 %); im Sanierungsfeld (7-%-Staffel)
 /// zaehlen sie nicht. Der Text darf sie dort nicht als Teil der Kosten nennen.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn das_sanierungsfeld_verweist_die_energieberater_kosten_an_ihr_eigenes_feld() {
     pruefe_faelle(&[Fall {
         datei: "bindung_p35c_sanierung.yaml",
@@ -203,7 +202,6 @@ fn das_sanierungsfeld_verweist_die_energieberater_kosten_an_ihr_eigenes_feld() {
 
 /// Die Dateikoepfe nennen "Abs.1a" (so einen Absatz hat § 35c nicht); die Stelle ist Abs. 1 Satz 4.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn die_kopfkommentare_der_35c_dateien_nennen_abs_1_satz_4() {
     for datei in [
         "bindung_p35c_sanierung.yaml",
@@ -223,7 +221,6 @@ fn die_kopfkommentare_der_35c_dateien_nennen_abs_1_satz_4() {
 /// § 10 Abs. 1 Nr. 3a EStG: Beitraege zu den Altvertraegen zaehlen nur, wenn die Laufzeit vor dem 1. Januar 2005
 /// begonnen hat und bis zum 31. Dezember 2004 ein Beitrag gezahlt wurde. Frage und Hilfetext nennen die Bedingung.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn nr_3a_altvertraege_nennen_die_bedingung_des_gesetzes() {
     let mut faelle = Vec::new();
     for id in [
@@ -260,7 +257,6 @@ fn nr_3a_altvertraege_nennen_die_bedingung_des_gesetzes() {
 /// Zuschlag auf die nach dem gesonderten Tarif des § 32d Absatz 1 ermittelte Einkommensteuer gezahlt wurde".
 /// Der Text nennt nur den Wortlaut, keine Lesart, aus welchem Beleg das Feld gespeist wird.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn nr_4_kirchensteuer_nennt_den_zuschlag_zur_kapitalertragsteuer() {
     pruefe_faelle(&[Fall {
         datei: "bindung_sonder_agb_35a.yaml",
@@ -278,7 +274,6 @@ fn nr_4_kirchensteuer_nennt_den_zuschlag_zur_kapitalertragsteuer() {
 
 /// Die erstattete Kirchensteuer (Nr. 4) steht in § 10 Abs. 4b SATZ 3 ("Nummer 3 und 4"); Satz 2 nennt Nr. 2 bis 3a.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn kist_erstattet_nennt_abs_4b_satz_3_als_fundstelle() {
     let m = eintrag("bindung_sonder_agb_35a.yaml", FELD_ID, "kist_erstattet");
     let anker = m.get("anker_ref").expect("anker_ref");
@@ -295,7 +290,6 @@ fn kist_erstattet_nennt_abs_4b_satz_3_als_fundstelle() {
 /// dort steht." allein liess die Rueckerstattung stehen; die vier Beitragsfelder (Person und Partner, KV und PV)
 /// nennen sie jetzt.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn die_beitragsfelder_nennen_die_erstattung_nach_abs_4b() {
     let mut faelle = Vec::new();
     for (datei, id) in [
@@ -309,7 +303,7 @@ fn die_beitragsfelder_nennen_die_erstattung_nach_abs_4b() {
             kennung: FELD_ID,
             id,
             feld: "hilfe_kurz",
-            muss: &["erstattete Beiträge", "§ 10 Abs. 4b EStG"],
+            muss: &["erstatteter Beiträge", "§ 10 Abs. 4b EStG"],
             verboten: &["wie dort steht."],
         });
     }
@@ -322,7 +316,6 @@ fn die_beitragsfelder_nennen_die_erstattung_nach_abs_4b() {
 /// Erstausbildung abgeschlossen ist oder die Ausbildung im Rahmen eines Dienstverhaeltnisses stattfindet. Beide
 /// Texte zur Berufsausbildung nennen den Wortlaut und sagen, dass dieselben Kosten nicht zweimal angesetzt werden.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn die_ausbildungstexte_nennen_paragraph_9_absatz_6_und_das_dienstverhaeltnis() {
     pruefe_faelle(&[
         Fall {
@@ -357,7 +350,6 @@ fn die_ausbildungstexte_nennen_paragraph_9_absatz_6_und_das_dienstverhaeltnis() 
 /// Kein Projektjargon aus der Bauzeit in einem Text, den der Nutzer liest. Kommentare und `grund`-Zeilen
 /// (Entwicklersprache) bleiben aussen vor.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn kein_projektjargon_im_nutzertext() {
     fn durchsuche(wert: &Value, re: &Regex, stelle: &str, funde: &mut Vec<String>) {
         match wert {
@@ -402,7 +394,6 @@ fn kein_projektjargon_im_nutzertext() {
 
 /// Die Kontrolle zum Jargon-Netz: der Nutzertext der DBA-Frage wurde berichtigt, er sagt "Staat" statt "Stufe-1".
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn die_dba_hilfe_nennt_den_einen_staat_in_alltagssprache() {
     pruefe_faelle(&[Fall {
         datei: "bindung_p34c_gesamt.yaml",
@@ -417,7 +408,6 @@ fn die_dba_hilfe_nennt_den_einen_staat_in_alltagssprache() {
 /// § 35a Abs. 2 und 3 EStG geben 20 % der AUFWENDUNGEN; auf Arbeitskosten beschraenkt erst Abs. 5 Satz 2. Die
 /// Begruendung der beiden Zaehlgruppen nennt beide Stellen.
 #[test]
-#[ignore = "rot auf 4c34f8ff: die Texte sind noch nicht berichtigt (naechster Commit)"]
 fn die_35a_gruppen_nennen_abs_5_satz_2_fuer_die_arbeitskosten() {
     let mut faelle = Vec::new();
     for id in ["hh_handwerker", "hh_dienstleistung"] {

@@ -1312,7 +1312,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für deine Basis-Krankenversicherung gezahlt?"
-    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 25). Trage den Beitrag so ein, wie dort steht. Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
+    hilfe_kurz: "Der Basistarif (gesetzlich oder privater Basisschutz), ohne Zusatz-/Komfortleistungen. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 25). Trage den Beitrag so ein, wie dort steht, abzüglich im selben Jahr erstatteter Beiträge (zum Beispiel einer Beitragsrückerstattung; § 10 Abs. 4b EStG). Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 250000
     herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag KV", "LStB Nr. 25"]
     elster_kz: null
@@ -1331,7 +1331,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Der Pflege-Pflichtbeitrag (gesetzlich), ohne private Pflege-Zusatzversicherung. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 26). Trage den Beitrag so ein, wie dort steht. Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
+    hilfe_kurz: "Der Pflege-Pflichtbeitrag (gesetzlich), ohne private Pflege-Zusatzversicherung. Steht auf der Beitragsbescheinigung deiner Kasse oder der Lohnsteuerbescheinigung (Nr. 26). Trage den Beitrag so ein, wie dort steht, abzüglich im selben Jahr erstatteter Beiträge (zum Beispiel einer Beitragsrückerstattung; § 10 Abs. 4b EStG). Hat dein Arbeitgeber einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 50000
     herkunft_slots: ["Beitragsbescheinigung KV/PV: Basisbeitrag PV", "LStB Nr. 26"]
     elster_kz: null
@@ -1427,8 +1427,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung gezahlt?"
-    hilfe_kurz: "Private Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung (altklassisch), soweit nicht Basis-Rente (§ 10 Abs. 1 Nr. 2)."
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung gezahlt (nur Verträge mit Laufzeitbeginn vor dem 1. Januar 2005)?"
+    hilfe_kurz: "Private Rentenversicherung mit Überschussbeteiligung oder Kapitallebensversicherung (altklassisch), soweit nicht Basis-Rente (§ 10 Abs. 1 Nr. 2). Zählt nur, wenn die Laufzeit des Vertrags vor dem 1. Januar 2005 begonnen hat und bis zum 31. Dezember 2004 ein Beitrag gezahlt wurde (§ 10 Abs. 1 Nr. 3a EStG)."
     beispielwert: 40000
     herkunft_slots: null
     elster_kz: E2001903
@@ -1446,8 +1446,8 @@ bindungen:
     einheit: EUR
     askable: true
     vorjahr: vorschlag
-    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung ohne Überschussbeteiligung oder fondsgebundenen Rentenversicherung gezahlt?"
-    hilfe_kurz: "Private Rentenversicherung ohne Überschussbeteiligung (z. B. fondsgebundene Rente, Riester-ähnliche Verträge außerhalb der Zulagenförderung)."
+    fragetext_laie: "Wie viel hast du dieses Jahr an Beiträgen zu einer privaten Rentenversicherung ohne Überschussbeteiligung oder fondsgebundenen Rentenversicherung gezahlt (nur Verträge mit Laufzeitbeginn vor dem 1. Januar 2005)?"
+    hilfe_kurz: "Private Rentenversicherung ohne Überschussbeteiligung (z. B. fondsgebundene Rente). Zählt nur, wenn die Laufzeit des Vertrags vor dem 1. Januar 2005 begonnen hat und bis zum 31. Dezember 2004 ein Beitrag gezahlt wurde (§ 10 Abs. 1 Nr. 3a EStG)."
     beispielwert: 30000
     herkunft_slots: null
     elster_kz: E2002003
