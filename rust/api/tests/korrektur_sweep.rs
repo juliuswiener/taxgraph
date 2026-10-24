@@ -353,7 +353,38 @@ fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'sta
         }
         t
     };
+    // Fuenf Themen mit gespeichertem Betrag (Einzelnutzer 1985 wie `einzel_1985`): das Kreuz der Ankreuzliste steht auf „ja, das gab es“,
+    // der Betrag steht im Fall. Ein Euro-Effekt zeigt sich nur dort, wo die Basis einen Betrag traegt (Auftrag `korrektur-sweep-erweitern`).
+    let thema = |plus: &[(&'static str, Gib)]| einzel_mit("keine", &[], plus);
+    let unterhalt = thema(&[("p33a_unterhalt_aufwendungen", Gib::Euro("3000"))]);
+    let ausland = thema(&[
+        ("dba_staat", Gib::Wahl("Frankreich")),
+        ("dba_einkunftsart", Gib::Wahl("dividenden")),
+        ("dba_methode", Gib::Wahl("kein_dba")),
+        ("dba_auslaendische_einkuenfte", Gib::Euro("5000")),
+        ("dba_gezahlte_auslaendische_steuer", Gib::Euro("1000")),
+    ]);
+    let vermietung = thema(&[
+        ("vv_anzahl_objekte", Gib::Euro("1")),
+        ("vv_einnahmen", Gib::Euro("12000")),
+        ("vv_gebaeude_afa", Gib::Euro("2000")),
+        ("vv_schuldzinsen", Gib::Euro("1000")),
+        ("vv_erhaltungsaufwand", Gib::Euro("500")),
+        ("vv_sonstige_wk", Gib::Euro("500")),
+    ]);
+    let kapital = thema(&[("kap_kapitalertraege", Gib::Euro("5000"))]);
+    let gewerbe = thema(&[
+        ("gewinn_betriebsart", Gib::Wahl("gewerbe")),
+        ("betriebseinnahmen", Gib::Euro("30000")),
+        ("sonstige_betriebsausgaben", Gib::Euro("5000")),
+        ("afa_jahresbetrag", Gib::Euro("1000")),
+    ]);
     vec![
+        ("einzel_unterhalt", "gesamt", unterhalt, &["kein_unterhalt"]),
+        ("einzel_ausland", "gesamt", ausland, &["keine_auslandseinkuenfte"]),
+        ("einzel_vermietung", "gesamt", vermietung, &["kein_vuv"]),
+        ("einzel_kapital", "gesamt", kapital, &["kein_kap"]),
+        ("einzel_gewerbe", "gesamt", gewerbe, &["kein_gewinn"]),
         ("einzel_zwei_kinder", "gesamt", kinder(einzel("15.03.1985", "keine")), &["kein_kind"]),
         ("ehepaar_zwei_kinder", "gesamt", kinder(paar("keine", "keine")), &["kein_kind"]),
         ("einzel_1955", "gesamt", einzel("15.03.1955", "keine"), &[]),
@@ -824,6 +855,31 @@ fn eingeschleppter_altwert_wird_als_euro_fund_gesehen() {
         let text = std::fs::read_to_string(datei.path()).unwrap();
         assert_eq!((z.versuche, z.euro, z.gleich, z.stand_nur), (1, 1, 0, 0), "der eingeschleppte Altwert wurde nicht als Euro-Fund gezaehlt: {text}");
         assert!(text.contains("\tEUR\tK Some(1363200)\tF Some(1392400)\tdelta -29200\t"), "die Fundzeile nennt nicht die 292,00 EUR: {text}");
+    });
+}
+
+/// Die fuenf Themenbasen (AK2). Jede muss in einer Zahl enden, die von der Basis ohne das Thema (`einzel_1985`) abweicht, mit
+/// `grund = bestaetigt`; sonst traegt ihr Betrag nichts bei und der Sweep waere dort blind. Der Test druckt je Basis eine Zeile `THEMA`.
+#[test]
+fn ausgangsfall_mit_thema_rechnet_anders_als_ohne() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        async fn basis_messung(name: &str) -> Messung {
+            let d = Dienst::neu();
+            let (n, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == name).unwrap();
+            let b = fragenlauf(&d, n, scheibe, 2025, &tabelle, kreuze).await;
+            d.messe(&d.baue(&b, None).await).await
+        }
+        let ohne = basis_messung("einzel_1985").await;
+        let mut blind = Vec::new();
+        for name in ["einzel_unterhalt", "einzel_ausland", "einzel_vermietung", "einzel_kapital", "einzel_gewerbe"] {
+            let m = basis_messung(name).await;
+            eprintln!("THEMA\t{name}\tSteuer {:?}\tohne das Thema {:?}\tgrund {}", m.zahl(), ohne.zahl(), m.grund());
+            if m.grund() != "bestaetigt" || m.zahl().is_none() || m.zahl() == ohne.zahl() {
+                blind.push(format!("{name}: Steuer {:?} gegen {:?}, grund {}", m.zahl(), ohne.zahl(), m.grund()));
+            }
+        }
+        assert!(blind.is_empty(), "Basen, die nicht anders rechnen als ohne das Thema (der Sweep waere dort blind): {blind:?}");
     });
 }
 
