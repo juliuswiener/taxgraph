@@ -800,6 +800,33 @@ fn kontrolle_geburtsdatum_1955_auf_1985() {
     });
 }
 
+/// Blindheitskontrolle des Sweeps (AK1). Seit `7c23f673` gibt es keinen Defekt der Klasse mehr, den der Sweep sucht; die Kontrolle
+/// oben prueft nur noch den frischen Fall und wuerde auch bei einem leeren Vergleich gruen bleiben. Hier schleppt der Test den
+/// alten Fehler ueber die oeffentliche Schnittstelle ein: ein vom Nutzer bestaetigtes `geburtsjahr` 1955, VOR dem Geburtsdatum
+/// geschrieben (danach liefe `schreibe_robust` in den Zweig „bestaetigt, bleibt“ und verwuerfe es). Die Antwort des Nutzers am
+/// Ziel bleibt stehen, auch wenn das Geburtsdatum auf 1985 korrigiert wird; K rechnet mit 1955 (1.363.200 Cent), der frische Fall
+/// F ohne dieses Ereignis mit 1985 (1.392.400 Cent). `versuche` (Art 3, Nutzerpfad) muss das als Euro-Fund zaehlen und loggen.
+/// Die Mutante `mk.zahl() != mf.zahl() || …` -> `false` in `versuche` faerbt den Test rot.
+#[test]
+fn eingeschleppter_altwert_wird_als_euro_fund_gesehen() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        let d = Dienst::neu();
+        let (_, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == "einzel_1955").unwrap();
+        let mut b = fragenlauf(&d, "einzel_1955", scheibe, 2025, &tabelle, kreuze).await;
+        let stelle = b.ereignisse.iter().position(|e| e.feld == "stammdaten_geburtsdatum").unwrap();
+        b.ereignisse.insert(stelle, Ereignis { feld: "geburtsjahr".to_owned(), wert: json!(1955), signal_2: "ok@geburtsjahr".to_owned(), art: Art::Antwort });
+        let ctx = Kontext { tabelle: &tabelle, kreuze };
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let mut log = Log(Some(datei.reopen().unwrap()));
+        let mut z = Zaehler::default();
+        versuche(&d, &b, &ctx, 3, "stammdaten_geburtsdatum", &json!("15.03.1955"), &json!("15.03.1985"), None, &mut z, &mut log).await;
+        let text = std::fs::read_to_string(datei.path()).unwrap();
+        assert_eq!((z.versuche, z.euro, z.gleich, z.stand_nur), (1, 1, 0, 0), "der eingeschleppte Altwert wurde nicht als Euro-Fund gezaehlt: {text}");
+        assert!(text.contains("\tEUR\tK Some(1363200)\tF Some(1392400)\tdelta -29200\t"), "die Fundzeile nennt nicht die 292,00 EUR: {text}");
+    });
+}
+
 // ---------------------------------------------------------------------------------------------------------------------------
 // Messung `fragen-reduktion-2` (Fragen-Reduktion Teil 2, 2026-10-21): wie viele Fragen stellt der Dienst, und rechnet er danach
 // dieselben Cent? Aufruf: `TAXGRAPH_OHNE_XSD=1 cargo test -p api --test it korrektur_sweep::messung_fragenzahl_und_steuer -- --ignored
