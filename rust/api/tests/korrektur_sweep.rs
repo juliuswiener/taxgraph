@@ -13,11 +13,13 @@
 //! zwischen K und F (Ergebnis, Steuer, Sperre, Feldwerte und -zustaende) ist ein Fund. Art 2: `f` steht nicht in `B`; K schreibt
 //! erst `v1`, korrigiert auf `v2`, F schreibt gleich `v2`. Art 3 (Nutzerpfad, nur an Gate-Feldern): K wird nach der Korrektur zu Ende
 //! befragt, F ist ein frischer Fragenlauf mit dem Endwert; so zeigt sich, ob ein verborgener Block weiter zaehlt (Klasse K2). Art 4
-//! (nur an Gate-Feldern): zweimal korrigiert (`v0 -> v1 -> v2`) gegen frischen Fall mit `v2`.
+//! (nur an Gate-Feldern): zweimal korrigiert (`v0 -> v1 -> v2`) gegen frischen Fall mit `v2`. Art 5 (Vorjahr-Weg, nur an Gate-Feldern):
+//! K entsteht ueber `POST /fall/{ziel}/vorjahr` aus einer Quelle im Vorjahr, wird zu Ende befragt und dann korrigiert; F ist der
+//! frische Fall mit `v2`. Die Herkunft der Werte unterscheidet K von F (Klasse STAND); ein Euro-Unterschied waere ein Fund.
 //!
 //! **Aufruf** (nie im Gate, darum `#[ignore]`): `TAXGRAPH_KORREKTUR_LOG=<datei> cargo test -p api --test it korrektur_sweep:: -- --ignored
 //! --nocapture`. Weitere Schalter: `TAXGRAPH_KORREKTUR_BASEN=a,b` (Namen der Ausgangsfaelle), `TAXGRAPH_KORREKTUR_FELDER=f1,f2`,
-//! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|123|…` (Standard 1234), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
+//! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|5|123|…` (Standard 12345), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
 //! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“. Was kein
@@ -190,7 +192,12 @@ impl Dienst {
 
     /// Ein Fall aus den Ereignissen; `ersetze` tauscht den Wert eines Feldes (Art 1), `haenge_an` schreibt am Ende (Art 2).
     async fn baue(&self, b: &Basis, ersetze: Option<(&str, &Value)>) -> String {
-        let fall = self.neuer_fall(b.scheibe, b.vz).await;
+        self.baue_vz(b, b.vz, ersetze).await
+    }
+
+    /// Wie `baue`, aber im Veranlagungsjahr `vz` (Art 5: die Quelle ist das Vorjahr).
+    async fn baue_vz(&self, b: &Basis, vz: i64, ersetze: Option<(&str, &Value)>) -> String {
+        let fall = self.neuer_fall(b.scheibe, vz).await;
         for e in &b.ereignisse {
             let mut e = e.clone();
             if let Some((f, w)) = ersetze {
@@ -202,10 +209,22 @@ impl Dienst {
                 continue;
             }
             let (status, antwort) = self.schreibe_robust(&fall, &mut e, false).await;
-            assert!(status == 201, "{}: {} = {} wurde abgewiesen: {status} {antwort}", b.name, e.feld, e.wert);
+            assert!(status == 201, "{}: {} = {} wurde abgewiesen ({vz}): {status} {antwort}", b.name, e.feld, e.wert);
         }
         fall
     }
+}
+
+/// Art 5, der Weg „Vorjahr uebernehmen“: die Quelle ist die Basis als Fall des Vorjahres, das Ziel ein neuer Fall; `POST
+/// /fall/{ziel}/vorjahr` legt die Werte vorlaeufig ab (Muster `vorjahr_naht.rs`), danach beantwortet der Fragenlauf, was die Oberflaeche
+/// weiter fragt (Gate, Ausloeser einer Ableitung, Pflicht-Kegel, Ring-Betraege) und bestaetigt Vorschlaege. Das ist K.
+async fn baue_ueber_vorjahr(d: &Dienst, b: &Basis, ctx: &Kontext<'_>) -> String {
+    let quelle = d.baue_vz(b, b.vz - 1, None).await;
+    let ziel = d.neuer_fall(b.scheibe, b.vz).await;
+    let (s, a) = d.sende("POST", &format!("/fall/{ziel}/vorjahr"), Some(&json!({"vorjahr_fall_id": quelle}))).await;
+    assert_eq!(s, 200, "{}: Vorjahr-Uebernahme abgewiesen: {a}", b.name);
+    fragenlauf_ab(d, &ziel, b.name, ctx.tabelle, ctx.kreuze, &[], Vec::new()).await;
+    ziel
 }
 
 struct Messung {
@@ -573,7 +592,7 @@ struct Kontext<'a> {
 async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str, alt: &Value, neu: &Value, dritte: Option<&Value>, z: &mut Zaehler, log: &mut Log) {
     z.versuche += 1;
     // K: Ausgangsfall mit dem alten Wert (Art 1/3: der Wert der Basis; Art 2: `alt` am Ende), dann korrigiert auf `neu`.
-    let k_fall = d.baue(b, None).await;
+    let k_fall = if art == 5 { baue_ueber_vorjahr(d, b, ctx).await } else { d.baue(b, None).await };
     if art == 2 {
         let e = Ereignis { feld: feld.to_owned(), wert: alt.clone(), signal_2: format!("ok@{feld}"), art: Art::Antwort };
         let (s, _) = d.schreibe(&k_fall, &e).await;
@@ -607,7 +626,7 @@ async fn versuche(d: &Dienst, b: &Basis, ctx: &Kontext<'_>, art: u8, feld: &str,
         let fall = d.neuer_fall(b.scheibe, b.vz).await;
         fragenlauf_ab(d, &fall, b.name, ctx.tabelle, ctx.kreuze, &[(feld, neu.clone())], Vec::new()).await;
         fall
-    } else if art == 1 || art == 4 {
+    } else if art == 1 || art == 4 || art == 5 {
         d.baue(b, Some((feld, endwert))).await
     } else {
         let fall = d.baue(b, None).await;
@@ -659,7 +678,7 @@ struct Einstellung {
 impl Einstellung {
     fn aus_env() -> Self {
         Self {
-            arten: std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "1234".to_owned()),
+            arten: std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "12345".to_owned()),
             nur: liste_aus_env("TAXGRAPH_KORREKTUR_FELDER"),
             grenze: std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX),
         }
@@ -696,7 +715,7 @@ async fn sweep_basis(
     let gates = gate_felder(bindungen);
     // Art 1, 3 und 4: jedes beantwortete Feld des Ausgangsfalls, jeder andere Wert. Art 3 und 4 nur an Feldern, an denen andere Fragen
     // haengen oder aus denen etwas abgeleitet wird.
-    for art in [1_u8, 3, 4] {
+    for art in [1_u8, 3, 4, 5] {
         if !arten.contains(char::from(b'0' + art)) {
             continue;
         }
@@ -949,6 +968,46 @@ fn abdeckung_nennt_nie_beantwortete_felder() {
         let feld = z.split('\t').nth(1).unwrap();
         assert!(bindungen.get(feld).is_some_and(|b| b.askable), "{feld} ist nicht beantwortbar und steht trotzdem in der Liste");
     }
+}
+
+/// Art 5, der Vorjahr-Weg (AK4). K entsteht ueber `POST /fall/{ziel}/vorjahr` aus einer Quelle im Vorjahr 2024. Der Test belegt
+/// zuerst, dass K wirklich ueber diesen Weg entstand (Ereignisse mit Schreiber `import:vorjahr` in der Akte des Ziels) und dieselbe
+/// Steuer traegt wie der direkt gebaute Fall (Fluss J: die Uebernahme aendert keine Zahl); dann, dass `versuche` die Art 5 zaehlt
+/// (vorher 0: das Wort „vorjahr“ stand in der Datei nie).
+#[test]
+fn vorjahr_weg_hat_versuche() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        let d = Dienst::neu();
+        let (_, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == "einzel_1985").unwrap();
+        let b = fragenlauf(&d, "einzel_1985", scheibe, 2025, &tabelle, kreuze).await;
+        let ctx = Kontext { tabelle: &tabelle, kreuze };
+        let ziel = baue_ueber_vorjahr(&d, &b, &ctx).await;
+        let akte: Value = serde_json::from_slice(&std::fs::read(d.zustand.konfig.faelle.join(format!("{ziel}.json"))).unwrap()).unwrap();
+        let aus_vorjahr: Vec<&Value> = akte["events"].as_array().unwrap().iter().filter(|e| e["schreiber"] == "import:vorjahr").collect();
+        assert!(aus_vorjahr.len() > 20, "K entstand nicht ueber die Vorjahr-Uebernahme: nur {} Ereignisse mit Schreiber import:vorjahr", aus_vorjahr.len());
+        assert!(aus_vorjahr.iter().all(|e| e["signal"]["signal_1"]["vz"] == 2024), "die Quelle der Uebernahme ist nicht das Vorjahr 2024");
+        let (ueber_vorjahr, direkt) = (d.messe(&ziel).await, d.messe(&d.baue(&b, None).await).await);
+        assert!(ueber_vorjahr.zahl().is_some() && ueber_vorjahr.grund() == "bestaetigt", "der Vorjahr-Weg endet nicht in einer Zahl: {}", ueber_vorjahr.ergebnis);
+        assert_eq!((ueber_vorjahr.zahl(), ueber_vorjahr.kist()), (direkt.zahl(), direkt.kist()), "die Vorjahr-Uebernahme aendert die Zahl");
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let mut log = Log(Some(datei.reopen().unwrap()));
+        let mut z = Zaehler::default();
+        versuche(&d, &b, &ctx, 5, "stammdaten_geburtsdatum", &json!("15.03.1985"), &json!("15.03.1955"), None, &mut z, &mut log).await;
+        let text = std::fs::read_to_string(datei.path()).unwrap();
+        assert_eq!(z.versuche, 1, "Art 5 zaehlt keinen Versuch");
+        assert_eq!(z.abgewiesen, 0, "die Korrektur auf dem Vorjahr-Weg wurde abgewiesen");
+        // K (ueber das Vorjahr) und F (direkt) tragen dieselbe Zahl, aber nicht dieselbe Herkunft der Werte: ein Fund der Klasse STAND.
+        // Waere K direkt gebaut (Art 5 laeuft den Art-1-Weg), stuende hier `gleich`.
+        assert_eq!((z.gleich, z.stand_nur, z.euro), (0, 1, 0), "Art 5 ist nicht der Vorjahr-Weg, oder er zeigt einen Euro-Fund (ein Befund fuer main, kein Bau): {text}");
+        assert!(text.contains("herkunft/herkunft"), "der Unterschied zwischen K und F ist nicht die Herkunft der Werte: {text}");
+        // Der Sweep selbst ruft die Art 5: ein Gate-Feld, ein anderer Wert, ein Versuch.
+        let bindungen = lade_bindungen();
+        let einst = Einstellung { arten: "5".to_owned(), nur: Some(vec!["kein_kap".to_owned()]), grenze: usize::MAX };
+        let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| *n == "einzel_1985").collect();
+        let summe = std::thread::spawn(move || sweep_alle(faelle, &einst, None, &bindungen)).join().unwrap();
+        assert_eq!(summe[0].1.versuche, 1, "der Sweep zaehlt keinen Versuch der Art 5 (heute vor dem Bau: 0)");
+    });
 }
 
 /// Die fuenf Themenbasen (AK2). Jede muss in einer Zahl enden, die von der Basis ohne das Thema (`einzel_1985`) abweicht, mit
