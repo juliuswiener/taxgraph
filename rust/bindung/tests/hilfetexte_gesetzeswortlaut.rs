@@ -435,7 +435,7 @@ fn die_35a_gruppen_nennen_abs_5_satz_2_fuer_die_arbeitskosten() {
 // ------------------------------------------------------------------------------- Satz der Fundstelle
 
 /// § 33 Abs. 2a `EStG`: S. 1 ordnet die Pauschale an, S. 2 nennt, wer sie erhaelt (Grad der Behinderung von
-/// mindestens 80 oder mindestens 70 mit Merkzeichen G; Merkzeichen aG, Bl, TBl oder H).
+/// mindestens 80 oder mindestens 70 mit Merkzeichen G; Merkzeichen aG, Bl, `TBl` oder H).
 #[test]
 fn der_grund_der_fahrtkostenpauschale_nennt_satz_2_und_die_grenze_70() {
     pruefe_faelle(&[Fall {
@@ -449,7 +449,7 @@ fn der_grund_der_fahrtkostenpauschale_nennt_satz_2_und_die_grenze_70() {
 }
 
 /// § 33b Abs. 3 `EStG`: S. 3 gewaehrt den erhoehten Pauschbetrag (Hilflose, Blinde, Taubblinde), S. 4 erklaert nur
-/// "hilflos". Die Merkzeichen H, Bl, TBl stehen nicht im Wortlaut und gehoeren nicht in den Grund.
+/// "hilflos". Die Merkzeichen H, Bl, `TBl` stehen nicht im Wortlaut und gehoeren nicht in den Grund.
 #[test]
 fn der_grund_der_hilflos_frage_nennt_satz_3_fuer_den_erhoehten_pauschbetrag() {
     pruefe_faelle(&[Fall {
