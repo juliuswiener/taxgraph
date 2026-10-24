@@ -63,7 +63,7 @@ fn ganz(f: &Felder, fid: &str) -> Option<i64> {
 #[test]
 fn verpflegung_ohne_mahlzeit_schreibt_keine_null_kuerzung() {
     let tage = z("tage_24h", 5, true);
-    assert_eq!(ganz(&ring_2025(&[tage.clone()]), "p9_4a_kuerzung_nach_entgelt"), None, "keine Mahlzeit: kein Eintrag");
+    assert_eq!(ganz(&ring_2025(std::slice::from_ref(&tage)), "p9_4a_kuerzung_nach_entgelt"), None, "keine Mahlzeit: kein Eintrag");
     assert_eq!(
         ganz(&ring_2025(&[tage, z("vpf_fruehstuecke_gestellt_anzahl", 1, true)]), "p9_4a_kuerzung_nach_entgelt"),
         Some(560),
@@ -77,7 +77,7 @@ fn verpflegung_ohne_mahlzeit_schreibt_keine_null_kuerzung() {
 fn kap_antrag_ohne_jahr_schreibt_nichts_und_scheitert_nicht() {
     let kap = [z("kap_kapitalertraege", 100_000, true)];
     let ohne_jahr = ring(&kap, None);
-    assert!(ohne_jahr.get("kap_antrag_guenstigerpruefung").is_none() && ohne_jahr.get("kap_sparer_pauschbetrag_genutzt").is_none());
+    assert!(!ohne_jahr.contains_key("kap_antrag_guenstigerpruefung") && !ohne_jahr.contains_key("kap_sparer_pauschbetrag_genutzt"));
     let mit_jahr = ring_2025(&kap);
     assert_eq!(mit_jahr.get("kap_antrag_guenstigerpruefung").map(|x| x.wert.clone()), Some(PyWert::Bool(true)));
     assert_eq!(ganz(&mit_jahr, "kap_sparer_pauschbetrag_genutzt"), Some(100_000), "1.000 EUR Ertraege, Pauschbetrag 1.000 EUR: alles genutzt");

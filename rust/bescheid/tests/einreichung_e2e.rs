@@ -122,10 +122,9 @@ fn instanzen() {
 /// Jahr 2024 und Land `HE`; ohne Schema laeuft nur der Zweig, der den fehlenden Writer meldet.
 #[test]
 fn empfaenger_land_und_jahr_des_falls_erreichen_das_xml() {
-    let mut datei: serde_json::Value =
-        serde_json::from_str(&std::fs::read_to_string(fixture("arbeitnehmer.json")).unwrap()).unwrap();
-    datei["veranlagungszeitraum"] = serde_json::json!(2024);
-    let st = store::Store::aus_datei(serde_json::from_value(datei).unwrap());
+    let mut datei = store::lade(&fixture("arbeitnehmer.json")).unwrap();
+    datei.veranlagungszeitraum = store::Veranlagungsjahr(2024);
+    let st = store::Store::aus_datei(datei);
     let ergebnis = einreichungs_xml(&st, index(), params(), "HE", Some("74931".to_owned()));
     if !schemas_da(st.veranlagungszeitraum()) {
         assert!(

@@ -93,7 +93,7 @@ fn guard(scheibe: Scheibe, events: &[Ev]) -> Result<Option<Sperrgrund>, Bescheid
 }
 
 /// Alle Faelle durchlaufen, dann melden: unter einer Mutation zeigt die Meldung jeden roten Fall.
-fn pruefe(scheibe: Scheibe, faelle: Vec<Fall>) {
+fn pruefe(scheibe: Scheibe, faelle: &[Fall]) {
     assert!(!faelle.is_empty());
     let abweichend: Vec<String> = faelle
         .iter()
@@ -122,7 +122,7 @@ fn dhf_inland_ja_zaehlt_nur_bestaetigt() {
     };
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("dHf, Inland ja nur vorlaeufig, Bedingungen bestaetigt", rest(false), Some("dhf_tatbestand_offen")),
             fall("dHf, Inland ja bestaetigt, Bedingungen bestaetigt (Gegenprobe)", rest(true), None),
         ],
@@ -137,7 +137,7 @@ fn verpflegung_tage_monate_und_mahlzeiten() {
     let tage = || z("tage_24h", 5, true);
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall(
                 "Tage nur vorlaeufig: die Summe zaehlt sie trotzdem, ohne Monate am Ort sperrt es",
                 vec![z("tage_24h", 5, false)],
@@ -192,7 +192,7 @@ fn verpflegung_nach_der_frist_zaehlt_nur_bestaetigte_tage() {
     };
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("Tage vorlaeufig, Nach-Frist-Tage 0 bestaetigt: kein bestaetigter Tag, keine Unterbrechungsfrage", nach_frist_null(false), None),
             fall(
                 "Tage bestaetigt, Nach-Frist-Tage 0 bestaetigt: die Unterbrechung ist offen (Gegenprobe)",
@@ -265,7 +265,7 @@ fn uebernachtung_jede_einzelne_angabe_muss_bestaetigt_sein() {
     };
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("alles bestaetigt (Gegenprobe)", mit(vec![b("uebernachtung_im_inland", true, true)], bedingungen(), zeit()), None),
             fall(
                 "Ort ja nur vorlaeufig",
@@ -329,7 +329,7 @@ fn arbeitsmittel_sofortabzug_nur_bestaetigt_gewaehlt_und_null_ist_kein_arbeitsmi
     let am = || z("am_anschaffungskosten", 50_000, true);
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("500 EUR, Sofortabzug bestaetigt gewaehlt (Gegenprobe)", vec![am(), b("am_gwg_sofortabzug_gewaehlt", true, true)], None),
             fall(
                 "500 EUR, Sofortabzug nur vorlaeufig gewaehlt",
@@ -364,7 +364,7 @@ fn versorgungsbezug_braucht_beginnjahr_und_bemessungsgrundlage_ueber_null_und_be
     let offen = Some("versorgungsfreibetrag_offen");
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("Beginnjahr und Bemessungsgrundlage bestaetigt (Gegenprobe)", bezug(2020, true, 1_500_000, true), None),
             fall("Beginnjahr 0 bestaetigt", bezug(0, true, 1_500_000, true), offen),
             fall("Bemessungsgrundlage 0 bestaetigt", bezug(2020, true, 0, true), offen),
@@ -407,7 +407,7 @@ fn p16_abs4_verlangt_beide_bedingungen_bestaetigt() {
     let offen = Some("p16_4_gate_offen");
     pruefe(
         Scheibe::RentnerGesamt,
-        vec![
+        &[
             fall("Person A: nur das Alter bestaetigt", a(ja, None), offen),
             fall("Person A: nur erstmalig bestaetigt", a(None, ja), offen),
             fall("Person A: Alter bestaetigt, erstmalig nur vorlaeufig", a(ja, Some((true, false))), offen),
@@ -439,7 +439,7 @@ fn realsplitting_verlangt_zustimmung_und_betrag_bestaetigt() {
     let offen = Some("realsplitting_angaben_offen");
     pruefe(
         Scheibe::Gesamt,
-        vec![
+        &[
             fall("Zustimmung ja und Betrag bestaetigt (Gegenprobe)", rs(Some((true, true)), Some(true)), None),
             fall("Zustimmung fehlt, Betrag bestaetigt", rs(None, Some(true)), offen),
             fall("Zustimmung nur vorlaeufig, Betrag bestaetigt", rs(Some((true, false)), Some(true)), offen),
