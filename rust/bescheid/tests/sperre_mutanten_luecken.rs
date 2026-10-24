@@ -355,7 +355,8 @@ fn arbeitsmittel_sofortabzug_nur_bestaetigt_gewaehlt_und_null_ist_kein_arbeitsmi
 #[test]
 fn gwg_grenzen_250_und_800_euro_und_beide_tatbestandsfragen() {
     let gwg = |betrag: i64, nutzbar: Option<bool>, netto: Option<bool>, ohne_abzug: Option<bool>, verzeichnis: Option<bool>| {
-        let mut e = vec![z("gwg_anschaffungskosten_netto", betrag, true)];
+        // `kein_gewinn` = nein: ein Betrag der Art GWG neben dem unbeantworteten Kreuz waere `flag_konsistenz_offen`.
+        let mut e = vec![b("kein_gewinn", false, true), z("gwg_anschaffungskosten_netto", betrag, true)];
         for (feld, wert) in [
             ("gwg_bewegliches_selbstaendig_nutzbar", nutzbar),
             ("gwg_netto_ohne_vorsteuer", netto),
