@@ -1,4 +1,4 @@
-//! § 33a Abs. 1 EStG, Schritt 1 (Julius-Regel "erst Sperren, dann Rechnungen", 2026-10-08; Ticket `p33a-rechnet-ohne-zwoelftelung-anteil-und-
+//! § 33a Abs. 1 `EStG`, Schritt 1 (Julius-Regel "erst Sperren, dann Rechnungen", 2026-10-08; Ticket `p33a-rechnet-ohne-zwoelftelung-anteil-und-
 //! haelftelung`): wer eine Person nur einen Teil des Jahres unterstuetzt (`p33a_unterstuetzungszeitraum` ist nicht das ganze Jahr) oder wessen
 //! Unterhalt eine weitere Person mitgetragen hat (`p33a_weitere_person_beteiligt` = ja), bekommt keine Zahl (`p33a_unterhalt_nicht_gerechnet`).
 //! Vorher zog die Rechnung in beiden Faellen den vollen Hoechstbetrag ab (12.096 EUR im VZ 2025): § 33a Abs. 3 S. 1 kuerzt um ein Zwoelftel je
@@ -236,7 +236,7 @@ async fn teiljahr_und_weitere_person_halten_die_zahl_zurueck() {
     }
 }
 
-/// AK1b: dieselbe Sperre in der Scheibe `rentner_gesamt` (der `gesamt_guard`-Zweig gilt fuer beide Scheiben). Kontrolle je Fall: ganzes
+/// Dieselbe Sperre in der Scheibe `rentner_gesamt` (der `gesamt_guard`-Zweig gilt fuer beide Scheiben). Kontrolle je Fall: ganzes
 /// Jahr und keine weitere Person rechnen.
 #[tokio::test]
 async fn die_rentner_scheibe_sperrt_ebenso() {
@@ -311,6 +311,10 @@ async fn eine_vorlaeufige_antwort_sperrt_und_die_frage_bleibt_in_der_liste() {
     }
 }
 
+/// Ein Fall von `das_kreuz_verbirgt_die_ursache_nicht_vor_dem_nutzer`: Name, Antworten, Ursachen in der Liste, Felder NICHT in der Liste,
+/// Antworten, die die Sperre aufloesen.
+type Ursachenfall = (&'static str, Paare, Vec<&'static str>, Vec<&'static str>, Paare);
+
 /// Der Status der Regel, an der das Feld haengt (`ausgeschlossen`, `relevant`, ...), wie die Oberflaeche ihn aus `/stand` und der Frage liest.
 async fn regelstatus(d: &Dienst, feld: &str) -> Value {
     let (_, frage) = sende(d, "GET", &format!("/fall/pt/feld/{feld}/frage"), None).await;
@@ -328,7 +332,7 @@ async fn regelstatus(d: &Dienst, feld: &str) -> Value {
 async fn das_kreuz_verbirgt_die_ursache_nicht_vor_dem_nutzer() {
     let kreuz = ("kein_unterhalt", json!(true));
     // (Name, Antworten, Ursachen in der Liste, Ursachen NICHT in der Liste, Antworten, die die Sperre aufloesen)
-    let faelle: Vec<(&str, Paare, Vec<&str>, Vec<&str>, Paare)> = vec![
+    let faelle: Vec<Ursachenfall> = vec![
         ("Teiljahr", vec![(ZEITRAUM, json!("01.01-30.06"))], vec![ZEITRAUM], vec![WEITERE], vec![(ZEITRAUM, json!(GANZES_JAHR))]),
         ("weitere Person", vec![(WEITERE, json!(true))], vec![WEITERE], vec![ZEITRAUM], vec![(WEITERE, json!(false))]),
         (
