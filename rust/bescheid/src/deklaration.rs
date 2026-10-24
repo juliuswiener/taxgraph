@@ -4,7 +4,7 @@
 //! - [`mit_ring_werten`] (`_mit_ring_werten`): berechnete Kz als fertige Events in den Snapshot,
 //! - [`an_gesamt_sperrgrund`] (`_an_gesamt_sperrgrund`): der K2-Guard, liefert einen
 //!   [`Sperrgrund`] oder `None`,
-//! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`sperrgrund_frage_felder`], [`rentenbeginn_offen_stand`],
+//! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`sperrgrund_frage_felder`], [`sperrgrund_ursache_felder`], [`rentenbeginn_offen_stand`],
 //!   [`vorlaeufige_ring_betraege`],
 //! - [`einreichungs_xml`] (`api.einreichen` bis zum XML): Ring-Werte, Guard, `deklariere` und
 //!   `erzeuge_xml` in Pythons Reihenfolge,
@@ -28,7 +28,7 @@ use store::Store;
 pub use einreichung::{einreichungs_xml, EinreichFehler, Einreichung};
 pub use feste_zahl::{feste_zahl, FesteZahl, KeineZahl, KeineZahlGrund};
 pub use ring_werte::mit_ring_werten;
-pub use sperre::an_gesamt_sperrgrund;
+pub use sperre::{an_gesamt_sperrgrund, vv_objekt_vorschlaege};
 
 use ring_werte::berechnet_herkunft;
 
@@ -394,6 +394,31 @@ pub fn sperrgrund_frage_felder(grund: Option<Sperrgrund>, liste: &[&str]) -> Vec
     } else {
         vec![frage]
     }
+}
+
+/// Die Antworten, die `p33a_unterhalt_nicht_gerechnet` ausloesen, als Fragen der Liste, wenn das Kreuz `kein_unterhalt` sie verbirgt
+/// (Julius, 2026-10-22: "Haelt eine Sperre die Zahl zurueck, muss die zugehoerige Frage sichtbar sein"). Ein gespeicherter Wert gewinnt gegen
+/// das Kreuz (Entscheidung vom 2026-10-09), die Sperre bleibt, und der Nutzer sah sonst keine Frage, deren Antwort er aendern koennte.
+/// Anders als bei [`sperrgrund_frage_felder`] ist die Antwort hier BESTAETIGT und loest die Sperre selbst aus; die Oberflaeche ersetzt sie
+/// dann mit `ersetzt`. Ohne das Kreuz bleibt die Liste, wie sie ist (die Zeile steht unter "Schon beantwortet"). `liste`: was schon darin
+/// steht, kommt nicht doppelt.
+///
+/// ```
+/// use bescheid::deklaration::sperrgrund_ursache_felder;
+/// use bescheid::Felder;
+/// use domain::Sperrgrund;
+/// // Ohne Felder gibt es keine Ursache.
+/// let grund = Some(Sperrgrund::P33aUnterhaltNichtGerechnet);
+/// assert!(sperrgrund_ursache_felder(grund, &Felder::new(), &[]).is_empty());
+/// assert!(sperrgrund_ursache_felder(Some(Sperrgrund::DhfTatbestandOffen), &Felder::new(), &[]).is_empty());
+/// assert!(sperrgrund_ursache_felder(None, &Felder::new(), &[]).is_empty());
+/// ```
+#[must_use]
+pub fn sperrgrund_ursache_felder(grund: Option<Sperrgrund>, felder: &Felder, liste: &[&str]) -> Vec<&'static str> {
+    if grund != Some(Sperrgrund::P33aUnterhaltNichtGerechnet) || !sperre::p33a_kreuz_verbirgt(felder) {
+        return Vec::new();
+    }
+    sperre::p33a_ursachen(felder).into_iter().filter(|f| !liste.contains(f)).collect()
 }
 
 /// § 22 aa Rentenfreibetrag (`/stand`-spezifisch): eine Jahresrente > 0 ohne ganzzahliges

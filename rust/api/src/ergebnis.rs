@@ -6,7 +6,7 @@
 //! ein Fehler an einer frueheren Stelle verdeckt jeden spaeteren.
 use bescheid::deklaration::{
     an_gesamt_sperrgrund, feste_zahl, sperrgrund_felder, sperrgrund_klartext_text,
-    vorlaeufige_ring_betraege,
+    vorlaeufige_ring_betraege, vv_objekt_vorschlaege,
 };
 use bescheid::zweige::{abschlusszahlung_cent, bescheid_fn, Kette, P31Sieger, Umgebung};
 use bescheid::{Felder, Instanzquelle};
@@ -97,16 +97,20 @@ fn melde(z: &Zustand, fall_id: &FallId, mut obj: Map<String, Value>) -> Antwort 
 
 /// Die Instanz-Gruppen, deren nicht bestaetigte Felder [`offene_instanzfelder`] meldet. Der Ring zaehlt nur eine Instanz,
 /// deren Felder alle bestaetigt sind (`Instanzquelle::zaehlt`): ein vorlaeufiges Feld, auch ein Textfeld, nimmt die ganze
-/// Instanz aus der Zahl, und `grund` heisst trotzdem `bestaetigt`. Jede Gruppe der Bindung steht hier oder, mit Grund, in der
+/// Instanz aus der Zahl, und `grund` heisst trotzdem `bestaetigt`. Bei `vv_objekt` und `rente` trifft das nur Instanz 1: ab Index 2
+/// sperren `gesamt` und `rentner_gesamt` schon (`vv_instanz_offen`, `rente_instanz_offen`). Bei `vv_objekt` sperrt seit d-68 auch Instanz 1
+/// (`vv_objekt_unbestaetigt`, [`vv_objekt_vorschlaege`]); der Eintrag hier bleibt die zweite Reihe, falls diese Sperre faellt. Jede Gruppe der Bindung steht hier oder, mit Grund, in der
 /// Ausnahmeliste des Waechters `instanz_gruppen_vollstaendig` (`tests/kette_endstand_hermetisch.rs`): eine neue Gruppe
 /// faellt nicht still heraus.
-pub const HINWEIS_GRUPPEN: [&str; 6] = [
+pub const HINWEIS_GRUPPEN: [&str; 8] = [
     "gwg",
     "kind",
     "p23_veraeusserung",
     "hh_handwerker",
     "hh_dienstleistung",
     "hh_minijob",
+    "vv_objekt",
+    "rente",
 ];
 
 /// Die Basis-Felder der Instanzen der [`HINWEIS_GRUPPEN`], die nicht bestaetigt sind, dazu das offen gelassene Gate von
@@ -250,7 +254,13 @@ pub fn ergebnis(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort,
         let sperr = an_gesamt_sperrgrund(&felder, Some(&sb.cfg), vz_opt, &q)
             .map_err(|e| bescheid_fehler(&e))?;
         if let Some(g) = sperr {
-            return Ok(melde(z, fall_id, gesperrt(fall_id, &sid, g, &felder)?));
+            let mut obj = gesperrt(fall_id, &sid, g, &felder)?;
+            // d-68 Schritt 2: die Sperre nennt die Felder, die der Nutzer bestaetigen muss (die Frage dazu steht in `/fragen`).
+            if g == Sperrgrund::VvObjektUnbestaetigt {
+                let offen = vv_objekt_vorschlaege(&felder, &sb.cfg, &q).map_err(|e| bescheid_fehler(&e))?;
+                obj.insert("offen".into(), json!(offen));
+            }
+            return Ok(melde(z, fall_id, obj));
         }
     }
     // Multi-Regel-Scheibe ohne ehrlichen Gesamt-Accessor: bewusst KEINE Scheiben-Zahl.

@@ -6,7 +6,6 @@ use engine::zugriff::teil1::einkuenfte::{
 };
 use engine::zugriff::teil1::mobilitaetspraemie::{p101_mobilitaetspraemie_cent, P101Eingabe};
 use engine::zugriff::teil1::pauschbetraege::{arbeitnehmer_pauschbetrag, grundfreibetrag};
-use engine::zugriff::teil1::sonderausgaben::{p10_kv_pv, P10KvPvEingabe};
 use engine::zugriff::teil1::werbungskosten::{
     ep_ab_21km, werbungskosten_n, WerbungskostenNEingabe,
 };
@@ -24,30 +23,10 @@ use super::wk::{
     mit_sofortabzug_im_band, mit_unfallkosten, wk_teile,
 };
 use super::{kist_konfession, slot, Marke, Ring};
-use crate::abzuege::{basisbeitrag_nach_zuschuss, kind_kv_pv_summe};
+use crate::abzuege::{kind_kv_pv_summe, kv_pv_vorsorge};
 use crate::{
-    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_true, ist_zusammen, py_int, summe,
-    wert, Felder,
+    cent_zu_euro, feld_euro_oder_null, feld_int_oder_null, ist_zusammen, py_int, summe, Felder,
 };
-
-/// § 10 Abs. 1 Nr. 3/3a KV/PV-Vorsorge Person A oder B: eigener Abs.-4-Hoechstbetrag.
-fn kv_pv(f: &Felder, suffix: &str, kind_cent: i64) -> R<Euro> {
-    let c = |k: &str| feld_int_oder_null(f, &format!("{k}{suffix}"));
-    // Der Basisbeitrag nach Abzug der steuerfreien Arbeitgeberzuschuesse (Abweichung Nr. 92): ein Rechenpfad mit `gesamt` und `rentner_gesamt`.
-    let basis = basisbeitrag_nach_zuschuss(f, suffix, kind_cent)?;
-    let weitere = summe(&[
-        c("vorsorge_arbeitslosenversicherung")?,
-        c("vorsorge_erwerbsunfaehigkeit")?,
-        c("vorsorge_unfall_haftpflicht")?,
-        c("vorsorge_rv_alt_mit_ueberschuss")?,
-        c("vorsorge_rv_alt_ohne_ueberschuss")?,
-    ])?;
-    Ok(p10_kv_pv(&P10KvPvEingabe {
-        basis_kv_pv: cent_zu_euro(basis),
-        weitere_vorsorgeaufwendungen: cent_zu_euro(weitere),
-        mit_anspruch_auf_zuschuss: ist_true(wert(f, &format!("mit_anspruch_auf_zuschuss{suffix}"))),
-    })?)
-}
 
 /// § 10 Abs. 1 Nr. 2, Abs. 3 `_vorsorge_abzug`: `max(0, min(beitraege, Hoechstbeitrag) - ag)`,
 /// 0 ohne Beitraege. EURO.
@@ -121,16 +100,16 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
     let wk = mit_computer_im_kaufjahr(f, wk)?;
     // Beitraege zu Berufsverbaenden (Abweichung Nr. 93, Zeile 53 der Anlage N): zaehlen zu den Werbungskosten, vor dem Pauschbetrag-Vergleich.
     let wk = mit_berufsverband(f, wk)?;
-    // Kind-Beitraege in DENSELBEN Abs.-4-Deckel (CENT, direkt addiert).
-    let kv_pv_a = kv_pv(f, "", kind_kv_pv_summe(&r.q())?.get())?;
+    // Kind-Beitraege in DENSELBEN Abs.-4-Deckel (CENT, direkt addiert). Bei Zusammenveranlagung gilt der gemeinsame Hoechstbetrag (Abweichung
+    // Nr. 115): ein Aufruf fuer das Paar, ein Rechenpfad mit `gesamt` und `rentner_gesamt` (Abweichung Nr. 92).
     let zusammen = ist_zusammen(f);
+    let kv_pv = kv_pv_vorsorge(f, zusammen, kind_kv_pv_summe(&r.q())?.get())?;
     let brutto_a = cent_zu_euro(py_int(slot(slots, "bruttoarbeitslohn")?)?);
     // Abweichung Nr. 78: In dieser Scheibe sind alle Sonderausgaben Vorsorge (Nr. 2, 3, 3a); der Pauschbetrag steht daneben (§ 10c). Die
     // Catala-Scopes bilden weiter `max(Sonderausgaben; Pauschbetrag)`; der fertige Abzug enthaelt den Pauschbetrag schon, das `max`
     // aendert dann nichts.
     // ponytail: der Scope kennt keine eigene Vorsorge-Eingabe; Upgrade: Eingabe `vorsorge` im Catala-Scope und `make catala-c`.
     let (est, so_einzel) = if zusammen {
-        let kv_pv_b = kv_pv(f, "_partner", 0)?;
         let est = est_zusammen(&EstZusammenEingabe {
             vz,
             bruttoarbeitslohn_a: brutto_a,
@@ -141,7 +120,7 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
                 vz,
                 true,
                 Euro::new(0),
-                add(kv_pv_a, kv_pv_b)?,
+                kv_pv,
                 p,
             )?,
         })?;
@@ -158,7 +137,7 @@ pub(super) fn festzusetzende_est<Z: Marke>(r: &Ring<'_, Z>, slots: &Slots) -> R<
             vz,
             false,
             Euro::new(0),
-            add(vorsorge_abzug(gesamt, ag, p, vz)?, kv_pv_a)?,
+            add(vorsorge_abzug(gesamt, ag, p, vz)?, kv_pv)?,
             p,
         )?;
         // Der Slot "veranlagung" muss da sein (Python: `slots["veranlagung"]`), sein Wert zaehlt hier nicht.

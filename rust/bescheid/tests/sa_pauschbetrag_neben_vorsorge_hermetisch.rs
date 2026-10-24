@@ -458,3 +458,264 @@ fn engine_uebrige_sonderausgaben_konkurrieren_mit_dem_pauschbetrag() {
     assert_eq!(gesamt_zve(&beides, params()).unwrap(), euro(59_800));
     assert_eq!(gesamt(&beides, params()).unwrap(), euro(14_337));
 }
+
+// ---------------------------------------------------------------------------------------------------------------------------------
+// § 10 Abs. 4 S. 3 und 4 EStG: bei Zusammenveranlagung gilt EIN gemeinsamer Hoechstbetrag fuer Kranken-, Pflege- und weitere Vorsorge.
+//
+// **Worum es geht.** Der Hoechstbetrag fuer Nr. 3 und 3a ist 2.800 EUR, mit Anspruch auf Zuschuss 1.900 EUR je Person. Bei zusammen veranlagten
+// Ehegatten "bestimmt sich der gemeinsame Hoechstbetrag aus der Summe der jedem Ehegatten ... zustehenden Hoechstbetraege" (S. 3); uebersteigen
+// die Basisbeitraege (Nr. 3) beider zusammen ihn, sind sie voll abzuziehen und die weiteren Aufwendungen (Nr. 3a) entfallen (S. 4). Bis zu dieser
+// Abweichung rechneten alle drei Scheiben jede Person fuer sich und addierten (`max(Basis; min(Basis + weitere; Hoechstbetrag))` je Person).
+//
+// HERKUNFT DER ERWARTUNGSWERTE: Handrechnung aus dem Wortlaut (`sources/gesetze-im-internet/estg_p10_2026-07-11.txt`, Abs. 4 S. 1 bis 4),
+// nicht aus dem Code. `GdE` 60.000 EUR (Brutto 61.230 EUR minus 1.230 EUR Arbeitnehmer-Pauschbetrag), Pauschbetrag § 10c Satz 2 bei
+// Zusammenveranlagung 72 EUR, zvE = 60.000 - 72 - Vorsorge. Bei `AnGesamt` (gibt kein zvE heraus) gilt die Steuer: die Akte muss dieselbe
+// Steuer geben wie eine Akte, die denselben Abzug nur als Basisbeitrag der Person A traegt (Basisbeitraege ueber dem Hoechstbetrag sind
+// voll abziehbar, ihr Ergebnis haengt also nicht an der Frage dieser Abweichung).
+
+/// Gesamt zusammen: Brutto A 61.230 EUR, dazu die Vorsorgefelder.
+fn gesamt_zusammen(vorsorge: &[(&str, Value)]) -> Paare {
+    let mut v = vec![
+        p("veranlagung", json!("zusammen")),
+        p("bruttoarbeitslohn", json!(cent(61_230))),
+    ];
+    v.extend(vorsorge.iter().map(|(f, w)| p(f, w.clone())));
+    v
+}
+
+/// Ein Fall: Akte, Soll-zvE in EUR.
+struct ZveFall {
+    name: &'static str,
+    scheibe: Scheibe,
+    paare: Paare,
+    zve: i64,
+}
+
+/// Alle Zeilen durchlaufen, dann melden (unter einer Mutation zeigt die Meldung jede rote Zeile).
+fn melde_zve(faelle: &[ZveFall]) {
+    let ab: Vec<String> = faelle
+        .iter()
+        .filter_map(|f| {
+            let ist = rechne(f.scheibe, &f.paare).zve;
+            (ist != Some(f.zve)).then(|| format!("{}: Ist {ist:?}, Soll {}", f.name, f.zve))
+        })
+        .collect();
+    assert!(
+        ab.is_empty(),
+        "{} von {} Zeilen weichen ab: {ab:#?}",
+        ab.len(),
+        faelle.len()
+    );
+}
+
+/// Alle Paare durchlaufen: dieselbe Steuer wie die Kontrolle, dann melden.
+fn melde_gleiche_steuer(paare: &[(&str, Scheibe, Paare, Paare)]) {
+    let ab: Vec<String> = paare
+        .iter()
+        .filter_map(|(name, scheibe, akte, kontrolle)| {
+            let (ist, soll) = (rechne(*scheibe, akte).est, rechne(*scheibe, kontrolle).est);
+            (ist != soll).then(|| format!("{name}: Steuer {ist}, Kontrolle (nur Basisbeitrag) {soll}"))
+        })
+        .collect();
+    assert!(
+        ab.is_empty(),
+        "{} von {} Zeilen weichen ab: {ab:#?}",
+        ab.len(),
+        paare.len()
+    );
+}
+
+fn kv(feld: &str, euro: i64) -> (&str, Value) {
+    (feld, json!(cent(euro)))
+}
+
+/// Gesamt zusammen, ohne Zuschuss. Gemeinsamer Hoechstbetrag 2 x 2.800 = 5.600 EUR.
+///  - A Basis 5.000, B Basis 1.000 + weitere 1.000: Basis zusammen 6.000 > 5.600, also 6.000 voll, die weiteren entfallen (S. 4): zvE
+///    60.000 - 72 - 6.000 = 53.928 (je Person: 5.000 + 2.000 = 7.000, zvE 52.928)
+///  - A Basis 1.000 + weitere 3.000, B Basis 500: 4.500 <= 5.600, alles abziehbar: zvE 60.000 - 72 - 4.500 = 55.428 (je Person: 2.800 + 500
+///    = 3.300, zvE 56.628)
+///  - A Basis 2.000 + weitere 3.000, B Basis 1.000 + weitere 2.000: Basis 3.000 <= 5.600, mit den weiteren 8.000 > 5.600, also gedeckelt auf
+///    5.600: zvE 54.328 (je Person: 2.800 + 2.800 = 5.600, gleich; Kontrolle: wo beide am eigenen Deckel liegen, aendert sich nichts)
+#[test]
+fn kv_pv_gemeinsamer_hoechstbetrag_gesamt_zusammen() {
+    let fall = |name, vorsorge: &[(&str, Value)], zve| ZveFall {
+        name,
+        scheibe: Scheibe::Gesamt,
+        paare: gesamt_zusammen(vorsorge),
+        zve,
+    };
+    melde_zve(&[
+        fall(
+            "A Basis 5.000, B Basis 1.000 + weitere 1.000",
+            &[
+                kv("basis_kv", 5_000),
+                kv("basis_kv_partner", 1_000),
+                kv("vorsorge_arbeitslosenversicherung_partner", 1_000),
+            ],
+            53_928,
+        ),
+        fall(
+            "A Basis 1.000 + weitere 3.000, B Basis 500",
+            &[
+                kv("basis_kv", 1_000),
+                kv("vorsorge_arbeitslosenversicherung", 3_000),
+                kv("basis_kv_partner", 500),
+            ],
+            55_428,
+        ),
+        // Kind-KV 3.000 (zaehlt zu Person A, § 10 Abs. 1 Nr. 3 S. 2) bricht allein durch (3.000 > 2.800); B weitere 2.800: Basis 3.000 +
+        // weitere 2.800 = 5.800 > 5.600, Basis 3.000 darunter, also 5.600 (je Person: 3.000 + 2.800 = 5.800, zvE 54.128)
+        fall(
+            "Kind-KV 3.000 bei A, B weitere 2.800",
+            &[
+                ("kind_idnr", json!("12345678901")),
+                kv("kind_kv", 3_000),
+                kv("vorsorge_arbeitslosenversicherung_partner", 2_800),
+            ],
+            54_328,
+        ),
+        fall(
+            "beide am eigenen Deckel (Kontrolle)",
+            &[
+                kv("basis_kv", 2_000),
+                kv("vorsorge_arbeitslosenversicherung", 3_000),
+                kv("basis_kv_partner", 1_000),
+                kv("vorsorge_arbeitslosenversicherung_partner", 2_000),
+            ],
+            54_328,
+        ),
+    ]);
+}
+
+/// Mischfall Zuschuss: der Hoechstbetrag ist je Person 1.900 EUR mit und 2.800 EUR ohne Anspruch auf Zuschuss, gemeinsam die Summe.
+///  - A mit Anspruch, B ohne: 1.900 + 2.800 = 4.700. A Basis 500 + weitere 4.000, B Basis 500: 5.000 > 4.700, gedeckelt auf 4.700, Basis
+///    zusammen 1.000 bricht nicht durch: zvE 60.000 - 72 - 4.700 = 55.228 (je Person: 1.900 + 500 = 2.400, zvE 57.528)
+///  - A ohne, B mit Anspruch: ebenfalls 4.700; dieselbe Akte mit vertauschten Rollen: 55.228 (liest die Rechnung nur das Feld von A, gilt
+///    5.600, 5.000 sind abziehbar und das zvE ist 54.928)
+///  - beide mit Anspruch: 1.900 + 1.900 = 3.800. A Basis 500 + weitere 3.500, B Basis 500: 4.500, gedeckelt auf 3.800: zvE 56.128
+#[test]
+fn kv_pv_gemeinsamer_hoechstbetrag_mischfall_zuschuss() {
+    let fall = |name, vorsorge: &[(&str, Value)], zve| ZveFall {
+        name,
+        scheibe: Scheibe::Gesamt,
+        paare: gesamt_zusammen(vorsorge),
+        zve,
+    };
+    melde_zve(&[
+        fall(
+            "A mit Zuschuss, B ohne",
+            &[
+                kv("basis_kv", 500),
+                kv("vorsorge_arbeitslosenversicherung", 4_000),
+                kv("basis_kv_partner", 500),
+                ("mit_anspruch_auf_zuschuss", json!(true)),
+            ],
+            55_228,
+        ),
+        fall(
+            "A ohne Zuschuss, B mit",
+            &[
+                kv("basis_kv", 500),
+                kv("vorsorge_arbeitslosenversicherung", 4_000),
+                kv("basis_kv_partner", 500),
+                ("mit_anspruch_auf_zuschuss_partner", json!(true)),
+            ],
+            55_228,
+        ),
+        fall(
+            "beide mit Zuschuss",
+            &[
+                kv("basis_kv", 500),
+                kv("vorsorge_arbeitslosenversicherung", 3_500),
+                kv("basis_kv_partner", 500),
+                ("mit_anspruch_auf_zuschuss", json!(true)),
+                ("mit_anspruch_auf_zuschuss_partner", json!(true)),
+            ],
+            56_128,
+        ),
+    ]);
+}
+
+/// Einzelveranlagung bleibt unveraendert: der Hoechstbetrag ist 2.800 EUR, auch wenn Felder der Person B im Speicher stehen. A Basis 1.000 +
+/// weitere 3.000: 4.000 > 2.800, also 2.800: zvE 60.000 - 36 - 2.800 = 57.164 (B-Felder 500 + 2.000 zaehlen nicht).
+#[test]
+fn kv_pv_gemeinsamer_hoechstbetrag_einzel_bleibt_je_person() {
+    let akte = gesamt_akte(&[
+        kv("basis_kv", 1_000),
+        kv("vorsorge_arbeitslosenversicherung", 3_000),
+        kv("basis_kv_partner", 500),
+        kv("vorsorge_arbeitslosenversicherung_partner", 2_000),
+    ]);
+    melde_zve(&[ZveFall {
+        name: "Einzel mit B-Feldern im Speicher",
+        scheibe: Scheibe::Gesamt,
+        paare: akte,
+        zve: 57_164,
+    }]);
+}
+
+/// `AnGesamt` zusammen und `RentnerGesamt` zusammen rechnen denselben gemeinsamen Weg. `AnGesamt` gibt kein zvE heraus: dieselbe Steuer wie
+/// die Kontrolle, die den Abzug nur als Basisbeitrag von A traegt.
+///  - A Basis 5.000, B Basis 1.000 + weitere 1.000 gleich A Basis 6.000
+///  - A Basis 1.000 + weitere 3.000, B Basis 500 gleich A Basis 4.500
+///  - Mischfall: A mit Zuschuss + Basis 500 + weitere 4.000, B Basis 500 gleich A Basis 4.700
+#[test]
+fn kv_pv_gemeinsamer_hoechstbetrag_an_gesamt_zusammen() {
+    let akte = |v: &[(&str, Value)]| an_zusammen(v);
+    melde_gleiche_steuer(&[
+        (
+            "A Basis 5.000, B Basis 1.000 + weitere 1.000",
+            Scheibe::AnGesamt,
+            akte(&[
+                kv("basis_kv", 5_000),
+                kv("basis_kv_partner", 1_000),
+                kv("vorsorge_arbeitslosenversicherung_partner", 1_000),
+            ]),
+            akte(&[kv("basis_kv", 6_000)]),
+        ),
+        (
+            "A Basis 1.000 + weitere 3.000, B Basis 500",
+            Scheibe::AnGesamt,
+            akte(&[
+                kv("basis_kv", 1_000),
+                kv("vorsorge_arbeitslosenversicherung", 3_000),
+                kv("basis_kv_partner", 500),
+            ]),
+            akte(&[kv("basis_kv", 4_500)]),
+        ),
+        (
+            "Mischfall: A mit Zuschuss, B ohne",
+            Scheibe::AnGesamt,
+            akte(&[
+                kv("basis_kv", 500),
+                kv("vorsorge_arbeitslosenversicherung", 4_000),
+                kv("basis_kv_partner", 500),
+                ("mit_anspruch_auf_zuschuss", json!(true)),
+            ]),
+            akte(&[kv("basis_kv", 4_700)]),
+        ),
+    ]);
+}
+
+/// `RentnerGesamt` zusammen: Basisbeitraege beider Ehegatten ueber dem gemeinsamen Hoechstbetrag sind voll abziehbar, die weiteren entfallen.
+/// A Basis 5.000, B Basis 1.000 + weitere 1.000 gleich A Basis 6.000 (zvE gleich).
+#[test]
+fn kv_pv_gemeinsamer_hoechstbetrag_rentner_zusammen() {
+    let akte = |v: &[(&str, Value)]| {
+        let mut a = rentner_akte(0);
+        a.retain(|(f, _)| f != "veranlagung" && f != "basis_kv");
+        a.push(p("veranlagung", json!("zusammen")));
+        a.extend(v.iter().map(|(f, w)| p(f, w.clone())));
+        a
+    };
+    let ist = rechne(
+        Scheibe::RentnerGesamt,
+        &akte(&[
+            kv("basis_kv", 5_000),
+            kv("basis_kv_partner", 1_000),
+            kv("vorsorge_arbeitslosenversicherung_partner", 1_000),
+        ]),
+    );
+    let soll = rechne(Scheibe::RentnerGesamt, &akte(&[kv("basis_kv", 6_000)]));
+    assert_eq!(ist, soll, "Rentner zusammen: Abzug 6.000 gemeinsam");
+}

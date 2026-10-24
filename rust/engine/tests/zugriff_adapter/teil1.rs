@@ -466,6 +466,9 @@ pub fn p10_kv_pv(args: &[Value]) -> R<P10KvPvEingabe> {
         basis_kv_pv: euro(s, "basis_kv_pv")?,
         weitere_vorsorgeaufwendungen: euro(s, "weitere_vorsorgeaufwendungen")?,
         mit_anspruch_auf_zuschuss: get_truthy(s, "mit_anspruch_auf_zuschuss", false),
+        // Das Python-Orakel kennt den gemeinsamen Hoechstbetrag nicht (Abweichung Nr. 115): fehlend = Einzelveranlagung.
+        zusammenveranlagt: get_truthy(s, "zusammenveranlagt", false),
+        mit_anspruch_auf_zuschuss_ehegatte: get_truthy(s, "mit_anspruch_auf_zuschuss_ehegatte", false),
     })
 }
 

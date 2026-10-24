@@ -15,7 +15,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel Kirchensteuer hast du dieses Jahr gezahlt?"
-    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid."
+    hilfe_kurz: "Steht auf deiner Lohnsteuerbescheinigung oder deinem Steuerbescheid. Nicht dazu zählt Kirchensteuer, die du als Zuschlag zur Kapitalertragsteuer oder als Zuschlag auf die Einkommensteuer nach dem gesonderten Tarif des § 32d Abs. 1 EStG gezahlt hast (§ 10 Abs. 1 Nr. 4 EStG)."
     beispielwert: 60000
     herkunft_slots: null
     # E10/SA/KiSt/Gezahlt/Sum — Summen-Kz. Der Einzelposten (E0108004 + Art E0108003) liegt
@@ -42,8 +42,8 @@ bindungen:
     elster_kz: E0107602
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 10 Abs. 4b Satz 2 EStG"
-      zitatanker: "erstatteten Aufwendungen"
+      quelle: "§ 10 Abs. 4b Satz 3 EStG"
+      zitatanker: "Nummer 3 und 4 ergebenden Erstattungsüberhangs"
       datei: "sources/gesetze-im-internet/estg_p10_2026-07-11.txt"
 
   # ========================= Sonderausgaben — Berufsausbildung (p10_1_7) =========================
@@ -56,7 +56,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Was hast du dieses Jahr für deine eigene erste Berufsausbildung oder ein Erststudium bezahlt?"
-    hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr."
+    hilfe_kurz: "Zum Beispiel Studiengebühren, Fachbücher, Fahrten. Bis 6.000 Euro im Jahr. Nach § 9 Abs. 6 EStG sind Kosten für eine Berufsausbildung oder ein Studium nur dann Werbungskosten, wenn du vorher schon eine Erstausbildung abgeschlossen hast oder die Ausbildung im Rahmen eines Dienstverhältnisses stattfindet. Kosten, die du als Werbungskosten angesetzt hast, trägst du hier nicht noch einmal ein."
     beispielwert: 200000
     herkunft_slots: null
     # E10/SA/AW_eig_BAusb/Sum — Summen-Kz. Einzelposten liegen unter Einz (E0108002 Betrag +

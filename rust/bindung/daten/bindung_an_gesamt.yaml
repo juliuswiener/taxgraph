@@ -1163,7 +1163,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für seine Basis-Krankenversicherung gezahlt?"
-    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 25), ohne Zusatzleistungen. Trage den Beitrag so ein, wie dort steht. Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
+    hilfe_kurz: "Person-individuell: die Kranken-Basisbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 25), ohne Zusatzleistungen. Trage den Beitrag so ein, wie dort steht, abzüglich im selben Jahr erstatteter Beiträge (zum Beispiel einer Beitragsrückerstattung; § 10 Abs. 4b EStG). Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 a oder 24 b), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 250000
     herkunft_slots: null
     elster_kz: null
@@ -1182,7 +1182,7 @@ bindungen:
     askable: true
     vorjahr: vorschlag
     fragetext_laie: "Wie viel hat dein Ehe-/Lebenspartner dieses Jahr an Beiträgen für die gesetzliche Pflegeversicherung gezahlt?"
-    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 26), ohne private Zusatzversicherung. Trage den Beitrag so ein, wie dort steht. Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
+    hilfe_kurz: "Person-individuell: die Pflege-Pflichtbeiträge deines Partners (aus seiner Beitragsbescheinigung oder Lohnsteuerbescheinigung, Nr. 26), ohne private Zusatzversicherung. Trage den Beitrag so ein, wie dort steht, abzüglich im selben Jahr erstatteter Beiträge (zum Beispiel einer Beitragsrückerstattung; § 10 Abs. 4b EStG). Hat der Arbeitgeber deines Partners einen steuerfreien Zuschuss gezahlt (Nr. 24 c), ziehe ihn hier nicht ab: Du gibst ihn bei der Frage dazu an, die Software zieht ihn ab."
     beispielwert: 50000
     herkunft_slots: null
     elster_kz: null

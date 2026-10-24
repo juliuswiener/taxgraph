@@ -333,11 +333,14 @@ static void *tg_run_kvpv(void) {
 }
 
 int tg_kranken_pflege_vorsorge(long basis_cents, long weitere_cents, int mit_zuschuss,
-                                TgAusgabe *out) {
+                                int zusammenveranlagt, int mit_zuschuss_ehegatte, TgAusgabe *out) {
   catala_init();
   tg_kvpv_in.KrankenPflegeVorsorge__basis_kv_pv_in = catala_new_money(basis_cents);
   tg_kvpv_in.KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in = catala_new_money(weitere_cents);
   tg_kvpv_in.KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in = catala_new_bool(mit_zuschuss);
+  tg_kvpv_in.KrankenPflegeVorsorge__zusammenveranlagt_in = catala_new_bool(zusammenveranlagt);
+  tg_kvpv_in.KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+      catala_new_bool(mit_zuschuss_ehegatte);
   const KrankenPflegeVorsorge__KrankenPflegeVorsorge *r = catala_do(tg_run_kvpv);
   if (!r) {
     catala_free_all();

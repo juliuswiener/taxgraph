@@ -95,6 +95,10 @@ pub enum Sperrgrund {
     /// (Kryptowerte, Beteiligung, Verkauf bei Zusammenveranlagung, nur teilweise Eigennutzung). Python kennt den Grund nicht.
     P23VerkaufNichtGerechnet,
     P32bKombiOffen,
+    /// Rust-eigen (Julius-Regel "erst Sperren, dann Rechnungen" 2026-10-08, `p33a_unterhalt_nicht_gerechnet`): Unterhalt nach § 33a Abs. 1
+    /// `EStG` fuer einen Teil des Jahres oder mit einer weiteren Person. Die Rechnung kennt weder die Zwoelftelung (Abs. 3 S. 1) noch den
+    /// Anteil (Abs. 1 S. 7) und zoege den vollen Hoechstbetrag ab. Python kennt den Grund nicht.
+    P33aUnterhaltNichtGerechnet,
     P35cDoppelfoerderungOffen,
     /// Rust-eigen (Nr. 52, `partner_einkunftsart_nicht_ring_faehig`): der Ehegatte hat bei Zusammenveranlagung "sonstige
     /// Einkuenfte" bejaht (`kein_sonstige_partner` = nein), und die Scheibe `gesamt` rechnet sie nicht. Python liefert dort eine
@@ -137,6 +141,10 @@ pub enum Sperrgrund {
     /// liegt nach dem Veranlagungsjahr (`ERiC` lehnt es ab, Regel `Arbeitslohn_ab08_5`).
     VersorgungsbeginnNachVz,
     VvInstanzOffen,
+    /// Rust-eigen (d-68, `vv_objekt_unbestaetigt`): das erste Objekt der Vermietung traegt eine Angabe, die nur ein Vorschlag ist
+    /// (Vorjahr-Uebernahme, KI). Die Instanz zaehlt dann nicht in die Zahl (`Instanz::zustand` ist der meet), und die Steuer stuende
+    /// ohne die Mieteinkuenfte da. Python kennt den Grund nicht. Das zweite Objekt und jedes weitere sperrt mit [`Sperrgrund::VvInstanzOffen`].
+    VvObjektUnbestaetigt,
 }
 
 impl Sperrgrund {
@@ -190,6 +198,7 @@ impl Sperrgrund {
             Self::LufEuerOffen => "luf_euer_offen",
             Self::P164GateOffen => "p16_4_gate_offen",
             Self::P32bKombiOffen => "p32b_kombi_offen",
+            Self::P33aUnterhaltNichtGerechnet => "p33a_unterhalt_nicht_gerechnet",
             Self::P35cDoppelfoerderungOffen => "p35c_doppelfoerderung_offen",
             Self::P23AngabenOffen => "p23_angaben_offen",
             Self::P23VerkaufNichtGerechnet => "p23_verkauf_nicht_gerechnet",
@@ -224,6 +233,7 @@ impl Sperrgrund {
             Self::VersorgungsfreibetragOffen => "versorgungsfreibetrag_offen",
             Self::VersorgungsbeginnNachVz => "versorgungsbeginn_nach_vz",
             Self::VvInstanzOffen => "vv_instanz_offen",
+            Self::VvObjektUnbestaetigt => "vv_objekt_unbestaetigt",
         }
     }
 
@@ -274,6 +284,7 @@ impl Sperrgrund {
             Self::LufEuerOffen => Some("Du hast einen land- oder forstwirtschaftlichen Betrieb angegeben und dazu Einnahmen und Ausgaben einzeln erfasst. Für die Land- und Forstwirtschaft gelten eigene Arten der Gewinnermittlung, die die Software noch nicht rechnet. Dieser Fall braucht steuerliche Beratung."),
             Self::P164GateOffen => Some("Es ist ein Gewinn aus dem Verkauf oder der Aufgabe eines Betriebs angegeben — bei dir oder bei deinem Partner. Dafür gibt es einen Freibetrag, aber nur unter zwei Bedingungen: Die betreffende Person ist mindestens 55 Jahre alt oder dauernd berufsunfähig, und sie hat diesen Freibetrag noch nie in Anspruch genommen. Bitte beantworte beide Fragen."),
             Self::P32bKombiOffen => Some("Du hast Lohnersatzleistungen wie Eltern-, Kranken- oder Arbeitslosengeld angegeben und zusätzlich einen Betriebsverkauf, Gewerbesteuer oder ausländische Einkünfte. Diese Kombination rechnet die Software noch nicht: Lohnersatzleistungen erhöhen den Steuersatz, und wie sich das mit den anderen Ermäßigungen verzahnt, ist offen. Dieser Fall braucht steuerliche Beratung."),
+            Self::P33aUnterhaltNichtGerechnet => Some("Du hast Unterhalt für eine unterstützte Person angegeben, den du nur einen Teil des Jahres gezahlt hast oder zu dem eine weitere Person beigetragen hat. In beiden Fällen kürzt das Gesetz den Höchstbetrag: um ein Zwölftel für jeden Monat ohne Unterstützung, und bei mehreren Zahlern teilt es ihn auf. Diese Kürzung rechnet die Software noch nicht. Ein Ergebnis mit dem vollen Höchstbetrag wäre zu niedrig, deshalb rechnet sie hier nicht weiter. Dieser Fall braucht steuerliche Beratung. Hast du die Person doch das ganze Jahr allein unterstützt, ändere deine Antwort zum Unterstützungszeitraum oder zur weiteren Person."),
             Self::P35cDoppelfoerderungOffen => Some("Zu deiner energetischen Sanierung fehlt noch die Antwort, ob du dafür schon anderweitig gefördert wurdest — etwa durch öffentliche Zuschüsse oder weil du dieselben Kosten bereits als Handwerkerleistung geltend machst. In diesen Fällen entfällt die Steuerermäßigung ganz. Bitte beantworte diese Frage, auch wenn keine andere Förderung vorliegt."),
             Self::P23AngabenOffen => Some("Du hast einen privaten Verkauf angegeben. Zu diesem Verkauf fehlt noch eine Angabe, oder zwei Angaben passen nicht zusammen: die Art des Verkaufs, das Kaufdatum und das Verkaufsdatum (das Verkaufsdatum muss im Steuerjahr liegen und darf nicht vor dem Kaufdatum liegen), bei einem Grundstück ob du es selbst bewohnt hast und ob du darauf in den letzten zehn Jahren ein Gebäude gebaut, ausgebaut oder erweitert hast, bei einem selbst bewohnten Grundstück, das du innerhalb von zehn Jahren verkauft hast, die Wohnfläche in Quadratmetern und der Zeitraum, in dem du dort gewohnt hast (der Beginn darf nicht nach dem Ende liegen), bei einem anderen Gegenstand ob du ihn täglich gebraucht oder daraus Einkünfte erzielt hast, der Verkaufspreis, ein Betrag mit Minus, oder eine Abschreibung, die höher ist als die Anschaffungskosten. Bitte trage die Angaben zu jedem Verkauf vollständig ein."),
             Self::P23VerkaufNichtGerechnet => Some("Du hast einen privaten Verkauf angegeben, den die Software noch nicht rechnet. Das betrifft Kryptowerte (zum Beispiel Bitcoin), den Anteil an einer Beteiligung, einen Verkauf bei gemeinsamer Veranlagung mit deinem Ehe- oder Lebenspartner, ein Grundstück, das du nur zum Teil selbst bewohnt hast, und ein Grundstück, das du länger als zehn Jahre besitzt und auf dem in den letzten zehn Jahren ein Gebäude entstand oder erweitert wurde. Ein Ergebnis ohne diesen Verkauf wäre falsch, deshalb rechnet die Software hier nicht weiter. Dieser Fall braucht steuerliche Beratung."),
@@ -304,6 +315,7 @@ impl Sperrgrund {
             Self::VersorgungUeberLohn => Some("Dein Versorgungsbezug ist höher als dein Bruttoarbeitslohn, oder du hast keinen Bruttoarbeitslohn eingetragen. Das passt nicht zusammen: Der Bruttoarbeitslohn (Nummer 3 der Lohnsteuerbescheinigung) enthält den Versorgungsbezug (Nummer 8) schon. Trage bei Bruttoarbeitslohn den ganzen Betrag aus Nummer 3 ein, nicht nur den Teil ohne Versorgung. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: Sie hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung."),
             Self::VersorgungsbeginnNachVz => Some("Das Jahr, in dem deine Versorgung begonnen hat, liegt nach dem Jahr dieser Steuererklärung. Eine Versorgung, die erst später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Versorgungsbeginns. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
             Self::VvInstanzOffen => Some("Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich vermietet ist. Bitte ergänze die fehlenden Angaben."),
+            Self::VvObjektUnbestaetigt => Some("Zu deiner Vermietung steht mindestens eine Angabe nur als Vorschlag da, zum Beispiel aus dem Vorjahr. Solange du sie nicht bestätigt hast, zeigt die Software keine Steuer an; sie könnte die Mieteinkünfte sonst nicht mitrechnen. Bitte sieh dir die Angaben zum Objekt an und bestätige sie; danach rechnet die Software die Zahl."),
         }
     }
 }
@@ -372,6 +384,7 @@ impl FromStr for Sperrgrund {
             "luf_euer_offen" => Ok(Self::LufEuerOffen),
             "p16_4_gate_offen" => Ok(Self::P164GateOffen),
             "p32b_kombi_offen" => Ok(Self::P32bKombiOffen),
+            "p33a_unterhalt_nicht_gerechnet" => Ok(Self::P33aUnterhaltNichtGerechnet),
             "p35c_doppelfoerderung_offen" => Ok(Self::P35cDoppelfoerderungOffen),
             "p23_angaben_offen" => Ok(Self::P23AngabenOffen),
             "p23_verkauf_nicht_gerechnet" => Ok(Self::P23VerkaufNichtGerechnet),
@@ -406,6 +419,7 @@ impl FromStr for Sperrgrund {
             "versorgungsfreibetrag_offen" => Ok(Self::VersorgungsfreibetragOffen),
             "versorgungsbeginn_nach_vz" => Ok(Self::VersorgungsbeginnNachVz),
             "vv_instanz_offen" => Ok(Self::VvInstanzOffen),
+            "vv_objekt_unbestaetigt" => Ok(Self::VvObjektUnbestaetigt),
             other => Err(UnbekannterSperrgrund(other.to_owned())),
         }
     }
@@ -533,6 +547,7 @@ mod tests {
             Sperrgrund::P23VerkaufNichtGerechnet,
             Sperrgrund::RavBavAngabenOffen,
             Sperrgrund::RavBavNichtGerechnet,
+            Sperrgrund::P33aUnterhaltNichtGerechnet,
         ] {
             assert!(
                 !klartext.contains_key(grund.als_str()),

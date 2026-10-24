@@ -20,6 +20,8 @@ mod daten_verzeichnis;
 mod fehlertexte_hermetisch;
 #[path = "gitignore_verweise.rs"]
 mod gitignore_verweise;
+#[path = "hilfetexte_gesetzeswortlaut.rs"]
+mod hilfetexte_gesetzeswortlaut;
 #[path = "keine_python_bindung_im_rust_code.rs"]
 mod keine_python_bindung_im_rust_code;
 #[path = "lade_alle_yamls.rs"]

@@ -86,20 +86,120 @@ const catala_type catala_type__KrankenPflegeVorsorge__TestDurchbruchMitZuschuss(
     "g", catala_type_money);
 }
 
+typedef struct KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenBasisDurchbruchGemeinsam", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenUnterGemeinsamemHB", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenGedeckeltAufGemeinsamenHB", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800 {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenMischfallA1900B2800", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900 {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenMischfallA2800B1900", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenBeideMitZuschuss", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss;
+const catala_type catala_type__KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestEinzelIgnoriertEhegattenZuschuss", 1,
+    "g", catala_type_money);
+}
+
+typedef struct KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestZusammenOhneHBUeberschreitung", 1,
+    "g", catala_type_money);
+}
+
 typedef struct KrankenPflegeVorsorge__KrankenPflegeVorsorge_in {
   CATALA_MONEY KrankenPflegeVorsorge__basis_kv_pv_in;
   CATALA_MONEY KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in;
   CATALA_BOOL KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in;
+  CATALA_BOOL KrankenPflegeVorsorge__zusammenveranlagt_in;
+  CATALA_BOOL KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in;
 } KrankenPflegeVorsorge__KrankenPflegeVorsorge_in;
 const catala_type catala_type__KrankenPflegeVorsorge__KrankenPflegeVorsorge_in()
 {
   static catala_type ty = {UNINITIALIZED};
-  static struct catala_label_type fields[3];
+  static struct catala_label_type fields[5];
   if (ty.kind != UNINITIALIZED) return ty;
-  return catala_type_struct(&ty, fields, "KrankenPflegeVorsorge_in", 3,
+  return catala_type_struct(&ty, fields, "KrankenPflegeVorsorge_in", 5,
     "basis_kv_pv_in", catala_type_money,
     "weitere_vorsorgeaufwendungen_in", catala_type_money,
-    "mit_anspruch_auf_zuschuss_in", catala_type_bool);
+    "mit_anspruch_auf_zuschuss_in", catala_type_bool,
+    "zusammenveranlagt_in", catala_type_bool,
+    "mit_anspruch_auf_zuschuss_ehegatte_in", catala_type_bool);
 }
 
 typedef void KrankenPflegeVorsorge__TestNormalUnterHB_in;
@@ -142,35 +242,160 @@ const catala_type catala_type__KrankenPflegeVorsorge__TestDurchbruchMitZuschuss_
   return catala_type_struct(&ty, NULL, "TestDurchbruchMitZuschuss_in", 0);
 }
 
+typedef void KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenBasisDurchbruchGemeinsam_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenUnterGemeinsamemHB_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenGedeckeltAufGemeinsamenHB_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenMischfallA1900B2800_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenMischfallA2800B1900_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenBeideMitZuschuss_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestEinzelIgnoriertEhegattenZuschuss_in", 0);
+}
+
+typedef void KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestZusammenOhneHBUeberschreitung_in", 0);
+}
+
 const catala_code_position KrankenPflegeVorsorge__loc[][1] = {
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 45, 10, 45, 68}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 49, 8, 49, 53}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 60, 12, 60, 13}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 67, 23, 67, 24}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 68, 3, 68, 26}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 68, 13, 68, 26}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 75, 12, 75, 13}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 82, 23, 82, 24}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 83, 3, 83, 26}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 83, 13, 83, 26}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 90, 12, 90, 13}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 97, 23, 97, 24}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 98, 3, 98, 26}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 98, 13, 98, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 63, 10, 63, 68}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 67, 8, 67, 53}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 78, 12, 78, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 87, 23, 87, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 88, 3, 88, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 88, 13, 88, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 95, 12, 95, 13}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     105, 12, 105, 13}},
+     104, 23, 104, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 105, 3, 105, 26}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     112, 23, 112, 24}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 113, 3, 113, 26}},
+     105, 13, 105, 26}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     113, 13, 113, 26}},
+     112, 12, 112, 13}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     120, 12, 120, 13}},
+     121, 23, 121, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 122, 3, 122, 26}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     127, 23, 127, 24}},
-  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 128, 3, 128, 26}},
+     122, 13, 122, 26}},
   {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
-     128, 13, 128, 26}}
+     129, 12, 129, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     138, 23, 138, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 139, 3, 139, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     139, 13, 139, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     146, 12, 146, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     155, 23, 155, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 156, 3, 156, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     156, 13, 156, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     163, 12, 163, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     172, 23, 172, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 173, 3, 173, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     173, 13, 173, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     180, 12, 180, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     189, 23, 189, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 190, 3, 190, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     190, 13, 190, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     197, 12, 197, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     206, 23, 206, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 207, 3, 207, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     207, 13, 207, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     214, 12, 214, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     223, 23, 223, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 224, 3, 224, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     224, 13, 224, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     231, 12, 231, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     240, 23, 240, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 241, 3, 241, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     241, 13, 241, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     248, 12, 248, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     257, 23, 257, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 258, 3, 258, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     258, 13, 258, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     265, 12, 265, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     274, 23, 274, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 275, 3, 275, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     275, 13, 275, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     282, 12, 282, 13}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     291, 23, 291, 24}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en", 292, 3, 292, 26}},
+  {{"rules/estg/p10_1_3_3a/krankenpflegevorsorge.catala_en",
+     292, 13, 292, 26}}
 };
 
 const KrankenPflegeVorsorge__KrankenPflegeVorsorge*
@@ -184,17 +409,33 @@ const KrankenPflegeVorsorge__KrankenPflegeVorsorge*
     kranken_pflege_vorsorge_in->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in;
   CATALA_BOOL mit_anspruch_auf_zuschuss =
     kranken_pflege_vorsorge_in->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in;
+  CATALA_BOOL zusammenveranlagt =
+    kranken_pflege_vorsorge_in->KrankenPflegeVorsorge__zusammenveranlagt_in;
+  CATALA_BOOL mit_anspruch_auf_zuschuss_ehegatte =
+    kranken_pflege_vorsorge_in->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in;
   CATALA_MONEY abziehbare_kv_pv_vorsorge;
   CATALA_MONEY hoechstbetrag;
+  CATALA_MONEY hoechstbetrag__1;
+  CATALA_MONEY hoechstbetrag__2;
   CATALA_MONEY beruecksichtigt_ohne_durchbruch;
   KrankenPflegeVorsorge__KrankenPflegeVorsorge* const
     kranken_pflege_vorsorge =
     catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
   if (CATALA_TRUE == mit_anspruch_auf_zuschuss) {
-    hoechstbetrag = catala_new_money(190000);
+    hoechstbetrag__1 = catala_new_money(190000);
   } else {
-    hoechstbetrag = catala_new_money(280000);
+    hoechstbetrag__1 = catala_new_money(280000);
   }
+  if (CATALA_TRUE == zusammenveranlagt) {
+    if (CATALA_TRUE == mit_anspruch_auf_zuschuss_ehegatte) {
+      hoechstbetrag__2 = catala_new_money(190000);
+    } else {
+      hoechstbetrag__2 = catala_new_money(280000);
+    }
+  } else {
+    hoechstbetrag__2 = catala_new_money(0);
+  }
+  hoechstbetrag = o_add_mon_mon(hoechstbetrag__1, hoechstbetrag__2);
   if (CATALA_TRUE ==
       o_gt(catala_type_money, KrankenPflegeVorsorge__loc[0],
            o_add_mon_mon(basis_kv_pv, weitere_vorsorgeaufwendungen),
@@ -239,6 +480,9 @@ const KrankenPflegeVorsorge__TestNormalUnterHB*
   result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
     catala_new_money(50000);
   result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
     CATALA_FALSE;
   result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
   r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
@@ -292,6 +536,9 @@ const KrankenPflegeVorsorge__TestDeckel* KrankenPflegeVorsorge__test_deckel
   result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
     catala_new_money(150000);
   result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
     CATALA_FALSE;
   result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
   r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
@@ -347,6 +594,9 @@ const KrankenPflegeVorsorge__TestBasisDurchbruch*
   result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
     catala_new_money(100000);
   result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
     CATALA_FALSE;
   result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
   r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
@@ -404,6 +654,9 @@ const KrankenPflegeVorsorge__TestMitZuschussUnterHB*
     catala_new_money(20000);
   result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
     CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
   result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
   r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
     result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
@@ -460,6 +713,9 @@ const KrankenPflegeVorsorge__TestDurchbruchMitZuschuss*
     catala_new_money(0);
   result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
     CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
   result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
   r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
     result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
@@ -489,5 +745,477 @@ const KrankenPflegeVorsorge__TestDurchbruchMitZuschuss*
   }
   test_durchbruch_mit_zuschuss->KrankenPflegeVorsorge__g = g;
   return test_durchbruch_mit_zuschuss;
+}
+
+const KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam*
+    KrankenPflegeVorsorge__test_zusammen_basis_durchbruch_gemeinsam
+    (const KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in*
+       test_zusammen_basis_durchbruch_gemeinsam_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam* const
+    test_zusammen_basis_durchbruch_gemeinsam =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(600000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(100000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[22];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[23], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[25], g,
+           catala_new_money(600000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[24], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_basis_durchbruch_gemeinsam->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_basis_durchbruch_gemeinsam;
+}
+
+const KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB*
+    KrankenPflegeVorsorge__test_zusammen_unter_gemeinsamem_h_b
+    (const KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in*
+       test_zusammen_unter_gemeinsamem_h_b_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB* const
+    test_zusammen_unter_gemeinsamem_h_b =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(150000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(300000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[26];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[27], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[29], g,
+           catala_new_money(450000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[28], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_unter_gemeinsamem_h_b->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_unter_gemeinsamem_h_b;
+}
+
+const KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB*
+    KrankenPflegeVorsorge__test_zusammen_gedeckelt_auf_gemeinsamen_h_b
+    (const KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in*
+       test_zusammen_gedeckelt_auf_gemeinsamen_h_b_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB* const
+    test_zusammen_gedeckelt_auf_gemeinsamen_h_b =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(300000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(500000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[30];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[31], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[33], g,
+           catala_new_money(560000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[32], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_gedeckelt_auf_gemeinsamen_h_b->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_gedeckelt_auf_gemeinsamen_h_b;
+}
+
+const KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800*
+    KrankenPflegeVorsorge__test_zusammen_mischfall_a1900_b2800
+    (const KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in*
+       test_zusammen_mischfall_a1900_b2800_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800* const
+    test_zusammen_mischfall_a1900_b2800 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(100000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(400000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[34];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[35], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[37], g,
+           catala_new_money(470000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[36], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_mischfall_a1900_b2800->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_mischfall_a1900_b2800;
+}
+
+const KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900*
+    KrankenPflegeVorsorge__test_zusammen_mischfall_a2800_b1900
+    (const KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in*
+       test_zusammen_mischfall_a2800_b1900_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900* const
+    test_zusammen_mischfall_a2800_b1900 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(100000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(400000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_TRUE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[38];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[39], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[41], g,
+           catala_new_money(470000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[40], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_mischfall_a2800_b1900->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_mischfall_a2800_b1900;
+}
+
+const KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss*
+    KrankenPflegeVorsorge__test_zusammen_beide_mit_zuschuss
+    (const KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in*
+       test_zusammen_beide_mit_zuschuss_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss* const
+    test_zusammen_beide_mit_zuschuss =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(100000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(350000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_TRUE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[42];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[43], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[45], g,
+           catala_new_money(380000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[44], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_beide_mit_zuschuss->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_beide_mit_zuschuss;
+}
+
+const KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss*
+    KrankenPflegeVorsorge__test_einzel_ignoriert_ehegatten_zuschuss
+    (const KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in*
+       test_einzel_ignoriert_ehegatten_zuschuss_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss* const
+    test_einzel_ignoriert_ehegatten_zuschuss =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(100000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(300000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[46];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[47], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[49], g,
+           catala_new_money(280000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[48], 1,
+      NULL);
+    abort();
+  }
+  test_einzel_ignoriert_ehegatten_zuschuss->KrankenPflegeVorsorge__g = g;
+  return test_einzel_ignoriert_ehegatten_zuschuss;
+}
+
+const KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung*
+    KrankenPflegeVorsorge__test_zusammen_ohne_h_b_ueberschreitung
+    (const KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in*
+       test_zusammen_ohne_h_b_ueberschreitung_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION))
+    r;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* result;
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge_in* const result__1 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge_in));
+  KrankenPflegeVorsorge__KrankenPflegeVorsorge* const r__2 =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__KrankenPflegeVorsorge));
+  CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION) const
+    r__1 = catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const KrankenPflegeVorsorge__KrankenPflegeVorsorge* g__1;
+  KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung* const
+    test_zusammen_ohne_h_b_ueberschreitung =
+    catala_malloc(sizeof(KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung));
+  result__1->KrankenPflegeVorsorge__basis_kv_pv_in =
+    catala_new_money(150000);
+  result__1->KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in =
+    catala_new_money(50000);
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in =
+    CATALA_FALSE;
+  result__1->KrankenPflegeVorsorge__zusammenveranlagt_in = CATALA_TRUE;
+  result__1->KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in =
+    CATALA_FALSE;
+  result = KrankenPflegeVorsorge__kranken_pflege_vorsorge(result__1);
+  r__2->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge =
+    result->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  r__1[0].content = r__2;
+  r__1[1].content = KrankenPflegeVorsorge__loc[50];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(KrankenPflegeVorsorge__KrankenPflegeVorsorge*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((KrankenPflegeVorsorge__KrankenPflegeVorsorge*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, KrankenPflegeVorsorge__loc[51], 1, NULL);
+    abort();
+  }
+  g = g__1->KrankenPflegeVorsorge__abziehbare_kv_pv_vorsorge;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, KrankenPflegeVorsorge__loc[53], g,
+           catala_new_money(200000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, KrankenPflegeVorsorge__loc[52], 1,
+      NULL);
+    abort();
+  }
+  test_zusammen_ohne_h_b_ueberschreitung->KrankenPflegeVorsorge__g = g;
+  return test_zusammen_ohne_h_b_ueberschreitung;
 }
 

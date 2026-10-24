@@ -819,6 +819,8 @@ fn run(fnname: &str, w: &[Eingabe]) -> Result<i128, String> {
             basis_kv_pv: eu(w, "basis_kv_pv"),
             weitere_vorsorgeaufwendungen: eu(w, "weitere_vorsorgeaufwendungen"),
             mit_anspruch_auf_zuschuss: wa(w, "mit_anspruch_auf_zuschuss"),
+            zusammenveranlagt: wa(w, "zusammenveranlagt"),
+            mit_anspruch_auf_zuschuss_ehegatte: wa(w, "mit_anspruch_auf_zuschuss_ehegatte"),
         })),
         "p10_1_7_berufsausbildung" => e(p10_1_7_berufsausbildung(&P1017BerufsausbildungEingabe {
             berufsausbildung_aufwendungen: eu(w, "berufsausbildung_aufwendungen"),

@@ -43,10 +43,52 @@ typedef struct KrankenPflegeVorsorge__TestDurchbruchMitZuschuss {
 } KrankenPflegeVorsorge__TestDurchbruchMitZuschuss;
 const catala_type catala_type__KrankenPflegeVorsorge__TestDurchbruchMitZuschuss();
 
+typedef struct KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800 {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900 {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss();
+
+typedef struct KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss;
+const catala_type catala_type__KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss();
+
+typedef struct KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung {
+  CATALA_MONEY KrankenPflegeVorsorge__g;
+} KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung();
+
 typedef struct KrankenPflegeVorsorge__KrankenPflegeVorsorge_in {
   CATALA_MONEY KrankenPflegeVorsorge__basis_kv_pv_in;
   CATALA_MONEY KrankenPflegeVorsorge__weitere_vorsorgeaufwendungen_in;
   CATALA_BOOL KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_in;
+  CATALA_BOOL KrankenPflegeVorsorge__zusammenveranlagt_in;
+  CATALA_BOOL KrankenPflegeVorsorge__mit_anspruch_auf_zuschuss_ehegatte_in;
 } KrankenPflegeVorsorge__KrankenPflegeVorsorge_in;
 const catala_type catala_type__KrankenPflegeVorsorge__KrankenPflegeVorsorge_in();
 
@@ -64,6 +106,30 @@ const catala_type catala_type__KrankenPflegeVorsorge__TestMitZuschussUnterHB_in(
 
 typedef void KrankenPflegeVorsorge__TestDurchbruchMitZuschuss_in;
 const catala_type catala_type__KrankenPflegeVorsorge__TestDurchbruchMitZuschuss_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in();
+
+typedef void KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in();
+
+typedef void KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in;
+const catala_type catala_type__KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in();
 
 extern const catala_code_position KrankenPflegeVorsorge__loc[][1];
 
@@ -94,5 +160,45 @@ const KrankenPflegeVorsorge__TestDurchbruchMitZuschuss*
     KrankenPflegeVorsorge__test_durchbruch_mit_zuschuss
     (const KrankenPflegeVorsorge__TestDurchbruchMitZuschuss_in*
        test_durchbruch_mit_zuschuss_in);
+
+const KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam*
+    KrankenPflegeVorsorge__test_zusammen_basis_durchbruch_gemeinsam
+    (const KrankenPflegeVorsorge__TestZusammenBasisDurchbruchGemeinsam_in*
+       test_zusammen_basis_durchbruch_gemeinsam_in);
+
+const KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB*
+    KrankenPflegeVorsorge__test_zusammen_unter_gemeinsamem_h_b
+    (const KrankenPflegeVorsorge__TestZusammenUnterGemeinsamemHB_in*
+       test_zusammen_unter_gemeinsamem_h_b_in);
+
+const KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB*
+    KrankenPflegeVorsorge__test_zusammen_gedeckelt_auf_gemeinsamen_h_b
+    (const KrankenPflegeVorsorge__TestZusammenGedeckeltAufGemeinsamenHB_in*
+       test_zusammen_gedeckelt_auf_gemeinsamen_h_b_in);
+
+const KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800*
+    KrankenPflegeVorsorge__test_zusammen_mischfall_a1900_b2800
+    (const KrankenPflegeVorsorge__TestZusammenMischfallA1900B2800_in*
+       test_zusammen_mischfall_a1900_b2800_in);
+
+const KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900*
+    KrankenPflegeVorsorge__test_zusammen_mischfall_a2800_b1900
+    (const KrankenPflegeVorsorge__TestZusammenMischfallA2800B1900_in*
+       test_zusammen_mischfall_a2800_b1900_in);
+
+const KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss*
+    KrankenPflegeVorsorge__test_zusammen_beide_mit_zuschuss
+    (const KrankenPflegeVorsorge__TestZusammenBeideMitZuschuss_in*
+       test_zusammen_beide_mit_zuschuss_in);
+
+const KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss*
+    KrankenPflegeVorsorge__test_einzel_ignoriert_ehegatten_zuschuss
+    (const KrankenPflegeVorsorge__TestEinzelIgnoriertEhegattenZuschuss_in*
+       test_einzel_ignoriert_ehegatten_zuschuss_in);
+
+const KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung*
+    KrankenPflegeVorsorge__test_zusammen_ohne_h_b_ueberschreitung
+    (const KrankenPflegeVorsorge__TestZusammenOhneHBUeberschreitung_in*
+       test_zusammen_ohne_h_b_ueberschreitung_in);
 
 #endif /* __KRANKENPFLEGEVORSORGE_H__ */

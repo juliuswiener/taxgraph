@@ -160,7 +160,13 @@ const HANDLER: &[(&str, Handler)] = &[
         let weitere = e.zahl("weitere_vorsorgeaufwendungen")?;
         Ok(einzel(
             "abziehbare_kv_pv_vorsorge",
-            kranken_pflege_vorsorge(basis, weitere, e.wahr("mit_anspruch_auf_zuschuss")?),
+            kranken_pflege_vorsorge(
+                basis,
+                weitere,
+                e.wahr("mit_anspruch_auf_zuschuss")?,
+                e.wahr("zusammenveranlagt")?,
+                e.wahr("mit_anspruch_auf_zuschuss_ehegatte")?,
+            ),
         ))
     }),
     ("berufsausbildung", |e| {
