@@ -176,7 +176,11 @@ fn fluss_b_auswahl_buttons() {
 /// des Fragebogens); die vier Partner-Zeilen bleiben sichtbar, sind aber ausgegraut (Kaestchen `disabled`, der Satz „gilt nur bei
 /// gemeinsamer Erklärung“), solange die Wahl fehlt oder „allein“ ist. Die Wahl schreibt `veranlagung`; der Fragebogen fragt sie danach nicht
 /// noch einmal, und eine ausgegraute Zeile schreibt nichts.
+///
+/// ROT bis zum Bau und darum `ignore`, damit `make rust-test` (nextest ohne `--run-ignored`) gruen bleibt. Der Bau nimmt das `ignore` weg.
+/// Das rote Kommando: `cargo nextest run -p api -E 'binary(oberflaeche) & test(partnerzeilen_erst_nach_der_veranlagung)' --run-ignored only`.
 #[test]
+#[ignore = "rot bis zum Bau (Ticket Partner-Zeilen vor allein/gemeinsam): mit --run-ignored only aufrufen, der Bau nimmt das ignore weg"]
 fn partnerzeilen_erst_nach_der_veranlagung() {
     const PARTNER: [&str; 4] = ["kein_kap_partner", "kein_gewinn_partner", "kein_sonstige_partner", "keine_behinderung_pflege_partner"];
     let _sperre = crate::browser::seriell();
@@ -228,7 +232,7 @@ fn partnerzeilen_erst_nach_der_veranlagung() {
     let felder = u.stand_felder(&fall);
     pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", felder["veranlagung"]["wert"] == json!("einzel"), "veranlagung im Fall: {}", felder["veranlagung"]["wert"]);
     for f in PARTNER {
-        pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", felder.get(f).is_none_or(|e| e.is_null()), "{f} wurde geschrieben: {}", felder[f]);
+        pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", felder.get(f).is_none_or(serde_json::Value::is_null), "{f} wurde geschrieben: {}", felder[f]);
     }
     let offen = u.offene(&fall);
     pp!("B.die_wahl_schreibt_die_veranlagung_und_keine_partnerzeile", !offen.iter().any(|f| f == "veranlagung"), "der Fragebogen fragt die Veranlagung noch einmal");

@@ -82,7 +82,11 @@ async fn fragen_voll(d: &Dienst) -> Value {
 }
 
 /// `GET /fragen` auf einem frischen Fall der Scheibe `gesamt`: die Ehegatten-Zeilen warten auf `veranlagung = zusammen`.
+///
+/// ROT bis zum Bau und darum `ignore`, damit `make rust-test` (nextest ohne `--run-ignored`) gruen bleibt. Der Bau nimmt das `ignore` weg.
+/// Das rote Kommando: `cargo nextest run -p api --test it partnerzeilen_warten_auf_veranlagung::die_ehegatten --run-ignored only`.
 #[tokio::test]
+#[ignore = "rot bis zum Bau (Ticket Partner-Zeilen vor allein/gemeinsam): mit --run-ignored only aufrufen, der Bau nimmt das ignore weg"]
 async fn die_ehegatten_zeilen_warten_auf_die_veranlagung() {
     let d = neuer_fall("gesamt").await;
     let antwort = fragen_voll(&d).await;
@@ -128,7 +132,8 @@ async fn schreibe(d: &Dienst, feld: &str, wert: Value) {
 /// Zeile ohne Betrag (`kein_sonstige_partner`) wird ignoriert und sperrt nicht.
 #[tokio::test]
 async fn der_wechsel_auf_allein_laesst_gespeicherte_partnerzeilen_nie_still_mitrechnen() {
-    let faelle: [(&str, Vec<(&str, Value)>, Value); 4] = [
+    type Fall = (&'static str, Vec<(&'static str, Value)>, Value);
+    let faelle: [Fall; 4] = [
         ("ja und Betrag", vec![("kein_kap_partner", json!(false)), ("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
         ("Zeile offen, Betrag", vec![("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
         ("nein und Betrag", vec![("kein_kap_partner", json!(true)), ("kap_kapitalertraege_partner", json!(500_000))], json!("partner_konsistenz_offen")),
