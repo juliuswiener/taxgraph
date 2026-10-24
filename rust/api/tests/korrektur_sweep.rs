@@ -20,7 +20,8 @@
 //! `TAXGRAPH_KORREKTUR_ART=1|2|3|4|123|…` (Standard 1234), `TAXGRAPH_KORREKTUR_GRENZE=<n>` (hoechstens n Felder je Ausgangsfall und Art).
 //!
 //! GRENZE: ein Versuch trifft nur die Werte und Ausgangsfaelle, die er probiert. Text-Felder variiert der Sweep nicht; Datumsfelder nur
-//! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“.
+//! mit sieben Geburtsdaten bzw. zwei Daten im Veranlagungsjahr. „Keine Abweichung gesehen“ heisst nicht „kein Fehler“. Was kein
+//! Ausgangsfall je beantwortet, nennt das Log selbst: je Scheibe `ABDECKUNG` (fragbar, nie beantwortet) und je Feld `NIE_BEANTWORTET`.
 #![allow(
     clippy::unwrap_used,
     clippy::expect_used,
@@ -31,7 +32,7 @@
     clippy::print_stderr
 )]
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -41,6 +42,8 @@ use api::{app, Zustand};
 use auth::Auth;
 use axum::body::Body;
 use axum::http::Request;
+use bescheid::deklaration::Cfg;
+use domain::Scheibe;
 use http_body_util::BodyExt;
 use serde_json::{json, Value};
 use tower::ServiceExt;
@@ -317,7 +320,7 @@ fn rente(partner: bool, beginn: &'static str, euro: &'static str) -> Tabelle {
 }
 
 /// (Name, Scheibe, Antworten, Kreuze der Ankreuzliste, Beschreibung). Kreuz heisst „ja, das gab es“.
-fn ausgangsfaelle() -> Vec<(&'static str, &'static str, Tabelle, &'static [&'static str])> {
+fn ausgangsfaelle() -> Vec<Ausgangsfall> {
     let einzel = |gd: &'static str, konf: &'static str| {
         let mut t = person_a(gd);
         t.push(("veranlagung", Gib::Wahl("einzel")));
@@ -646,6 +649,24 @@ fn liste_aus_env(name: &str) -> Option<Vec<String>> {
     std::env::var(name).ok().filter(|v| !v.is_empty()).map(|v| v.split(',').map(str::to_owned).collect())
 }
 
+/// Was ein Lauf variiert: die Arten (Standard 1234), nur diese Felder, hoechstens `grenze` Felder je Ausgangsfall und Art.
+struct Einstellung {
+    arten: String,
+    nur: Option<Vec<String>>,
+    grenze: usize,
+}
+
+impl Einstellung {
+    fn aus_env() -> Self {
+        Self {
+            arten: std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "1234".to_owned()),
+            nur: liste_aus_env("TAXGRAPH_KORREKTUR_FELDER"),
+            grenze: std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX),
+        }
+    }
+}
+
+/// Ein Ausgangsfall: Sweep und die Namen der Felder, die sein Fragenlauf beantwortet hat (ohne `__n` der Instanzen).
 async fn sweep_basis(
     name: &'static str,
     scheibe: &'static str,
@@ -653,7 +674,8 @@ async fn sweep_basis(
     kreuze: &'static [&'static str],
     bindungen: &BTreeMap<String, bindung::Bindung>,
     log_pfad: Option<String>,
-) -> Zaehler {
+    einst: &Einstellung,
+) -> (Zaehler, BTreeSet<String>) {
     let d = Dienst::neu();
     let vz = 2025;
     let b = fragenlauf(&d, name, scheibe, vz, &tabelle, kreuze).await;
@@ -667,9 +689,7 @@ async fn sweep_basis(
         basis_messung.grund(),
         basis_messung.ergebnis.as_object().map_or_else(String::new, |o| o.keys().cloned().collect::<Vec<_>>().join(","))
     ));
-    let arten = std::env::var("TAXGRAPH_KORREKTUR_ART").unwrap_or_else(|_| "1234".to_owned());
-    let nur = liste_aus_env("TAXGRAPH_KORREKTUR_FELDER");
-    let grenze: usize = std::env::var("TAXGRAPH_KORREKTUR_GRENZE").ok().and_then(|g| g.parse().ok()).unwrap_or(usize::MAX);
+    let (arten, nur, grenze) = (&einst.arten, &einst.nur, einst.grenze);
     let mut z = Zaehler::default();
     let mut nicht_variiert: Vec<String> = Vec::new();
     let ctx = Kontext { tabelle: &tabelle, kreuze };
@@ -748,7 +768,19 @@ async fn sweep_basis(
     for f in &nicht_variiert {
         log.zeile(&format!("NICHT_VARIIERT\t{name}\t{f}"));
     }
-    z
+    (z, b.ereignisse.iter().map(|e| basisname(&e.feld).to_owned()).collect())
+}
+
+/// Was der Lauf nicht pruefen konnte (AK3): je Scheibe die Zahl der fragbaren Felder und der Felder, die keine Basis dieser Scheibe je
+/// beantwortet hat. Eine Zeile `ABDECKUNG\t<scheibe>\tfragbar N\tnie_beantwortet M`, danach je Feld `NIE_BEANTWORTET\t<feld>\t<scheibe>`.
+/// Fuer ein solches Feld heisst „kein Fund“ „nicht geprueft“.
+fn abdeckung(scheibe: &str, bindungen: &BTreeMap<String, bindung::Bindung>, beantwortet: &BTreeSet<String>) -> Vec<String> {
+    let liste = Cfg::fuer(scheibe.parse::<Scheibe>().unwrap()).felder_roh().unwrap_or_else(|| panic!("{scheibe} traegt keine eigene Feldliste"));
+    let fragbar: Vec<&str> = liste.iter().copied().filter(|f| bindungen.get(*f).is_some_and(|b| b.askable)).collect();
+    let nie: Vec<&str> = fragbar.iter().copied().filter(|f| !beantwortet.contains(*f)).collect();
+    let mut zeilen = vec![format!("ABDECKUNG\t{scheibe}\tfragbar {}\tnie_beantwortet {}", fragbar.len(), nie.len())];
+    zeilen.extend(nie.iter().map(|f| format!("NIE_BEANTWORTET\t{f}\t{scheibe}")));
+    zeilen
 }
 
 /// Felder, an denen andere Fragen haengen: Gates, Kreuze der Ankreuzliste, Quellen einer Ableitung und jedes Feld, das eine
@@ -775,7 +807,38 @@ fn lade_bindungen() -> BTreeMap<String, bindung::Bindung> {
     reg.dateien.into_iter().flat_map(|(_, d)| d.bindungen).map(|b| (b.feld_id.clone(), b)).collect()
 }
 
-/// Der Sweep ueber alle Ausgangsfaelle (oder die, die `TAXGRAPH_KORREKTUR_BASEN` nennt), je Ausgangsfall ein Thread.
+type Ausgangsfall = (&'static str, &'static str, Tabelle, &'static [&'static str]);
+
+/// Der Sweep ueber `faelle`, je Ausgangsfall ein Thread; danach je Scheibe die Abdeckung (`abdeckung`) ins Log.
+fn sweep_alle(faelle: Vec<Ausgangsfall>, einst: &Einstellung, log_pfad: Option<String>, bindungen: &BTreeMap<String, bindung::Bindung>) -> Vec<(&'static str, Zaehler)> {
+    let ergebnisse: Vec<(&str, &str, Zaehler, BTreeSet<String>)> = std::thread::scope(|s| {
+        let hs: Vec<_> = faelle
+            .into_iter()
+            .map(|(name, scheibe, tabelle, kreuze)| {
+                let log_pfad = log_pfad.clone();
+                s.spawn(move || {
+                    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+                    let (z, beantwortet) = rt.block_on(sweep_basis(name, scheibe, tabelle, kreuze, bindungen, log_pfad, einst));
+                    (name, scheibe, z, beantwortet)
+                })
+            })
+            .collect();
+        hs.into_iter().map(|h| h.join().unwrap()).collect()
+    });
+    let mut je_scheibe: BTreeMap<&str, BTreeSet<String>> = BTreeMap::new();
+    for (_, scheibe, _, beantwortet) in &ergebnisse {
+        je_scheibe.entry(scheibe).or_default().extend(beantwortet.iter().cloned());
+    }
+    let mut log = Log(log_pfad.map(|p| std::fs::OpenOptions::new().create(true).append(true).open(p).unwrap()));
+    for (scheibe, beantwortet) in &je_scheibe {
+        for zeile in abdeckung(scheibe, bindungen, beantwortet) {
+            log.zeile(&zeile);
+        }
+    }
+    ergebnisse.into_iter().map(|(name, _, z, _)| (name, z)).collect()
+}
+
+/// Der Sweep ueber alle Ausgangsfaelle (oder die, die `TAXGRAPH_KORREKTUR_BASEN` nennt).
 #[test]
 #[ignore = "Messung: TAXGRAPH_KORREKTUR_LOG=<datei> setzen und mit --ignored aufrufen"]
 fn korrektur_sweep_ueber_alle_ausgangsfaelle() {
@@ -784,19 +847,7 @@ fn korrektur_sweep_ueber_alle_ausgangsfaelle() {
     let log_pfad = std::env::var("TAXGRAPH_KORREKTUR_LOG").ok();
     let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| nur.as_ref().is_none_or(|l| l.iter().any(|x| x == n))).collect();
     assert!(!faelle.is_empty(), "kein Ausgangsfall gewaehlt");
-    let summe: Vec<(&str, Zaehler)> = std::thread::scope(|s| {
-        let hs: Vec<_> = faelle
-            .into_iter()
-            .map(|(name, scheibe, tabelle, kreuze)| {
-                let (bindungen, log_pfad) = (&bindungen, log_pfad.clone());
-                s.spawn(move || {
-                    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
-                    (name, rt.block_on(sweep_basis(name, scheibe, tabelle, kreuze, bindungen, log_pfad)))
-                })
-            })
-            .collect();
-        hs.into_iter().map(|h| h.join().unwrap()).collect()
-    });
+    let summe = sweep_alle(faelle, &Einstellung::aus_env(), log_pfad, &bindungen);
     for (name, z) in &summe {
         eprintln!("ENDE {name}: Versuche {}, abgewiesen {}, gleich {}, nur Stand {}, EUR/Sperre {}", z.versuche, z.abgewiesen, z.gleich, z.stand_nur, z.euro);
     }
@@ -856,6 +907,48 @@ fn eingeschleppter_altwert_wird_als_euro_fund_gesehen() {
         assert_eq!((z.versuche, z.euro, z.gleich, z.stand_nur), (1, 1, 0, 0), "der eingeschleppte Altwert wurde nicht als Euro-Fund gezaehlt: {text}");
         assert!(text.contains("\tEUR\tK Some(1363200)\tF Some(1392400)\tdelta -29200\t"), "die Fundzeile nennt nicht die 292,00 EUR: {text}");
     });
+}
+
+/// Abdeckung (AK3): der Lauf nennt selbst, was er nicht pruefen konnte. Ohne Versuche (`arten` leer) laeuft nur der Fragenlauf der Basis
+/// und das Log bekommt je Scheibe `ABDECKUNG` und je nie beantwortetes Feld `NIE_BEANTWORTET`. Eine Basis allein laesst das Thema
+/// Kapital offen; kommt `einzel_kapital` dazu, ist `kap_kapitalertraege` beantwortet (die Menge gilt je Scheibe, nicht je Basis).
+#[test]
+fn abdeckung_nennt_nie_beantwortete_felder() {
+    let bindungen = lade_bindungen();
+    let einst = Einstellung { arten: String::new(), nur: None, grenze: usize::MAX };
+    let lauf = |namen: &[&str]| -> String {
+        let datei = tempfile::NamedTempFile::new().unwrap();
+        let faelle: Vec<_> = ausgangsfaelle().into_iter().filter(|(n, ..)| namen.contains(n)).collect();
+        assert_eq!(faelle.len(), namen.len(), "Ausgangsfall fehlt: {namen:?}");
+        sweep_alle(faelle, &einst, Some(datei.path().to_str().unwrap().to_owned()), &bindungen);
+        std::fs::read_to_string(datei.path()).unwrap()
+    };
+    let zahlen = |text: &str| -> (usize, usize) {
+        let z = text.lines().find(|l| l.starts_with("ABDECKUNG\tgesamt\t")).unwrap_or_else(|| panic!("keine Zeile ABDECKUNG fuer gesamt: {text}"));
+        let teile: Vec<usize> = z.split('\t').skip(2).map(|t| t.rsplit(' ').next().unwrap().parse().unwrap()).collect();
+        (teile[0], teile[1])
+    };
+    let allein = lauf(&["einzel_1985"]);
+    let (fragbar, nie) = zahlen(&allein);
+    let nie_zeilen = allein.lines().filter(|l| l.starts_with("NIE_BEANTWORTET\t")).count();
+    assert_eq!(nie_zeilen, nie, "die Zahl in ABDECKUNG und die Zeilen NIE_BEANTWORTET gehen auseinander");
+    assert!(nie > 0 && nie < fragbar, "fragbar {fragbar}, nie beantwortet {nie}: die Abdeckung unterscheidet nichts");
+    assert!(allein.contains("NIE_BEANTWORTET\tkap_kapitalertraege\tgesamt\n"), "Kapital ist in einzel_1985 nie beantwortet: {allein}");
+    assert!(!allein.contains("NIE_BEANTWORTET\tstammdaten_nachname\t"), "ein beantwortetes Feld steht als nie beantwortet");
+    // Die Menge gilt je Scheibe: zwei Basen, die je ein anderes Thema beantworten, decken beide Themen ab (nicht nur die erste oder letzte).
+    assert!(allein.contains("NIE_BEANTWORTET\tp33a_unterhalt_aufwendungen\tgesamt\n"), "Unterhalt ist in einzel_1985 nie beantwortet: {allein}");
+    let zusammen = lauf(&["einzel_unterhalt", "einzel_kapital"]);
+    let (fragbar2, nie2) = zahlen(&zusammen);
+    assert_eq!(fragbar2, fragbar, "die Zahl der fragbaren Felder haengt von den Basen ab");
+    for feld in ["kap_kapitalertraege", "p33a_unterhalt_aufwendungen"] {
+        assert!(!zusammen.contains(&format!("NIE_BEANTWORTET\t{feld}\t")), "{feld} ist beantwortet, steht aber als nie beantwortet: {zusammen}");
+    }
+    assert!(nie2 < nie, "zwei Basen mit Themen decken nicht mehr ab als eine ohne ({nie2} gegen {nie})");
+    // Was nicht fragbar ist, steht nie in der Liste.
+    for z in zusammen.lines().filter(|l| l.starts_with("NIE_BEANTWORTET\t")) {
+        let feld = z.split('\t').nth(1).unwrap();
+        assert!(bindungen.get(feld).is_some_and(|b| b.askable), "{feld} ist nicht beantwortbar und steht trotzdem in der Liste");
+    }
 }
 
 /// Die fuenf Themenbasen (AK2). Jede muss in einer Zahl enden, die von der Basis ohne das Thema (`einzel_1985`) abweicht, mit
