@@ -558,18 +558,21 @@ async fn ein_gespeicherter_wert_zaehlt_trotz_nein_weiter() {
 /// Seit d-53 (2026-10-22) stehen bei Zusammenveranlagung auch die Zeilen `kein_kap_partner` und `kein_sonstige_partner` in der Liste, bis sie
 /// beantwortet sind: zwei Fragen mehr in jedem Fall mit Ehegatten (214 -> 216 und so fort); ihre Bloecke ("nein") stehen in
 /// `rentner_ehegatten_kreuze.rs`.
+/// Seit Plan Nr. 116 (2026-10-24, Julius d-67) steht die Frage `p35a_mitveranlagung` nur noch Nicht-Zusammenveranlagten
+/// (`feld_bedingung veranlagung wert_nicht zusammen`): eine Frage weniger in jedem Fall mit Ehegatten (216 -> 215 und so fort), die
+/// drei Einzel-Faelle bleiben gleich.
 #[tokio::test]
 async fn die_fragenzahl_vor_und_nach_den_antworten() {
     let faelle = [
         ("einzel offen", "einzel", None, None, 160),
         ("einzel nein", "einzel", Some(true), None, 151),
         ("einzel ja", "einzel", Some(false), None, 159),
-        ("zusammen offen", "zusammen", None, None, 216),
-        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 196),
-        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 206),
-        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 204),
-        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 214),
-        ("zusammen ja/offen", "zusammen", Some(false), None, 215),
+        ("zusammen offen", "zusammen", None, None, 215),
+        ("zusammen nein/nein", "zusammen", Some(true), Some(true), 195),
+        ("zusammen nein/ja", "zusammen", Some(true), Some(false), 205),
+        ("zusammen ja/nein", "zusammen", Some(false), Some(true), 203),
+        ("zusammen ja/ja", "zusammen", Some(false), Some(false), 213),
+        ("zusammen ja/offen", "zusammen", Some(false), None, 214),
     ];
     let mut abweichungen = Vec::new();
     for (name, veranlagung, a, b, soll) in faelle {

@@ -1,4 +1,4 @@
-//! Plan Nr. 116 (Julius d-67, 2026-10-24): § 35a Abs. 5 S. 4 EStG teilt die Hoechstbetraege nur fuer ZWEI ALLEINSTEHENDE im selben Haushalt. Ein
+//! Plan Nr. 116 (Julius d-67, 2026-10-24): § 35a Abs. 5 S. 4 `EStG` teilt die Hoechstbetraege nur fuer ZWEI ALLEINSTEHENDE im selben Haushalt. Ein
 //! zusammenveranlagtes Ehepaar teilt nichts; die Frage `p35a_mitveranlagung` ("leben wir im selben Haushalt mit einem anderen Alleinstehenden")
 //! steht ihm nicht mehr.
 //!
