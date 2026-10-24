@@ -31,6 +31,8 @@ mod einkunft;
 mod gesamt;
 mod werbungskosten;
 
+pub use gesamt::vv_objekt_vorschlaege;
+
 use domain::{PyWert, Sperrgrund, Vz, Zustand};
 use konsistenz::{alleinerziehend_mit_zusammen, partner_ohne_zusammen};
 use rust_decimal::Decimal;

@@ -137,6 +137,10 @@ pub enum Sperrgrund {
     /// liegt nach dem Veranlagungsjahr (`ERiC` lehnt es ab, Regel `Arbeitslohn_ab08_5`).
     VersorgungsbeginnNachVz,
     VvInstanzOffen,
+    /// Rust-eigen (d-68, `vv_objekt_unbestaetigt`): das erste Objekt der Vermietung traegt eine Angabe, die nur ein Vorschlag ist
+    /// (Vorjahr-Uebernahme, KI). Die Instanz zaehlt dann nicht in die Zahl (`Instanz::zustand` ist der meet), und die Steuer stuende
+    /// ohne die Mieteinkuenfte da. Python kennt den Grund nicht. Das zweite Objekt und jedes weitere sperrt mit [`Sperrgrund::VvInstanzOffen`].
+    VvObjektUnbestaetigt,
 }
 
 impl Sperrgrund {
@@ -224,6 +228,7 @@ impl Sperrgrund {
             Self::VersorgungsfreibetragOffen => "versorgungsfreibetrag_offen",
             Self::VersorgungsbeginnNachVz => "versorgungsbeginn_nach_vz",
             Self::VvInstanzOffen => "vv_instanz_offen",
+            Self::VvObjektUnbestaetigt => "vv_objekt_unbestaetigt",
         }
     }
 
@@ -304,6 +309,7 @@ impl Sperrgrund {
             Self::VersorgungUeberLohn => Some("Dein Versorgungsbezug ist höher als dein Bruttoarbeitslohn, oder du hast keinen Bruttoarbeitslohn eingetragen. Das passt nicht zusammen: Der Bruttoarbeitslohn (Nummer 3 der Lohnsteuerbescheinigung) enthält den Versorgungsbezug (Nummer 8) schon. Trage bei Bruttoarbeitslohn den ganzen Betrag aus Nummer 3 ein, nicht nur den Teil ohne Versorgung. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten. Eine Rente aus Pensionskasse, Pensionsfonds oder Direktversicherung mit Leistungsmitteilung gehört nicht hierher: Sie hat eine Leistungsmitteilung statt einer Lohnsteuerbescheinigung."),
             Self::VersorgungsbeginnNachVz => Some("Das Jahr, in dem deine Versorgung begonnen hat, liegt nach dem Jahr dieser Steuererklärung. Eine Versorgung, die erst später beginnt, gehört nicht in diese Erklärung. Bitte prüfe das Jahr des Versorgungsbeginns. Bei gemeinsamer Veranlagung gilt das für jede Person einzeln: Prüfe es auch für deinen Ehegatten."),
             Self::VvInstanzOffen => Some("Zu einer deiner vermieteten Immobilien sind die Angaben unvollständig. Jedes weitere Objekt braucht dieselben Angaben wie das erste: Mieteinnahmen, Gebäudeabschreibung, Schuldzinsen, Erhaltungsaufwand, sonstige Werbungskosten und den Anteil, der entgeltlich vermietet ist. Bitte ergänze die fehlenden Angaben."),
+            Self::VvObjektUnbestaetigt => Some("Zu deiner Vermietung steht mindestens eine Angabe nur als Vorschlag da, zum Beispiel aus dem Vorjahr. Solange du sie nicht bestätigt hast, zeigt die Software keine Steuer an; sie könnte die Mieteinkünfte sonst nicht mitrechnen. Bitte sieh dir die Angaben zum Objekt an und bestätige sie; danach rechnet die Software die Zahl."),
         }
     }
 }
@@ -406,6 +412,7 @@ impl FromStr for Sperrgrund {
             "versorgungsfreibetrag_offen" => Ok(Self::VersorgungsfreibetragOffen),
             "versorgungsbeginn_nach_vz" => Ok(Self::VersorgungsbeginnNachVz),
             "vv_instanz_offen" => Ok(Self::VvInstanzOffen),
+            "vv_objekt_unbestaetigt" => Ok(Self::VvObjektUnbestaetigt),
             other => Err(UnbekannterSperrgrund(other.to_owned())),
         }
     }

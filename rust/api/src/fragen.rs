@@ -5,7 +5,7 @@
 //! Queue, Metadaten, Mitschnitt. Ein Fehler an einer frueheren Stelle verdeckt jeden spaeteren.
 use std::collections::HashMap;
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_frage_felder, sperrgrund_klartext};
+use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_frage_felder, sperrgrund_klartext, vv_objekt_vorschlaege};
 use bescheid::zweige::Umgebung;
 use bescheid::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 use bindung::{Bindung, Vorjahr};
@@ -266,6 +266,23 @@ pub fn fragen(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, A
     // die Sperre bleibt). Ohne sie bliebe die Zahl gesperrt und der Nutzer sah keine Frage dazu.
     let sperrfragen = sperrgrund_frage_felder(gesperrt, &queue);
     queue.extend(sperrfragen);
+    // d-68 Schritt 2: die Felder der Vermietung, die die Sperre `vv_objekt_unbestaetigt` hält, stehen in der Liste. Ein Vorjahreswert
+    // dort gilt der Fragenliste als beantwortet (`vorjahr: uebernehmbar`), die Sperre verlangt aber die Bestaetigung.
+    if gesperrt == Some(Sperrgrund::VvObjektUnbestaetigt) {
+        let q = Instanzquelle {
+            store: Some(store),
+            bindung: Some(&sb.index),
+            nur_bestaetigt: false,
+        };
+        let vorschlaege = vv_objekt_vorschlaege(&felder, &sb.cfg, &q).map_err(|e| bescheid_fehler(&e))?;
+        let neu: Vec<&str> = sb
+            .index
+            .keys()
+            .map(String::as_str)
+            .filter(|k| vorschlaege.iter().any(|v| v == k) && !queue.contains(k))
+            .collect();
+        queue.extend(neu);
+    }
     let out: Vec<Value> = queue
         .iter()
         .map(|fid| frage_metadaten(fid, &sb, store))
