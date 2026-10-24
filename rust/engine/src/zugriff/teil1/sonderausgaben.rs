@@ -92,17 +92,23 @@ pub fn p10_4b_erstattungsueberhang(e: &P10KistEingabe) -> Result<Euro, EngineFeh
 /// Eingabe fuer [`p10_kv_pv`].
 #[derive(Debug, Clone, Copy)]
 pub struct P10KvPvEingabe {
-    /// PARITÄT: Python setzt fehlend = 0 (fail-closed)
+    /// PARITÄT: Python setzt fehlend = 0 (fail-closed). Bei Zusammenveranlagung die Summe beider Ehegatten.
     pub basis_kv_pv: Euro,
-    /// PARITÄT: Python setzt fehlend = 0 (fail-closed)
+    /// PARITÄT: Python setzt fehlend = 0 (fail-closed). Bei Zusammenveranlagung die Summe beider Ehegatten.
     pub weitere_vorsorgeaufwendungen: Euro,
-    /// PARITÄT: Python setzt fehlend = False (fail-open: Hoechstbetrag 2.800 statt 1.900)
+    /// PARITÄT: Python setzt fehlend = False (fail-open: Hoechstbetrag 2.800 statt 1.900). Person A.
     pub mit_anspruch_auf_zuschuss: bool,
+    /// Abweichung Nr. 115: Zusammenveranlagung, es gilt der gemeinsame Hoechstbetrag (§ 10 Abs. 4 S. 3 `EStG`).
+    pub zusammenveranlagt: bool,
+    /// Abweichung Nr. 115: Person B hat Anspruch auf Zuschuss; zaehlt nur bei `zusammenveranlagt`.
+    pub mit_anspruch_auf_zuschuss_ehegatte: bool,
 }
 
 /// `catala_p10_kv_pv` -- § 10 Abs. 1 Nr. 3/3a `EStG`: abziehbare KV/PV-Vorsorge, EURO.
 /// max(Basis; min(Basis + weitere; Hoechstbetrag)) -- die Basisabsicherung ist immer voll
-/// abziehbar (§ 10 Abs. 4 S. 4), nur die weiteren werden gedeckelt.
+/// abziehbar (§ 10 Abs. 4 S. 4), nur die weiteren werden gedeckelt. Bei Zusammenveranlagung rechnet
+/// der Aufruf EINMAL fuer das Paar: Basis und weitere sind die Summen beider Ehegatten, der
+/// Hoechstbetrag ist die Summe der Hoechstbetraege beider (§ 10 Abs. 4 S. 3 `EStG`, Abweichung Nr. 115).
 ///
 /// # Errors
 /// [`EngineFehler`] bei Catala-Laufzeitfehler oder Ueberlauf.
@@ -112,6 +118,7 @@ pub struct P10KvPvEingabe {
 /// use engine::zugriff::teil1::sonderausgaben::{p10_kv_pv, P10KvPvEingabe};
 /// let e = P10KvPvEingabe {
 ///     basis_kv_pv: Euro::new(3000), weitere_vorsorgeaufwendungen: Euro::new(500), mit_anspruch_auf_zuschuss: false,
+///     zusammenveranlagt: false, mit_anspruch_auf_zuschuss_ehegatte: false,
 /// };
 /// assert_eq!(p10_kv_pv(&e).unwrap(), Euro::new(3000));
 /// ```
@@ -120,6 +127,8 @@ pub fn p10_kv_pv(e: &P10KvPvEingabe) -> Result<Euro, EngineFehler> {
         basis: in_cent(e.basis_kv_pv)?,
         weitere: in_cent(e.weitere_vorsorgeaufwendungen)?,
         mit_zuschuss: e.mit_anspruch_auf_zuschuss,
+        zusammenveranlagt: e.zusammenveranlagt,
+        mit_zuschuss_ehegatte: e.mit_anspruch_auf_zuschuss_ehegatte,
     })?;
     Ok(c.floor_euro())
 }

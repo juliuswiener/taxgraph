@@ -275,6 +275,8 @@ const SPECS: &[Spec] = &[
             ("basis_kv_pv", Art::Geld),
             ("weitere_vorsorgeaufwendungen", Art::Geld),
             ("mit_anspruch_auf_zuschuss", Art::Wahr),
+            ("zusammenveranlagt", Art::Wahr),
+            ("mit_anspruch_auf_zuschuss_ehegatte", Art::Wahr),
         ],
         ausgaben: &["abziehbare_kv_pv_vorsorge"],
         zufall: 300,

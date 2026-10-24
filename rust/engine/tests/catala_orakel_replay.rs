@@ -321,6 +321,8 @@ const ADAPTER: &[(&str, &str, Adapter)] = &[
             basis: geld(e, "basis_kv_pv")?,
             weitere: geld(e, "weitere_vorsorgeaufwendungen")?,
             mit_zuschuss: e.wahr("mit_anspruch_auf_zuschuss")?,
+            zusammenveranlagt: e.wahr("zusammenveranlagt")?,
+            mit_zuschuss_ehegatte: e.wahr("mit_anspruch_auf_zuschuss_ehegatte")?,
         };
         Ok(Some(cent("abziehbare_kv_pv_vorsorge", vorsorgeaufwendungen::berechnen(eingabe))))
     }),

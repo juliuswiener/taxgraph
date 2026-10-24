@@ -600,15 +600,11 @@ fn krankengeld_kuerzung(kv_cent: i64) -> i64 {
     kv_cent / 25 + i64::from(kv_cent % 25 >= 13)
 }
 
-/// KV/PV-Sonderausgaben einer Person; `partner` waehlt die `_partner`-Felder (ohne Kind-Beitraege).
-fn kv_pv_sonderausgaben(
-    f: &Felder,
-    partner: bool,
-    kind_kv_pv: i64,
-) -> Result<Euro, BescheidFehler> {
-    let s = if partner { "_partner" } else { "" };
-    let fid = |name: &str| format!("{name}{s}");
-    let basis = basisbeitrag_nach_zuschuss(f, s, kind_kv_pv)?;
+/// Basisbeitrag (Nr. 3, nach Zuschuss und Kuerzung, mit `kind_kv_pv`) und weitere Vorsorgebeitraege (Nr. 3a) einer Person in Cent;
+/// `suffix` waehlt die `_partner`-Felder (dann ohne Kind-Beitraege).
+fn kv_pv_beitraege(f: &Felder, suffix: &str, kind_kv_pv: i64) -> Result<(i64, i64), BescheidFehler> {
+    let fid = |name: &str| format!("{name}{suffix}");
+    let basis = basisbeitrag_nach_zuschuss(f, suffix, kind_kv_pv)?;
     let weitere = summe(&[
         feld_int_oder_null(f, &fid("vorsorge_arbeitslosenversicherung"))?,
         feld_int_oder_null(f, &fid("vorsorge_erwerbsunfaehigkeit"))?,
@@ -616,10 +612,36 @@ fn kv_pv_sonderausgaben(
         feld_int_oder_null(f, &fid("vorsorge_rv_alt_mit_ueberschuss"))?,
         feld_int_oder_null(f, &fid("vorsorge_rv_alt_ohne_ueberschuss"))?,
     ])?;
+    Ok((basis, weitere))
+}
+
+/// Abziehbare KV/PV-Vorsorge (§ 10 Abs. 1 Nr. 3 und 3a `EStG`, Hoechstbetrag nach Abs. 4), EURO: bei Einzelveranlagung die Person A, bei
+/// Zusammenveranlagung das Paar mit EINEM gemeinsamen Hoechstbetrag aus der Summe der Hoechstbetraege beider Ehegatten (Abs. 4 S. 3,
+/// Abweichung Nr. 115). Basis- und weitere Beitraege beider gehen als Summen in den Scope, die Zuschuss-Angaben je Person; uebersteigen die
+/// Basisbeitraege zusammen den gemeinsamen Hoechstbetrag, sind sie voll abziehbar und die weiteren entfallen (S. 4).
+///
+/// Der EINE Rechenpfad fuer `an_gesamt` (`zweige/an_gesamt.rs`), `gesamt` und `rentner_gesamt`; `kind_kv_pv` (Cent) gehoert zu Person A.
+///
+/// # Errors
+/// [`BescheidFehler::Ueberlauf`] bei einer Summe jenseits von `i64`, Fehler der Engine.
+pub(crate) fn kv_pv_vorsorge(
+    f: &Felder,
+    zusammen: bool,
+    kind_kv_pv: i64,
+) -> Result<Euro, BescheidFehler> {
+    let (basis_a, weitere_a) = kv_pv_beitraege(f, "", kind_kv_pv)?;
+    let (basis, weitere) = if zusammen {
+        let (basis_b, weitere_b) = kv_pv_beitraege(f, "_partner", 0)?;
+        (summe(&[basis_a, basis_b])?, summe(&[weitere_a, weitere_b])?)
+    } else {
+        (basis_a, weitere_a)
+    };
     Ok(p10_kv_pv(&P10KvPvEingabe {
         basis_kv_pv: cent_zu_euro(basis),
         weitere_vorsorgeaufwendungen: cent_zu_euro(weitere),
-        mit_anspruch_auf_zuschuss: ist_true(wert(f, &fid("mit_anspruch_auf_zuschuss"))),
+        mit_anspruch_auf_zuschuss: ist_true(wert(f, "mit_anspruch_auf_zuschuss")),
+        zusammenveranlagt: zusammen,
+        mit_anspruch_auf_zuschuss_ehegatte: ist_true(wert(f, "mit_anspruch_auf_zuschuss_partner")),
     })?)
 }
 
@@ -646,9 +668,8 @@ fn sonderausgaben(
             erstattete_kirchensteuer: feld_euro_oder_null(f, "kist_erstattet")?,
         })?,
     )?;
-    let kv_pv_a = kv_pv_sonderausgaben(f, false, kind_kv_pv_summe(q)?.get())?;
-    let mut vorsorge = kv_pv_a;
-    sa = euro_plus(sa, kv_pv_a)?;
+    let vorsorge = kv_pv_vorsorge(f, veranlagung == Veranlagung::Zusammen, kind_kv_pv_summe(q)?.get())?;
+    sa = euro_plus(sa, vorsorge)?;
     sa = euro_plus(sa, kinderbetreuung_summe(q, vz, p)?)?;
     sa = euro_plus(sa, schulgeld_summe(q, vz, f, p)?)?;
     if ist_true(wert(f, "realsplitting_zustimmung")) {
@@ -659,11 +680,6 @@ fn sonderausgaben(
             kv_krankengeld: feld_euro_oder_null(f, "realsplitting_empfaenger_kv_krankengeld")?,
         };
         sa = euro_plus(sa, p10_1a_realsplitting(&e)?)?;
-    }
-    if veranlagung == Veranlagung::Zusammen {
-        let kv_pv_b = kv_pv_sonderausgaben(f, true, 0)?;
-        vorsorge = euro_plus(vorsorge, kv_pv_b)?;
-        sa = euro_plus(sa, kv_pv_b)?;
     }
     let ausb = P1017BerufsausbildungEingabe {
         berufsausbildung_aufwendungen: feld_euro_oder_null(f, "berufsausbildung_aufwendungen")?,

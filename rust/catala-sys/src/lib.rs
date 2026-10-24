@@ -187,6 +187,8 @@ extern "C" {
         basis_cents: i64,
         weitere_cents: i64,
         mit_zuschuss: i32,
+        zusammenveranlagt: i32,
+        mit_zuschuss_ehegatte: i32,
         out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_berufsausbildung(aufwendungen_cents: i64, out: *mut TgAusgabeFfi) -> i32;
@@ -865,20 +867,24 @@ pub fn verbilligte_vermietung_wk(
 }
 
 /// § 10 Abs. 1 Nr. 3 `EStG` Basiskranken- und Pflegeversicherung: Basisbeitrag, weitere
-/// Vorsorgeaufwendungen (jeweils Cent) und Zuschuss-Anspruch-Flag auf die abziehbare
-/// Kranken-/Pflegevorsorge, in Cent.
+/// Vorsorgeaufwendungen (jeweils Cent; bei Zusammenveranlagung die Summen beider Ehegatten) und
+/// Zuschuss-Anspruch-Flag von Person A auf die abziehbare Kranken-/Pflegevorsorge, in Cent. Bei
+/// `zusammenveranlagt` gilt der gemeinsame Hoechstbetrag (§ 10 Abs. 4 S. 3 `EStG`): Person A plus
+/// Person B, deren Flag `mit_zuschuss_ehegatte` ist.
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
 ///
 /// ```
 /// use catala_sys::kranken_pflege_vorsorge;
-/// assert_eq!(kranken_pflege_vorsorge(50_000, 0, false).unwrap(), 50_000);
+/// assert_eq!(kranken_pflege_vorsorge(50_000, 0, false, false, false).unwrap(), 50_000);
 /// ```
 pub fn kranken_pflege_vorsorge(
     basis_cent: i64,
     weitere_cent: i64,
     mit_zuschuss: bool,
+    zusammenveranlagt: bool,
+    mit_zuschuss_ehegatte: bool,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out = TgAusgabeFfi::default();
@@ -888,6 +894,8 @@ pub fn kranken_pflege_vorsorge(
                 basis_cent,
                 weitere_cent,
                 i32::from(mit_zuschuss),
+                i32::from(zusammenveranlagt),
+                i32::from(mit_zuschuss_ehegatte),
                 &raw mut out,
             )
         };
