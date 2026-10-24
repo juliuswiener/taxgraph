@@ -1,5 +1,5 @@
 # catala-orakel v1 -- NICHT von Hand aendern, `make catala-orakel` erzeugt die Datei
-# regeln-hash: e63647215c4ccb2a626a4e9b66ec389e236a99604339c4f383ea08239e95d8b3
+# regeln-hash: b6fb9c43c5d66a7e3bb59e862d58c0d2928577db61b3eece58f094137d5e2be8
 # catala: 1.2.1
 # seed: 20261011
 # funktion | eingaben (Cent, ganze Zahl, true/false, Jahr, Bruch) | ausgaben (Cent) oder FEHLER
@@ -8478,7 +8478,7 @@ entfernungspauschale | entfernung_km_roh=10/61 arbeitstage=243 eigenes_oder_uebe
 entfernungspauschale | entfernung_km_roh=2991/37 arbeitstage=215 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=728525 satz_bis_20_km=40 satz_ab_21_km=50 staffelgrenze_km=9 hoechstbetrag=788430 | entfernungspauschale=788430 abziehbarer_betrag=788430
 entfernungspauschale | entfernung_km_roh=3545/62 arbeitstage=100 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=291742 satz_bis_20_km=95 satz_ab_21_km=0 staffelgrenze_km=37 hoechstbetrag=635010 | entfernungspauschale=351500 abziehbarer_betrag=351500
 entfernungspauschale | entfernung_km_roh=6649/88 arbeitstage=288 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=349635 satz_bis_20_km=77 satz_ab_21_km=67 staffelgrenze_km=29 hoechstbetrag=1000000 | entfernungspauschale=1530720 abziehbarer_betrag=1530720
-entfernungspauschale | entfernung_km_roh=4181/47 arbeitstage=0 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=61 satz_ab_21_km=100 staffelgrenze_km=33 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=1000000
+entfernungspauschale | entfernung_km_roh=4181/47 arbeitstage=0 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=61 satz_ab_21_km=100 staffelgrenze_km=33 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=0
 entfernungspauschale | entfernung_km_roh=2124/18 arbeitstage=44 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=1000000 satz_bis_20_km=56 satz_ab_21_km=11 staffelgrenze_km=10 hoechstbetrag=732291 | entfernungspauschale=76912 abziehbarer_betrag=1000000
 entfernungspauschale | entfernung_km_roh=2823/51 arbeitstage=106 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=282559 satz_bis_20_km=26 satz_ab_21_km=10 staffelgrenze_km=10 hoechstbetrag=969469 | entfernungspauschale=75260 abziehbarer_betrag=282559
 entfernungspauschale | entfernung_km_roh=3291/26 arbeitstage=84 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=926253 satz_bis_20_km=100 satz_ab_21_km=54 staffelgrenze_km=24 hoechstbetrag=1000000 | entfernungspauschale=664272 abziehbarer_betrag=926253
@@ -8720,7 +8720,7 @@ entfernungspauschale | entfernung_km_roh=3746/35 arbeitstage=293 eigenes_oder_ue
 entfernungspauschale | entfernung_km_roh=479/8 arbeitstage=260 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=555414 satz_bis_20_km=100 satz_ab_21_km=100 staffelgrenze_km=6 hoechstbetrag=269305 | entfernungspauschale=269305 abziehbarer_betrag=555414
 entfernungspauschale | entfernung_km_roh=682/74 arbeitstage=123 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=71225 satz_bis_20_km=96 satz_ab_21_km=29 staffelgrenze_km=29 hoechstbetrag=512554 | entfernungspauschale=106272 abziehbarer_betrag=106272
 entfernungspauschale | entfernung_km_roh=2079/18 arbeitstage=21 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=514219 satz_bis_20_km=0 satz_ab_21_km=60 staffelgrenze_km=12 hoechstbetrag=0 | entfernungspauschale=0 abziehbarer_betrag=514219
-entfernungspauschale | entfernung_km_roh=1577/16 arbeitstage=0 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=621240 satz_bis_20_km=36 satz_ab_21_km=100 staffelgrenze_km=19 hoechstbetrag=517107 | entfernungspauschale=0 abziehbarer_betrag=621240
+entfernungspauschale | entfernung_km_roh=1577/16 arbeitstage=0 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=621240 satz_bis_20_km=36 satz_ab_21_km=100 staffelgrenze_km=19 hoechstbetrag=517107 | entfernungspauschale=0 abziehbarer_betrag=0
 entfernungspauschale | entfernung_km_roh=8635/82 arbeitstage=156 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=478559 satz_bis_20_km=28 satz_ab_21_km=33 staffelgrenze_km=32 hoechstbetrag=963566 | entfernungspauschale=515580 abziehbarer_betrag=515580
 entfernungspauschale | entfernung_km_roh=8803/87 arbeitstage=267 eigenes_oder_ueberlassenes_kfz=false oepnv_kosten_jahr=1000000 satz_bis_20_km=64 satz_ab_21_km=57 staffelgrenze_km=19 hoechstbetrag=1000000 | entfernungspauschale=1000000 abziehbarer_betrag=1000000
 entfernungspauschale | entfernung_km_roh=704/26 arbeitstage=93 eigenes_oder_ueberlassenes_kfz=true oepnv_kosten_jahr=0 satz_bis_20_km=3 satz_ab_21_km=14 staffelgrenze_km=20 hoechstbetrag=316525 | entfernungspauschale=14694 abziehbarer_betrag=14694

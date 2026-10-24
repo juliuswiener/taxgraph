@@ -63,9 +63,9 @@ bindungen:
     elster_kz: E0203611
     # Fragen-Reduktion Teil 2, Phase 3 (Entscheidungen d-55 und d-56, Julius 2026-10-22): wer bestaetigt, an 0 Tagen zur Arbeit gefahren
     # zu sein, hat keine Wege zur ersten Taetigkeitsstaette und damit keinen Fahrkartenabzug in diesem Block (§ 9 Abs. 2 EStG; BMF
-    # 18.11.2021 Rz. 20). Die Frage entfaellt. BEKANNTE GRENZE: der Rechenkern kennt die Tage hier nicht (`abziehbarer_betrag =
-    # oepnv_kosten_jahr`, wenn sie ueber der Pauschale 0 liegen); eine EIGENE Antwort des Nutzers vor der 0 bleibt stehen und wird
-    # weiter abgezogen, wie heute. Der Regelfix ist ein eigenes Ticket.
+    # 18.11.2021 Rz. 20). Die Frage entfaellt. Eine EIGENE Antwort des Nutzers (vor oder nach der 0) bleibt gespeichert; die Catala-Regel
+    # `abziehbarer_betrag` ist bei `arbeitstage <= 0` gleich 0 und zieht sie nicht ab (Regelfix d-56, 2026-10-24). OFFEN: die eigene Summe
+    # steht dabei weiter als E0203611 in der Erklaerung (gemessen: `null_arbeitstage::messung_erklaerung_fahrkarten_nach_tagen`).
     ableitung: {aus: ep_arbeitstage, art: neutral_bei_null, neutral: 0, grund: "Wer an 0 Tagen zur Arbeit gefahren ist, hat keine Wege zur ersten Tätigkeitsstätte und damit keinen Abzug für Fahrkarten in diesem Block (§ 9 Abs. 2 EStG). Eine Frage danach ist eine Frage zu viel."}
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:

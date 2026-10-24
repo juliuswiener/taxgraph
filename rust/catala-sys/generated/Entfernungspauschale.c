@@ -92,7 +92,9 @@ const catala_code_position Entfernungspauschale__loc[][1] = {
   {{"rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en",
      72, 10, 72, 37}},
   {{"rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en",
-     79, 8, 79, 48}}
+     84, 8, 84, 24}},
+  {{"rules/estg/p09_entfernungspauschale/entfernungspauschale.catala_en",
+     85, 13, 85, 53}}
 };
 
 static CATALA_DEC closure_entfernung_km
@@ -283,8 +285,12 @@ const Entfernungspauschale__Berechnung* Entfernungspauschale__berechnung
     abort();
   }
   if (CATALA_TRUE ==
-      o_gt(catala_type_money, Entfernungspauschale__loc[18],
-           oepnv_kosten_jahr, entfernungspauschale)) {
+      o_lte(catala_type_integer, Entfernungspauschale__loc[18], arbeitstage,
+            catala_new_int(0))) {
+    abziehbarer_betrag = catala_new_money(0);
+  } else if (CATALA_TRUE ==
+             o_gt(catala_type_money, Entfernungspauschale__loc[19],
+                  oepnv_kosten_jahr, entfernungspauschale)) {
     abziehbarer_betrag = oepnv_kosten_jahr;
   } else {
     abziehbarer_betrag = entfernungspauschale;
