@@ -163,13 +163,17 @@ fn faelle() -> Vec<Fall> {
         },
         Fall {
             gruppe: "kv_pv",
-            name: "Partner: Basis 1.000 + Haftpflicht 3.000 EUR, Partner mit Anspruch auf Zuschuss: 1.900",
+            // ABWEICHUNG Nr. 115 vom Python-Orakel (das gab 1.900, je Person gerechnet): bei Zusammenveranlagung gilt der
+            // gemeinsame Hoechstbetrag aus der Summe beider Ehegatten (§ 10 Abs. 4 S. 3 EStG): Person A ohne Anspruch auf
+            // Zuschuss 2.800 + Partner mit Anspruch 1.900 = 4.700; Basis 1.000 + weitere 3.000 = 4.000 liegen darunter und
+            // sind voll abziehbar. Handrechnung aus dem Wortlaut, nicht aus dem Code.
+            name: "Partner: Basis 1.000 + Haftpflicht 3.000 EUR, Partner mit Anspruch auf Zuschuss: gemeinsamer Hoechstbetrag 4.700, also 4.000",
             events: vec![z("basis_kv_partner", 100_000, true), z("vorsorge_unfall_haftpflicht_partner", 300_000, true), b("mit_anspruch_auf_zuschuss_partner", true)],
             gde: 50_000,
             ausserg: 0,
             zusammen: true,
             nur_bestaetigt: true,
-            erwartet: [0, 1900, 0],
+            erwartet: [0, 4000, 0],
         },
         Fall {
             gruppe: "agb",

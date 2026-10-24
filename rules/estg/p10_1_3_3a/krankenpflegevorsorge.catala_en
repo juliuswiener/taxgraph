@@ -29,18 +29,36 @@ Abs. 1 Nr. 3a; `mit_anspruch_auf_zuschuss` = Zugehörigkeit zur 1900-Gruppe (Bea
 Eingabe). `basis_kv_pv_ist_basisabsicherung` = getriagte Geltungsbedingung (die Basis-Beiträge sind
 Basisabsicherung, im Feld materialisiert). Reine Teilregel.
 
+**Abweichung Nr. 115 (2026-10-24): gemeinsamer Höchstbetrag bei Zusammenveranlagung.** § 10 Abs. 4 S. 3 EStG
+(Wortlaut `estg_p10_2026-07-11.txt`): "Bei zusammen veranlagten Ehegatten bestimmt sich der gemeinsame Höchstbetrag
+aus der Summe der jedem Ehegatten unter den Voraussetzungen von Satz 1 und 2 zustehenden Höchstbeträge." S. 4
+(Basis-Durchbruch) vergleicht auf dieser Summe. Der Scope rechnet darum EINMAL für das Paar: `basis_kv_pv` und
+`weitere_vorsorgeaufwendungen` sind bei `zusammenveranlagt` die Summen beider Ehegatten, der Höchstbetrag ist die
+Summe aus dem Höchstbetrag von Person A (`mit_anspruch_auf_zuschuss`) und von Person B
+(`mit_anspruch_auf_zuschuss_ehegatte`). Bei Einzelveranlagung zählt nur Person A. Bis zu dieser Abweichung rechnete
+jede Person für sich (Höchstbetrag je Person) und die Aufrufer addierten; das gab bis zu 2.800 EUR zu viel oder zu wenig
+Abzug, je nach Verteilung der Beiträge auf die Ehegatten.
+
 ```catala
 declaration scope KrankenPflegeVorsorge:
   input basis_kv_pv content money
   input weitere_vorsorgeaufwendungen content money
   input mit_anspruch_auf_zuschuss content boolean
+  input zusammenveranlagt content boolean
+  input mit_anspruch_auf_zuschuss_ehegatte content boolean
   output abziehbare_kv_pv_vorsorge content money
 
 scope KrankenPflegeVorsorge:
   definition abziehbare_kv_pv_vorsorge equals
-    let hoechstbetrag equals
+    let hoechstbetrag_person_a equals
       if mit_anspruch_auf_zuschuss then $1,900.00 else $2,800.00
     in
+    let hoechstbetrag_ehegatte equals
+      if zusammenveranlagt
+      then (if mit_anspruch_auf_zuschuss_ehegatte then $1,900.00 else $2,800.00)
+      else $0.00
+    in
+    let hoechstbetrag equals hoechstbetrag_person_a + hoechstbetrag_ehegatte in
     let beruecksichtigt_ohne_durchbruch equals
       if basis_kv_pv + weitere_vorsorgeaufwendungen > hoechstbetrag
       then hoechstbetrag
@@ -63,7 +81,9 @@ scope TestNormalUnterHB:
   definition r equals output of KrankenPflegeVorsorge with {
     -- basis_kv_pv: $1,000.00
     -- weitere_vorsorgeaufwendungen: $500.00
-    -- mit_anspruch_auf_zuschuss: false }
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
   definition g equals r.abziehbare_kv_pv_vorsorge
   assertion g = $1,500.00
 ```
@@ -78,7 +98,9 @@ scope TestDeckel:
   definition r equals output of KrankenPflegeVorsorge with {
     -- basis_kv_pv: $2,000.00
     -- weitere_vorsorgeaufwendungen: $1,500.00
-    -- mit_anspruch_auf_zuschuss: false }
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
   definition g equals r.abziehbare_kv_pv_vorsorge
   assertion g = $2,800.00
 ```
@@ -93,7 +115,9 @@ scope TestBasisDurchbruch:
   definition r equals output of KrankenPflegeVorsorge with {
     -- basis_kv_pv: $5,000.00
     -- weitere_vorsorgeaufwendungen: $1,000.00
-    -- mit_anspruch_auf_zuschuss: false }
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
   definition g equals r.abziehbare_kv_pv_vorsorge
   assertion g = $5,000.00
 ```
@@ -108,7 +132,9 @@ scope TestMitZuschussUnterHB:
   definition r equals output of KrankenPflegeVorsorge with {
     -- basis_kv_pv: $1,500.00
     -- weitere_vorsorgeaufwendungen: $200.00
-    -- mit_anspruch_auf_zuschuss: true }
+    -- mit_anspruch_auf_zuschuss: true
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
   definition g equals r.abziehbare_kv_pv_vorsorge
   assertion g = $1,700.00
 ```
@@ -123,7 +149,145 @@ scope TestDurchbruchMitZuschuss:
   definition r equals output of KrankenPflegeVorsorge with {
     -- basis_kv_pv: $2,500.00
     -- weitere_vorsorgeaufwendungen: $0.00
-    -- mit_anspruch_auf_zuschuss: true }
+    -- mit_anspruch_auf_zuschuss: true
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
   definition g equals r.abziehbare_kv_pv_vorsorge
   assertion g = $2,500.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenBasisDurchbruchGemeinsam:
+  # Abs. 4 S. 3/4: A Basis 5000, B Basis 1000 + weitere 1000 = Basis 6000 > gemeinsamer HB 5600 -> volle Basis 6000, weitere scheiden aus (je Person waeren es 7000).
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenBasisDurchbruchGemeinsam:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $6,000.00
+    -- weitere_vorsorgeaufwendungen: $1,000.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $6,000.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenUnterGemeinsamemHB:
+  # Abs. 4 S. 3: A Basis 1000 + weitere 3000, B Basis 500 = 1500 + 3000 = 4500 <= gemeinsamer HB 5600 -> voll 4500 (je Person waeren es 3300).
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenUnterGemeinsamemHB:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,500.00
+    -- weitere_vorsorgeaufwendungen: $3,000.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $4,500.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenGedeckeltAufGemeinsamenHB:
+  # Abs. 4 S. 3: Basis 3000 + weitere 5000 = 8000 > gemeinsamer HB 5600, Basis 3000 <= 5600 -> auf 5600 gedeckelt.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenGedeckeltAufGemeinsamenHB:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $3,000.00
+    -- weitere_vorsorgeaufwendungen: $5,000.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $5,600.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenMischfallA1900B2800:
+  # Abs. 4 S. 2/3: A mit Anspruch auf Zuschuss (1900), B ohne (2800) = gemeinsamer HB 4700; Basis 1000 + weitere 4000 = 5000 -> auf 4700 gedeckelt.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenMischfallA1900B2800:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,000.00
+    -- weitere_vorsorgeaufwendungen: $4,000.00
+    -- mit_anspruch_auf_zuschuss: true
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $4,700.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenMischfallA2800B1900:
+  # Abs. 4 S. 2/3: A ohne Anspruch (2800), B mit Anspruch (1900) = gemeinsamer HB 4700; Basis 1000 + weitere 4000 = 5000 -> auf 4700 gedeckelt.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenMischfallA2800B1900:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,000.00
+    -- weitere_vorsorgeaufwendungen: $4,000.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: true }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $4,700.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenBeideMitZuschuss:
+  # Abs. 4 S. 2/3: beide mit Anspruch auf Zuschuss = gemeinsamer HB 3800; Basis 1000 + weitere 3500 = 4500 -> auf 3800 gedeckelt.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenBeideMitZuschuss:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,000.00
+    -- weitere_vorsorgeaufwendungen: $3,500.00
+    -- mit_anspruch_auf_zuschuss: true
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: true }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $3,800.00
+```
+
+```catala
+#[test]
+declaration scope TestEinzelIgnoriertEhegattenZuschuss:
+  # Einzelveranlagung (zusammenveranlagt false): die Angabe zum Ehegatten zaehlt nicht, HB bleibt 2800; Basis 1000 + weitere 3000 = 4000 -> 2800.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestEinzelIgnoriertEhegattenZuschuss:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,000.00
+    -- weitere_vorsorgeaufwendungen: $3,000.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: false
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $2,800.00
+```
+
+```catala
+#[test]
+declaration scope TestZusammenOhneHBUeberschreitung:
+  # Abs. 4 S. 3: gemeinsamer HB 5600, Summe 1500 + 500 = 2000 darunter -> voll 2000.
+  internal r content KrankenPflegeVorsorge
+  output g content money
+scope TestZusammenOhneHBUeberschreitung:
+  definition r equals output of KrankenPflegeVorsorge with {
+    -- basis_kv_pv: $1,500.00
+    -- weitere_vorsorgeaufwendungen: $500.00
+    -- mit_anspruch_auf_zuschuss: false
+    -- zusammenveranlagt: true
+    -- mit_anspruch_auf_zuschuss_ehegatte: false }
+  definition g equals r.abziehbare_kv_pv_vorsorge
+  assertion g = $2,000.00
 ```
