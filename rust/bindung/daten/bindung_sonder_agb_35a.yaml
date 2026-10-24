@@ -497,7 +497,7 @@ bindungen:
     askable: true
     vorjahr: uebernehmbar
     fragetext_laie: "Lebst du mit einer anderen alleinstehenden Person im selben Haushalt?"
-    hilfe_kurz: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge insgesamt jeweils nur einmal in Anspruch nehmen (§ 35a Abs. 5 S. 4 EStG). Bei „Ja“ teilt die Rechnung jeden der drei Höchstbeträge je zur Hälfte."
+    hilfe_kurz: "Leben zwei Alleinstehende in einem Haushalt zusammen, können sie die Höchstbeträge insgesamt jeweils nur einmal in Anspruch nehmen (§ 35a Abs. 5 S. 4 EStG). Bei „Ja“ teilt die Rechnung jeden der drei Höchstbeträge je zur Hälfte; eine andere Aufteilung, auf die ihr euch einigt, rechnet sie nicht."
     beispielwert: false
     herkunft_slots: null
     elster_kz: null
