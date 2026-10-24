@@ -19,7 +19,7 @@
 //!    Italien-Haelfte minus Anrechnung der Brasilien-Haelfte, Test 6), nicht im Bescheid. Kein Bescheid-Aufruf liefert sie.
 //! 3. Der Vollfall in einer Akte wird heute abgewiesen: Wer `dba_mehrere_staaten` bestaetigt, bekommt die Sperre
 //!    `dba_multi_country_offen` statt einer Zahl (Test 7; Stelle `deklaration/sperre/einkunft.rs::dba_p32b_p16`). Das ist
-//!    eine bekannte Grenze (Hilfetext des Feldes: "Die DBA-Anrechnung ist in Stufe-1 auf EINEN Staat beschraenkt"), kein Defekt.
+//!    eine bekannte Grenze (Hilfetext des Feldes: "Die Anrechnung ausländischer Steuer nach dem Doppelbesteuerungsabkommen (DBA) rechnet die App nur für EINEN Staat"), kein Defekt.
 //!    Der Befehl, der die Abweisung zeigt:
 //!    `cd rust && cargo nextest run -p bescheid --test it ausland_bstbk_2022_23_hermetisch::bekannte_grenze_der_vollfall`
 //!
