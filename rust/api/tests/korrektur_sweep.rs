@@ -1106,3 +1106,34 @@ fn messung_fragenzahl_und_steuer() {
         p0_lauf("agb_angemessen_unbeantwortet", "gesamt", &einzel_mit("keine", &[], &[]), &[], &["agb_notwendig_angemessen"]).await;
     });
 }
+
+/// Vorjahr-Weg, Vermietung (Auftrag `vorjahr-instanz`, Befund 3 des Korrektur-Sweeps Art 5). Aufrufort ist `GET /fall/{id}/ergebnis`.
+/// K entsteht ueber `POST /fall/{ziel}/vorjahr` aus einer Quelle im Vorjahr und wird zu Ende befragt; die Direktzahl ist der Fall mit
+/// denselben Antworten ohne Vorjahr. Erlaubt ist, was den Nutzer nicht taeuscht: entweder steht die Direktzahl da, oder `offen` nennt
+/// mindestens ein `vv_`-Feld (Hinweis), oder die Zahl ist gesperrt. NIE erlaubt: eine kleinere Zahl mit `grund = bestaetigt` und leerem `offen`.
+/// Heute ROT: K 1.392.400 gegen Direktzahl 1.712.100 Cent (3.197 EUR Vermietungsueberschuss fehlen), `offen = []`, 21 Felder vorlaeufig.
+#[test]
+fn vorjahr_weg_vermietung_laesst_die_zahl_nie_still_niedriger() {
+    let rt = tokio::runtime::Builder::new_current_thread().enable_all().build().unwrap();
+    rt.block_on(async {
+        let d = Dienst::neu();
+        let (_, scheibe, tabelle, kreuze) = ausgangsfaelle().into_iter().find(|(n, ..)| *n == "einzel_vermietung").unwrap();
+        let b = fragenlauf(&d, "einzel_vermietung", scheibe, 2025, &tabelle, kreuze).await;
+        let ctx = Kontext { tabelle: &tabelle, kreuze };
+        let direkt = d.messe(&d.baue(&b, None).await).await;
+        assert!(direkt.zahl().is_some() && direkt.grund() == "bestaetigt", "die Kontrolle (Fall ohne Vorjahr) endet nicht in einer Zahl: {}", direkt.ergebnis);
+        let ziel = baue_ueber_vorjahr(&d, &b, &ctx).await;
+        let (status, e) = d.sende("GET", &format!("/fall/{ziel}/ergebnis"), None).await;
+        assert_eq!(status, 200, "ergebnis: {e}");
+        let zahl = e["zahl_cent"].as_i64();
+        let offen: Vec<&str> = e["offen"].as_array().map(|a| a.iter().filter_map(Value::as_str).collect()).unwrap_or_default();
+        let gesperrt = zahl.is_none() || e["grund"] != json!("bestaetigt");
+        let meldet = offen.iter().any(|f| f.starts_with("vv_"));
+        assert!(
+            zahl == direkt.zahl() || gesperrt || meldet,
+            "Vorjahr-Weg Vermietung: Zahl {zahl:?} gegen Direktzahl {:?}, grund {}, offen {offen:?}: die Zahl steht still niedriger da",
+            direkt.zahl(),
+            e["grund"]
+        );
+    });
+}
