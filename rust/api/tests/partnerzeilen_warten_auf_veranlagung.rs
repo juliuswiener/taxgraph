@@ -83,10 +83,9 @@ async fn fragen_voll(d: &Dienst) -> Value {
 
 /// `GET /fragen` auf einem frischen Fall der Scheibe `gesamt`: die Ehegatten-Zeilen warten auf `veranlagung = zusammen`.
 ///
-/// ROT bis zum Bau und darum `ignore`, damit `make rust-test` (nextest ohne `--run-ignored`) gruen bleibt. Der Bau nimmt das `ignore` weg.
-/// Das rote Kommando: `cargo nextest run -p api --test it partnerzeilen_warten_auf_veranlagung::die_ehegatten --run-ignored only`.
+/// Gebaut in `api/src/fragen.rs` (`frage_metadaten`, Schluessel `wartet_auf`); war rot bis zum Bau. Das Kommando:
+/// `cargo nextest run -p api --test it partnerzeilen_warten_auf_veranlagung::die_ehegatten`.
 #[tokio::test]
-#[ignore = "rot bis zum Bau (Ticket Partner-Zeilen vor allein/gemeinsam): mit --run-ignored only aufrufen, der Bau nimmt das ignore weg"]
 async fn die_ehegatten_zeilen_warten_auf_die_veranlagung() {
     let d = neuer_fall("gesamt").await;
     let antwort = fragen_voll(&d).await;

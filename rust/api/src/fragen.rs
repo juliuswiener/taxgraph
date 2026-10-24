@@ -188,6 +188,14 @@ pub(crate) fn frage_metadaten(
     if let (true, Some(m)) = (b.leer_erlaubt, frage.as_object_mut()) {
         m.insert("leer_erlaubt".into(), json!(true));
     }
+    // Rust-eigen (F5): eine Zeile der Ankreuzliste, die an EINEM Antwortwert eines anderen Felds haengt, nennt ihn. So graut die Seite sie aus, bis die
+    // Antwort (`veranlagung = zusammen`) da ist. Nur die einfache Bedingung `wert`: mit `und`, `oder` oder `beleg` bleibt der Schluessel weg, weil ein
+    // Feld-Wert-Paar sie nicht beschreibt.
+    if let (Some(true), Some(fb)) = (b.screening, &b.feld_bedingung) {
+        if let (Some(wert), None, None, false, Some(m)) = (&fb.wert, &fb.und, &fb.oder, fb.beleg, frage.as_object_mut()) {
+            m.insert("wartet_auf".into(), json!({"feld": fb.feld, "wert": wert}));
+        }
+    }
     Ok(frage)
 }
 
