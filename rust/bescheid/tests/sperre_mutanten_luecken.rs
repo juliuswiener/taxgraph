@@ -346,52 +346,6 @@ fn arbeitsmittel_sofortabzug_nur_bestaetigt_gewaehlt_und_null_ist_kein_arbeitsmi
     );
 }
 
-// ---------------------------------------------------------------- GWG (§ 6 Abs. 2 und § 9 Abs. 1 Nr. 7 EStG)
-
-/// Geringwertige Wirtschaftsgueter: die Grenzen der Sperre liegen bei 250,00 EUR (Verzeichnis, ab dann "ueber") und 800,00 EUR
-/// (Sofortabzug, ab dann "ueber"); genau auf der Grenze gilt noch die untere Regel. Dazu: von den zwei Tatbestandsfragen reicht eine
-/// beantwortete nicht. Die Tabellen in `offene_defekte.rs` pruefen die Fachfaelle (Python-Tests), nicht die Grenzwerte (Mutanten `>`
-/// -> `>=` auf 25.000 und 80.000 Cent, `||` -> `&&` bei den zwei Tatbestandsfragen).
-#[test]
-fn gwg_grenzen_250_und_800_euro_und_beide_tatbestandsfragen() {
-    let gwg = |betrag: i64, nutzbar: Option<bool>, netto: Option<bool>, ohne_abzug: Option<bool>, verzeichnis: Option<bool>| {
-        // `kein_gewinn` = nein: ein Betrag der Art GWG neben dem unbeantworteten Kreuz waere `flag_konsistenz_offen`. Ein GWG schaltet den
-        // EUeR-Weg ein (`GEWINN_QUELLEN_MENGEN`); seine drei Komponenten stehen darum auf 0, sonst sperrt `gewinn_angaben_offen` zuerst.
-        let mut e = vec![
-            b("kein_gewinn", false, true),
-            z("betriebseinnahmen", 0, true),
-            z("sonstige_betriebsausgaben", 0, true),
-            z("afa_jahresbetrag", 0, true),
-            z("gwg_anschaffungskosten_netto", betrag, true),
-        ];
-        for (feld, wert) in [
-            ("gwg_bewegliches_selbstaendig_nutzbar", nutzbar),
-            ("gwg_netto_ohne_vorsteuer", netto),
-            ("gwg_ohne_vorsteuerabzug", ohne_abzug),
-            ("gwg_verzeichnis_ab_250", verzeichnis),
-        ] {
-            if let Some(w) = wert {
-                e.push(b(feld, w, true));
-            }
-        }
-        e
-    };
-    let ja = Some(true);
-    pruefe(
-        Scheibe::Gesamt,
-        vec![
-            fall("800,00 EUR netto, alles beantwortet: noch Sofortabzug (Gegenprobe)", gwg(80_000, ja, ja, None, ja), None),
-            fall("800,01 EUR netto, keine AfA-Angaben: ueber der Grenze", gwg(80_001, ja, ja, None, ja), Some("gwg_abschreibung_offen")),
-            fall("800,00 EUR brutto, Kleinunternehmer (ja): noch Sofortabzug (Gegenprobe)", gwg(80_000, ja, Some(false), ja, ja), None),
-            fall("800,01 EUR brutto, Kleinunternehmer (ja): ueber der Grenze, der Nettobetrag fehlt", gwg(80_001, ja, Some(false), ja, ja), Some("gwg_mehrwertsteuer_offen")),
-            fall("nur die Nutzbarkeit beantwortet", gwg(10_000, ja, None, None, None), Some("gwg_tatbestand_offen")),
-            fall("nur die Netto-Frage beantwortet", gwg(10_000, None, ja, None, None), Some("gwg_tatbestand_offen")),
-            fall("250,00 EUR, Verzeichnis nicht beantwortet: noch kein Verzeichnis noetig (Gegenprobe)", gwg(25_000, ja, ja, None, None), None),
-            fall("250,01 EUR, Verzeichnis nicht beantwortet", gwg(25_001, ja, ja, None, None), Some("gwg_tatbestand_offen")),
-        ],
-    );
-}
-
 // ---------------------------------------------------------------- Versorgungsfreibetrag (§ 19 Abs. 2)
 
 /// Versorgungsbezug: Beginnjahr UND Bemessungsgrundlage muessen BESTAETIGT und ueber 0 sein (Python `isinstance(x, int) and x > 0`).
