@@ -54,6 +54,7 @@ pub(super) fn gesamt_guard(k: &K<'_>, cfg: &Cfg) -> Grund {
         sperre!(versorgung_stimmig(k, true));
     }
     sperre!(behinderung_wahlrecht(k));
+    sperre_o!(p33a_unterhalt(k));
     sperre!(p35a_p35c(k));
     sperre!(gwg(k));
     sperre!(kinderbetreuung(k));
@@ -311,6 +312,11 @@ fn behinderung_wahlrecht(k: &K<'_>) -> Grund {
         && positiv(f, "behinderungsbedingte_aufwendungen_partner")
         && !bestaetigt(f, "behinderungsbedingte_aufwendungen_wahlrecht_pb_partner"))
     .then_some(Sperrgrund::BehinderungsbedingteAufwendungenWahlrechtPartnerOffen))
+}
+
+/// § 33a Abs. 1 `EStG`: Unterhalt im Teiljahr oder mit weiterer Person ([`super::p33a_ursachen`]).
+fn p33a_unterhalt(k: &K<'_>) -> Option<Sperrgrund> {
+    (!super::p33a_ursachen(k.f).is_empty()).then_some(Sperrgrund::P33aUnterhaltNichtGerechnet)
 }
 
 /// `_hh_instanz_positiv`: irgendeine Instanz mit Betrag > 0 (jeder Zustand); ohne Store/Bindung der

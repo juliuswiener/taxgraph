@@ -249,6 +249,39 @@ fn ohne_gesamt_guard(k: &K<'_>) -> Option<Sperrgrund> {
 
 // ---------------------------------------------------------------- Lesehilfen (Python-Idiome)
 
+/// Der Wert von `p33a_unterstuetzungszeitraum` fuer "das ganze Jahr" (der `standardwert` der Frage). Jeder andere Text ist ein Teiljahr.
+const GANZES_JAHR: &str = "01.01-31.12";
+
+/// § 33a Abs. 1 `EStG` (Julius-Regel "erst Sperren, dann Rechnungen", 2026-10-08): die Antworten, die `p33a_unterhalt_nicht_gerechnet`
+/// ausloesen, als Feld-Kennungen. Unterhalt fuer einen Teil des Jahres (Abs. 3 S. 1: ein Zwoelftel weniger je Monat ohne Unterstuetzung)
+/// oder mit einer weiteren Person (Abs. 1 S. 7: der Betrag wird geteilt). Die Rechnung kennt beides nicht (`p33a_unterhalt` nimmt weder
+/// Zeitraum noch weitere Person) und zoege den vollen Hoechstbetrag ab: zu wenig Steuer.
+///
+/// Leer ohne Unterhaltsbetrag > 0 (auch vorlaeufig, wie [`positiv`]), sonst sperrte jede Antwort auf die Folgefragen. Der Guard liest die
+/// Roh-Felder: auch ein VORLAEUFIGER Zeitraum oder eine vorlaeufige weitere Person (Vorjahreswert, KI-Vorschlag) loest aus, damit eine Zahl
+/// nicht den Normalfall vortaeuscht, den der Vorschlag verneint. Ein unbeantworteter Zeitraum zaehlt als das ganze Jahr (Standardwert).
+/// Nicht gemeint: der Ausbildungsfreibetrag nach Abs. 2 (Haelfte je Elternteil, S. 4), der keine Antwort darauf hat.
+pub(crate) fn p33a_ursachen(f: &Felder) -> Vec<&'static str> {
+    if !positiv(f, "p33a_unterhalt_aufwendungen") {
+        return Vec::new();
+    }
+    let mut ursachen = Vec::new();
+    if matches!(wert(f, "p33a_unterstuetzungszeitraum"), Some(PyWert::Text(z)) if z != GANZES_JAHR) {
+        ursachen.push("p33a_unterstuetzungszeitraum");
+    }
+    if ist_true(wert(f, "p33a_weitere_person_beteiligt")) {
+        ursachen.push("p33a_weitere_person_beteiligt");
+    }
+    ursachen
+}
+
+/// Verbirgt das BESTAETIGTE Kreuz `kein_unterhalt` ("ich zahle keinen Unterhalt") den Unterhaltsblock? Dann sind Zeitraum und weitere Person
+/// `ausgeschlossen` und stehen nicht in der Fragenliste (Messung `p33a_teiljahr_sperre::messung_kreuz_nein_neben_unterhalt`), obwohl ein
+/// gespeicherter Wert gegen das Kreuz gewinnt (Entscheidung vom 2026-10-09).
+pub(crate) fn p33a_kreuz_verbirgt(f: &Felder) -> bool {
+    bestaetigt(f, "kein_unterhalt") && ist_true(wert(f, "kein_unterhalt"))
+}
+
 /// `_positiv(fid)`: Zahl (kein Bool) und `> 0`, auch vorlaeufig.
 fn positiv(f: &Felder, fid: &str) -> bool {
     ist_positive_zahl(wert(f, fid))
