@@ -218,7 +218,7 @@ fn die_kopfkommentare_der_35c_dateien_nennen_abs_1_satz_4() {
 
 // ------------------------------------------------------------------------------- § 10 Abs. 1 Nr. 3a
 
-/// § 10 Abs. 1 Nr. 3a EStG: Beitraege zu den Altvertraegen zaehlen nur, wenn die Laufzeit vor dem 1. Januar 2005
+/// § 10 Abs. 1 Nr. 3a `EStG`: Beitraege zu den Altvertraegen zaehlen nur, wenn die Laufzeit vor dem 1. Januar 2005
 /// begonnen hat und bis zum 31. Dezember 2004 ein Beitrag gezahlt wurde. Frage und Hilfetext nennen die Bedingung.
 #[test]
 fn nr_3a_altvertraege_nennen_die_bedingung_des_gesetzes() {
@@ -253,7 +253,7 @@ fn nr_3a_altvertraege_nennen_die_bedingung_des_gesetzes() {
 
 // ------------------------------------------------------------------------------- § 10 Abs. 1 Nr. 4, Abs. 4b
 
-/// § 10 Abs. 1 Nr. 4 EStG: "dies gilt nicht, soweit die Kirchensteuer als Zuschlag zur Kapitalertragsteuer oder als
+/// § 10 Abs. 1 Nr. 4 `EStG`: "dies gilt nicht, soweit die Kirchensteuer als Zuschlag zur Kapitalertragsteuer oder als
 /// Zuschlag auf die nach dem gesonderten Tarif des § 32d Absatz 1 ermittelte Einkommensteuer gezahlt wurde".
 /// Der Text nennt nur den Wortlaut, keine Lesart, aus welchem Beleg das Feld gespeist wird.
 #[test]
@@ -286,7 +286,7 @@ fn kist_erstattet_nennt_abs_4b_satz_3_als_fundstelle() {
     );
 }
 
-/// § 10 Abs. 4b EStG: erstattete Beitraege werden mit den gezahlten verrechnet. "Trage den Beitrag so ein, wie
+/// § 10 Abs. 4b `EStG`: erstattete Beitraege werden mit den gezahlten verrechnet. "Trage den Beitrag so ein, wie
 /// dort steht." allein liess die Rueckerstattung stehen; die vier Beitragsfelder (Person und Partner, KV und PV)
 /// nennen sie jetzt.
 #[test]
@@ -312,7 +312,7 @@ fn die_beitragsfelder_nennen_die_erstattung_nach_abs_4b() {
 
 // ------------------------------------------------------------------------------- § 10 Abs. 1 Nr. 7, § 9 Abs. 6
 
-/// § 9 Abs. 6 S. 1 EStG: Kosten einer Berufsausbildung oder eines Studiums sind nur Werbungskosten, wenn schon eine
+/// § 9 Abs. 6 S. 1 `EStG`: Kosten einer Berufsausbildung oder eines Studiums sind nur Werbungskosten, wenn schon eine
 /// Erstausbildung abgeschlossen ist oder die Ausbildung im Rahmen eines Dienstverhaeltnisses stattfindet. Beide
 /// Texte zur Berufsausbildung nennen den Wortlaut und sagen, dass dieselben Kosten nicht zweimal angesetzt werden.
 #[test]
@@ -405,7 +405,7 @@ fn die_dba_hilfe_nennt_den_einen_staat_in_alltagssprache() {
     }]);
 }
 
-/// § 35a Abs. 2 und 3 EStG geben 20 % der AUFWENDUNGEN; auf Arbeitskosten beschraenkt erst Abs. 5 Satz 2. Die
+/// § 35a Abs. 2 und 3 `EStG` geben 20 % der AUFWENDUNGEN; auf Arbeitskosten beschraenkt erst Abs. 5 Satz 2. Die
 /// Begruendung der beiden Zaehlgruppen nennt beide Stellen.
 #[test]
 fn die_35a_gruppen_nennen_abs_5_satz_2_fuer_die_arbeitskosten() {
