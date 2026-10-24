@@ -70,6 +70,8 @@ mod lstb_beleg_hermetisch;
 mod null_arbeitstage;
 #[path = "p23_waechter_hermetisch.rs"]
 mod p23_waechter_hermetisch;
+#[path = "p33a_teiljahr_sperre.rs"]
+mod p33a_teiljahr_sperre;
 #[path = "p34_abs3_55_geburtstag_hermetisch.rs"]
 mod p34_abs3_55_geburtstag_hermetisch;
 #[path = "p34_partner_fragen_hermetisch.rs"]
