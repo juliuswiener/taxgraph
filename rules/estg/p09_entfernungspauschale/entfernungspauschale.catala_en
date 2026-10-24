@@ -26,7 +26,7 @@ Semantik (§ 9, BMF-Schreiben):
 - Guenstigerpruefung: tatsaechliche Aufwendungen fuer oeffentliche
   Verkehrsmittel sind ansetzbar, soweit sie den als Entfernungspauschale
   abziehbaren Jahresbetrag uebersteigen (§ 9 Abs. 2 Satz 2 EStG, BMF Rz. 2);
-  jahresbezogener Vergleich.
+  jahresbezogener Vergleich. Ohne Arbeitstage (<= 0) ist der abziehbare Betrag 0 (d-56).
 
 ```catala
 declaration scope Berechnung:
@@ -75,7 +75,13 @@ scope Berechnung:
 
   # § 9 Abs. 2 Satz 2 EStG: OePNV-Kosten ansetzbar, soweit sie den als
   # Entfernungspauschale abziehbaren Jahresbetrag uebersteigen (jahresbezogen).
+  # ABWEICHUNG vom BMF-Oracle (d-56, Julius 2026-10-22): ohne Arbeitstage gibt es keine Wege zur
+  # ersten Taetigkeitsstaette und in diesem Block nichts abzuziehen. Abs. 2 S. 2 haengt an den
+  # Wegen von S. 1 und 2; BMF Rz. 2 rechnet nur mit 220 Tagen. Das Oracle wuerde bei 0 Tagen die
+  # Fahrkartensumme ansetzen, weil die Pauschale 0 ist. `<= 0` statt `= 0`: auch negative Tage
+  # sind keine Wege.
   definition abziehbarer_betrag equals
-    if oepnv_kosten_jahr > entfernungspauschale then oepnv_kosten_jahr
+    if arbeitstage <= 0 then $0.00
+    else if oepnv_kosten_jahr > entfernungspauschale then oepnv_kosten_jahr
     else entfernungspauschale
 ```

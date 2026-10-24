@@ -99,6 +99,45 @@ scope Falle4Oepnv:
   assertion ep = $1,320.00
   assertion abziehbar = $1,380.00
 
+# Falle 5: 0 Arbeitstage (d-56). 30 km, ohne Kfz, OePNV 1380. Ohne Wege keine Pauschale und kein
+# OePNV-Abzug: abziehbar 0 (das BMF-Oracle haette 1380). Kontrolle mit 1 Arbeitstag: Pauschale
+# 20 x 0,30 + 10 x 0,38 = 9,80, OePNV 1380 ist groesser -> abziehbar 1380.
+#[test]
+declaration scope Falle5NullTage:
+  internal kein_tag content EP.Berechnung
+  internal ein_tag content EP.Berechnung
+  output ep_null content money
+  output abziehbar_null content money
+  output ep_ein_tag content money
+  output abziehbar_ein_tag content money
+scope Falle5NullTage:
+  definition kein_tag equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 0
+    -- eigenes_oder_ueberlassenes_kfz: false
+    -- oepnv_kosten_jahr: $1,380.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ein_tag equals output of EP.Berechnung with {
+    -- entfernung_km_roh: 30.0
+    -- arbeitstage: 1
+    -- eigenes_oder_ueberlassenes_kfz: false
+    -- oepnv_kosten_jahr: $1,380.00
+    -- satz_bis_20_km: $0.30
+    -- satz_ab_21_km: $0.38
+    -- staffelgrenze_km: 20
+    -- hoechstbetrag: $4,500.00 }
+  definition ep_null equals kein_tag.entfernungspauschale
+  definition abziehbar_null equals kein_tag.abziehbarer_betrag
+  definition ep_ein_tag equals ein_tag.entfernungspauschale
+  definition abziehbar_ein_tag equals ein_tag.abziehbarer_betrag
+  assertion ep_null = $0.00
+  assertion abziehbar_null = $0.00
+  assertion ep_ein_tag = $9.80
+  assertion abziehbar_ein_tag = $1,380.00
+
 # VZ 2026: einheitlich 0,38 ab km 1. 30 km, 220 AT, eigenes Kfz.
 # pro Tag 30 x 0,38 = 11,40; Jahr 2508.
 #[test]
