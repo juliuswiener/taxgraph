@@ -177,7 +177,7 @@ regel_bedingungen:
   - regel_id: p33_2a_fahrtkostenpauschale
     feld: keine_behinderung_pflege
     wert: false
-    grund: "§ 33 Abs. 2a S. 1 EStG gewährt die behinderungsbedingte Fahrtkostenpauschale nur Menschen mit den dort genannten Merkzeichen bzw. einem Grad der Behinderung ab 80 — ohne festgestellte Behinderung ist der Tatbestand nicht erfüllt."
+    grund: "§ 33 Abs. 2a S. 2 EStG gewährt die behinderungsbedingte Fahrtkostenpauschale nur Menschen mit einem Grad der Behinderung von mindestens 80 (oder mindestens 70 mit Merkzeichen G) und Menschen mit den Merkzeichen aG, Bl, TBl oder H — ohne festgestellte Behinderung ist der Tatbestand nicht erfüllt."
 
   - regel_id: p19_2_versorgungsfreibetrag
     feld: keine_versorgungsbezuege

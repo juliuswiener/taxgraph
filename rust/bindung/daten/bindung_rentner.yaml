@@ -491,7 +491,7 @@ bindungen:
     # Hing an gar nichts und wurde deshalb ausnahmslos gefragt — auch dem Paar, das jede
     # Behinderung verneint hatte. Das Nachbarfeld (Grad der Behinderung) war immerhin gegated,
     # nur am falschen Kreuz; dieses hier an keinem.
-    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 3 S. 4 EStG knuepft den erhoehten Pauschbetrag an die Merkzeichen H, Bl und TBl, die Teil der amtlichen Feststellung sind. Ohne bestaetigte Behinderung des Partners gibt es keine Feststellung, aus der ein Merkzeichen hervorginge. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
+    feld_bedingung: {feld: keine_behinderung_pflege_partner, wert: false, grund: "§ 33b Abs. 3 S. 3 EStG gewaehrt den erhoehten Pauschbetrag Menschen, die hilflos im Sinne von S. 4 sind, Blinden und Taubblinden. Ohne bestaetigte Behinderung des Partners gibt es keine amtliche Feststellung, aus der Hilflosigkeit, Blindheit oder Taubblindheit hervorginge. Das Feld sitzt in p2_festzusetzung_zusammen, die auch die Stammdaten traegt und nie entfallen darf — deshalb auf Feldebene."}
     typ: bool
     einheit: null
     askable: true
