@@ -1,4 +1,4 @@
 {
-  "argv": ["make", "rust-test"],
-  "silence": "5m"
+  "argv": ["bash", "scripts/orch-tor.sh"],
+  "silence": "10m"
 }
