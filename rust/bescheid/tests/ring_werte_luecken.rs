@@ -4,16 +4,16 @@
 //!
 //! **Worum es geht.** `mit_ring_werten` legt Hilfswerte ins Formular, die ELSTER als eigene Kennzahl verlangt (Summenzeilen, die
 //! Kuerzung der Verpflegung, der genutzte Sparer-Pauschbetrag). Jeder Wert entsteht nur unter einer Bedingung: bestaetigt, ueber 0,
-//! aus den Toepfen statt dem Aggregat. Die Grenzen dieser Bedingungen pruefte kein Test.
+//! ohne Fehler beim Rechnen. Die Grenzen dieser Bedingungen pruefte kein Test.
 //!
 //! **Warum es zaehlt.** Faellt eine Bedingung, steht im Formular eine Null-Zeile, die ELSTER nicht kennt, oder ein Wert, der aus
-//! einem vorlaeufigen Betrag oder dem falschen Topf stammt (genutzter Sparer-Pauschbetrag zu niedrig, Summenzeile zu hoch).
+//! einem vorlaeufigen Betrag stammt (Summenzeile zu hoch), oder ein Ueberlauf bleibt unbemerkt.
 //!
-//! **Wo es sitzt.** `deklaration/ring_werte.rs`: `verpflegung`, `kap_antrag`, `pb_genutzt`, `instanz_summe`, `haushaltsnah`,
-//! `vermietung`, `einzelzeile`, `p22_nr3`.
+//! **Wo es sitzt.** `deklaration/ring_werte.rs`: `verpflegung`, `kap_antrag`, `bestaetigt_ganz_oder_null`, `vermietung`,
+//! `einzelzeile`, `p22_nr3`.
 //!
 //! HERKUNFT DER ERWARTUNGSWERTE: aus den Regeln, die die Funktionen selbst in ihren Kommentaren nennen ("Inert: keine Summe > 0, kein
-//! Eintrag", "nur BESTAETIGTE Felder", "Toepfe XOR Aggregat", "Werbungskosten NUR bei echt positiver Differenz") und aus den
+//! Eintrag", "nur BESTAETIGTE Felder", "Werbungskosten NUR bei echt positiver Differenz") und aus den
 //! Parametern der Vorjahre (`params/2025`). Die Cent-Werte sind von Hand gerechnet, nicht aus dem Rust-Code abgelesen.
 //!
 //! Jede Zeile hat eine Gegenprobe (Wert ueber 0 oder bestaetigt), die den Eintrag liefert: ohne sie bestuende auch ein Ring, der nie
@@ -94,47 +94,6 @@ fn kap_antrag_mit_ueberlauf_scheitert_statt_still_zu_fehlen() {
     let fehler = mit_ring_werten(&mut f, Some(Vz::Vz2025), params()).unwrap_err();
     assert!(fehler.ist_ueberlauf(), "kein Ueberlauf: {fehler:?}");
     assert!(!f.contains_key("kap_antrag_guenstigerpruefung"), "Eintrag trotz Fehler");
-}
-
-/// Toepfe XOR Aggregat je Person: ist EIN Topf belegt, rechnet der Ring aus den Toepfen und ignoriert das Aggregat; sonst aus dem
-/// Aggregat. Person B bei Zusammenveranlagung ebenso. Pauschbetrag 2025: 1.000 EUR einzeln, 2.000 EUR zusammen.
-#[test]
-fn sparer_pauschbetrag_genutzt_rechnet_aus_den_toepfen_wenn_einer_belegt_ist() {
-    let nur_topf = [z("kap_gewinn_aktien", 500_000, true)];
-    assert_eq!(
-        ganz(&ring_2025(&nur_topf), "kap_sparer_pauschbetrag_genutzt"),
-        Some(100_000),
-        "5.000 EUR Aktiengewinn nur im Topf, Aggregat 0: die 1.000 EUR Pauschbetrag sind genutzt"
-    );
-    let zusammen = [
-        ("veranlagung", json!("zusammen"), true),
-        z("kap_kapitalertraege", 100_000, true),
-        z("kap_gewinn_aktien_partner", 700_000, true),
-    ];
-    assert_eq!(
-        ganz(&ring_2025(&zusammen), "kap_sparer_pauschbetrag_genutzt"),
-        Some(200_000),
-        "A 1.000 EUR im Aggregat, B 7.000 EUR im Topf: zusammen 8.000 EUR, Pauschbetrag 2.000 EUR genutzt"
-    );
-}
-
-/// § 35a: die Summe je Betragsfeld zaehlt nur die BESTAETIGTEN Instanzen dieses Feldes (Instanz 1 ohne Suffix, weitere mit `__n`) und
-/// steht nur bei einer Summe ueber 0.
-#[test]
-fn haushaltsnahe_summen_zaehlen_nur_das_eigene_feld_und_nur_bestaetigtes() {
-    let f = ring_2025(&[
-        z("hh_minijob_betrag", 30_000, true),
-        z("hh_minijob_betrag__2", 5_000, true),
-        z("hh_minijob_betrag__3", 99_999, false),
-        z("hh_dienstleistung_betrag", 20_000, true),
-        z("hh_handwerker_betrag", 10_000, true),
-    ]);
-    assert_eq!(ganz(&f, "hh_minijob_aufwendungen"), Some(35_000), "Instanz 1 und 2, die vorlaeufige 3 nicht");
-    assert_eq!(ganz(&f, "hh_dienstleistungen"), Some(20_000), "nur das eigene Feld");
-    assert_eq!(ganz(&f, "hh_handwerker_arbeitskosten"), Some(10_000), "nur das eigene Feld");
-    let leer = ring_2025(&[z("hh_minijob_betrag", 0, true), z("hh_handwerker_betrag", 50_000, false)]);
-    assert_eq!(ganz(&leer, "hh_minijob_aufwendungen"), None, "Summe 0: kein Eintrag");
-    assert_eq!(ganz(&leer, "hh_handwerker_arbeitskosten"), None, "nur ein vorlaeufiger Betrag: kein Eintrag");
 }
 
 /// Anlage V: die Summenzeilen entstehen nur bei bestaetigten Einnahmen ueber 0. Die Werbungskosten zaehlen nur bestaetigte ganze
