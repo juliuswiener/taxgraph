@@ -469,6 +469,48 @@ const FAELLE: &[Zeile] = &[
         zusammen: false,
         erwartet: 600,
     },
+    // Weit zwischen dem halben und dem vollen Deckel, je Topf allein: die "knapp darueber"-Faelle liegen unter 1 EUR
+    // ueber dem halben Deckel, und die Abrundung der Summe verdeckt dort, ob der Vergleich gegen den halben oder den
+    // vollen Deckel laeuft (Mutation: Vergleich im erzeugten C gegen den vollen Deckel, Ergebnis bleibt halbiert).
+    Zeile {
+        gruppe: "halbierung",
+        name: "Minijob 2.000 (20 % = 400) weit ueber dem halben Deckel, unter dem vollen: 255",
+        minijob: 2000,
+        dienstleistungen: 0,
+        handwerker: 0,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: false,
+        erwartet: 255,
+    },
+    Zeile {
+        gruppe: "halbierung",
+        name: "Dienstleistungen 15.000 (20 % = 3.000) weit ueber dem halben Deckel, unter dem vollen: 2.000",
+        minijob: 0,
+        dienstleistungen: 15_000,
+        handwerker: 0,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: false,
+        erwartet: 2000,
+    },
+    Zeile {
+        gruppe: "halbierung",
+        name: "Handwerker 5.000 (20 % = 1.000) weit ueber dem halben Deckel, unter dem vollen: 600",
+        minijob: 0,
+        dienstleistungen: 0,
+        handwerker: 5000,
+        eu_ewr: true,
+        unbar: true,
+        gefoerdert: false,
+        mitveranlagt: true,
+        zusammen: false,
+        erwartet: 600,
+    },
     Zeile {
         gruppe: "halbierung",
         name: "alle drei am halben Deckel: 255 + 2.000 + 600 = 2.855 (Grenzfall, gleich der halbierten Summe)",
@@ -650,7 +692,7 @@ fn gates_und_halbierung() {
 }
 
 /// Zwei Alleinstehende im selben Haushalt (§ 35a Abs. 5 S. 4, BMF Rz. 53): 20 % der eigenen Kosten laufen gegen die HALBEN
-/// Deckel 255 / 2.000 / 600 EUR, je Topf, knapp darunter, genau darauf und knapp darueber. Die Summe wird nicht halbiert: bei
+/// Deckel 255 / 2.000 / 600 EUR, je Topf, knapp darunter, genau darauf, knapp darueber und weit darueber (unter dem vollen Deckel). Die Summe wird nicht halbiert: bei
 /// 5.000 EUR Dienstleistungen sind es 1.000 EUR, nicht 500. Plan Nr. 116.
 #[test]
 fn alleinstehende_teilen_die_hoechstbetraege_nicht_die_summe() {

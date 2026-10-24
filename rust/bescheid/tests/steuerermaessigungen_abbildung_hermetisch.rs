@@ -27,7 +27,7 @@
 //! Gesetzeswortlaut; dort stuetzt nur das Python-Orakel.
 //!
 //! AUSNAHME (Plan Nr. 116, Julius d-67, 2026-10-24): die Zeilen zu `p35a_mitveranlagung` (die drei Faelle "Einzelveranlagt, Antwort ..."
-//! und die Gruppe "ehepaar") stammen NICHT vom Python-Orakel, das die Summe halbierte, sondern von Hand aus § 35a Abs. 5 S. 4 `EStG` und
+//! und die Gruppen "ehepaar" und "einzel_antwort") stammen NICHT vom Python-Orakel, das die Summe halbierte, sondern von Hand aus § 35a Abs. 5 S. 4 `EStG` und
 //! BMF-Schreiben vom 2016-11-09 Rz. 53 mit Beispiel 9 (`sources/bmf/bmf_p35a_2016-11-09.txt:809-831`): ein zusammenveranlagtes Ehepaar
 //! teilt nichts, zwei Alleinstehende (Einzelveranlagung, Antwort ja) teilen die Deckel 510 / 4.000 / 1.200 zur Haelfte.
 //!
@@ -271,6 +271,54 @@ fn faelle() -> Vec<Fall> {
             ohne_store: false,
             nur_bestaetigt: true,
             erwartet: 1000,
+        },
+        // Gruppe "einzel_antwort": ein Alleinstehender (`Veranlagung::Einzel`), dessen Kosten in allen drei Toepfen WEIT ueber dem halben Deckel
+        // liegen (Minijob 2.000 -> 400, Dienstleistungen 15.000 -> 3.000, Handwerker 5.000 -> 1.000 EUR; volle Deckel 510 / 4.000 / 1.200,
+        // halbe 255 / 2.000 / 600). Nur ein ausdrueckliches "ja" teilt: halbiert 255 + 2.000 + 600 = 2.855, ungeteilt 400 + 3.000 + 1.000 = 4.400.
+        // Eine fehlende Antwort zaehlt nicht als "ja" (Mutation `ist_true(..)` -> `!ist_false(..)` in `abzuege.rs`).
+        Fall {
+            gruppe: "einzel_antwort",
+            name: "Alleinstehend, Antwort fehlt, Kosten weit ueber dem halben Deckel: ungeteilt 4.400",
+            events: vec![
+                b("hh_in_eu_ewr", true),
+                b("hh_rechnung_unbar", true),
+                z("hh_minijob_betrag", 200_000, true),
+                z("hh_dienstleistung_betrag", 1_500_000, true),
+                z("hh_handwerker_betrag", 500_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 4400,
+        },
+        Fall {
+            gruppe: "einzel_antwort",
+            name: "Alleinstehend, Antwort nein, Kosten weit ueber dem halben Deckel: ungeteilt 4.400",
+            events: vec![
+                b("hh_in_eu_ewr", true),
+                b("hh_rechnung_unbar", true),
+                b("p35a_mitveranlagung", false),
+                z("hh_minijob_betrag", 200_000, true),
+                z("hh_dienstleistung_betrag", 1_500_000, true),
+                z("hh_handwerker_betrag", 500_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 4400,
+        },
+        Fall {
+            gruppe: "einzel_antwort",
+            name: "Alleinstehend, Antwort ja (Gegenprobe), dieselben Kosten: halbe Deckel 255 + 2.000 + 600 = 2.855",
+            events: vec![
+                b("hh_in_eu_ewr", true),
+                b("hh_rechnung_unbar", true),
+                b("p35a_mitveranlagung", true),
+                z("hh_minijob_betrag", 200_000, true),
+                z("hh_dienstleistung_betrag", 1_500_000, true),
+                z("hh_handwerker_betrag", 500_000, true),
+            ],
+            ohne_store: false,
+            nur_bestaetigt: true,
+            erwartet: 2855,
         },
         Fall {
             gruppe: "gates",
@@ -655,6 +703,13 @@ fn ja_nein_felder_kommen_an() {
 #[test]
 fn ehepaar_rechnet_ungeteilt() {
     pruefe_mit("ehepaar", Veranlagung::Zusammen);
+}
+
+/// Nur ein AUSDRUECKLICHES "ja" auf `p35a_mitveranlagung` teilt die Deckel eines Alleinstehenden; eine fehlende Antwort und ein "nein"
+/// rechnen ungeteilt, auch wenn die Kosten weit ueber dem halben Deckel liegen. Die Gegenprobe "ja" haelt die Fixtur ehrlich. Plan Nr. 116.
+#[test]
+fn alleinstehender_teilt_nur_bei_ausdruecklichem_ja() {
+    pruefe("einzel_antwort");
 }
 
 /// Die Betraege kommen richtig an: Instanzen werden je Topf summiert, unbestaetigte zaehlen bei
