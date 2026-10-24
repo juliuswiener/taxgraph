@@ -371,7 +371,7 @@ mod tests {
     }
 
     /// Eine Zeile der Ankreuzliste mit der Bedingung `feld_bedingung` aus `bedingung` (und `screening`).
-    fn zeile(screening: Option<bool>, bedingung: Value) -> Bindung {
+    fn zeile(screening: Option<bool>, bedingung: &Value) -> Bindung {
         serde_json::from_value(json!({
             "feld_id": "kein_x_partner", "quelle": {"regel_id": "r", "signatur_slot": "s"}, "typ": "bool", "askable": false,
             "hilfe_kurz": "Tipp", "beispielwert": false, "vz_gueltigkeit": [2025],
@@ -387,15 +387,15 @@ mod tests {
         let grund = "Begruendung fuer den Test mit mehr als vierzig Zeichen";
         let einfach = json!({"feld": "veranlagung", "wert": "zusammen", "grund": grund});
         assert_eq!(
-            wartet_auf(&zeile(Some(true), einfach.clone())),
+            wartet_auf(&zeile(Some(true), &einfach)),
             Some(json!({"feld": "veranlagung", "wert": "zusammen"}))
         );
-        assert_eq!(wartet_auf(&zeile(Some(false), einfach.clone())), None, "keine Zeile der Ankreuzliste");
-        assert_eq!(wartet_auf(&zeile(None, einfach.clone())), None, "screening fehlt");
+        assert_eq!(wartet_auf(&zeile(Some(false), &einfach)), None, "keine Zeile der Ankreuzliste");
+        assert_eq!(wartet_auf(&zeile(None, &einfach)), None, "screening fehlt");
         let mit = |zusatz: Value| {
             let mut b = einfach.clone();
             b.as_object_mut().unwrap().extend(zusatz.as_object().unwrap().clone());
-            zeile(Some(true), b)
+            zeile(Some(true), &b)
         };
         let weitere = json!({"feld": "anderes", "groesser_als": 0, "grund": grund});
         assert_eq!(wartet_auf(&mit(json!({"und": weitere}))), None, "und");
@@ -404,10 +404,10 @@ mod tests {
         let andere_art = |art: Value| {
             let mut b = json!({"feld": "veranlagung", "grund": grund});
             b.as_object_mut().unwrap().extend(art.as_object().unwrap().clone());
-            wartet_auf(&zeile(Some(true), b))
+            wartet_auf(&zeile(Some(true), &b))
         };
         assert_eq!(andere_art(json!({"wert_nicht": "zusammen"})), None, "wert_nicht");
         assert_eq!(andere_art(json!({"groesser_als": 0})), None, "groesser_als");
-        assert_eq!(wartet_auf(&zeile(Some(true), Value::Null)), None, "ohne feld_bedingung");
+        assert_eq!(wartet_auf(&zeile(Some(true), &Value::Null)), None, "ohne feld_bedingung");
     }
 }
