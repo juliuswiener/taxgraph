@@ -106,6 +106,8 @@ mod rentenbeginn_jahr;
 mod rentner_lohn_versorgung_hermetisch;
 #[path = "sa_pauschbetrag_neben_vorsorge_hermetisch.rs"]
 mod sa_pauschbetrag_neben_vorsorge_hermetisch;
+#[path = "ring_werte_luecken.rs"]
+mod ring_werte_luecken;
 #[path = "scheiben_tabellen_konsistenz.rs"]
 mod scheiben_tabellen_konsistenz;
 #[path = "slot_waechter.rs"]
