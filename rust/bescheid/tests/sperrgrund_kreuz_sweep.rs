@@ -81,11 +81,11 @@ use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, feste_zahl, Cfg};
+use bescheid::deklaration::{an_gesamt_sperrgrund, feste_zahl, sperrgrund_frage_felder, Cfg};
 use bescheid::zweige::Umgebung;
 use bescheid::{BindungIndex, Instanzquelle};
 use bindung::{Bindung, FeldBedingung, Registry};
-use domain::{Achsenwert, Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Scheibe, Vz, Zustand};
+use domain::{Achsenwert, Feldtyp, Herkunft, HerkunftVektor, PruefTiefe, PyWert, Scheibe, Sperrgrund, Vz, Zustand};
 use intervall::AchsenBindung;
 use interview::{Graph, Sicht};
 use serde_json::{json, Value};
@@ -282,8 +282,10 @@ impl Lauf {
         Ok(())
     }
 
+    /// Die Warteschlange wie `api::fragen::fragen` sie liefert: `naechste_fragen`, dazu die Frage, die der aktive Sperrgrund verlangt und
+    /// die ein Kreuz sonst verbirgt (derselbe Helfer `sperrgrund_frage_felder`, derselbe Sperrgrund wie im Dienst).
     fn fragen(&self) -> Vec<String> {
-        interview::naechste_fragen(
+        let mut liste: Vec<String> = interview::naechste_fragen(
             &self.store,
             &self.lage.sicht,
             &self.lage.welt.graph,
@@ -291,7 +293,11 @@ impl Lauf {
         )
         .into_iter()
         .map(str::to_owned)
-        .collect()
+        .collect();
+        let schon: Vec<&str> = liste.iter().map(String::as_str).collect();
+        let mehr = sperrgrund_frage_felder(self.grund().parse::<Sperrgrund>().ok(), &schon);
+        liste.extend(mehr.into_iter().map(str::to_owned));
+        liste
     }
 
     /// Setzt die Vorgaben, dann beantwortet es die Warteschlange, bis sie nichts Neues mehr enthaelt. Nach der Antwort auf
@@ -971,6 +977,55 @@ fn die_ausnahme_fuer_den_ausweg_ueber_das_kreuz_ist_eng() {
     assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_kind", "flag_konsistenz_offen", nach), "ein Kreuz ohne Eintrag");
     assert!(!ist_ausweg_kreuz("RentnerGesamt", "kein_sonstige_partner", "rente_instanz_offen", nach), "ein anderer Sperrgrund");
     assert!(!ist_ausweg_kreuz("Gesamt", "kein_sonstige_partner", "flag_konsistenz_offen", nach), "eine andere Scheibe");
+}
+
+// ---------------------------------------------------------------- Widerspruchswert vor dem Kreuz
+
+/// Die Sperren, bei denen ein gespeicherter Wert dem Kreuz "nein" widerspricht und die Frage der Sperre hinter dem Kreuz verschwindet
+/// (Entscheidung `ein-gespeicherter-wert-gewinnt-gegen-das-kreuz-nein-und-die-sperrfrage-kehrt-in-die-liste-zurueck`): (Kreuz, Werte vor dem
+/// Kreuz, Sperrgrund, Frage der Sperre).
+type Widerspruch = (&'static str, &'static [(&'static str, i64)], &'static str, &'static str);
+const WIDERSPRUECHE: [Widerspruch; 2] = [
+    (
+        "keine_behinderung_pflege",
+        &[("rentner_grad_der_behinderung", 100), ("behinderungsbedingte_aufwendungen", 200_000)],
+        "behinderungsbedingte_aufwendungen_wahlrecht_offen",
+        "behinderungsbedingte_aufwendungen_wahlrecht_pb",
+    ),
+    (
+        "keine_energetische_sanierung",
+        &[("p35c_energieberater_aufwendungen", 500_000)],
+        "p35c_doppelfoerderung_offen",
+        "p35c_keine_doppelfoerderung",
+    ),
+];
+
+/// Die Sweeps oben fuellen nur leere Faelle ("zu"-Antworten): ein gespeicherter Wert, der dem Kreuz widerspricht, kommt darin nicht vor.
+/// Dieser Test legt den Wert VOR das Kreuz (wie ein Vorjahr oder eine aeltere Sitzung) und verlangt: der Guard sperrt weiter (der Wert
+/// gewinnt), und die Warteschlange fragt, was die Sperre verlangt, genau wie der Dienst (`sperrgrund_frage_felder` in `Lauf::fragen`).
+/// Danach ist die Sperre weg, es bleibt keine Sackgasse. Kontrolle je Fall: dasselbe Kreuz OHNE den Wert verbirgt die Frage und sperrt nicht;
+/// erst der Wert holt sie zurueck.
+#[test]
+fn ein_widerspruchswert_vor_dem_kreuz_wird_gesehen() {
+    for scheibe in [Scheibe::Gesamt, Scheibe::RentnerGesamt] {
+        for (kreuz, werte, grund, frage) in WIDERSPRUECHE {
+            let ohne_wert = lauf_mit(scheibe, &[("veranlagung", json!("einzel")), (kreuz, json!(true))]);
+            assert_eq!(ohne_wert.grund(), "keiner", "{scheibe:?} {kreuz}: KONTROLLE, das Kreuz allein sperrt");
+            assert!(!ohne_wert.gefragt.contains(frage), "{scheibe:?} {kreuz}: KONTROLLE, das Kreuz verbirgt {frage} nicht");
+
+            let mut vorgaben = vec![("veranlagung", json!("einzel"))];
+            vorgaben.extend(werte.iter().map(|(f, w)| (*f, json!(w))));
+            vorgaben.push((kreuz, json!(true)));
+            let w = lauf_mit(scheibe, &vorgaben);
+            assert!(
+                w.gefragt.contains(frage),
+                "{scheibe:?} {kreuz}: der Wert {werte:?} loest {grund} aus, die Warteschlange fragt {frage} nicht (Sperre ohne sichtbare Frage)"
+            );
+            let sack = sackgasse(&w, "keiner", false, &Zaehler::default());
+            assert!(sack.is_none(), "{scheibe:?} {kreuz}: DEFEKT Sackgasse {sack:?}");
+            assert_eq!(w.grund(), "keiner", "{scheibe:?} {kreuz}: die Antwort auf {frage} loest {grund} nicht");
+        }
+    }
 }
 
 // ---------------------------------------------------------------- Ticket kein_lohn_pension_partner

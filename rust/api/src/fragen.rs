@@ -5,7 +5,7 @@
 //! Queue, Metadaten, Mitschnitt. Ein Fehler an einer frueheren Stelle verdeckt jeden spaeteren.
 use std::collections::HashMap;
 
-use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_klartext};
+use bescheid::deklaration::{an_gesamt_sperrgrund, sperrgrund_frage_felder, sperrgrund_klartext};
 use bescheid::zweige::Umgebung;
 use bescheid::{BescheidFehler, BindungIndex, Felder, Instanzquelle};
 use bindung::{Bindung, Vorjahr};
@@ -247,7 +247,11 @@ pub fn fragen(z: &Zustand, fall_id: &FallId, store: &Store) -> Result<Antwort, A
     // Ring-Betraege (`ring_betrag_vorlaeufig`). Ein Vorjahreswert dort bleibt eine Frage.
     let mut pflicht = crate::ergebnis::pflicht_kegel(&sb);
     pflicht.extend(bescheid::deklaration::ring_kandidaten(&sb.cfg));
-    let queue = interview::naechste_fragen_mit_pflicht(store, &sb.sicht, &sb.graph, beitrag.as_ref(), &pflicht);
+    let mut queue = interview::naechste_fragen_mit_pflicht(store, &sb.sicht, &sb.graph, beitrag.as_ref(), &pflicht);
+    // Die Frage, die der Sperrgrund verlangt, steht in der Liste, auch wenn ein Kreuz "nein" sie verbirgt (der gespeicherte Wert gewinnt,
+    // die Sperre bleibt). Ohne sie bliebe die Zahl gesperrt und der Nutzer sah keine Frage dazu.
+    let sperrfragen = sperrgrund_frage_felder(gesperrt, &queue);
+    queue.extend(sperrfragen);
     let out: Vec<Value> = queue
         .iter()
         .map(|fid| frage_metadaten(fid, &sb, store))
