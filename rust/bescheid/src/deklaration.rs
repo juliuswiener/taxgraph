@@ -4,7 +4,7 @@
 //! - [`mit_ring_werten`] (`_mit_ring_werten`): berechnete Kz als fertige Events in den Snapshot,
 //! - [`an_gesamt_sperrgrund`] (`_an_gesamt_sperrgrund`): der K2-Guard, liefert einen
 //!   [`Sperrgrund`] oder `None`,
-//! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`rentenbeginn_offen_stand`],
+//! - [`sperrgrund_klartext`], [`sperrgrund_felder`], [`sperrgrund_frage_felder`], [`rentenbeginn_offen_stand`],
 //!   [`vorlaeufige_ring_betraege`],
 //! - [`einreichungs_xml`] (`api.einreichen` bis zum XML): Ring-Werte, Guard, `deklariere` und
 //!   `erzeuge_xml` in Pythons Reihenfolge,
@@ -361,6 +361,38 @@ pub fn sperrgrund_felder(grund: Option<Sperrgrund>, felder: &Felder) -> Vec<Part
         partner_ohne_zusammen(felder)
     } else {
         Vec::new()
+    }
+}
+
+/// Die Frage, die der Sperrgrund verlangt und die kein Kreuz aus der Fragenliste nehmen darf (Julius, 2026-10-22: "Haelt eine Sperre die
+/// Zahl zurueck, muss die zugehoerige Frage sichtbar sein"). Ein gespeicherter Wert gewinnt gegen das Kreuz "nein" (Entscheidung vom
+/// 2026-10-09, Punkt 3); loest er eine Sperre aus, deren einzige Antwort das Kreuz verbirgt, braeuchte der Nutzer sonst eine Frage, die
+/// nie kommt. Gemeint sind die zwei Wahlrechte, die eine einzelne Antwort aufloest: § 33b Abs. 1 S. 1 (Pauschbetrag oder Einzelnachweis)
+/// und § 35c Abs. 3 S. 2 (Doppelfoerderung). Alle anderen Sperrgruende liefern nichts.
+///
+/// Ob die Antwort fehlt, sagt die Sperre selbst: beide Gruende gelten, solange das Feld nicht BESTAETIGT ist (kein Ereignis oder
+/// vorlaeufig, wie `Antwort::Offen` der Fragenliste). `liste`: die Fragenliste; was schon darin steht, kommt nicht doppelt.
+///
+/// ```
+/// use bescheid::deklaration::sperrgrund_frage_felder;
+/// use domain::Sperrgrund;
+/// let grund = Some(Sperrgrund::P35cDoppelfoerderungOffen);
+/// assert_eq!(sperrgrund_frage_felder(grund, &[]), ["p35c_keine_doppelfoerderung"]);
+/// assert!(sperrgrund_frage_felder(grund, &["p35c_keine_doppelfoerderung"]).is_empty());
+/// assert!(sperrgrund_frage_felder(Some(Sperrgrund::DhfTatbestandOffen), &[]).is_empty());
+/// assert!(sperrgrund_frage_felder(None, &[]).is_empty());
+/// ```
+#[must_use]
+pub fn sperrgrund_frage_felder(grund: Option<Sperrgrund>, liste: &[&str]) -> Vec<&'static str> {
+    let frage = match grund {
+        Some(Sperrgrund::BehinderungsbedingteAufwendungenWahlrechtOffen) => "behinderungsbedingte_aufwendungen_wahlrecht_pb",
+        Some(Sperrgrund::P35cDoppelfoerderungOffen) => "p35c_keine_doppelfoerderung",
+        _ => return Vec::new(),
+    };
+    if liste.contains(&frage) {
+        Vec::new()
+    } else {
+        vec![frage]
     }
 }
 
