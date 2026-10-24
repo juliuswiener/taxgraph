@@ -83,6 +83,19 @@ fn kap_antrag_ohne_jahr_schreibt_nichts_und_scheitert_nicht() {
     assert_eq!(ganz(&mit_jahr, "kap_sparer_pauschbetrag_genutzt"), Some(100_000), "1.000 EUR Ertraege, Pauschbetrag 1.000 EUR: alles genutzt");
 }
 
+/// Anlage KAP: ein bestaetigter Kapitalertrag ausserhalb von `i64` ist KEIN Python-Fehler, den der Ring schluckt (Python rechnet mit
+/// beliebig grossen `int` weiter und haette eine Zahl), sondern ein `Ueberlauf`: der Aufruf scheitert, und es bleibt kein halber Eintrag.
+/// Nur Fehler MIT Python-Klasse fallen still weg (Test davor). Ein `cargo-mutants`-Lauf (2026-10-24) zeigte: der Zweig `Err(e) => return
+/// Err(e)` hatte keinen Test, die Bedingung davor liess sich auf `true` setzen.
+#[test]
+fn kap_antrag_mit_ueberlauf_scheitert_statt_still_zu_fehlen() {
+    let st = store(&[("kap_kapitalertraege", json!(10_000_000_000_000_000_000_u64), true)]);
+    let mut f = felder(&st);
+    let fehler = mit_ring_werten(&mut f, Some(Vz::Vz2025), params()).unwrap_err();
+    assert!(fehler.ist_ueberlauf(), "kein Ueberlauf: {fehler:?}");
+    assert!(!f.contains_key("kap_antrag_guenstigerpruefung"), "Eintrag trotz Fehler");
+}
+
 /// Toepfe XOR Aggregat je Person: ist EIN Topf belegt, rechnet der Ring aus den Toepfen und ignoriert das Aggregat; sonst aus dem
 /// Aggregat. Person B bei Zusammenveranlagung ebenso. Pauschbetrag 2025: 1.000 EUR einzeln, 2.000 EUR zusammen.
 #[test]
