@@ -374,9 +374,10 @@ fn nach_themen<'r>(
 ///
 /// Das Ziel bleibt eine Frage; nur seine STELLE aendert sich: direkt hinter den letzten Ausloeser,
 /// der noch weiter hinten steht. Mehrere Nachzuegler hinter demselben Ausloeser behalten ihre
-/// Reihenfolge, die Menge bleibt gleich. Ein Ausloeser mit eigener `ableitung` zaehlt nicht (keine
-/// Ketten; er koennte selbst nachruecken und seinen Nachzuegler verlieren), ebenso wenig einer, der
-/// nicht in der Gruppe steht (anderes Thema, schon beantwortet).
+/// Reihenfolge, die Menge bleibt gleich. Ein Ausloeser mit eigener `ableitung` zaehlt nicht, ebenso
+/// wenig einer, der selbst nachrueckt (keine Ketten; sein Nachzuegler stuende hinter einem Platz, den
+/// er verlaesst, und ginge verloren), und keiner, der nicht in der Gruppe steht (anderes Thema, schon
+/// beantwortet).
 // ponytail: nur Ausloeser derselben Gruppe. Liegt ein `und_feld` in einem anderen Thema, ordnet
 // `themen_folge` es nicht vor (dort gilt nur `aus`); heute gibt es keinen solchen Fall.
 fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
@@ -385,33 +386,59 @@ fn nach_ausloesern(gruppe: Vec<&Bindung>) -> Vec<&Bindung> {
         .enumerate()
         .map(|(i, b)| (b.feld_id.as_str(), i))
         .collect();
+    // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`- oder `wert`-Bedingung: die Antwort auf die
+    // IBAN entscheidet, ob der BIC noch gefragt wird, die Art der Versorgung, ob das Alter bei Versorgungsbeginn gefragt wird; also
+    // steht das Ziel dahinter.
+    // ponytail: nur diese beiden Arten. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland stand vor der Konfession,
+    // an der seine `wert_nicht`-Bedingung haengt, Fluss I Befund B; seit B1 ordnet die Eingangsfrage die Konfession davor, nicht die
+    // Bedingung); wer sie auch ordnen will, entscheidet das je Feld.
+    let ausloeser: Vec<Vec<&str>> = gruppe
+        .iter()
+        .map(|b| {
+            let mut x: Vec<&str> = b
+                .ableitung
+                .iter()
+                .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
+                .flatten()
+                .collect();
+            x.extend(
+                b.feld_bedingung
+                    .iter()
+                    .flat_map(FeldBedingung::und_glieder)
+                    .filter(|g| g.praefix_nicht.is_some() || g.wert.is_some())
+                    .map(|g| g.feld.as_str()),
+            );
+            x
+        })
+        .collect();
+    // Je Feld der Index des letzten Ausloesers, der weiter hinten steht und zaehlt; `zaehlt_nicht` sind die Felder, die selbst rueckten.
+    let ziele = |zaehlt_nicht: &HashSet<usize>| -> Vec<Option<usize>> {
+        ausloeser
+            .iter()
+            .enumerate()
+            .map(|(i, xs)| {
+                xs.iter()
+                    .filter_map(|x| ort.get(x).copied())
+                    .filter(|&j| {
+                        j > i
+                            && !zaehlt_nicht.contains(&j)
+                            && gruppe.get(j).is_some_and(|a| a.ableitung.is_none())
+                    })
+                    .max()
+            })
+            .collect()
+    };
+    // Zwei Durchgaenge: erst, wer ueberhaupt nachrueckt, dann ohne diese Felder als Ausloeser. Die Nachrueckenden des zweiten sind
+    // eine Teilmenge des ersten, also steht kein Ausloeser des zweiten unter ihnen.
+    let rueckt: HashSet<usize> = ziele(&HashSet::new())
+        .iter()
+        .enumerate()
+        .filter_map(|(i, j)| j.map(|_| i))
+        .collect();
     // Index des Ausloesers -> Indizes seiner Nachzuegler, in Gruppenordnung.
     let mut hinter: HashMap<usize, Vec<usize>> = HashMap::new();
-    for (i, b) in gruppe.iter().enumerate() {
-        // Ausloeser: Quelle und `und_feld` der Ableitung, dazu das Feld einer `praefix_nicht`-Bedingung: die Antwort auf die IBAN
-        // entscheidet, ob der BIC noch gefragt wird, also steht er dahinter.
-        // ponytail: nur `praefix_nicht`. Die Folge der uebrigen `feld_bedingung` ist gewollt (das Bundesland stand vor der
-        // Konfession, an der seine Bedingung haengt, Fluss I Befund B; seit B1 ordnet die Eingangsfrage die Konfession davor, nicht
-        // die Bedingung); wer sie auch ordnen will, entscheidet das je Feld.
-        let mut ausloeser: Vec<&str> = b
-            .ableitung
-            .iter()
-            .flat_map(|regel| [Some(regel.aus.as_str()), regel.und_feld.as_deref()])
-            .flatten()
-            .collect();
-        ausloeser.extend(
-            b.feld_bedingung
-                .iter()
-                .flat_map(FeldBedingung::und_glieder)
-                .filter(|g| g.praefix_nicht.is_some())
-                .map(|g| g.feld.as_str()),
-        );
-        let weiter_hinten = ausloeser
-            .into_iter()
-            .filter_map(|x| ort.get(x).copied())
-            .filter(|&j| j > i && gruppe.get(j).is_some_and(|a| a.ableitung.is_none()))
-            .max();
-        if let Some(j) = weiter_hinten {
+    for (i, j) in ziele(&rueckt).into_iter().enumerate() {
+        if let Some(j) = j {
             hinter.entry(j).or_default().push(i);
         }
     }
