@@ -390,7 +390,7 @@ bindungen:
     elster_kz: E0107208
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 35a Abs. 2 EStG"
+      quelle: "§ 35a Abs. 5 S. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_dienstleistung_betrag
@@ -409,7 +409,7 @@ bindungen:
     elster_kz: E0107207
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 35a Abs. 2 EStG"
+      quelle: "§ 35a Abs. 5 S. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_dienstleistung_art
@@ -426,7 +426,7 @@ bindungen:
     elster_kz: E0107206
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 35a Abs. 2 EStG"
+      quelle: "§ 35a Abs. 5 S. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
   - feld_id: hh_handwerker_arbeitskosten

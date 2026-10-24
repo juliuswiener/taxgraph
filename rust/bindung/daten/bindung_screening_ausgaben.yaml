@@ -442,7 +442,7 @@ bindungen:
     elster_kz_grund: "Zahl der Instanzen, kein Vordruck-Kz — sie ergibt sich aus der Zahl der ausgefuellten Anlagen bzw. Zeilen."
     vz_gueltigkeit: [2024, 2025, 2026]
     anker_ref:
-      quelle: "§ 35a Abs. 2 EStG"
+      quelle: "§ 35a Abs. 5 S. 2 EStG"
       zitatanker: "gilt nur für Arbeitskosten"
       datei: "sources/gesetze-im-internet/estg_p35a_2026-07-09.txt"
 
