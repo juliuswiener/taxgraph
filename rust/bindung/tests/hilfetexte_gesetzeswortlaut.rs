@@ -105,12 +105,21 @@ fn eintrag(datei: &'static str, kennung: &str, id: &str) -> &'static Mapping {
     treffer[0]
 }
 
-/// Der Text `feld` des Eintrags `kennung: id` in `datei`.
+/// Der Text `feld` des Eintrags `kennung: id` in `datei`. `feld` darf ein Pfad mit `/` sein
+/// (`feld_bedingung/grund`: der `grund` steht im Unterabschnitt).
 fn text(datei: &'static str, kennung: &str, id: &str, feld: &str) -> String {
-    eintrag(datei, kennung, id)
-        .get(feld)
-        .and_then(Value::as_str)
-        .unwrap_or_else(|| panic!("{datei}: {id} hat kein Textfeld {feld}"))
+    let mut teile = feld.split('/');
+    let erst = teile.next().unwrap_or(feld);
+    let mut v = eintrag(datei, kennung, id)
+        .get(erst)
+        .unwrap_or_else(|| panic!("{datei}: {id} hat kein Feld {erst}"));
+    for t in teile {
+        v = v
+            .get(t)
+            .unwrap_or_else(|| panic!("{datei}: {id} hat kein Feld {t} unter {feld}"));
+    }
+    v.as_str()
+        .unwrap_or_else(|| panic!("{datei}: {id}/{feld} ist kein Text"))
         .to_owned()
 }
 
@@ -421,4 +430,34 @@ fn die_35a_gruppen_nennen_abs_5_satz_2_fuer_die_arbeitskosten() {
         });
     }
     pruefe_faelle(&faelle);
+}
+
+// ------------------------------------------------------------------------------- Satz der Fundstelle
+
+/// § 33 Abs. 2a `EStG`: S. 1 ordnet die Pauschale an, S. 2 nennt, wer sie erhaelt (Grad der Behinderung von
+/// mindestens 80 oder mindestens 70 mit Merkzeichen G; Merkzeichen aG, Bl, `TBl` oder H).
+#[test]
+fn der_grund_der_fahrtkostenpauschale_nennt_satz_2_und_die_grenze_70() {
+    pruefe_faelle(&[Fall {
+        datei: "bindung_regel_bedingungen.yaml",
+        kennung: "regel_id",
+        id: "p33_2a_fahrtkostenpauschale",
+        feld: "grund",
+        muss: &["Abs. 2a S. 2", "mindestens 70"],
+        verboten: &["Abs. 2a S. 1", "ab 80"],
+    }]);
+}
+
+/// § 33b Abs. 3 `EStG`: S. 3 gewaehrt den erhoehten Pauschbetrag (Hilflose, Blinde, Taubblinde), S. 4 erklaert nur
+/// "hilflos". Die Merkzeichen H, Bl, `TBl` stehen nicht im Wortlaut und gehoeren nicht in den Grund.
+#[test]
+fn der_grund_der_hilflos_frage_nennt_satz_3_fuer_den_erhoehten_pauschbetrag() {
+    pruefe_faelle(&[Fall {
+        datei: "bindung_rentner.yaml",
+        kennung: FELD_ID,
+        id: "rentner_hilflos_blind_taubblind_partner",
+        feld: "feld_bedingung/grund",
+        muss: &["Abs. 3 S. 3", "im Sinne von S. 4"],
+        verboten: &["Abs. 3 S. 4", "Merkzeichen"],
+    }]);
 }
