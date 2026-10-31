@@ -190,7 +190,8 @@ const HANDLER: &[(&str, Handler)] = &[
     ("haushaltsnahe", |e| {
         let minijob = e.zahl("minijob_aufwendungen")?;
         let dienst = e.zahl("haushaltsnahe_dienstleistungen")?;
-        Ok(einzel("steuerermaessigung", haushaltsnahe(minijob, dienst, e.zahl("handwerker_arbeitskosten")?)))
+        let handwerker = e.zahl("handwerker_arbeitskosten")?;
+        Ok(einzel("steuerermaessigung", haushaltsnahe(minijob, dienst, handwerker, e.wahr("hoechstbetraege_geteilt")?)))
     }),
     ("verlustvortrag_abzug", |e| {
         let gde = e.zahl("gesamtbetrag_einkuenfte")?;

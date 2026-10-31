@@ -86,20 +86,70 @@ const catala_type catala_type__Haushaltsnahe__TestNullAufwand()
     "g", catala_type_money);
 }
 
+typedef struct Haushaltsnahe__TestAlleinstehendeBeispiel9 {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeBeispiel9;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeBeispiel9()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestAlleinstehendeBeispiel9", 1,
+    "g", catala_type_money);
+}
+
+typedef struct Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestAlleinstehendeDienstleistungUnterHalbemDeckel", 1,
+    "g", catala_type_money);
+}
+
+typedef struct Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestAlleinstehendeAlleDreiAmHalbenDeckel", 1,
+    "g", catala_type_money);
+}
+
+typedef struct Haushaltsnahe__TestOhneTeilungBeispiel9 {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestOhneTeilungBeispiel9;
+const catala_type catala_type__Haushaltsnahe__TestOhneTeilungBeispiel9()
+{
+  static catala_type ty = {UNINITIALIZED};
+  static struct catala_label_type fields[1];
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, fields, "TestOhneTeilungBeispiel9", 1,
+    "g", catala_type_money);
+}
+
 typedef struct Haushaltsnahe__Haushaltsnahe_in {
   CATALA_MONEY Haushaltsnahe__minijob_aufwendungen_in;
   CATALA_MONEY Haushaltsnahe__haushaltsnahe_dienstleistungen_in;
   CATALA_MONEY Haushaltsnahe__handwerker_arbeitskosten_in;
+  CATALA_BOOL Haushaltsnahe__hoechstbetraege_geteilt_in;
 } Haushaltsnahe__Haushaltsnahe_in;
 const catala_type catala_type__Haushaltsnahe__Haushaltsnahe_in()
 {
   static catala_type ty = {UNINITIALIZED};
-  static struct catala_label_type fields[3];
+  static struct catala_label_type fields[4];
   if (ty.kind != UNINITIALIZED) return ty;
-  return catala_type_struct(&ty, fields, "Haushaltsnahe_in", 3,
+  return catala_type_struct(&ty, fields, "Haushaltsnahe_in", 4,
     "minijob_aufwendungen_in", catala_type_money,
     "haushaltsnahe_dienstleistungen_in", catala_type_money,
-    "handwerker_arbeitskosten_in", catala_type_money);
+    "handwerker_arbeitskosten_in", catala_type_money,
+    "hoechstbetraege_geteilt_in", catala_type_bool);
 }
 
 typedef void Haushaltsnahe__TestMinijobDeckel_in;
@@ -142,36 +192,91 @@ const catala_type catala_type__Haushaltsnahe__TestNullAufwand_in()
   return catala_type_struct(&ty, NULL, "TestNullAufwand_in", 0);
 }
 
+typedef void Haushaltsnahe__TestAlleinstehendeBeispiel9_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeBeispiel9_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestAlleinstehendeBeispiel9_in", 0);
+}
+
+typedef void Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestAlleinstehendeDienstleistungUnterHalbemDeckel_in", 0);
+}
+
+typedef void Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestAlleinstehendeAlleDreiAmHalbenDeckel_in", 0);
+}
+
+typedef void Haushaltsnahe__TestOhneTeilungBeispiel9_in;
+const catala_type catala_type__Haushaltsnahe__TestOhneTeilungBeispiel9_in()
+{
+  static catala_type ty = {UNINITIALIZED};
+  if (ty.kind != UNINITIALIZED) return ty;
+  return catala_type_struct(&ty, NULL, "TestOhneTeilungBeispiel9_in", 0);
+}
+
 const catala_code_position Haushaltsnahe__loc[][1] = {
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 25, 12, 25, 29}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 26, 12, 26, 29}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 27, 12, 27, 29}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 32, 8, 32, 45}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 37, 8, 37, 57}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 42, 8, 42, 51}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 47, 5, 47, 22}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 47, 25, 47, 42}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 47, 45, 47, 62}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 56, 12, 56, 13}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 63, 23, 63, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 64, 3, 64, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 64, 13, 64, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 71, 12, 71, 13}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 78, 23, 78, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 79, 3, 79, 26}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 79, 13, 79, 26}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 86, 12, 86, 13}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 93, 23, 93, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 94, 3, 94, 26}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 94, 13, 94, 26}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 101, 12, 101, 13}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 108, 23, 108, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 109, 3, 109, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 109, 13, 109, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 116, 12, 116, 13}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 123, 23, 123, 24}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 124, 3, 124, 22}},
-  {{"rules/estg/p35a/haushaltsnahe.catala_en", 124, 13, 124, 22}}
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 35, 12, 35, 32}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 36, 12, 36, 29}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 37, 12, 37, 29}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 38, 12, 38, 29}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 48, 8, 48, 68}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 48, 48, 48, 68}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 49, 20, 49, 40}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 53, 8, 53, 80}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 53, 60, 53, 80}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 54, 22, 54, 42}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 58, 8, 58, 74}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 58, 54, 58, 74}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 59, 22, 59, 42}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 63, 5, 63, 22}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 63, 25, 63, 42}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 63, 45, 63, 62}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 72, 12, 72, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 80, 23, 80, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 81, 3, 81, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 81, 13, 81, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 88, 12, 88, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 96, 23, 96, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 97, 3, 97, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 97, 13, 97, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 104, 12, 104, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 112, 23, 112, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 113, 3, 113, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 113, 13, 113, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 120, 12, 120, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 128, 23, 128, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 129, 3, 129, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 129, 13, 129, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 136, 12, 136, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 144, 23, 144, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 145, 3, 145, 22}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 145, 13, 145, 22}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 156, 12, 156, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 164, 23, 164, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 165, 3, 165, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 165, 13, 165, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 172, 12, 172, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 180, 23, 180, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 181, 3, 181, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 181, 13, 181, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 188, 12, 188, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 196, 23, 196, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 197, 3, 197, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 197, 13, 197, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 204, 12, 204, 13}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 212, 23, 212, 24}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 213, 3, 213, 26}},
+  {{"rules/estg/p35a/haushaltsnahe.catala_en", 213, 13, 213, 26}}
 };
 
 const Haushaltsnahe__Haushaltsnahe* Haushaltsnahe__haushaltsnahe
@@ -183,19 +288,29 @@ const Haushaltsnahe__Haushaltsnahe* Haushaltsnahe__haushaltsnahe
     haushaltsnahe_in->Haushaltsnahe__haushaltsnahe_dienstleistungen_in;
   CATALA_MONEY handwerker_arbeitskosten =
     haushaltsnahe_in->Haushaltsnahe__handwerker_arbeitskosten_in;
+  CATALA_BOOL hoechstbetraege_geteilt =
+    haushaltsnahe_in->Haushaltsnahe__hoechstbetraege_geteilt_in;
+  const CATALA_OPTION(CATALA_TUPLE(CATALA_DEC;CATALA_POSITION))
+    anteil_hoechstbetrag;
+  CATALA_DEC anteil_hoechstbetrag__2;
+  CATALA_TUPLE(CATALA_DEC;CATALA_POSITION) const anteil_hoechstbetrag__1 =
+    catala_malloc(2 * sizeof(tuple_element*));
   const CATALA_OPTION(CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION))
     ermaessigung_abs1;
   CATALA_MONEY ermaessigung_abs1__2;
+  CATALA_DEC ermaessigung_abs1__3;
   CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION) const ermaessigung_abs1__1 =
     catala_malloc(2 * sizeof(tuple_element*));
   const CATALA_OPTION(CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION))
     ermaessigung_abs2;
   CATALA_MONEY ermaessigung_abs2__2;
+  CATALA_DEC ermaessigung_abs2__3;
   CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION) const ermaessigung_abs2__1 =
     catala_malloc(2 * sizeof(tuple_element*));
   const CATALA_OPTION(CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION))
     ermaessigung_abs3;
   CATALA_MONEY ermaessigung_abs3__2;
+  CATALA_DEC ermaessigung_abs3__3;
   CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION) const ermaessigung_abs3__1 =
     catala_malloc(2 * sizeof(tuple_element*));
   CATALA_MONEY steuerermaessigung;
@@ -204,48 +319,111 @@ const Haushaltsnahe__Haushaltsnahe* Haushaltsnahe__haushaltsnahe
   CATALA_MONEY steuerermaessigung__3;
   Haushaltsnahe__Haushaltsnahe* const haushaltsnahe =
     catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe));
+  if (CATALA_TRUE == hoechstbetraege_geteilt) {
+    anteil_hoechstbetrag__2 = catala_new_frac(1, 2);
+  } else {
+    anteil_hoechstbetrag__2 = catala_new_frac(1, 1);
+  }
+  anteil_hoechstbetrag__1[0].content = anteil_hoechstbetrag__2;
+  anteil_hoechstbetrag__1[1].content = Haushaltsnahe__loc[0];
+  anteil_hoechstbetrag = catala_some(anteil_hoechstbetrag__1);
+  if (anteil_hoechstbetrag->code == catala_option_some) {
+    const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+      arg = anteil_hoechstbetrag->payload;
+    ermaessigung_abs1__3 = ((CATALA_DEC)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[5], 1, NULL);
+    abort();
+  }
   if (CATALA_TRUE ==
-      o_gt(catala_type_money, Haushaltsnahe__loc[3],
+      o_gt(catala_type_money, Haushaltsnahe__loc[4],
            o_mult_mon_rat(minijob_aufwendungen, catala_new_frac(1, 5)),
-           catala_new_money(51000))) {
-    ermaessigung_abs1__2 = catala_new_money(51000);
+           o_mult_mon_rat(catala_new_money(51000), ermaessigung_abs1__3))) {
+    CATALA_DEC ermaessigung_abs1__4;
+    if (anteil_hoechstbetrag->code == catala_option_some) {
+      const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+        arg = anteil_hoechstbetrag->payload;
+      ermaessigung_abs1__4 = ((CATALA_DEC)(arg[0].content));
+    } else {
+      catala_error(catala_no_value, Haushaltsnahe__loc[6], 1, NULL);
+      abort();
+    }
+    ermaessigung_abs1__2 = o_mult_mon_rat(catala_new_money(51000),
+                                          ermaessigung_abs1__4);
   } else {
     ermaessigung_abs1__2 = o_mult_mon_rat(minijob_aufwendungen,
                                           catala_new_frac(1, 5));
   }
   ermaessigung_abs1__1[0].content = ermaessigung_abs1__2;
-  ermaessigung_abs1__1[1].content = Haushaltsnahe__loc[0];
+  ermaessigung_abs1__1[1].content = Haushaltsnahe__loc[1];
   ermaessigung_abs1 = catala_some(ermaessigung_abs1__1);
+  if (anteil_hoechstbetrag->code == catala_option_some) {
+    const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+      arg = anteil_hoechstbetrag->payload;
+    ermaessigung_abs2__3 = ((CATALA_DEC)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[8], 1, NULL);
+    abort();
+  }
   if (CATALA_TRUE ==
-      o_gt(catala_type_money, Haushaltsnahe__loc[4],
+      o_gt(catala_type_money, Haushaltsnahe__loc[7],
            o_mult_mon_rat(haushaltsnahe_dienstleistungen,
-                          catala_new_frac(1, 5)), catala_new_money(400000))) {
-    ermaessigung_abs2__2 = catala_new_money(400000);
+                          catala_new_frac(1, 5)),
+           o_mult_mon_rat(catala_new_money(400000), ermaessigung_abs2__3))) {
+    CATALA_DEC ermaessigung_abs2__4;
+    if (anteil_hoechstbetrag->code == catala_option_some) {
+      const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+        arg = anteil_hoechstbetrag->payload;
+      ermaessigung_abs2__4 = ((CATALA_DEC)(arg[0].content));
+    } else {
+      catala_error(catala_no_value, Haushaltsnahe__loc[9], 1, NULL);
+      abort();
+    }
+    ermaessigung_abs2__2 = o_mult_mon_rat(catala_new_money(400000),
+                                          ermaessigung_abs2__4);
   } else {
     ermaessigung_abs2__2 = o_mult_mon_rat(haushaltsnahe_dienstleistungen,
                                           catala_new_frac(1, 5));
   }
   ermaessigung_abs2__1[0].content = ermaessigung_abs2__2;
-  ermaessigung_abs2__1[1].content = Haushaltsnahe__loc[1];
+  ermaessigung_abs2__1[1].content = Haushaltsnahe__loc[2];
   ermaessigung_abs2 = catala_some(ermaessigung_abs2__1);
+  if (anteil_hoechstbetrag->code == catala_option_some) {
+    const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+      arg = anteil_hoechstbetrag->payload;
+    ermaessigung_abs3__3 = ((CATALA_DEC)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[11], 1, NULL);
+    abort();
+  }
   if (CATALA_TRUE ==
-      o_gt(catala_type_money, Haushaltsnahe__loc[5],
+      o_gt(catala_type_money, Haushaltsnahe__loc[10],
            o_mult_mon_rat(handwerker_arbeitskosten, catala_new_frac(1, 5)),
-           catala_new_money(120000))) {
-    ermaessigung_abs3__2 = catala_new_money(120000);
+           o_mult_mon_rat(catala_new_money(120000), ermaessigung_abs3__3))) {
+    CATALA_DEC ermaessigung_abs3__4;
+    if (anteil_hoechstbetrag->code == catala_option_some) {
+      const CATALA_TUPLE(CATALA_DEC;CATALA_POSITION)
+        arg = anteil_hoechstbetrag->payload;
+      ermaessigung_abs3__4 = ((CATALA_DEC)(arg[0].content));
+    } else {
+      catala_error(catala_no_value, Haushaltsnahe__loc[12], 1, NULL);
+      abort();
+    }
+    ermaessigung_abs3__2 = o_mult_mon_rat(catala_new_money(120000),
+                                          ermaessigung_abs3__4);
   } else {
     ermaessigung_abs3__2 = o_mult_mon_rat(handwerker_arbeitskosten,
                                           catala_new_frac(1, 5));
   }
   ermaessigung_abs3__1[0].content = ermaessigung_abs3__2;
-  ermaessigung_abs3__1[1].content = Haushaltsnahe__loc[2];
+  ermaessigung_abs3__1[1].content = Haushaltsnahe__loc[3];
   ermaessigung_abs3 = catala_some(ermaessigung_abs3__1);
   if (ermaessigung_abs1->code == catala_option_some) {
     const CATALA_TUPLE(CATALA_MONEY;CATALA_POSITION)
       arg = ermaessigung_abs1->payload;
     steuerermaessigung__1 = ((CATALA_MONEY)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[6], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[13], 1, NULL);
     abort();
   }
   if (ermaessigung_abs2->code == catala_option_some) {
@@ -253,7 +431,7 @@ const Haushaltsnahe__Haushaltsnahe* Haushaltsnahe__haushaltsnahe
       arg = ermaessigung_abs2->payload;
     steuerermaessigung__2 = ((CATALA_MONEY)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[7], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[14], 1, NULL);
     abort();
   }
   if (ermaessigung_abs3->code == catala_option_some) {
@@ -261,7 +439,7 @@ const Haushaltsnahe__Haushaltsnahe* Haushaltsnahe__haushaltsnahe
       arg = ermaessigung_abs3->payload;
     steuerermaessigung__3 = ((CATALA_MONEY)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[8], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[15], 1, NULL);
     abort();
   }
   steuerermaessigung = o_add_mon_mon(o_add_mon_mon(steuerermaessigung__1,
@@ -293,30 +471,31 @@ const Haushaltsnahe__TestMinijobDeckel* Haushaltsnahe__test_minijob_deckel
     catala_new_money(0);
   result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
     catala_new_money(0);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
   result = Haushaltsnahe__haushaltsnahe(result__1);
   r__2->Haushaltsnahe__steuerermaessigung =
     result->Haushaltsnahe__steuerermaessigung;
   r__1[0].content = r__2;
-  r__1[1].content = Haushaltsnahe__loc[9];
+  r__1[1].content = Haushaltsnahe__loc[16];
   r = catala_some(r__1);
   if (r->code == catala_option_some) {
     const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
       arg = r->payload;
     g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[10], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[17], 1, NULL);
     abort();
   }
   g = g__1->Haushaltsnahe__steuerermaessigung;
   if (CATALA_FALSE ==
-      o_eq(catala_type_money, Haushaltsnahe__loc[12], g,
+      o_eq(catala_type_money, Haushaltsnahe__loc[19], g,
            catala_new_money(51000))) {
     fputs("g = ", stderr);
     catala_errbuf.indent += 2;
     catala_print (catala_errbuf, embed(catala_type_money, g));
     catala_errbuf.indent -= 2;
     fputc('\n', stderr);
-    catala_error(catala_assertion_failed, Haushaltsnahe__loc[11], 1, NULL);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[18], 1, NULL);
     abort();
   }
   test_minijob_deckel->Haushaltsnahe__g = g;
@@ -345,30 +524,31 @@ const Haushaltsnahe__TestHandwerkerDeckel*
     catala_new_money(0);
   result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
     catala_new_money(1000000);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
   result = Haushaltsnahe__haushaltsnahe(result__1);
   r__2->Haushaltsnahe__steuerermaessigung =
     result->Haushaltsnahe__steuerermaessigung;
   r__1[0].content = r__2;
-  r__1[1].content = Haushaltsnahe__loc[13];
+  r__1[1].content = Haushaltsnahe__loc[20];
   r = catala_some(r__1);
   if (r->code == catala_option_some) {
     const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
       arg = r->payload;
     g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[14], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[21], 1, NULL);
     abort();
   }
   g = g__1->Haushaltsnahe__steuerermaessigung;
   if (CATALA_FALSE ==
-      o_eq(catala_type_money, Haushaltsnahe__loc[16], g,
+      o_eq(catala_type_money, Haushaltsnahe__loc[23], g,
            catala_new_money(120000))) {
     fputs("g = ", stderr);
     catala_errbuf.indent += 2;
     catala_print (catala_errbuf, embed(catala_type_money, g));
     catala_errbuf.indent -= 2;
     fputc('\n', stderr);
-    catala_error(catala_assertion_failed, Haushaltsnahe__loc[15], 1, NULL);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[22], 1, NULL);
     abort();
   }
   test_handwerker_deckel->Haushaltsnahe__g = g;
@@ -398,30 +578,31 @@ const Haushaltsnahe__TestSummeDreiToepfe*
     catala_new_money(0);
   result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
     catala_new_money(1000000);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
   result = Haushaltsnahe__haushaltsnahe(result__1);
   r__2->Haushaltsnahe__steuerermaessigung =
     result->Haushaltsnahe__steuerermaessigung;
   r__1[0].content = r__2;
-  r__1[1].content = Haushaltsnahe__loc[17];
+  r__1[1].content = Haushaltsnahe__loc[24];
   r = catala_some(r__1);
   if (r->code == catala_option_some) {
     const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
       arg = r->payload;
     g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[18], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[25], 1, NULL);
     abort();
   }
   g = g__1->Haushaltsnahe__steuerermaessigung;
   if (CATALA_FALSE ==
-      o_eq(catala_type_money, Haushaltsnahe__loc[20], g,
+      o_eq(catala_type_money, Haushaltsnahe__loc[27], g,
            catala_new_money(171000))) {
     fputs("g = ", stderr);
     catala_errbuf.indent += 2;
     catala_print (catala_errbuf, embed(catala_type_money, g));
     catala_errbuf.indent -= 2;
     fputc('\n', stderr);
-    catala_error(catala_assertion_failed, Haushaltsnahe__loc[19], 1, NULL);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[26], 1, NULL);
     abort();
   }
   test_summe_drei_toepfe->Haushaltsnahe__g = g;
@@ -452,30 +633,31 @@ const Haushaltsnahe__TestDienstleistungUnterDeckel*
     catala_new_money(300000);
   result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
     catala_new_money(0);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
   result = Haushaltsnahe__haushaltsnahe(result__1);
   r__2->Haushaltsnahe__steuerermaessigung =
     result->Haushaltsnahe__steuerermaessigung;
   r__1[0].content = r__2;
-  r__1[1].content = Haushaltsnahe__loc[21];
+  r__1[1].content = Haushaltsnahe__loc[28];
   r = catala_some(r__1);
   if (r->code == catala_option_some) {
     const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
       arg = r->payload;
     g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[22], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[29], 1, NULL);
     abort();
   }
   g = g__1->Haushaltsnahe__steuerermaessigung;
   if (CATALA_FALSE ==
-      o_eq(catala_type_money, Haushaltsnahe__loc[24], g,
+      o_eq(catala_type_money, Haushaltsnahe__loc[31], g,
            catala_new_money(60000))) {
     fputs("g = ", stderr);
     catala_errbuf.indent += 2;
     catala_print (catala_errbuf, embed(catala_type_money, g));
     catala_errbuf.indent -= 2;
     fputc('\n', stderr);
-    catala_error(catala_assertion_failed, Haushaltsnahe__loc[23], 1, NULL);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[30], 1, NULL);
     abort();
   }
   test_dienstleistung_unter_deckel->Haushaltsnahe__g = g;
@@ -503,32 +685,257 @@ const Haushaltsnahe__TestNullAufwand* Haushaltsnahe__test_null_aufwand
     catala_new_money(0);
   result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
     catala_new_money(0);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
   result = Haushaltsnahe__haushaltsnahe(result__1);
   r__2->Haushaltsnahe__steuerermaessigung =
     result->Haushaltsnahe__steuerermaessigung;
   r__1[0].content = r__2;
-  r__1[1].content = Haushaltsnahe__loc[25];
+  r__1[1].content = Haushaltsnahe__loc[32];
   r = catala_some(r__1);
   if (r->code == catala_option_some) {
     const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
       arg = r->payload;
     g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
   } else {
-    catala_error(catala_no_value, Haushaltsnahe__loc[26], 1, NULL);
+    catala_error(catala_no_value, Haushaltsnahe__loc[33], 1, NULL);
     abort();
   }
   g = g__1->Haushaltsnahe__steuerermaessigung;
   if (CATALA_FALSE ==
-      o_eq(catala_type_money, Haushaltsnahe__loc[28], g, catala_new_money(0))) {
+      o_eq(catala_type_money, Haushaltsnahe__loc[35], g, catala_new_money(0))) {
     fputs("g = ", stderr);
     catala_errbuf.indent += 2;
     catala_print (catala_errbuf, embed(catala_type_money, g));
     catala_errbuf.indent -= 2;
     fputc('\n', stderr);
-    catala_error(catala_assertion_failed, Haushaltsnahe__loc[27], 1, NULL);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[34], 1, NULL);
     abort();
   }
   test_null_aufwand->Haushaltsnahe__g = g;
   return test_null_aufwand;
+}
+
+const Haushaltsnahe__TestAlleinstehendeBeispiel9*
+    Haushaltsnahe__test_alleinstehende_beispiel9
+    (const Haushaltsnahe__TestAlleinstehendeBeispiel9_in*
+       test_alleinstehende_beispiel9_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION))
+    r;
+  const Haushaltsnahe__Haushaltsnahe* result;
+  Haushaltsnahe__Haushaltsnahe_in* const result__1 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe_in));
+  Haushaltsnahe__Haushaltsnahe* const r__2 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe));
+  CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION) const r__1 =
+    catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const Haushaltsnahe__Haushaltsnahe* g__1;
+  Haushaltsnahe__TestAlleinstehendeBeispiel9* const
+    test_alleinstehende_beispiel9 =
+    catala_malloc(sizeof(Haushaltsnahe__TestAlleinstehendeBeispiel9));
+  result__1->Haushaltsnahe__minijob_aufwendungen_in =
+    catala_new_money(280000);
+  result__1->Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
+    catala_new_money(0);
+  result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
+    catala_new_money(450000);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_TRUE;
+  result = Haushaltsnahe__haushaltsnahe(result__1);
+  r__2->Haushaltsnahe__steuerermaessigung =
+    result->Haushaltsnahe__steuerermaessigung;
+  r__1[0].content = r__2;
+  r__1[1].content = Haushaltsnahe__loc[36];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[37], 1, NULL);
+    abort();
+  }
+  g = g__1->Haushaltsnahe__steuerermaessigung;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, Haushaltsnahe__loc[39], g,
+           catala_new_money(85500))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[38], 1, NULL);
+    abort();
+  }
+  test_alleinstehende_beispiel9->Haushaltsnahe__g = g;
+  return test_alleinstehende_beispiel9;
+}
+
+const Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel*
+    Haushaltsnahe__test_alleinstehende_dienstleistung_unter_halbem_deckel
+    (const Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in*
+       test_alleinstehende_dienstleistung_unter_halbem_deckel_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION))
+    r;
+  const Haushaltsnahe__Haushaltsnahe* result;
+  Haushaltsnahe__Haushaltsnahe_in* const result__1 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe_in));
+  Haushaltsnahe__Haushaltsnahe* const r__2 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe));
+  CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION) const r__1 =
+    catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const Haushaltsnahe__Haushaltsnahe* g__1;
+  Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel* const
+    test_alleinstehende_dienstleistung_unter_halbem_deckel =
+    catala_malloc(sizeof(Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel));
+  result__1->Haushaltsnahe__minijob_aufwendungen_in = catala_new_money(0);
+  result__1->Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
+    catala_new_money(500000);
+  result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
+    catala_new_money(0);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_TRUE;
+  result = Haushaltsnahe__haushaltsnahe(result__1);
+  r__2->Haushaltsnahe__steuerermaessigung =
+    result->Haushaltsnahe__steuerermaessigung;
+  r__1[0].content = r__2;
+  r__1[1].content = Haushaltsnahe__loc[40];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[41], 1, NULL);
+    abort();
+  }
+  g = g__1->Haushaltsnahe__steuerermaessigung;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, Haushaltsnahe__loc[43], g,
+           catala_new_money(100000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[42], 1, NULL);
+    abort();
+  }
+  test_alleinstehende_dienstleistung_unter_halbem_deckel->Haushaltsnahe__g =
+    g;
+  return test_alleinstehende_dienstleistung_unter_halbem_deckel;
+}
+
+const Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel*
+    Haushaltsnahe__test_alleinstehende_alle_drei_am_halben_deckel
+    (const Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in*
+       test_alleinstehende_alle_drei_am_halben_deckel_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION))
+    r;
+  const Haushaltsnahe__Haushaltsnahe* result;
+  Haushaltsnahe__Haushaltsnahe_in* const result__1 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe_in));
+  Haushaltsnahe__Haushaltsnahe* const r__2 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe));
+  CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION) const r__1 =
+    catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const Haushaltsnahe__Haushaltsnahe* g__1;
+  Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel* const
+    test_alleinstehende_alle_drei_am_halben_deckel =
+    catala_malloc(sizeof(Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel));
+  result__1->Haushaltsnahe__minijob_aufwendungen_in =
+    catala_new_money(300000);
+  result__1->Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
+    catala_new_money(3000000);
+  result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
+    catala_new_money(1000000);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_TRUE;
+  result = Haushaltsnahe__haushaltsnahe(result__1);
+  r__2->Haushaltsnahe__steuerermaessigung =
+    result->Haushaltsnahe__steuerermaessigung;
+  r__1[0].content = r__2;
+  r__1[1].content = Haushaltsnahe__loc[44];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[45], 1, NULL);
+    abort();
+  }
+  g = g__1->Haushaltsnahe__steuerermaessigung;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, Haushaltsnahe__loc[47], g,
+           catala_new_money(285500))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[46], 1, NULL);
+    abort();
+  }
+  test_alleinstehende_alle_drei_am_halben_deckel->Haushaltsnahe__g = g;
+  return test_alleinstehende_alle_drei_am_halben_deckel;
+}
+
+const Haushaltsnahe__TestOhneTeilungBeispiel9*
+    Haushaltsnahe__test_ohne_teilung_beispiel9
+    (const Haushaltsnahe__TestOhneTeilungBeispiel9_in*
+       test_ohne_teilung_beispiel9_in)
+{
+  const CATALA_OPTION(CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION))
+    r;
+  const Haushaltsnahe__Haushaltsnahe* result;
+  Haushaltsnahe__Haushaltsnahe_in* const result__1 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe_in));
+  Haushaltsnahe__Haushaltsnahe* const r__2 =
+    catala_malloc(sizeof(Haushaltsnahe__Haushaltsnahe));
+  CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION) const r__1 =
+    catala_malloc(2 * sizeof(tuple_element*));
+  CATALA_MONEY g;
+  const Haushaltsnahe__Haushaltsnahe* g__1;
+  Haushaltsnahe__TestOhneTeilungBeispiel9* const
+    test_ohne_teilung_beispiel9 =
+    catala_malloc(sizeof(Haushaltsnahe__TestOhneTeilungBeispiel9));
+  result__1->Haushaltsnahe__minijob_aufwendungen_in =
+    catala_new_money(280000);
+  result__1->Haushaltsnahe__haushaltsnahe_dienstleistungen_in =
+    catala_new_money(0);
+  result__1->Haushaltsnahe__handwerker_arbeitskosten_in =
+    catala_new_money(450000);
+  result__1->Haushaltsnahe__hoechstbetraege_geteilt_in = CATALA_FALSE;
+  result = Haushaltsnahe__haushaltsnahe(result__1);
+  r__2->Haushaltsnahe__steuerermaessigung =
+    result->Haushaltsnahe__steuerermaessigung;
+  r__1[0].content = r__2;
+  r__1[1].content = Haushaltsnahe__loc[48];
+  r = catala_some(r__1);
+  if (r->code == catala_option_some) {
+    const CATALA_TUPLE(Haushaltsnahe__Haushaltsnahe*;CATALA_POSITION)
+      arg = r->payload;
+    g__1 = ((Haushaltsnahe__Haushaltsnahe*)(arg[0].content));
+  } else {
+    catala_error(catala_no_value, Haushaltsnahe__loc[49], 1, NULL);
+    abort();
+  }
+  g = g__1->Haushaltsnahe__steuerermaessigung;
+  if (CATALA_FALSE ==
+      o_eq(catala_type_money, Haushaltsnahe__loc[51], g,
+           catala_new_money(141000))) {
+    fputs("g = ", stderr);
+    catala_errbuf.indent += 2;
+    catala_print (catala_errbuf, embed(catala_type_money, g));
+    catala_errbuf.indent -= 2;
+    fputc('\n', stderr);
+    catala_error(catala_assertion_failed, Haushaltsnahe__loc[50], 1, NULL);
+    abort();
+  }
+  test_ohne_teilung_beispiel9->Haushaltsnahe__g = g;
+  return test_ohne_teilung_beispiel9;
 }
 

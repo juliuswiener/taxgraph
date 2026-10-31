@@ -43,10 +43,31 @@ typedef struct Haushaltsnahe__TestNullAufwand {
 } Haushaltsnahe__TestNullAufwand;
 const catala_type catala_type__Haushaltsnahe__TestNullAufwand();
 
+typedef struct Haushaltsnahe__TestAlleinstehendeBeispiel9 {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeBeispiel9;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeBeispiel9();
+
+typedef struct Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel();
+
+typedef struct Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel();
+
+typedef struct Haushaltsnahe__TestOhneTeilungBeispiel9 {
+  CATALA_MONEY Haushaltsnahe__g;
+} Haushaltsnahe__TestOhneTeilungBeispiel9;
+const catala_type catala_type__Haushaltsnahe__TestOhneTeilungBeispiel9();
+
 typedef struct Haushaltsnahe__Haushaltsnahe_in {
   CATALA_MONEY Haushaltsnahe__minijob_aufwendungen_in;
   CATALA_MONEY Haushaltsnahe__haushaltsnahe_dienstleistungen_in;
   CATALA_MONEY Haushaltsnahe__handwerker_arbeitskosten_in;
+  CATALA_BOOL Haushaltsnahe__hoechstbetraege_geteilt_in;
 } Haushaltsnahe__Haushaltsnahe_in;
 const catala_type catala_type__Haushaltsnahe__Haushaltsnahe_in();
 
@@ -64,6 +85,18 @@ const catala_type catala_type__Haushaltsnahe__TestDienstleistungUnterDeckel_in()
 
 typedef void Haushaltsnahe__TestNullAufwand_in;
 const catala_type catala_type__Haushaltsnahe__TestNullAufwand_in();
+
+typedef void Haushaltsnahe__TestAlleinstehendeBeispiel9_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeBeispiel9_in();
+
+typedef void Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in();
+
+typedef void Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in;
+const catala_type catala_type__Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in();
+
+typedef void Haushaltsnahe__TestOhneTeilungBeispiel9_in;
+const catala_type catala_type__Haushaltsnahe__TestOhneTeilungBeispiel9_in();
 
 extern const catala_code_position Haushaltsnahe__loc[][1];
 
@@ -88,5 +121,25 @@ const Haushaltsnahe__TestDienstleistungUnterDeckel*
 
 const Haushaltsnahe__TestNullAufwand* Haushaltsnahe__test_null_aufwand
     (const Haushaltsnahe__TestNullAufwand_in* test_null_aufwand_in);
+
+const Haushaltsnahe__TestAlleinstehendeBeispiel9*
+    Haushaltsnahe__test_alleinstehende_beispiel9
+    (const Haushaltsnahe__TestAlleinstehendeBeispiel9_in*
+       test_alleinstehende_beispiel9_in);
+
+const Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel*
+    Haushaltsnahe__test_alleinstehende_dienstleistung_unter_halbem_deckel
+    (const Haushaltsnahe__TestAlleinstehendeDienstleistungUnterHalbemDeckel_in*
+       test_alleinstehende_dienstleistung_unter_halbem_deckel_in);
+
+const Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel*
+    Haushaltsnahe__test_alleinstehende_alle_drei_am_halben_deckel
+    (const Haushaltsnahe__TestAlleinstehendeAlleDreiAmHalbenDeckel_in*
+       test_alleinstehende_alle_drei_am_halben_deckel_in);
+
+const Haushaltsnahe__TestOhneTeilungBeispiel9*
+    Haushaltsnahe__test_ohne_teilung_beispiel9
+    (const Haushaltsnahe__TestOhneTeilungBeispiel9_in*
+       test_ohne_teilung_beispiel9_in);
 
 #endif /* __HAUSHALTSNAHE_H__ */

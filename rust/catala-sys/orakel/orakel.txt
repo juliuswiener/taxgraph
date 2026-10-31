@@ -1,5 +1,5 @@
 # catala-orakel v1 -- NICHT von Hand aendern, `make catala-orakel` erzeugt die Datei
-# regeln-hash: 73e01281c5c90b45edf4ef9349ad773ac5c23d51cb97c99d54762822a80e5aaf
+# regeln-hash: 856ff49d7f50b0234cb1d3e202035b6aa3a87d00864adf62b8e6f6e6dc943646
 # catala: 1.2.1
 # seed: 20261011
 # funktion | eingaben (Cent, ganze Zahl, true/false, Jahr, Bruch) | ausgaben (Cent) oder FEHLER
@@ -7452,306 +7452,306 @@ gwg_sofortabzug | anschaffungskosten_netto=73 | sofortabzug=73
 gwg_sofortabzug | anschaffungskosten_netto=2900000 | sofortabzug=0
 gwg_sofortabzug | anschaffungskosten_netto=52847309 | sofortabzug=0
 gwg_sofortabzug | anschaffungskosten_netto=165 | sofortabzug=165
-haushaltsnahe | minijob_aufwendungen=22100000 haushaltsnahe_dienstleistungen=30326 handwerker_arbeitskosten=590975 | steuerermaessigung=175260
-haushaltsnahe | minijob_aufwendungen=4427178 haushaltsnahe_dienstleistungen=19300000 handwerker_arbeitskosten=462 | steuerermaessigung=451092
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=7247 | steuerermaessigung=1449
-haushaltsnahe | minijob_aufwendungen=6093 haushaltsnahe_dienstleistungen=500000 handwerker_arbeitskosten=86891890 | steuerermaessigung=221219
-haushaltsnahe | minijob_aufwendungen=307 haushaltsnahe_dienstleistungen=3305821 handwerker_arbeitskosten=783 | steuerermaessigung=400218
-haushaltsnahe | minijob_aufwendungen=91 haushaltsnahe_dienstleistungen=2338241 handwerker_arbeitskosten=4841232 | steuerermaessigung=520018
-haushaltsnahe | minijob_aufwendungen=8938 haushaltsnahe_dienstleistungen=9567 handwerker_arbeitskosten=8600000 | steuerermaessigung=123701
-haushaltsnahe | minijob_aufwendungen=6829131993298490460 haushaltsnahe_dienstleistungen=14700000 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=896 handwerker_arbeitskosten=48600001 | steuerermaessigung=171179
-haushaltsnahe | minijob_aufwendungen=5900000 haushaltsnahe_dienstleistungen=36800000 handwerker_arbeitskosten=12400000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=4884 haushaltsnahe_dienstleistungen=53199669 handwerker_arbeitskosten=0 | steuerermaessigung=400977
-haushaltsnahe | minijob_aufwendungen=371014388 haushaltsnahe_dienstleistungen=602049 handwerker_arbeitskosten=6339244320 | steuerermaessigung=291410
-haushaltsnahe | minijob_aufwendungen=26 haushaltsnahe_dienstleistungen=47100000 handwerker_arbeitskosten=26000000 | steuerermaessigung=520005
-haushaltsnahe | minijob_aufwendungen=393253 haushaltsnahe_dienstleistungen=9328 handwerker_arbeitskosten=31100000 | steuerermaessigung=172866
-haushaltsnahe | minijob_aufwendungen=20600000 haushaltsnahe_dienstleistungen=13400000 handwerker_arbeitskosten=42599999 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=10100000 haushaltsnahe_dienstleistungen=23 handwerker_arbeitskosten=891922 | steuerermaessigung=171005
-haushaltsnahe | minijob_aufwendungen=21400000 haushaltsnahe_dienstleistungen=84 handwerker_arbeitskosten=0 | steuerermaessigung=51017
-haushaltsnahe | minijob_aufwendungen=25800000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=84 | steuerermaessigung=51017
-haushaltsnahe | minijob_aufwendungen=86 haushaltsnahe_dienstleistungen=21600000 handwerker_arbeitskosten=20299999 | steuerermaessigung=520017
-haushaltsnahe | minijob_aufwendungen=6 haushaltsnahe_dienstleistungen=85676808 handwerker_arbeitskosten=76 | steuerermaessigung=400016
-haushaltsnahe | minijob_aufwendungen=8800000 haushaltsnahe_dienstleistungen=73449 handwerker_arbeitskosten=5637625 | steuerermaessigung=185690
-haushaltsnahe | minijob_aufwendungen=9301835 haushaltsnahe_dienstleistungen=2013 handwerker_arbeitskosten=19300000 | steuerermaessigung=171403
-haushaltsnahe | minijob_aufwendungen=40676220 haushaltsnahe_dienstleistungen=934120 handwerker_arbeitskosten=8200000 | steuerermaessigung=357824
-haushaltsnahe | minijob_aufwendungen=9566728 haushaltsnahe_dienstleistungen=3100001 handwerker_arbeitskosten=3372 | steuerermaessigung=451674
-haushaltsnahe | minijob_aufwendungen=8753028672 haushaltsnahe_dienstleistungen=2135177 handwerker_arbeitskosten=9654459 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=40700000 handwerker_arbeitskosten=23299999 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=4500000 haushaltsnahe_dienstleistungen=44500000 handwerker_arbeitskosten=82 | steuerermaessigung=451016
-haushaltsnahe | minijob_aufwendungen=7868886549 haushaltsnahe_dienstleistungen=35700000 handwerker_arbeitskosten=52197205 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=348 haushaltsnahe_dienstleistungen=214 handwerker_arbeitskosten=17 | steuerermaessigung=116
-haushaltsnahe | minijob_aufwendungen=587 haushaltsnahe_dienstleistungen=695 handwerker_arbeitskosten=24000000 | steuerermaessigung=120256
-haushaltsnahe | minijob_aufwendungen=47292 haushaltsnahe_dienstleistungen=24700000 handwerker_arbeitskosten=113077 | steuerermaessigung=432073
-haushaltsnahe | minijob_aufwendungen=4599999 haushaltsnahe_dienstleistungen=4616521237 handwerker_arbeitskosten=7474 | steuerermaessigung=452495
-haushaltsnahe | minijob_aufwendungen=524 haushaltsnahe_dienstleistungen=4797358 handwerker_arbeitskosten=5006454 | steuerermaessigung=520105
-haushaltsnahe | minijob_aufwendungen=90809925 haushaltsnahe_dienstleistungen=23800000 handwerker_arbeitskosten=6 | steuerermaessigung=451001
-haushaltsnahe | minijob_aufwendungen=540 haushaltsnahe_dienstleistungen=17 handwerker_arbeitskosten=9366 | steuerermaessigung=1984
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=35099999 handwerker_arbeitskosten=0 | steuerermaessigung=400000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=31500001 | steuerermaessigung=120000
-haushaltsnahe | minijob_aufwendungen=5657 haushaltsnahe_dienstleistungen=3071 handwerker_arbeitskosten=3940 | steuerermaessigung=2533
-haushaltsnahe | minijob_aufwendungen=86650004 haushaltsnahe_dienstleistungen=6500001 handwerker_arbeitskosten=30700000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=37299999 haushaltsnahe_dienstleistungen=64 handwerker_arbeitskosten=44000000 | steuerermaessigung=171013
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=46200000 | steuerermaessigung=120000
-haushaltsnahe | minijob_aufwendungen=18100000 haushaltsnahe_dienstleistungen=12600000 handwerker_arbeitskosten=42 | steuerermaessigung=451008
-haushaltsnahe | minijob_aufwendungen=7400000 haushaltsnahe_dienstleistungen=9000000 handwerker_arbeitskosten=133 | steuerermaessigung=451027
-haushaltsnahe | minijob_aufwendungen=6200000 haushaltsnahe_dienstleistungen=69042202 handwerker_arbeitskosten=36200000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=29199999 haushaltsnahe_dienstleistungen=727 handwerker_arbeitskosten=1299999 | steuerermaessigung=171145
-haushaltsnahe | minijob_aufwendungen=97257 haushaltsnahe_dienstleistungen=8097 handwerker_arbeitskosten=5963 | steuerermaessigung=22263
-haushaltsnahe | minijob_aufwendungen=3906914973 haushaltsnahe_dienstleistungen=35300000 handwerker_arbeitskosten=552669 | steuerermaessigung=561534
-haushaltsnahe | minijob_aufwendungen=3325034499 haushaltsnahe_dienstleistungen=34600000 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=92477917 haushaltsnahe_dienstleistungen=2500000 handwerker_arbeitskosten=266893 | steuerermaessigung=504379
-haushaltsnahe | minijob_aufwendungen=63 haushaltsnahe_dienstleistungen=802 handwerker_arbeitskosten=50116 | steuerermaessigung=10196
-haushaltsnahe | minijob_aufwendungen=4 haushaltsnahe_dienstleistungen=9500000 handwerker_arbeitskosten=34999999 | steuerermaessigung=520001
-haushaltsnahe | minijob_aufwendungen=78 haushaltsnahe_dienstleistungen=32800000 handwerker_arbeitskosten=39276 | steuerermaessigung=407871
-haushaltsnahe | minijob_aufwendungen=27200000 haushaltsnahe_dienstleistungen=6432803 handwerker_arbeitskosten=7480 | steuerermaessigung=452496
-haushaltsnahe | minijob_aufwendungen=340473 haushaltsnahe_dienstleistungen=218174 handwerker_arbeitskosten=87 | steuerermaessigung=94652
-haushaltsnahe | minijob_aufwendungen=68658 haushaltsnahe_dienstleistungen=36700000 handwerker_arbeitskosten=0 | steuerermaessigung=413732
-haushaltsnahe | minijob_aufwendungen=40800000 haushaltsnahe_dienstleistungen=779 handwerker_arbeitskosten=42699999 | steuerermaessigung=171156
-haushaltsnahe | minijob_aufwendungen=50412 haushaltsnahe_dienstleistungen=5713760 handwerker_arbeitskosten=17465312 | steuerermaessigung=530082
-haushaltsnahe | minijob_aufwendungen=14200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=6786 | steuerermaessigung=52357
-haushaltsnahe | minijob_aufwendungen=25301722 haushaltsnahe_dienstleistungen=20100000 handwerker_arbeitskosten=1293759688 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=6784726 haushaltsnahe_dienstleistungen=11149737 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=783440294 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=362 | steuerermaessigung=51072
-haushaltsnahe | minijob_aufwendungen=43100000 haushaltsnahe_dienstleistungen=188019 handwerker_arbeitskosten=8578786 | steuerermaessigung=208604
-haushaltsnahe | minijob_aufwendungen=85389092 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=51000
-haushaltsnahe | minijob_aufwendungen=823455 haushaltsnahe_dienstleistungen=8881917381 handwerker_arbeitskosten=8800000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=1500000 haushaltsnahe_dienstleistungen=14000001 handwerker_arbeitskosten=2252855 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=330 haushaltsnahe_dienstleistungen=20200000 handwerker_arbeitskosten=780 | steuerermaessigung=400222
-haushaltsnahe | minijob_aufwendungen=2241281 haushaltsnahe_dienstleistungen=1700000 handwerker_arbeitskosten=2978310 | steuerermaessigung=511000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=886 handwerker_arbeitskosten=5393224163976953855 | steuerermaessigung=120177
-haushaltsnahe | minijob_aufwendungen=1200000 haushaltsnahe_dienstleistungen=700000 handwerker_arbeitskosten=0 | steuerermaessigung=191000
-haushaltsnahe | minijob_aufwendungen=64 haushaltsnahe_dienstleistungen=23600000 handwerker_arbeitskosten=46942 | steuerermaessigung=409401
-haushaltsnahe | minijob_aufwendungen=599 haushaltsnahe_dienstleistungen=932 handwerker_arbeitskosten=0 | steuerermaessigung=306
-haushaltsnahe | minijob_aufwendungen=89951 haushaltsnahe_dienstleistungen=6756 handwerker_arbeitskosten=39000001 | steuerermaessigung=139341
-haushaltsnahe | minijob_aufwendungen=5500000 haushaltsnahe_dienstleistungen=21400000 handwerker_arbeitskosten=21063 | steuerermaessigung=455213
-haushaltsnahe | minijob_aufwendungen=6313166 haushaltsnahe_dienstleistungen=18500000 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=40200000 handwerker_arbeitskosten=2624 | steuerermaessigung=400525
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=9164540 handwerker_arbeitskosten=21600000 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=13000001 handwerker_arbeitskosten=0 | steuerermaessigung=400000
-haushaltsnahe | minijob_aufwendungen=38 haushaltsnahe_dienstleistungen=3995 handwerker_arbeitskosten=380445 | steuerermaessigung=76896
-haushaltsnahe | minijob_aufwendungen=28900000 haushaltsnahe_dienstleistungen=22300000 handwerker_arbeitskosten=768 | steuerermaessigung=451154
-haushaltsnahe | minijob_aufwendungen=10699999 haushaltsnahe_dienstleistungen=515 handwerker_arbeitskosten=40600000 | steuerermaessigung=171103
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=4612525690 handwerker_arbeitskosten=95449511 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=5331 haushaltsnahe_dienstleistungen=371 handwerker_arbeitskosten=8104 | steuerermaessigung=2761
-haushaltsnahe | minijob_aufwendungen=29100000 haushaltsnahe_dienstleistungen=15900000 handwerker_arbeitskosten=39 | steuerermaessigung=451008
-haushaltsnahe | minijob_aufwendungen=2200001 haushaltsnahe_dienstleistungen=179068 handwerker_arbeitskosten=39200000 | steuerermaessigung=206814
-haushaltsnahe | minijob_aufwendungen=17600001 haushaltsnahe_dienstleistungen=11 handwerker_arbeitskosten=991 | steuerermaessigung=51200
-haushaltsnahe | minijob_aufwendungen=40199999 haushaltsnahe_dienstleistungen=665 handwerker_arbeitskosten=48200000 | steuerermaessigung=171133
-haushaltsnahe | minijob_aufwendungen=18800000 haushaltsnahe_dienstleistungen=52238 handwerker_arbeitskosten=9459387091 | steuerermaessigung=181448
-haushaltsnahe | minijob_aufwendungen=30600001 haushaltsnahe_dienstleistungen=413 handwerker_arbeitskosten=555829 | steuerermaessigung=162249
-haushaltsnahe | minijob_aufwendungen=1020 haushaltsnahe_dienstleistungen=32800001 handwerker_arbeitskosten=611 | steuerermaessigung=400326
-haushaltsnahe | minijob_aufwendungen=14217 haushaltsnahe_dienstleistungen=13300001 handwerker_arbeitskosten=900334 | steuerermaessigung=522843
-haushaltsnahe | minijob_aufwendungen=6512 haushaltsnahe_dienstleistungen=94125339 handwerker_arbeitskosten=11529930 | steuerermaessigung=521302
-haushaltsnahe | minijob_aufwendungen=91463806 haushaltsnahe_dienstleistungen=271 handwerker_arbeitskosten=17 | steuerermaessigung=51057
-haushaltsnahe | minijob_aufwendungen=4748 haushaltsnahe_dienstleistungen=15900000 handwerker_arbeitskosten=10000000 | steuerermaessigung=520950
-haushaltsnahe | minijob_aufwendungen=8215917 haushaltsnahe_dienstleistungen=2906009 handwerker_arbeitskosten=737 | steuerermaessigung=451147
-haushaltsnahe | minijob_aufwendungen=9442255336 haushaltsnahe_dienstleistungen=3185007 handwerker_arbeitskosten=45078 | steuerermaessigung=460016
-haushaltsnahe | minijob_aufwendungen=2946412550 haushaltsnahe_dienstleistungen=61086 handwerker_arbeitskosten=2698 | steuerermaessigung=63757
-haushaltsnahe | minijob_aufwendungen=3733 haushaltsnahe_dienstleistungen=1584594 handwerker_arbeitskosten=2749 | steuerermaessigung=318216
-haushaltsnahe | minijob_aufwendungen=422965 haushaltsnahe_dienstleistungen=80874 handwerker_arbeitskosten=0 | steuerermaessigung=67175
-haushaltsnahe | minijob_aufwendungen=748684 haushaltsnahe_dienstleistungen=9352546 handwerker_arbeitskosten=32600000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=45900000 haushaltsnahe_dienstleistungen=59 handwerker_arbeitskosten=21 | steuerermaessigung=51016
-haushaltsnahe | minijob_aufwendungen=38389 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=32100000 | steuerermaessigung=127678
-haushaltsnahe | minijob_aufwendungen=3765 haushaltsnahe_dienstleistungen=81720 handwerker_arbeitskosten=33 | steuerermaessigung=17104
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=273 handwerker_arbeitskosten=80397 | steuerermaessigung=16134
-haushaltsnahe | minijob_aufwendungen=31800000 haushaltsnahe_dienstleistungen=39169 handwerker_arbeitskosten=36500000 | steuerermaessigung=178834
-haushaltsnahe | minijob_aufwendungen=20200000 haushaltsnahe_dienstleistungen=3900000 handwerker_arbeitskosten=35199999 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=555752494 haushaltsnahe_dienstleistungen=46757 handwerker_arbeitskosten=37500000 | steuerermaessigung=180351
-haushaltsnahe | minijob_aufwendungen=802596 haushaltsnahe_dienstleistungen=7899999 handwerker_arbeitskosten=51844514 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=5369018 haushaltsnahe_dienstleistungen=7959298 handwerker_arbeitskosten=37800000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=799999 haushaltsnahe_dienstleistungen=35800000 handwerker_arbeitskosten=75694139 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=59313490 haushaltsnahe_dienstleistungen=60 handwerker_arbeitskosten=0 | steuerermaessigung=51012
-haushaltsnahe | minijob_aufwendungen=670281 haushaltsnahe_dienstleistungen=38 handwerker_arbeitskosten=235350739 | steuerermaessigung=171008
-haushaltsnahe | minijob_aufwendungen=35100000 haushaltsnahe_dienstleistungen=29399999 handwerker_arbeitskosten=50811 | steuerermaessigung=461162
-haushaltsnahe | minijob_aufwendungen=18 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=21443 | steuerermaessigung=4293
-haushaltsnahe | minijob_aufwendungen=31100000 haushaltsnahe_dienstleistungen=13900000 handwerker_arbeitskosten=20800000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=10600000 haushaltsnahe_dienstleistungen=23900000 handwerker_arbeitskosten=69592 | steuerermaessigung=464918
-haushaltsnahe | minijob_aufwendungen=4541 haushaltsnahe_dienstleistungen=39100000 handwerker_arbeitskosten=19100000 | steuerermaessigung=520908
-haushaltsnahe | minijob_aufwendungen=20900000 haushaltsnahe_dienstleistungen=10500000 handwerker_arbeitskosten=533983 | steuerermaessigung=557797
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=3600000 handwerker_arbeitskosten=25900000 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=46917702 handwerker_arbeitskosten=14000000 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=21700000 haushaltsnahe_dienstleistungen=6753 handwerker_arbeitskosten=210 | steuerermaessigung=52393
-haushaltsnahe | minijob_aufwendungen=3174 haushaltsnahe_dienstleistungen=2900037 handwerker_arbeitskosten=6403 | steuerermaessigung=401916
-haushaltsnahe | minijob_aufwendungen=11200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=273925 | steuerermaessigung=105785
-haushaltsnahe | minijob_aufwendungen=9578821 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=20599999 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=4612 handwerker_arbeitskosten=21600000 | steuerermaessigung=120922
-haushaltsnahe | minijob_aufwendungen=9232893539 haushaltsnahe_dienstleistungen=16700000 handwerker_arbeitskosten=18300000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=723750 haushaltsnahe_dienstleistungen=2900000 handwerker_arbeitskosten=79714 | steuerermaessigung=466943
-haushaltsnahe | minijob_aufwendungen=2960 haushaltsnahe_dienstleistungen=43200000 handwerker_arbeitskosten=511 | steuerermaessigung=400694
-haushaltsnahe | minijob_aufwendungen=242 haushaltsnahe_dienstleistungen=323380 handwerker_arbeitskosten=733910 | steuerermaessigung=184724
-haushaltsnahe | minijob_aufwendungen=20 haushaltsnahe_dienstleistungen=842 handwerker_arbeitskosten=0 | steuerermaessigung=172
-haushaltsnahe | minijob_aufwendungen=6833545 haushaltsnahe_dienstleistungen=12500000 handwerker_arbeitskosten=1998 | steuerermaessigung=451400
-haushaltsnahe | minijob_aufwendungen=3778 haushaltsnahe_dienstleistungen=6543 handwerker_arbeitskosten=0 | steuerermaessigung=2065
-haushaltsnahe | minijob_aufwendungen=40299999 haushaltsnahe_dienstleistungen=9500000 handwerker_arbeitskosten=15870408 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=8104 haushaltsnahe_dienstleistungen=62404 handwerker_arbeitskosten=46800000 | steuerermaessigung=134102
-haushaltsnahe | minijob_aufwendungen=1 haushaltsnahe_dienstleistungen=37800000 handwerker_arbeitskosten=65581970 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=334524 haushaltsnahe_dienstleistungen=11104748 handwerker_arbeitskosten=87338860 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=777 handwerker_arbeitskosten=52653 | steuerermaessigung=10686
-haushaltsnahe | minijob_aufwendungen=75658 haushaltsnahe_dienstleistungen=142470 handwerker_arbeitskosten=386903 | steuerermaessigung=121007
-haushaltsnahe | minijob_aufwendungen=8685824925829223870 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=51000
-haushaltsnahe | minijob_aufwendungen=19704217 haushaltsnahe_dienstleistungen=660442 handwerker_arbeitskosten=8540373343474809608 | steuerermaessigung=303088
-haushaltsnahe | minijob_aufwendungen=2467914 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=9299999 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=23662 haushaltsnahe_dienstleistungen=22700000 handwerker_arbeitskosten=403739 | steuerermaessigung=485480
-haushaltsnahe | minijob_aufwendungen=98057 haushaltsnahe_dienstleistungen=34 handwerker_arbeitskosten=0 | steuerermaessigung=19618
-haushaltsnahe | minijob_aufwendungen=26142 haushaltsnahe_dienstleistungen=24120633 handwerker_arbeitskosten=430659 | steuerermaessigung=491360
-haushaltsnahe | minijob_aufwendungen=42299999 haushaltsnahe_dienstleistungen=61760483 handwerker_arbeitskosten=43 | steuerermaessigung=451009
-haushaltsnahe | minijob_aufwendungen=63 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=5431 | steuerermaessigung=1099
-haushaltsnahe | minijob_aufwendungen=19800000 haushaltsnahe_dienstleistungen=77854266 handwerker_arbeitskosten=3665 | steuerermaessigung=451733
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=18419 handwerker_arbeitskosten=6665640 | steuerermaessigung=123684
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=22800000 handwerker_arbeitskosten=9732162 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=28200000 haushaltsnahe_dienstleistungen=16000000 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=29 haushaltsnahe_dienstleistungen=9322420856 handwerker_arbeitskosten=29100000 | steuerermaessigung=520006
-haushaltsnahe | minijob_aufwendungen=17 haushaltsnahe_dienstleistungen=48700000 handwerker_arbeitskosten=4052 | steuerermaessigung=400813
-haushaltsnahe | minijob_aufwendungen=3127 haushaltsnahe_dienstleistungen=3499 handwerker_arbeitskosten=25100000 | steuerermaessigung=121325
-haushaltsnahe | minijob_aufwendungen=57000299 haushaltsnahe_dienstleistungen=6930149632 handwerker_arbeitskosten=9099999 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=5300001 haushaltsnahe_dienstleistungen=44496814 handwerker_arbeitskosten=20 | steuerermaessigung=451004
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=38600000 handwerker_arbeitskosten=37796538 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=29700000 haushaltsnahe_dienstleistungen=51007 handwerker_arbeitskosten=6797086773423833182 | steuerermaessigung=181201
-haushaltsnahe | minijob_aufwendungen=85456 haushaltsnahe_dienstleistungen=8764303809553802124 handwerker_arbeitskosten=43200000 | steuerermaessigung=537091
-haushaltsnahe | minijob_aufwendungen=49 haushaltsnahe_dienstleistungen=7781 handwerker_arbeitskosten=0 | steuerermaessigung=1566
-haushaltsnahe | minijob_aufwendungen=42200000 haushaltsnahe_dienstleistungen=22524 handwerker_arbeitskosten=27999999 | steuerermaessigung=175505
-haushaltsnahe | minijob_aufwendungen=21968 haushaltsnahe_dienstleistungen=1408988 handwerker_arbeitskosten=35100000 | steuerermaessigung=406192
-haushaltsnahe | minijob_aufwendungen=52 haushaltsnahe_dienstleistungen=657419 handwerker_arbeitskosten=29800000 | steuerermaessigung=251494
-haushaltsnahe | minijob_aufwendungen=7180135272 haushaltsnahe_dienstleistungen=62927 handwerker_arbeitskosten=4801 | steuerermaessigung=64545
-haushaltsnahe | minijob_aufwendungen=17200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=45400001 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=93639 haushaltsnahe_dienstleistungen=1000000 handwerker_arbeitskosten=31964 | steuerermaessigung=225121
-haushaltsnahe | minijob_aufwendungen=230513 haushaltsnahe_dienstleistungen=7519 handwerker_arbeitskosten=38300000 | steuerermaessigung=167607
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=62929 handwerker_arbeitskosten=7400000 | steuerermaessigung=132586
-haushaltsnahe | minijob_aufwendungen=862 haushaltsnahe_dienstleistungen=950849 handwerker_arbeitskosten=34400000 | steuerermaessigung=310342
-haushaltsnahe | minijob_aufwendungen=27 haushaltsnahe_dienstleistungen=4256902 handwerker_arbeitskosten=968582 | steuerermaessigung=520005
-haushaltsnahe | minijob_aufwendungen=2344772 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=51000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=946 handwerker_arbeitskosten=31500001 | steuerermaessigung=120189
-haushaltsnahe | minijob_aufwendungen=43700000 haushaltsnahe_dienstleistungen=19800000 handwerker_arbeitskosten=22700000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=60329118 handwerker_arbeitskosten=59 | steuerermaessigung=400012
-haushaltsnahe | minijob_aufwendungen=99 haushaltsnahe_dienstleistungen=84056 handwerker_arbeitskosten=854 | steuerermaessigung=17002
-haushaltsnahe | minijob_aufwendungen=36900000 haushaltsnahe_dienstleistungen=5617 handwerker_arbeitskosten=299999 | steuerermaessigung=112123
-haushaltsnahe | minijob_aufwendungen=45687036 haushaltsnahe_dienstleistungen=42366061 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=74521 haushaltsnahe_dienstleistungen=15300001 handwerker_arbeitskosten=8430865 | steuerermaessigung=534904
-haushaltsnahe | minijob_aufwendungen=5900000 haushaltsnahe_dienstleistungen=2283 handwerker_arbeitskosten=1805512 | steuerermaessigung=171457
-haushaltsnahe | minijob_aufwendungen=54 haushaltsnahe_dienstleistungen=500000 handwerker_arbeitskosten=0 | steuerermaessigung=100011
-haushaltsnahe | minijob_aufwendungen=28432 haushaltsnahe_dienstleistungen=6466734610 handwerker_arbeitskosten=91035131 | steuerermaessigung=525686
-haushaltsnahe | minijob_aufwendungen=23800000 haushaltsnahe_dienstleistungen=6755 handwerker_arbeitskosten=0 | steuerermaessigung=52351
-haushaltsnahe | minijob_aufwendungen=7400000 haushaltsnahe_dienstleistungen=18200000 handwerker_arbeitskosten=16853 | steuerermaessigung=454371
-haushaltsnahe | minijob_aufwendungen=5087 haushaltsnahe_dienstleistungen=11700000 handwerker_arbeitskosten=0 | steuerermaessigung=401017
-haushaltsnahe | minijob_aufwendungen=1600000 haushaltsnahe_dienstleistungen=582088 handwerker_arbeitskosten=43288385 | steuerermaessigung=287418
-haushaltsnahe | minijob_aufwendungen=9208370085 haushaltsnahe_dienstleistungen=40200001 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=8151139975 haushaltsnahe_dienstleistungen=6636749334162589950 handwerker_arbeitskosten=13800000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=513 haushaltsnahe_dienstleistungen=90264427 handwerker_arbeitskosten=40999999 | steuerermaessigung=520103
-haushaltsnahe | minijob_aufwendungen=807419605 haushaltsnahe_dienstleistungen=13800000 handwerker_arbeitskosten=3931110 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=79524 haushaltsnahe_dienstleistungen=21899999 handwerker_arbeitskosten=0 | steuerermaessigung=415905
-haushaltsnahe | minijob_aufwendungen=5746 haushaltsnahe_dienstleistungen=2989 handwerker_arbeitskosten=264 | steuerermaessigung=1800
-haushaltsnahe | minijob_aufwendungen=2585 haushaltsnahe_dienstleistungen=8443855 handwerker_arbeitskosten=19800000 | steuerermaessigung=520517
-haushaltsnahe | minijob_aufwendungen=41300000 haushaltsnahe_dienstleistungen=872 handwerker_arbeitskosten=8132500 | steuerermaessigung=171174
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=7799999 handwerker_arbeitskosten=8492 | steuerermaessigung=401698
-haushaltsnahe | minijob_aufwendungen=644570 haushaltsnahe_dienstleistungen=38700001 handwerker_arbeitskosten=20 | steuerermaessigung=451004
-haushaltsnahe | minijob_aufwendungen=23406985 haushaltsnahe_dienstleistungen=7899999 handwerker_arbeitskosten=4500000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=48600001 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=51000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=9070772 handwerker_arbeitskosten=47200000 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=4404385789 haushaltsnahe_dienstleistungen=405017 handwerker_arbeitskosten=375 | steuerermaessigung=132078
-haushaltsnahe | minijob_aufwendungen=99 haushaltsnahe_dienstleistungen=46099999 handwerker_arbeitskosten=0 | steuerermaessigung=400020
-haushaltsnahe | minijob_aufwendungen=2010 haushaltsnahe_dienstleistungen=41163484 handwerker_arbeitskosten=398 | steuerermaessigung=400482
-haushaltsnahe | minijob_aufwendungen=7429 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=635 | steuerermaessigung=1613
-haushaltsnahe | minijob_aufwendungen=7600000 haushaltsnahe_dienstleistungen=6982252649 handwerker_arbeitskosten=4793454 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=81047 handwerker_arbeitskosten=37799999 | steuerermaessigung=136209
-haushaltsnahe | minijob_aufwendungen=48600000 haushaltsnahe_dienstleistungen=27400000 handwerker_arbeitskosten=1657934 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=15479 handwerker_arbeitskosten=170322 | steuerermaessigung=37160
-haushaltsnahe | minijob_aufwendungen=260502 haushaltsnahe_dienstleistungen=33300001 handwerker_arbeitskosten=22200000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5043231917 handwerker_arbeitskosten=74 | steuerermaessigung=400015
-haushaltsnahe | minijob_aufwendungen=6502386891 haushaltsnahe_dienstleistungen=774 handwerker_arbeitskosten=732964 | steuerermaessigung=171155
-haushaltsnahe | minijob_aufwendungen=5501196 haushaltsnahe_dienstleistungen=814347 handwerker_arbeitskosten=27939 | steuerermaessigung=219457
-haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=5849 handwerker_arbeitskosten=36100001 | steuerermaessigung=172170
-haushaltsnahe | minijob_aufwendungen=512772 haushaltsnahe_dienstleistungen=2758838 handwerker_arbeitskosten=20 | steuerermaessigung=451004
-haushaltsnahe | minijob_aufwendungen=9800000 haushaltsnahe_dienstleistungen=3019 handwerker_arbeitskosten=53744408 | steuerermaessigung=171604
-haushaltsnahe | minijob_aufwendungen=17900000 haushaltsnahe_dienstleistungen=10300000 handwerker_arbeitskosten=935376 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=1308298 handwerker_arbeitskosten=80 | steuerermaessigung=261676
-haushaltsnahe | minijob_aufwendungen=20406 haushaltsnahe_dienstleistungen=8448272 handwerker_arbeitskosten=0 | steuerermaessigung=404081
-haushaltsnahe | minijob_aufwendungen=180 haushaltsnahe_dienstleistungen=23024 handwerker_arbeitskosten=801 | steuerermaessigung=4801
-haushaltsnahe | minijob_aufwendungen=87 haushaltsnahe_dienstleistungen=8300001 handwerker_arbeitskosten=0 | steuerermaessigung=400017
-haushaltsnahe | minijob_aufwendungen=80274535 haushaltsnahe_dienstleistungen=725 handwerker_arbeitskosten=245749 | steuerermaessigung=100295
-haushaltsnahe | minijob_aufwendungen=88884567 haushaltsnahe_dienstleistungen=464805 handwerker_arbeitskosten=31499999 | steuerermaessigung=263961
-haushaltsnahe | minijob_aufwendungen=7732606208 haushaltsnahe_dienstleistungen=7642143296 handwerker_arbeitskosten=45000000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=30351687 haushaltsnahe_dienstleistungen=48699999 handwerker_arbeitskosten=41800000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=1989121 haushaltsnahe_dienstleistungen=89144106 handwerker_arbeitskosten=23000000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=5697072 haushaltsnahe_dienstleistungen=80226169 handwerker_arbeitskosten=900000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=23900000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=51000
-haushaltsnahe | minijob_aufwendungen=8714 haushaltsnahe_dienstleistungen=88671 handwerker_arbeitskosten=97715 | steuerermaessigung=39020
-haushaltsnahe | minijob_aufwendungen=1600001 haushaltsnahe_dienstleistungen=8557589480936925674 handwerker_arbeitskosten=43500000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=644607 haushaltsnahe_dienstleistungen=3284 handwerker_arbeitskosten=38202259 | steuerermaessigung=171657
-haushaltsnahe | minijob_aufwendungen=39800000 haushaltsnahe_dienstleistungen=42900000 handwerker_arbeitskosten=2500000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=360 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=72
-haushaltsnahe | minijob_aufwendungen=24 haushaltsnahe_dienstleistungen=275 handwerker_arbeitskosten=45600001 | steuerermaessigung=120060
-haushaltsnahe | minijob_aufwendungen=17400000 haushaltsnahe_dienstleistungen=75732728 handwerker_arbeitskosten=166322 | steuerermaessigung=484264
-haushaltsnahe | minijob_aufwendungen=46047855 haushaltsnahe_dienstleistungen=467444 handwerker_arbeitskosten=42099543 | steuerermaessigung=264489
-haushaltsnahe | minijob_aufwendungen=8100000 haushaltsnahe_dienstleistungen=39900000 handwerker_arbeitskosten=5704239576 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=68499 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=8264023 | steuerermaessigung=133700
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=12700000 handwerker_arbeitskosten=1159055 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=23300001 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=4441993 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=28100000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=36800001 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=2489 haushaltsnahe_dienstleistungen=12400000 handwerker_arbeitskosten=14100000 | steuerermaessigung=520498
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=47399999 | steuerermaessigung=120000
-haushaltsnahe | minijob_aufwendungen=48754 haushaltsnahe_dienstleistungen=248192 handwerker_arbeitskosten=31 | steuerermaessigung=59395
-haushaltsnahe | minijob_aufwendungen=1688 haushaltsnahe_dienstleistungen=2371 handwerker_arbeitskosten=955971161 | steuerermaessigung=120812
-haushaltsnahe | minijob_aufwendungen=43 haushaltsnahe_dienstleistungen=55603124 handwerker_arbeitskosten=41600000 | steuerermaessigung=520009
-haushaltsnahe | minijob_aufwendungen=49200000 haushaltsnahe_dienstleistungen=2700000 handwerker_arbeitskosten=2800001 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=38500001 haushaltsnahe_dienstleistungen=3246391062 handwerker_arbeitskosten=950640 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=47299999 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=33400000 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=31199999 haushaltsnahe_dienstleistungen=650 handwerker_arbeitskosten=97164725 | steuerermaessigung=171130
-haushaltsnahe | minijob_aufwendungen=19800001 haushaltsnahe_dienstleistungen=16012 handwerker_arbeitskosten=8400000 | steuerermaessigung=174202
-haushaltsnahe | minijob_aufwendungen=49400000 haushaltsnahe_dienstleistungen=6796 handwerker_arbeitskosten=77178421 | steuerermaessigung=172359
-haushaltsnahe | minijob_aufwendungen=14639 haushaltsnahe_dienstleistungen=1897449 handwerker_arbeitskosten=48500000 | steuerermaessigung=502418
-haushaltsnahe | minijob_aufwendungen=301 haushaltsnahe_dienstleistungen=18 handwerker_arbeitskosten=3296944 | steuerermaessigung=120064
-haushaltsnahe | minijob_aufwendungen=17700000 haushaltsnahe_dienstleistungen=257 handwerker_arbeitskosten=97 | steuerermaessigung=51070
-haushaltsnahe | minijob_aufwendungen=7879737454 haushaltsnahe_dienstleistungen=15400000 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=11300000 haushaltsnahe_dienstleistungen=667 handwerker_arbeitskosten=44800000 | steuerermaessigung=171133
-haushaltsnahe | minijob_aufwendungen=616378 haushaltsnahe_dienstleistungen=976 handwerker_arbeitskosten=0 | steuerermaessigung=51195
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=0
-haushaltsnahe | minijob_aufwendungen=7901 haushaltsnahe_dienstleistungen=31599999 handwerker_arbeitskosten=1854616 | steuerermaessigung=521580
-haushaltsnahe | minijob_aufwendungen=1900000 haushaltsnahe_dienstleistungen=30900000 handwerker_arbeitskosten=39499999 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=39400000 haushaltsnahe_dienstleistungen=91769821 handwerker_arbeitskosten=29200000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=92897 haushaltsnahe_dienstleistungen=79701734 handwerker_arbeitskosten=0 | steuerermaessigung=418579
-haushaltsnahe | minijob_aufwendungen=8486 haushaltsnahe_dienstleistungen=5700000 handwerker_arbeitskosten=8200000 | steuerermaessigung=521697
-haushaltsnahe | minijob_aufwendungen=5400000 haushaltsnahe_dienstleistungen=32799999 handwerker_arbeitskosten=0 | steuerermaessigung=451000
-haushaltsnahe | minijob_aufwendungen=25128508 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=8900000 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=91 handwerker_arbeitskosten=8244421 | steuerermaessigung=120018
-haushaltsnahe | minijob_aufwendungen=8611 haushaltsnahe_dienstleistungen=22 handwerker_arbeitskosten=61 | steuerermaessigung=1738
-haushaltsnahe | minijob_aufwendungen=664106 haushaltsnahe_dienstleistungen=4012970896 handwerker_arbeitskosten=32500000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=6000000 haushaltsnahe_dienstleistungen=41 handwerker_arbeitskosten=71705 | steuerermaessigung=65349
-haushaltsnahe | minijob_aufwendungen=14 haushaltsnahe_dienstleistungen=7181534438 handwerker_arbeitskosten=69381 | steuerermaessigung=413879
-haushaltsnahe | minijob_aufwendungen=288707 haushaltsnahe_dienstleistungen=302 handwerker_arbeitskosten=6900000 | steuerermaessigung=171060
-haushaltsnahe | minijob_aufwendungen=21426 haushaltsnahe_dienstleistungen=9562728 handwerker_arbeitskosten=66838317 | steuerermaessigung=524285
-haushaltsnahe | minijob_aufwendungen=24833 haushaltsnahe_dienstleistungen=42599193 handwerker_arbeitskosten=863 | steuerermaessigung=405140
-haushaltsnahe | minijob_aufwendungen=9700000 haushaltsnahe_dienstleistungen=11800000 handwerker_arbeitskosten=32200000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=532197 handwerker_arbeitskosten=5600000 | steuerermaessigung=226439
-haushaltsnahe | minijob_aufwendungen=1454 haushaltsnahe_dienstleistungen=65 handwerker_arbeitskosten=110 | steuerermaessigung=326
-haushaltsnahe | minijob_aufwendungen=3200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=6411227 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=912122 haushaltsnahe_dienstleistungen=2653 handwerker_arbeitskosten=77 | steuerermaessigung=51546
-haushaltsnahe | minijob_aufwendungen=27700001 haushaltsnahe_dienstleistungen=285871 handwerker_arbeitskosten=0 | steuerermaessigung=108174
-haushaltsnahe | minijob_aufwendungen=94 haushaltsnahe_dienstleistungen=26400000 handwerker_arbeitskosten=22700000 | steuerermaessigung=520019
-haushaltsnahe | minijob_aufwendungen=88287 haushaltsnahe_dienstleistungen=48600000 handwerker_arbeitskosten=31276 | steuerermaessigung=423912
-haushaltsnahe | minijob_aufwendungen=7393 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=1479
-haushaltsnahe | minijob_aufwendungen=24900000 haushaltsnahe_dienstleistungen=49605 handwerker_arbeitskosten=6524 | steuerermaessigung=62226
-haushaltsnahe | minijob_aufwendungen=20 haushaltsnahe_dienstleistungen=7799999 handwerker_arbeitskosten=8837021 | steuerermaessigung=520004
-haushaltsnahe | minijob_aufwendungen=2315276 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=1996306 | steuerermaessigung=171000
-haushaltsnahe | minijob_aufwendungen=23661 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 | steuerermaessigung=4732
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5523277 handwerker_arbeitskosten=64661843 | steuerermaessigung=520000
-haushaltsnahe | minijob_aufwendungen=37098165 haushaltsnahe_dienstleistungen=12100000 handwerker_arbeitskosten=95 | steuerermaessigung=451019
-haushaltsnahe | minijob_aufwendungen=3263 haushaltsnahe_dienstleistungen=36500000 handwerker_arbeitskosten=998626 | steuerermaessigung=520653
-haushaltsnahe | minijob_aufwendungen=5223 haushaltsnahe_dienstleistungen=14400001 handwerker_arbeitskosten=32199999 | steuerermaessigung=521045
-haushaltsnahe | minijob_aufwendungen=67 haushaltsnahe_dienstleistungen=1653148 handwerker_arbeitskosten=68282703 | steuerermaessigung=450643
-haushaltsnahe | minijob_aufwendungen=5700000 haushaltsnahe_dienstleistungen=89013527 handwerker_arbeitskosten=7 | steuerermaessigung=451001
-haushaltsnahe | minijob_aufwendungen=539904 haushaltsnahe_dienstleistungen=71583955 handwerker_arbeitskosten=2572737 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=9703496 haushaltsnahe_dienstleistungen=57 handwerker_arbeitskosten=30071649 | steuerermaessigung=171011
-haushaltsnahe | minijob_aufwendungen=31500000 haushaltsnahe_dienstleistungen=71373 handwerker_arbeitskosten=37200000 | steuerermaessigung=185275
-haushaltsnahe | minijob_aufwendungen=5596529 haushaltsnahe_dienstleistungen=27744 handwerker_arbeitskosten=0 | steuerermaessigung=56549
-haushaltsnahe | minijob_aufwendungen=2945602183 haushaltsnahe_dienstleistungen=349 handwerker_arbeitskosten=18200000 | steuerermaessigung=171070
-haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5393003576741539044 handwerker_arbeitskosten=88 | steuerermaessigung=400018
-haushaltsnahe | minijob_aufwendungen=59607 haushaltsnahe_dienstleistungen=12099999 handwerker_arbeitskosten=0 | steuerermaessigung=411921
-haushaltsnahe | minijob_aufwendungen=8500000 haushaltsnahe_dienstleistungen=74093346 handwerker_arbeitskosten=14200000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=655238 haushaltsnahe_dienstleistungen=31 handwerker_arbeitskosten=44000000 | steuerermaessigung=171006
-haushaltsnahe | minijob_aufwendungen=188 haushaltsnahe_dienstleistungen=22500001 handwerker_arbeitskosten=30946064 | steuerermaessigung=520038
-haushaltsnahe | minijob_aufwendungen=20700000 haushaltsnahe_dienstleistungen=8835679921374639431 handwerker_arbeitskosten=34900000 | steuerermaessigung=571000
-haushaltsnahe | minijob_aufwendungen=58 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=25000001 | steuerermaessigung=120012
+haushaltsnahe | minijob_aufwendungen=22100000 haushaltsnahe_dienstleistungen=30326 handwerker_arbeitskosten=590975 hoechstbetraege_geteilt=false | steuerermaessigung=175260
+haushaltsnahe | minijob_aufwendungen=4427178 haushaltsnahe_dienstleistungen=19300000 handwerker_arbeitskosten=462 hoechstbetraege_geteilt=false | steuerermaessigung=451092
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=7247 hoechstbetraege_geteilt=true | steuerermaessigung=1449
+haushaltsnahe | minijob_aufwendungen=6093 haushaltsnahe_dienstleistungen=500000 handwerker_arbeitskosten=86891890 hoechstbetraege_geteilt=true | steuerermaessigung=161219
+haushaltsnahe | minijob_aufwendungen=307 haushaltsnahe_dienstleistungen=3305821 handwerker_arbeitskosten=783 hoechstbetraege_geteilt=false | steuerermaessigung=400218
+haushaltsnahe | minijob_aufwendungen=91 haushaltsnahe_dienstleistungen=2338241 handwerker_arbeitskosten=4841232 hoechstbetraege_geteilt=true | steuerermaessigung=260018
+haushaltsnahe | minijob_aufwendungen=8938 haushaltsnahe_dienstleistungen=9567 handwerker_arbeitskosten=8600000 hoechstbetraege_geteilt=true | steuerermaessigung=63701
+haushaltsnahe | minijob_aufwendungen=6829131993298490460 haushaltsnahe_dienstleistungen=14700000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=451000
+haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=896 handwerker_arbeitskosten=48600001 hoechstbetraege_geteilt=false | steuerermaessigung=171179
+haushaltsnahe | minijob_aufwendungen=5900000 haushaltsnahe_dienstleistungen=36800000 handwerker_arbeitskosten=12400000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=4884 haushaltsnahe_dienstleistungen=53199669 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=200977
+haushaltsnahe | minijob_aufwendungen=371014388 haushaltsnahe_dienstleistungen=602049 handwerker_arbeitskosten=6339244320 hoechstbetraege_geteilt=false | steuerermaessigung=291410
+haushaltsnahe | minijob_aufwendungen=26 haushaltsnahe_dienstleistungen=47100000 handwerker_arbeitskosten=26000000 hoechstbetraege_geteilt=false | steuerermaessigung=520005
+haushaltsnahe | minijob_aufwendungen=393253 haushaltsnahe_dienstleistungen=9328 handwerker_arbeitskosten=31100000 hoechstbetraege_geteilt=false | steuerermaessigung=172866
+haushaltsnahe | minijob_aufwendungen=20600000 haushaltsnahe_dienstleistungen=13400000 handwerker_arbeitskosten=42599999 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=10100000 haushaltsnahe_dienstleistungen=23 handwerker_arbeitskosten=891922 hoechstbetraege_geteilt=false | steuerermaessigung=171005
+haushaltsnahe | minijob_aufwendungen=21400000 haushaltsnahe_dienstleistungen=84 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=51017
+haushaltsnahe | minijob_aufwendungen=25800000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=84 hoechstbetraege_geteilt=false | steuerermaessigung=51017
+haushaltsnahe | minijob_aufwendungen=86 haushaltsnahe_dienstleistungen=21600000 handwerker_arbeitskosten=20299999 hoechstbetraege_geteilt=false | steuerermaessigung=520017
+haushaltsnahe | minijob_aufwendungen=6 haushaltsnahe_dienstleistungen=85676808 handwerker_arbeitskosten=76 hoechstbetraege_geteilt=false | steuerermaessigung=400016
+haushaltsnahe | minijob_aufwendungen=8800000 haushaltsnahe_dienstleistungen=73449 handwerker_arbeitskosten=5637625 hoechstbetraege_geteilt=false | steuerermaessigung=185690
+haushaltsnahe | minijob_aufwendungen=9301835 haushaltsnahe_dienstleistungen=2013 handwerker_arbeitskosten=19300000 hoechstbetraege_geteilt=false | steuerermaessigung=171403
+haushaltsnahe | minijob_aufwendungen=40676220 haushaltsnahe_dienstleistungen=934120 handwerker_arbeitskosten=8200000 hoechstbetraege_geteilt=true | steuerermaessigung=272324
+haushaltsnahe | minijob_aufwendungen=9566728 haushaltsnahe_dienstleistungen=3100001 handwerker_arbeitskosten=3372 hoechstbetraege_geteilt=true | steuerermaessigung=226174
+haushaltsnahe | minijob_aufwendungen=8753028672 haushaltsnahe_dienstleistungen=2135177 handwerker_arbeitskosten=9654459 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=40700000 handwerker_arbeitskosten=23299999 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=4500000 haushaltsnahe_dienstleistungen=44500000 handwerker_arbeitskosten=82 hoechstbetraege_geteilt=true | steuerermaessigung=225516
+haushaltsnahe | minijob_aufwendungen=7868886549 haushaltsnahe_dienstleistungen=35700000 handwerker_arbeitskosten=52197205 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=348 haushaltsnahe_dienstleistungen=214 handwerker_arbeitskosten=17 hoechstbetraege_geteilt=true | steuerermaessigung=116
+haushaltsnahe | minijob_aufwendungen=587 haushaltsnahe_dienstleistungen=695 handwerker_arbeitskosten=24000000 hoechstbetraege_geteilt=false | steuerermaessigung=120256
+haushaltsnahe | minijob_aufwendungen=47292 haushaltsnahe_dienstleistungen=24700000 handwerker_arbeitskosten=113077 hoechstbetraege_geteilt=false | steuerermaessigung=432073
+haushaltsnahe | minijob_aufwendungen=4599999 haushaltsnahe_dienstleistungen=4616521237 handwerker_arbeitskosten=7474 hoechstbetraege_geteilt=false | steuerermaessigung=452495
+haushaltsnahe | minijob_aufwendungen=524 haushaltsnahe_dienstleistungen=4797358 handwerker_arbeitskosten=5006454 hoechstbetraege_geteilt=true | steuerermaessigung=260105
+haushaltsnahe | minijob_aufwendungen=90809925 haushaltsnahe_dienstleistungen=23800000 handwerker_arbeitskosten=6 hoechstbetraege_geteilt=true | steuerermaessigung=225501
+haushaltsnahe | minijob_aufwendungen=540 haushaltsnahe_dienstleistungen=17 handwerker_arbeitskosten=9366 hoechstbetraege_geteilt=true | steuerermaessigung=1984
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=35099999 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=200000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=31500001 hoechstbetraege_geteilt=true | steuerermaessigung=60000
+haushaltsnahe | minijob_aufwendungen=5657 haushaltsnahe_dienstleistungen=3071 handwerker_arbeitskosten=3940 hoechstbetraege_geteilt=false | steuerermaessigung=2533
+haushaltsnahe | minijob_aufwendungen=86650004 haushaltsnahe_dienstleistungen=6500001 handwerker_arbeitskosten=30700000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=37299999 haushaltsnahe_dienstleistungen=64 handwerker_arbeitskosten=44000000 hoechstbetraege_geteilt=true | steuerermaessigung=85513
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=46200000 hoechstbetraege_geteilt=true | steuerermaessigung=60000
+haushaltsnahe | minijob_aufwendungen=18100000 haushaltsnahe_dienstleistungen=12600000 handwerker_arbeitskosten=42 hoechstbetraege_geteilt=false | steuerermaessigung=451008
+haushaltsnahe | minijob_aufwendungen=7400000 haushaltsnahe_dienstleistungen=9000000 handwerker_arbeitskosten=133 hoechstbetraege_geteilt=false | steuerermaessigung=451027
+haushaltsnahe | minijob_aufwendungen=6200000 haushaltsnahe_dienstleistungen=69042202 handwerker_arbeitskosten=36200000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=29199999 haushaltsnahe_dienstleistungen=727 handwerker_arbeitskosten=1299999 hoechstbetraege_geteilt=true | steuerermaessigung=85645
+haushaltsnahe | minijob_aufwendungen=97257 haushaltsnahe_dienstleistungen=8097 handwerker_arbeitskosten=5963 hoechstbetraege_geteilt=true | steuerermaessigung=22263
+haushaltsnahe | minijob_aufwendungen=3906914973 haushaltsnahe_dienstleistungen=35300000 handwerker_arbeitskosten=552669 hoechstbetraege_geteilt=false | steuerermaessigung=561534
+haushaltsnahe | minijob_aufwendungen=3325034499 haushaltsnahe_dienstleistungen=34600000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=451000
+haushaltsnahe | minijob_aufwendungen=92477917 haushaltsnahe_dienstleistungen=2500000 handwerker_arbeitskosten=266893 hoechstbetraege_geteilt=false | steuerermaessigung=504379
+haushaltsnahe | minijob_aufwendungen=63 haushaltsnahe_dienstleistungen=802 handwerker_arbeitskosten=50116 hoechstbetraege_geteilt=false | steuerermaessigung=10196
+haushaltsnahe | minijob_aufwendungen=4 haushaltsnahe_dienstleistungen=9500000 handwerker_arbeitskosten=34999999 hoechstbetraege_geteilt=false | steuerermaessigung=520001
+haushaltsnahe | minijob_aufwendungen=78 haushaltsnahe_dienstleistungen=32800000 handwerker_arbeitskosten=39276 hoechstbetraege_geteilt=false | steuerermaessigung=407871
+haushaltsnahe | minijob_aufwendungen=27200000 haushaltsnahe_dienstleistungen=6432803 handwerker_arbeitskosten=7480 hoechstbetraege_geteilt=true | steuerermaessigung=226996
+haushaltsnahe | minijob_aufwendungen=340473 haushaltsnahe_dienstleistungen=218174 handwerker_arbeitskosten=87 hoechstbetraege_geteilt=false | steuerermaessigung=94652
+haushaltsnahe | minijob_aufwendungen=68658 haushaltsnahe_dienstleistungen=36700000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=213732
+haushaltsnahe | minijob_aufwendungen=40800000 haushaltsnahe_dienstleistungen=779 handwerker_arbeitskosten=42699999 hoechstbetraege_geteilt=true | steuerermaessigung=85656
+haushaltsnahe | minijob_aufwendungen=50412 haushaltsnahe_dienstleistungen=5713760 handwerker_arbeitskosten=17465312 hoechstbetraege_geteilt=false | steuerermaessigung=530082
+haushaltsnahe | minijob_aufwendungen=14200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=6786 hoechstbetraege_geteilt=false | steuerermaessigung=52357
+haushaltsnahe | minijob_aufwendungen=25301722 haushaltsnahe_dienstleistungen=20100000 handwerker_arbeitskosten=1293759688 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=6784726 haushaltsnahe_dienstleistungen=11149737 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=451000
+haushaltsnahe | minijob_aufwendungen=783440294 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=362 hoechstbetraege_geteilt=false | steuerermaessigung=51072
+haushaltsnahe | minijob_aufwendungen=43100000 haushaltsnahe_dienstleistungen=188019 handwerker_arbeitskosten=8578786 hoechstbetraege_geteilt=true | steuerermaessigung=123104
+haushaltsnahe | minijob_aufwendungen=85389092 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=25500
+haushaltsnahe | minijob_aufwendungen=823455 haushaltsnahe_dienstleistungen=8881917381 handwerker_arbeitskosten=8800000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=1500000 haushaltsnahe_dienstleistungen=14000001 handwerker_arbeitskosten=2252855 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=330 haushaltsnahe_dienstleistungen=20200000 handwerker_arbeitskosten=780 hoechstbetraege_geteilt=true | steuerermaessigung=200222
+haushaltsnahe | minijob_aufwendungen=2241281 haushaltsnahe_dienstleistungen=1700000 handwerker_arbeitskosten=2978310 hoechstbetraege_geteilt=false | steuerermaessigung=511000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=886 handwerker_arbeitskosten=5393224163976953855 hoechstbetraege_geteilt=false | steuerermaessigung=120177
+haushaltsnahe | minijob_aufwendungen=1200000 haushaltsnahe_dienstleistungen=700000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=191000
+haushaltsnahe | minijob_aufwendungen=64 haushaltsnahe_dienstleistungen=23600000 handwerker_arbeitskosten=46942 hoechstbetraege_geteilt=false | steuerermaessigung=409401
+haushaltsnahe | minijob_aufwendungen=599 haushaltsnahe_dienstleistungen=932 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=306
+haushaltsnahe | minijob_aufwendungen=89951 haushaltsnahe_dienstleistungen=6756 handwerker_arbeitskosten=39000001 hoechstbetraege_geteilt=false | steuerermaessigung=139341
+haushaltsnahe | minijob_aufwendungen=5500000 haushaltsnahe_dienstleistungen=21400000 handwerker_arbeitskosten=21063 hoechstbetraege_geteilt=true | steuerermaessigung=229713
+haushaltsnahe | minijob_aufwendungen=6313166 haushaltsnahe_dienstleistungen=18500000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=225500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=40200000 handwerker_arbeitskosten=2624 hoechstbetraege_geteilt=true | steuerermaessigung=200525
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=9164540 handwerker_arbeitskosten=21600000 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=13000001 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=200000
+haushaltsnahe | minijob_aufwendungen=38 haushaltsnahe_dienstleistungen=3995 handwerker_arbeitskosten=380445 hoechstbetraege_geteilt=false | steuerermaessigung=76896
+haushaltsnahe | minijob_aufwendungen=28900000 haushaltsnahe_dienstleistungen=22300000 handwerker_arbeitskosten=768 hoechstbetraege_geteilt=true | steuerermaessigung=225654
+haushaltsnahe | minijob_aufwendungen=10699999 haushaltsnahe_dienstleistungen=515 handwerker_arbeitskosten=40600000 hoechstbetraege_geteilt=false | steuerermaessigung=171103
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=4612525690 handwerker_arbeitskosten=95449511 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=5331 haushaltsnahe_dienstleistungen=371 handwerker_arbeitskosten=8104 hoechstbetraege_geteilt=false | steuerermaessigung=2761
+haushaltsnahe | minijob_aufwendungen=29100000 haushaltsnahe_dienstleistungen=15900000 handwerker_arbeitskosten=39 hoechstbetraege_geteilt=true | steuerermaessigung=225508
+haushaltsnahe | minijob_aufwendungen=2200001 haushaltsnahe_dienstleistungen=179068 handwerker_arbeitskosten=39200000 hoechstbetraege_geteilt=true | steuerermaessigung=121314
+haushaltsnahe | minijob_aufwendungen=17600001 haushaltsnahe_dienstleistungen=11 handwerker_arbeitskosten=991 hoechstbetraege_geteilt=true | steuerermaessigung=25700
+haushaltsnahe | minijob_aufwendungen=40199999 haushaltsnahe_dienstleistungen=665 handwerker_arbeitskosten=48200000 hoechstbetraege_geteilt=false | steuerermaessigung=171133
+haushaltsnahe | minijob_aufwendungen=18800000 haushaltsnahe_dienstleistungen=52238 handwerker_arbeitskosten=9459387091 hoechstbetraege_geteilt=true | steuerermaessigung=95948
+haushaltsnahe | minijob_aufwendungen=30600001 haushaltsnahe_dienstleistungen=413 handwerker_arbeitskosten=555829 hoechstbetraege_geteilt=false | steuerermaessigung=162249
+haushaltsnahe | minijob_aufwendungen=1020 haushaltsnahe_dienstleistungen=32800001 handwerker_arbeitskosten=611 hoechstbetraege_geteilt=false | steuerermaessigung=400326
+haushaltsnahe | minijob_aufwendungen=14217 haushaltsnahe_dienstleistungen=13300001 handwerker_arbeitskosten=900334 hoechstbetraege_geteilt=true | steuerermaessigung=262843
+haushaltsnahe | minijob_aufwendungen=6512 haushaltsnahe_dienstleistungen=94125339 handwerker_arbeitskosten=11529930 hoechstbetraege_geteilt=true | steuerermaessigung=261302
+haushaltsnahe | minijob_aufwendungen=91463806 haushaltsnahe_dienstleistungen=271 handwerker_arbeitskosten=17 hoechstbetraege_geteilt=false | steuerermaessigung=51057
+haushaltsnahe | minijob_aufwendungen=4748 haushaltsnahe_dienstleistungen=15900000 handwerker_arbeitskosten=10000000 hoechstbetraege_geteilt=false | steuerermaessigung=520950
+haushaltsnahe | minijob_aufwendungen=8215917 haushaltsnahe_dienstleistungen=2906009 handwerker_arbeitskosten=737 hoechstbetraege_geteilt=false | steuerermaessigung=451147
+haushaltsnahe | minijob_aufwendungen=9442255336 haushaltsnahe_dienstleistungen=3185007 handwerker_arbeitskosten=45078 hoechstbetraege_geteilt=true | steuerermaessigung=234516
+haushaltsnahe | minijob_aufwendungen=2946412550 haushaltsnahe_dienstleistungen=61086 handwerker_arbeitskosten=2698 hoechstbetraege_geteilt=true | steuerermaessigung=38257
+haushaltsnahe | minijob_aufwendungen=3733 haushaltsnahe_dienstleistungen=1584594 handwerker_arbeitskosten=2749 hoechstbetraege_geteilt=false | steuerermaessigung=318216
+haushaltsnahe | minijob_aufwendungen=422965 haushaltsnahe_dienstleistungen=80874 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=67175
+haushaltsnahe | minijob_aufwendungen=748684 haushaltsnahe_dienstleistungen=9352546 handwerker_arbeitskosten=32600000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=45900000 haushaltsnahe_dienstleistungen=59 handwerker_arbeitskosten=21 hoechstbetraege_geteilt=false | steuerermaessigung=51016
+haushaltsnahe | minijob_aufwendungen=38389 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=32100000 hoechstbetraege_geteilt=false | steuerermaessigung=127678
+haushaltsnahe | minijob_aufwendungen=3765 haushaltsnahe_dienstleistungen=81720 handwerker_arbeitskosten=33 hoechstbetraege_geteilt=true | steuerermaessigung=17104
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=273 handwerker_arbeitskosten=80397 hoechstbetraege_geteilt=true | steuerermaessigung=16134
+haushaltsnahe | minijob_aufwendungen=31800000 haushaltsnahe_dienstleistungen=39169 handwerker_arbeitskosten=36500000 hoechstbetraege_geteilt=false | steuerermaessigung=178834
+haushaltsnahe | minijob_aufwendungen=20200000 haushaltsnahe_dienstleistungen=3900000 handwerker_arbeitskosten=35199999 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=555752494 haushaltsnahe_dienstleistungen=46757 handwerker_arbeitskosten=37500000 hoechstbetraege_geteilt=true | steuerermaessigung=94851
+haushaltsnahe | minijob_aufwendungen=802596 haushaltsnahe_dienstleistungen=7899999 handwerker_arbeitskosten=51844514 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=5369018 haushaltsnahe_dienstleistungen=7959298 handwerker_arbeitskosten=37800000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=799999 haushaltsnahe_dienstleistungen=35800000 handwerker_arbeitskosten=75694139 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=59313490 haushaltsnahe_dienstleistungen=60 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=25512
+haushaltsnahe | minijob_aufwendungen=670281 haushaltsnahe_dienstleistungen=38 handwerker_arbeitskosten=235350739 hoechstbetraege_geteilt=false | steuerermaessigung=171008
+haushaltsnahe | minijob_aufwendungen=35100000 haushaltsnahe_dienstleistungen=29399999 handwerker_arbeitskosten=50811 hoechstbetraege_geteilt=false | steuerermaessigung=461162
+haushaltsnahe | minijob_aufwendungen=18 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=21443 hoechstbetraege_geteilt=false | steuerermaessigung=4293
+haushaltsnahe | minijob_aufwendungen=31100000 haushaltsnahe_dienstleistungen=13900000 handwerker_arbeitskosten=20800000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=10600000 haushaltsnahe_dienstleistungen=23900000 handwerker_arbeitskosten=69592 hoechstbetraege_geteilt=true | steuerermaessigung=239418
+haushaltsnahe | minijob_aufwendungen=4541 haushaltsnahe_dienstleistungen=39100000 handwerker_arbeitskosten=19100000 hoechstbetraege_geteilt=true | steuerermaessigung=260908
+haushaltsnahe | minijob_aufwendungen=20900000 haushaltsnahe_dienstleistungen=10500000 handwerker_arbeitskosten=533983 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=3600000 handwerker_arbeitskosten=25900000 hoechstbetraege_geteilt=false | steuerermaessigung=520000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=46917702 handwerker_arbeitskosten=14000000 hoechstbetraege_geteilt=false | steuerermaessigung=520000
+haushaltsnahe | minijob_aufwendungen=21700000 haushaltsnahe_dienstleistungen=6753 handwerker_arbeitskosten=210 hoechstbetraege_geteilt=true | steuerermaessigung=26893
+haushaltsnahe | minijob_aufwendungen=3174 haushaltsnahe_dienstleistungen=2900037 handwerker_arbeitskosten=6403 hoechstbetraege_geteilt=true | steuerermaessigung=201916
+haushaltsnahe | minijob_aufwendungen=11200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=273925 hoechstbetraege_geteilt=true | steuerermaessigung=80285
+haushaltsnahe | minijob_aufwendungen=9578821 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=20599999 hoechstbetraege_geteilt=false | steuerermaessigung=171000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=4612 handwerker_arbeitskosten=21600000 hoechstbetraege_geteilt=true | steuerermaessigung=60922
+haushaltsnahe | minijob_aufwendungen=9232893539 haushaltsnahe_dienstleistungen=16700000 handwerker_arbeitskosten=18300000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=723750 haushaltsnahe_dienstleistungen=2900000 handwerker_arbeitskosten=79714 hoechstbetraege_geteilt=false | steuerermaessigung=466943
+haushaltsnahe | minijob_aufwendungen=2960 haushaltsnahe_dienstleistungen=43200000 handwerker_arbeitskosten=511 hoechstbetraege_geteilt=true | steuerermaessigung=200694
+haushaltsnahe | minijob_aufwendungen=242 haushaltsnahe_dienstleistungen=323380 handwerker_arbeitskosten=733910 hoechstbetraege_geteilt=false | steuerermaessigung=184724
+haushaltsnahe | minijob_aufwendungen=20 haushaltsnahe_dienstleistungen=842 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=172
+haushaltsnahe | minijob_aufwendungen=6833545 haushaltsnahe_dienstleistungen=12500000 handwerker_arbeitskosten=1998 hoechstbetraege_geteilt=true | steuerermaessigung=225900
+haushaltsnahe | minijob_aufwendungen=3778 haushaltsnahe_dienstleistungen=6543 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=2065
+haushaltsnahe | minijob_aufwendungen=40299999 haushaltsnahe_dienstleistungen=9500000 handwerker_arbeitskosten=15870408 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=8104 haushaltsnahe_dienstleistungen=62404 handwerker_arbeitskosten=46800000 hoechstbetraege_geteilt=true | steuerermaessigung=74102
+haushaltsnahe | minijob_aufwendungen=1 haushaltsnahe_dienstleistungen=37800000 handwerker_arbeitskosten=65581970 hoechstbetraege_geteilt=false | steuerermaessigung=520000
+haushaltsnahe | minijob_aufwendungen=334524 haushaltsnahe_dienstleistungen=11104748 handwerker_arbeitskosten=87338860 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=777 handwerker_arbeitskosten=52653 hoechstbetraege_geteilt=false | steuerermaessigung=10686
+haushaltsnahe | minijob_aufwendungen=75658 haushaltsnahe_dienstleistungen=142470 handwerker_arbeitskosten=386903 hoechstbetraege_geteilt=false | steuerermaessigung=121007
+haushaltsnahe | minijob_aufwendungen=8685824925829223870 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=51000
+haushaltsnahe | minijob_aufwendungen=19704217 haushaltsnahe_dienstleistungen=660442 handwerker_arbeitskosten=8540373343474809608 hoechstbetraege_geteilt=true | steuerermaessigung=217588
+haushaltsnahe | minijob_aufwendungen=2467914 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=9299999 hoechstbetraege_geteilt=true | steuerermaessigung=85500
+haushaltsnahe | minijob_aufwendungen=23662 haushaltsnahe_dienstleistungen=22700000 handwerker_arbeitskosten=403739 hoechstbetraege_geteilt=false | steuerermaessigung=485480
+haushaltsnahe | minijob_aufwendungen=98057 haushaltsnahe_dienstleistungen=34 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=19618
+haushaltsnahe | minijob_aufwendungen=26142 haushaltsnahe_dienstleistungen=24120633 handwerker_arbeitskosten=430659 hoechstbetraege_geteilt=false | steuerermaessigung=491360
+haushaltsnahe | minijob_aufwendungen=42299999 haushaltsnahe_dienstleistungen=61760483 handwerker_arbeitskosten=43 hoechstbetraege_geteilt=false | steuerermaessigung=451009
+haushaltsnahe | minijob_aufwendungen=63 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=5431 hoechstbetraege_geteilt=false | steuerermaessigung=1099
+haushaltsnahe | minijob_aufwendungen=19800000 haushaltsnahe_dienstleistungen=77854266 handwerker_arbeitskosten=3665 hoechstbetraege_geteilt=false | steuerermaessigung=451733
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=18419 handwerker_arbeitskosten=6665640 hoechstbetraege_geteilt=true | steuerermaessigung=63684
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=22800000 handwerker_arbeitskosten=9732162 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=28200000 haushaltsnahe_dienstleistungen=16000000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=225500
+haushaltsnahe | minijob_aufwendungen=29 haushaltsnahe_dienstleistungen=9322420856 handwerker_arbeitskosten=29100000 hoechstbetraege_geteilt=false | steuerermaessigung=520006
+haushaltsnahe | minijob_aufwendungen=17 haushaltsnahe_dienstleistungen=48700000 handwerker_arbeitskosten=4052 hoechstbetraege_geteilt=false | steuerermaessigung=400813
+haushaltsnahe | minijob_aufwendungen=3127 haushaltsnahe_dienstleistungen=3499 handwerker_arbeitskosten=25100000 hoechstbetraege_geteilt=false | steuerermaessigung=121325
+haushaltsnahe | minijob_aufwendungen=57000299 haushaltsnahe_dienstleistungen=6930149632 handwerker_arbeitskosten=9099999 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=5300001 haushaltsnahe_dienstleistungen=44496814 handwerker_arbeitskosten=20 hoechstbetraege_geteilt=true | steuerermaessigung=225504
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=38600000 handwerker_arbeitskosten=37796538 hoechstbetraege_geteilt=false | steuerermaessigung=520000
+haushaltsnahe | minijob_aufwendungen=29700000 haushaltsnahe_dienstleistungen=51007 handwerker_arbeitskosten=6797086773423833182 hoechstbetraege_geteilt=false | steuerermaessigung=181201
+haushaltsnahe | minijob_aufwendungen=85456 haushaltsnahe_dienstleistungen=8764303809553802124 handwerker_arbeitskosten=43200000 hoechstbetraege_geteilt=true | steuerermaessigung=277091
+haushaltsnahe | minijob_aufwendungen=49 haushaltsnahe_dienstleistungen=7781 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=1566
+haushaltsnahe | minijob_aufwendungen=42200000 haushaltsnahe_dienstleistungen=22524 handwerker_arbeitskosten=27999999 hoechstbetraege_geteilt=false | steuerermaessigung=175505
+haushaltsnahe | minijob_aufwendungen=21968 haushaltsnahe_dienstleistungen=1408988 handwerker_arbeitskosten=35100000 hoechstbetraege_geteilt=true | steuerermaessigung=264394
+haushaltsnahe | minijob_aufwendungen=52 haushaltsnahe_dienstleistungen=657419 handwerker_arbeitskosten=29800000 hoechstbetraege_geteilt=false | steuerermaessigung=251494
+haushaltsnahe | minijob_aufwendungen=7180135272 haushaltsnahe_dienstleistungen=62927 handwerker_arbeitskosten=4801 hoechstbetraege_geteilt=false | steuerermaessigung=64545
+haushaltsnahe | minijob_aufwendungen=17200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=45400001 hoechstbetraege_geteilt=false | steuerermaessigung=171000
+haushaltsnahe | minijob_aufwendungen=93639 haushaltsnahe_dienstleistungen=1000000 handwerker_arbeitskosten=31964 hoechstbetraege_geteilt=false | steuerermaessigung=225121
+haushaltsnahe | minijob_aufwendungen=230513 haushaltsnahe_dienstleistungen=7519 handwerker_arbeitskosten=38300000 hoechstbetraege_geteilt=false | steuerermaessigung=167607
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=62929 handwerker_arbeitskosten=7400000 hoechstbetraege_geteilt=true | steuerermaessigung=72586
+haushaltsnahe | minijob_aufwendungen=862 haushaltsnahe_dienstleistungen=950849 handwerker_arbeitskosten=34400000 hoechstbetraege_geteilt=false | steuerermaessigung=310342
+haushaltsnahe | minijob_aufwendungen=27 haushaltsnahe_dienstleistungen=4256902 handwerker_arbeitskosten=968582 hoechstbetraege_geteilt=false | steuerermaessigung=520005
+haushaltsnahe | minijob_aufwendungen=2344772 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=25500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=946 handwerker_arbeitskosten=31500001 hoechstbetraege_geteilt=true | steuerermaessigung=60189
+haushaltsnahe | minijob_aufwendungen=43700000 haushaltsnahe_dienstleistungen=19800000 handwerker_arbeitskosten=22700000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=60329118 handwerker_arbeitskosten=59 hoechstbetraege_geteilt=false | steuerermaessigung=400012
+haushaltsnahe | minijob_aufwendungen=99 haushaltsnahe_dienstleistungen=84056 handwerker_arbeitskosten=854 hoechstbetraege_geteilt=false | steuerermaessigung=17002
+haushaltsnahe | minijob_aufwendungen=36900000 haushaltsnahe_dienstleistungen=5617 handwerker_arbeitskosten=299999 hoechstbetraege_geteilt=true | steuerermaessigung=86623
+haushaltsnahe | minijob_aufwendungen=45687036 haushaltsnahe_dienstleistungen=42366061 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=225500
+haushaltsnahe | minijob_aufwendungen=74521 haushaltsnahe_dienstleistungen=15300001 handwerker_arbeitskosten=8430865 hoechstbetraege_geteilt=true | steuerermaessigung=274904
+haushaltsnahe | minijob_aufwendungen=5900000 haushaltsnahe_dienstleistungen=2283 handwerker_arbeitskosten=1805512 hoechstbetraege_geteilt=true | steuerermaessigung=85957
+haushaltsnahe | minijob_aufwendungen=54 haushaltsnahe_dienstleistungen=500000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=100011
+haushaltsnahe | minijob_aufwendungen=28432 haushaltsnahe_dienstleistungen=6466734610 handwerker_arbeitskosten=91035131 hoechstbetraege_geteilt=true | steuerermaessigung=265686
+haushaltsnahe | minijob_aufwendungen=23800000 haushaltsnahe_dienstleistungen=6755 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=26851
+haushaltsnahe | minijob_aufwendungen=7400000 haushaltsnahe_dienstleistungen=18200000 handwerker_arbeitskosten=16853 hoechstbetraege_geteilt=false | steuerermaessigung=454371
+haushaltsnahe | minijob_aufwendungen=5087 haushaltsnahe_dienstleistungen=11700000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=201017
+haushaltsnahe | minijob_aufwendungen=1600000 haushaltsnahe_dienstleistungen=582088 handwerker_arbeitskosten=43288385 hoechstbetraege_geteilt=false | steuerermaessigung=287418
+haushaltsnahe | minijob_aufwendungen=9208370085 haushaltsnahe_dienstleistungen=40200001 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=451000
+haushaltsnahe | minijob_aufwendungen=8151139975 haushaltsnahe_dienstleistungen=6636749334162589950 handwerker_arbeitskosten=13800000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=513 haushaltsnahe_dienstleistungen=90264427 handwerker_arbeitskosten=40999999 hoechstbetraege_geteilt=false | steuerermaessigung=520103
+haushaltsnahe | minijob_aufwendungen=807419605 haushaltsnahe_dienstleistungen=13800000 handwerker_arbeitskosten=3931110 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=79524 haushaltsnahe_dienstleistungen=21899999 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=415905
+haushaltsnahe | minijob_aufwendungen=5746 haushaltsnahe_dienstleistungen=2989 handwerker_arbeitskosten=264 hoechstbetraege_geteilt=false | steuerermaessigung=1800
+haushaltsnahe | minijob_aufwendungen=2585 haushaltsnahe_dienstleistungen=8443855 handwerker_arbeitskosten=19800000 hoechstbetraege_geteilt=true | steuerermaessigung=260517
+haushaltsnahe | minijob_aufwendungen=41300000 haushaltsnahe_dienstleistungen=872 handwerker_arbeitskosten=8132500 hoechstbetraege_geteilt=true | steuerermaessigung=85674
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=7799999 handwerker_arbeitskosten=8492 hoechstbetraege_geteilt=true | steuerermaessigung=201698
+haushaltsnahe | minijob_aufwendungen=644570 haushaltsnahe_dienstleistungen=38700001 handwerker_arbeitskosten=20 hoechstbetraege_geteilt=false | steuerermaessigung=451004
+haushaltsnahe | minijob_aufwendungen=23406985 haushaltsnahe_dienstleistungen=7899999 handwerker_arbeitskosten=4500000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=48600001 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=25500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=9070772 handwerker_arbeitskosten=47200000 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=4404385789 haushaltsnahe_dienstleistungen=405017 handwerker_arbeitskosten=375 hoechstbetraege_geteilt=false | steuerermaessigung=132078
+haushaltsnahe | minijob_aufwendungen=99 haushaltsnahe_dienstleistungen=46099999 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=200020
+haushaltsnahe | minijob_aufwendungen=2010 haushaltsnahe_dienstleistungen=41163484 handwerker_arbeitskosten=398 hoechstbetraege_geteilt=false | steuerermaessigung=400482
+haushaltsnahe | minijob_aufwendungen=7429 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=635 hoechstbetraege_geteilt=false | steuerermaessigung=1613
+haushaltsnahe | minijob_aufwendungen=7600000 haushaltsnahe_dienstleistungen=6982252649 handwerker_arbeitskosten=4793454 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=81047 handwerker_arbeitskosten=37799999 hoechstbetraege_geteilt=true | steuerermaessigung=76209
+haushaltsnahe | minijob_aufwendungen=48600000 haushaltsnahe_dienstleistungen=27400000 handwerker_arbeitskosten=1657934 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=15479 handwerker_arbeitskosten=170322 hoechstbetraege_geteilt=false | steuerermaessigung=37160
+haushaltsnahe | minijob_aufwendungen=260502 haushaltsnahe_dienstleistungen=33300001 handwerker_arbeitskosten=22200000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5043231917 handwerker_arbeitskosten=74 hoechstbetraege_geteilt=false | steuerermaessigung=400015
+haushaltsnahe | minijob_aufwendungen=6502386891 haushaltsnahe_dienstleistungen=774 handwerker_arbeitskosten=732964 hoechstbetraege_geteilt=true | steuerermaessigung=85655
+haushaltsnahe | minijob_aufwendungen=5501196 haushaltsnahe_dienstleistungen=814347 handwerker_arbeitskosten=27939 hoechstbetraege_geteilt=false | steuerermaessigung=219457
+haushaltsnahe | minijob_aufwendungen=47400000 haushaltsnahe_dienstleistungen=5849 handwerker_arbeitskosten=36100001 hoechstbetraege_geteilt=false | steuerermaessigung=172170
+haushaltsnahe | minijob_aufwendungen=512772 haushaltsnahe_dienstleistungen=2758838 handwerker_arbeitskosten=20 hoechstbetraege_geteilt=false | steuerermaessigung=451004
+haushaltsnahe | minijob_aufwendungen=9800000 haushaltsnahe_dienstleistungen=3019 handwerker_arbeitskosten=53744408 hoechstbetraege_geteilt=true | steuerermaessigung=86104
+haushaltsnahe | minijob_aufwendungen=17900000 haushaltsnahe_dienstleistungen=10300000 handwerker_arbeitskosten=935376 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=1308298 handwerker_arbeitskosten=80 hoechstbetraege_geteilt=true | steuerermaessigung=200016
+haushaltsnahe | minijob_aufwendungen=20406 haushaltsnahe_dienstleistungen=8448272 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=204081
+haushaltsnahe | minijob_aufwendungen=180 haushaltsnahe_dienstleistungen=23024 handwerker_arbeitskosten=801 hoechstbetraege_geteilt=true | steuerermaessigung=4801
+haushaltsnahe | minijob_aufwendungen=87 haushaltsnahe_dienstleistungen=8300001 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=400017
+haushaltsnahe | minijob_aufwendungen=80274535 haushaltsnahe_dienstleistungen=725 handwerker_arbeitskosten=245749 hoechstbetraege_geteilt=true | steuerermaessigung=74795
+haushaltsnahe | minijob_aufwendungen=88884567 haushaltsnahe_dienstleistungen=464805 handwerker_arbeitskosten=31499999 hoechstbetraege_geteilt=true | steuerermaessigung=178461
+haushaltsnahe | minijob_aufwendungen=7732606208 haushaltsnahe_dienstleistungen=7642143296 handwerker_arbeitskosten=45000000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=30351687 haushaltsnahe_dienstleistungen=48699999 handwerker_arbeitskosten=41800000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=1989121 haushaltsnahe_dienstleistungen=89144106 handwerker_arbeitskosten=23000000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=5697072 haushaltsnahe_dienstleistungen=80226169 handwerker_arbeitskosten=900000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=23900000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=25500
+haushaltsnahe | minijob_aufwendungen=8714 haushaltsnahe_dienstleistungen=88671 handwerker_arbeitskosten=97715 hoechstbetraege_geteilt=false | steuerermaessigung=39020
+haushaltsnahe | minijob_aufwendungen=1600001 haushaltsnahe_dienstleistungen=8557589480936925674 handwerker_arbeitskosten=43500000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=644607 haushaltsnahe_dienstleistungen=3284 handwerker_arbeitskosten=38202259 hoechstbetraege_geteilt=true | steuerermaessigung=86157
+haushaltsnahe | minijob_aufwendungen=39800000 haushaltsnahe_dienstleistungen=42900000 handwerker_arbeitskosten=2500000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=360 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=72
+haushaltsnahe | minijob_aufwendungen=24 haushaltsnahe_dienstleistungen=275 handwerker_arbeitskosten=45600001 hoechstbetraege_geteilt=false | steuerermaessigung=120060
+haushaltsnahe | minijob_aufwendungen=17400000 haushaltsnahe_dienstleistungen=75732728 handwerker_arbeitskosten=166322 hoechstbetraege_geteilt=true | steuerermaessigung=258764
+haushaltsnahe | minijob_aufwendungen=46047855 haushaltsnahe_dienstleistungen=467444 handwerker_arbeitskosten=42099543 hoechstbetraege_geteilt=true | steuerermaessigung=178989
+haushaltsnahe | minijob_aufwendungen=8100000 haushaltsnahe_dienstleistungen=39900000 handwerker_arbeitskosten=5704239576 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=68499 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=8264023 hoechstbetraege_geteilt=false | steuerermaessigung=133700
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=12700000 handwerker_arbeitskosten=1159055 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=23300001 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=4441993 hoechstbetraege_geteilt=false | steuerermaessigung=171000
+haushaltsnahe | minijob_aufwendungen=28100000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=36800001 hoechstbetraege_geteilt=false | steuerermaessigung=171000
+haushaltsnahe | minijob_aufwendungen=2489 haushaltsnahe_dienstleistungen=12400000 handwerker_arbeitskosten=14100000 hoechstbetraege_geteilt=false | steuerermaessigung=520498
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=47399999 hoechstbetraege_geteilt=false | steuerermaessigung=120000
+haushaltsnahe | minijob_aufwendungen=48754 haushaltsnahe_dienstleistungen=248192 handwerker_arbeitskosten=31 hoechstbetraege_geteilt=true | steuerermaessigung=59395
+haushaltsnahe | minijob_aufwendungen=1688 haushaltsnahe_dienstleistungen=2371 handwerker_arbeitskosten=955971161 hoechstbetraege_geteilt=true | steuerermaessigung=60812
+haushaltsnahe | minijob_aufwendungen=43 haushaltsnahe_dienstleistungen=55603124 handwerker_arbeitskosten=41600000 hoechstbetraege_geteilt=true | steuerermaessigung=260009
+haushaltsnahe | minijob_aufwendungen=49200000 haushaltsnahe_dienstleistungen=2700000 handwerker_arbeitskosten=2800001 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=38500001 haushaltsnahe_dienstleistungen=3246391062 handwerker_arbeitskosten=950640 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=47299999 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=33400000 hoechstbetraege_geteilt=true | steuerermaessigung=85500
+haushaltsnahe | minijob_aufwendungen=31199999 haushaltsnahe_dienstleistungen=650 handwerker_arbeitskosten=97164725 hoechstbetraege_geteilt=false | steuerermaessigung=171130
+haushaltsnahe | minijob_aufwendungen=19800001 haushaltsnahe_dienstleistungen=16012 handwerker_arbeitskosten=8400000 hoechstbetraege_geteilt=false | steuerermaessigung=174202
+haushaltsnahe | minijob_aufwendungen=49400000 haushaltsnahe_dienstleistungen=6796 handwerker_arbeitskosten=77178421 hoechstbetraege_geteilt=false | steuerermaessigung=172359
+haushaltsnahe | minijob_aufwendungen=14639 haushaltsnahe_dienstleistungen=1897449 handwerker_arbeitskosten=48500000 hoechstbetraege_geteilt=false | steuerermaessigung=502418
+haushaltsnahe | minijob_aufwendungen=301 haushaltsnahe_dienstleistungen=18 handwerker_arbeitskosten=3296944 hoechstbetraege_geteilt=false | steuerermaessigung=120064
+haushaltsnahe | minijob_aufwendungen=17700000 haushaltsnahe_dienstleistungen=257 handwerker_arbeitskosten=97 hoechstbetraege_geteilt=false | steuerermaessigung=51070
+haushaltsnahe | minijob_aufwendungen=7879737454 haushaltsnahe_dienstleistungen=15400000 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=225500
+haushaltsnahe | minijob_aufwendungen=11300000 haushaltsnahe_dienstleistungen=667 handwerker_arbeitskosten=44800000 hoechstbetraege_geteilt=true | steuerermaessigung=85633
+haushaltsnahe | minijob_aufwendungen=616378 haushaltsnahe_dienstleistungen=976 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=51195
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=0
+haushaltsnahe | minijob_aufwendungen=7901 haushaltsnahe_dienstleistungen=31599999 handwerker_arbeitskosten=1854616 hoechstbetraege_geteilt=true | steuerermaessigung=261580
+haushaltsnahe | minijob_aufwendungen=1900000 haushaltsnahe_dienstleistungen=30900000 handwerker_arbeitskosten=39499999 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=39400000 haushaltsnahe_dienstleistungen=91769821 handwerker_arbeitskosten=29200000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=92897 haushaltsnahe_dienstleistungen=79701734 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=418579
+haushaltsnahe | minijob_aufwendungen=8486 haushaltsnahe_dienstleistungen=5700000 handwerker_arbeitskosten=8200000 hoechstbetraege_geteilt=true | steuerermaessigung=261697
+haushaltsnahe | minijob_aufwendungen=5400000 haushaltsnahe_dienstleistungen=32799999 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=451000
+haushaltsnahe | minijob_aufwendungen=25128508 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=8900000 hoechstbetraege_geteilt=true | steuerermaessigung=85500
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=91 handwerker_arbeitskosten=8244421 hoechstbetraege_geteilt=true | steuerermaessigung=60018
+haushaltsnahe | minijob_aufwendungen=8611 haushaltsnahe_dienstleistungen=22 handwerker_arbeitskosten=61 hoechstbetraege_geteilt=true | steuerermaessigung=1738
+haushaltsnahe | minijob_aufwendungen=664106 haushaltsnahe_dienstleistungen=4012970896 handwerker_arbeitskosten=32500000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=6000000 haushaltsnahe_dienstleistungen=41 handwerker_arbeitskosten=71705 hoechstbetraege_geteilt=true | steuerermaessigung=39849
+haushaltsnahe | minijob_aufwendungen=14 haushaltsnahe_dienstleistungen=7181534438 handwerker_arbeitskosten=69381 hoechstbetraege_geteilt=true | steuerermaessigung=213879
+haushaltsnahe | minijob_aufwendungen=288707 haushaltsnahe_dienstleistungen=302 handwerker_arbeitskosten=6900000 hoechstbetraege_geteilt=true | steuerermaessigung=85560
+haushaltsnahe | minijob_aufwendungen=21426 haushaltsnahe_dienstleistungen=9562728 handwerker_arbeitskosten=66838317 hoechstbetraege_geteilt=true | steuerermaessigung=264285
+haushaltsnahe | minijob_aufwendungen=24833 haushaltsnahe_dienstleistungen=42599193 handwerker_arbeitskosten=863 hoechstbetraege_geteilt=false | steuerermaessigung=405140
+haushaltsnahe | minijob_aufwendungen=9700000 haushaltsnahe_dienstleistungen=11800000 handwerker_arbeitskosten=32200000 hoechstbetraege_geteilt=false | steuerermaessigung=571000
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=532197 handwerker_arbeitskosten=5600000 hoechstbetraege_geteilt=false | steuerermaessigung=226439
+haushaltsnahe | minijob_aufwendungen=1454 haushaltsnahe_dienstleistungen=65 handwerker_arbeitskosten=110 hoechstbetraege_geteilt=false | steuerermaessigung=326
+haushaltsnahe | minijob_aufwendungen=3200000 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=6411227 hoechstbetraege_geteilt=true | steuerermaessigung=85500
+haushaltsnahe | minijob_aufwendungen=912122 haushaltsnahe_dienstleistungen=2653 handwerker_arbeitskosten=77 hoechstbetraege_geteilt=false | steuerermaessigung=51546
+haushaltsnahe | minijob_aufwendungen=27700001 haushaltsnahe_dienstleistungen=285871 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=82674
+haushaltsnahe | minijob_aufwendungen=94 haushaltsnahe_dienstleistungen=26400000 handwerker_arbeitskosten=22700000 hoechstbetraege_geteilt=false | steuerermaessigung=520019
+haushaltsnahe | minijob_aufwendungen=88287 haushaltsnahe_dienstleistungen=48600000 handwerker_arbeitskosten=31276 hoechstbetraege_geteilt=true | steuerermaessigung=223912
+haushaltsnahe | minijob_aufwendungen=7393 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=1479
+haushaltsnahe | minijob_aufwendungen=24900000 haushaltsnahe_dienstleistungen=49605 handwerker_arbeitskosten=6524 hoechstbetraege_geteilt=false | steuerermaessigung=62226
+haushaltsnahe | minijob_aufwendungen=20 haushaltsnahe_dienstleistungen=7799999 handwerker_arbeitskosten=8837021 hoechstbetraege_geteilt=false | steuerermaessigung=520004
+haushaltsnahe | minijob_aufwendungen=2315276 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=1996306 hoechstbetraege_geteilt=true | steuerermaessigung=85500
+haushaltsnahe | minijob_aufwendungen=23661 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=4732
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5523277 handwerker_arbeitskosten=64661843 hoechstbetraege_geteilt=true | steuerermaessigung=260000
+haushaltsnahe | minijob_aufwendungen=37098165 haushaltsnahe_dienstleistungen=12100000 handwerker_arbeitskosten=95 hoechstbetraege_geteilt=true | steuerermaessigung=225519
+haushaltsnahe | minijob_aufwendungen=3263 haushaltsnahe_dienstleistungen=36500000 handwerker_arbeitskosten=998626 hoechstbetraege_geteilt=true | steuerermaessigung=260653
+haushaltsnahe | minijob_aufwendungen=5223 haushaltsnahe_dienstleistungen=14400001 handwerker_arbeitskosten=32199999 hoechstbetraege_geteilt=false | steuerermaessigung=521045
+haushaltsnahe | minijob_aufwendungen=67 haushaltsnahe_dienstleistungen=1653148 handwerker_arbeitskosten=68282703 hoechstbetraege_geteilt=true | steuerermaessigung=260013
+haushaltsnahe | minijob_aufwendungen=5700000 haushaltsnahe_dienstleistungen=89013527 handwerker_arbeitskosten=7 hoechstbetraege_geteilt=false | steuerermaessigung=451001
+haushaltsnahe | minijob_aufwendungen=539904 haushaltsnahe_dienstleistungen=71583955 handwerker_arbeitskosten=2572737 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=9703496 haushaltsnahe_dienstleistungen=57 handwerker_arbeitskosten=30071649 hoechstbetraege_geteilt=true | steuerermaessigung=85511
+haushaltsnahe | minijob_aufwendungen=31500000 haushaltsnahe_dienstleistungen=71373 handwerker_arbeitskosten=37200000 hoechstbetraege_geteilt=true | steuerermaessigung=99775
+haushaltsnahe | minijob_aufwendungen=5596529 haushaltsnahe_dienstleistungen=27744 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=true | steuerermaessigung=31049
+haushaltsnahe | minijob_aufwendungen=2945602183 haushaltsnahe_dienstleistungen=349 handwerker_arbeitskosten=18200000 hoechstbetraege_geteilt=true | steuerermaessigung=85570
+haushaltsnahe | minijob_aufwendungen=0 haushaltsnahe_dienstleistungen=5393003576741539044 handwerker_arbeitskosten=88 hoechstbetraege_geteilt=true | steuerermaessigung=200018
+haushaltsnahe | minijob_aufwendungen=59607 haushaltsnahe_dienstleistungen=12099999 handwerker_arbeitskosten=0 hoechstbetraege_geteilt=false | steuerermaessigung=411921
+haushaltsnahe | minijob_aufwendungen=8500000 haushaltsnahe_dienstleistungen=74093346 handwerker_arbeitskosten=14200000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=655238 haushaltsnahe_dienstleistungen=31 handwerker_arbeitskosten=44000000 hoechstbetraege_geteilt=false | steuerermaessigung=171006
+haushaltsnahe | minijob_aufwendungen=188 haushaltsnahe_dienstleistungen=22500001 handwerker_arbeitskosten=30946064 hoechstbetraege_geteilt=false | steuerermaessigung=520038
+haushaltsnahe | minijob_aufwendungen=20700000 haushaltsnahe_dienstleistungen=8835679921374639431 handwerker_arbeitskosten=34900000 hoechstbetraege_geteilt=true | steuerermaessigung=285500
+haushaltsnahe | minijob_aufwendungen=58 haushaltsnahe_dienstleistungen=0 handwerker_arbeitskosten=25000001 hoechstbetraege_geteilt=true | steuerermaessigung=60012
 verlustvortrag_abzug | gesamtbetrag_einkuenfte=87142353 verlustvortrag_bestand=0 zusammenveranlagung=false | verlustabzug=0
 verlustvortrag_abzug | gesamtbetrag_einkuenfte=15100000 verlustvortrag_bestand=655751 zusammenveranlagung=true | verlustabzug=655751
 verlustvortrag_abzug | gesamtbetrag_einkuenfte=0 verlustvortrag_bestand=39700000 zusammenveranlagung=false | verlustabzug=0

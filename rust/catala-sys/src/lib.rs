@@ -210,6 +210,7 @@ extern "C" {
         minijob_cents: i64,
         dienstleistungen_cents: i64,
         handwerker_cents: i64,
+        hoechstbetraege_geteilt: i32,
         out: *mut TgAusgabeFfi,
     ) -> i32;
     fn tg_verlustvortrag_abzug(
@@ -1018,6 +1019,8 @@ pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, Catala
 
 /// § 35a Abs. 1-3 `EStG` haushaltsnahe Beschaeftigung, Dienstleistungen, Handwerker: die drei
 /// Aufwendungen (jeweils Cent) auf die Summe der gedeckelten 20-%-Toepfe, in Cent, ungerundet.
+/// `hoechstbetraege_geteilt` (§ 35a Abs. 5 S. 4: zwei Alleinstehende im selben Haushalt) halbiert die
+/// drei Hoechstbetraege 510 / 4.000 / 1.200 EUR, nicht die Summe.
 ///
 /// # Errors
 /// Gibt [`CatalaFehler`] zurueck, wenn der Catala-Scope eine Laufzeit-Assertion verletzt.
@@ -1025,12 +1028,15 @@ pub fn gwg_sofortabzug(anschaffungskosten_netto_cent: i64) -> Result<i64, Catala
 /// ```
 /// use catala_sys::haushaltsnahe;
 /// // 0,20 + 1.199,80 EUR: die Regel rundet je Topf nicht
-/// assert_eq!(haushaltsnahe(0, 100, 599_900).unwrap(), 120_000);
+/// assert_eq!(haushaltsnahe(0, 100, 599_900, false).unwrap(), 120_000);
+/// // zwei Alleinstehende: 20 % von 5.000 EUR = 1.000 EUR liegen unter dem halben Deckel 2.000 EUR
+/// assert_eq!(haushaltsnahe(0, 500_000, 0, true).unwrap(), 100_000);
 /// ```
 pub fn haushaltsnahe(
     minijob_cent: i64,
     dienstleistungen_cent: i64,
     handwerker_cent: i64,
+    hoechstbetraege_geteilt: bool,
 ) -> Result<i64, CatalaFehler> {
     locked(|| {
         let mut out = TgAusgabeFfi::default();
@@ -1040,6 +1046,7 @@ pub fn haushaltsnahe(
                 minijob_cent,
                 dienstleistungen_cent,
                 handwerker_cent,
+                i32::from(hoechstbetraege_geteilt),
                 &raw mut out,
             )
         };

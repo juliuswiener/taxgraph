@@ -36,7 +36,8 @@ enum Art {
     Wahr,
     /// Wie `Wahr`, aber aus einem eigenen Strom (Fallnummer, Eingabenummer): der Hauptstrom behaelt seine
     /// Ziehungen, die Zeilen der Nachfolger-Scopes aendern sich nicht. Fuer Eingaben, die einem
-    /// bestehenden Scope nachtraeglich zuwachsen (`kranken_pflege_vorsorge`, Abweichung Nr. 115).
+    /// bestehenden Scope nachtraeglich zuwachsen (`kranken_pflege_vorsorge`, Abweichung Nr. 115;
+    /// `haushaltsnahe`, Nr. 116).
     /// ponytail: kein Zusammenhang mit den uebrigen Eingaben des Falls; Upgrade: neue Eingaben ans Ende
     /// von `SPECS` als eigener Scope, wenn die Nachfolger neu gezogen werden duerfen.
     WahrNebenstrom,
@@ -346,6 +347,7 @@ const SPECS: &[Spec] = &[
             ("minijob_aufwendungen", Art::Geld),
             ("haushaltsnahe_dienstleistungen", Art::Geld),
             ("handwerker_arbeitskosten", Art::Geld),
+            ("hoechstbetraege_geteilt", Art::WahrNebenstrom),
         ],
         ausgaben: &["steuerermaessigung"],
         zufall: 300,

@@ -10,7 +10,7 @@ use crate::familienleistungsausgleich::{self, FamilienleistungsausgleichEingabe}
 
 /// Eingabe fuer [`p35a_haushaltsnahe`]. Die Flags stammen aus Feldzustaenden
 /// (`s[k]["wert"]`); massgeblich ist genau der Wahrheitswert `True` bzw. `False`.
-// Vier unabhaengige Feldzustaende aus dem Store, kein verkappter Zustandsautomat.
+// Fuenf unabhaengige Feldzustaende aus dem Store, kein verkappter Zustandsautomat.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, Copy)]
 pub struct P35aHaushaltsnaheEingabe {
@@ -26,14 +26,20 @@ pub struct P35aHaushaltsnaheEingabe {
     pub hh_rechnung_unbar: bool,
     /// `hh_handwerker_keine_foerderung["wert"] is False`. PARITÄT: Python setzt fehlend = {} -> nicht gefoerdert (fail-open)
     pub hh_handwerker_gefoerdert: bool,
-    /// `p35a_mitveranlagung["wert"] is True`. PARITÄT: Python setzt fehlend = {} -> keine Halbierung (fail-open)
+    /// `p35a_mitveranlagung["wert"] is True`: der Nutzer lebt mit einem anderen Alleinstehenden im selben Haushalt
+    /// (§ 35a Abs. 5 S. 4). Fehlend = nein (fail-open: dann bleibt es bei den ganzen Hoechstbetraegen). Gilt nur, wenn
+    /// [`Self::zusammenveranlagt`] false ist.
     pub p35a_mitveranlagung: bool,
+    /// Die Veranlagungsart ist `zusammen`. Ein zusammenveranlagtes Ehepaar teilt die Hoechstbetraege nie (BMF-Schreiben
+    /// vom 2016-11-09 Rz. 53 Beispiel 9; Plan Nr. 116, Julius d-67): die Antwort auf `p35a_mitveranlagung` zaehlt dann nicht.
+    pub zusammenveranlagt: bool,
 }
 
 /// `catala_p35a_haushaltsnahe` -- § 35a Abs. 1-5 `EStG`, EURO. EU/EWR (Abs. 4) gatet alles;
 /// Rechnung + unbare Zahlung (Abs. 5 S. 3) gatet nur Abs. 2/3; oeffentlich gefoerderte
 /// Massnahmen nullen nur Abs. 3 (S. 2). Abs. 1-3 rechnet der Catala-Scope `Haushaltsnahe` in
-/// Cent; bei Mitveranlagung halbiert, erst die Summe auf ganze Euro abgerundet.
+/// Cent; zwei Alleinstehende im selben Haushalt (Abs. 5 S. 4, `p35a_mitveranlagung` und nicht zusammenveranlagt) teilen
+/// die drei Hoechstbetraege zur Haelfte, die Summe wird nicht halbiert. Erst die Summe wird auf ganze Euro abgerundet.
 ///
 /// # Errors
 /// [`EngineFehler::Ueberlauf`] bei `i64`-Ueberlauf, [`EngineFehler::Catala`] aus dem Scope.
@@ -44,7 +50,7 @@ pub struct P35aHaushaltsnaheEingabe {
 /// let e = P35aHaushaltsnaheEingabe {
 ///     hh_minijob_aufwendungen: Euro::new(500), hh_dienstleistungen: Euro::new(5000),
 ///     hh_handwerker_arbeitskosten: Euro::new(3000), hh_in_eu_ewr: true, hh_rechnung_unbar: true,
-///     hh_handwerker_gefoerdert: false, p35a_mitveranlagung: false,
+///     hh_handwerker_gefoerdert: false, p35a_mitveranlagung: false, zusammenveranlagt: false,
 /// };
 /// assert_eq!(p35a_haushaltsnahe(&e).unwrap(), Euro::new(1700));
 /// ```
@@ -70,13 +76,9 @@ pub fn p35a_haushaltsnahe(e: &P35aHaushaltsnaheEingabe) -> Result<Euro, EngineFe
         topf(e.hh_minijob_aufwendungen.get())?,
         topf(dienstleistungen)?,
         topf(handwerker)?,
+        e.p35a_mitveranlagung && !e.zusammenveranlagt,
     )?;
-    Ok(Cent::new(if e.p35a_mitveranlagung {
-        summe.div_euclid(2)
-    } else {
-        summe
-    })
-    .floor_euro())
+    Ok(Cent::new(summe).floor_euro())
 }
 
 /// Eingabe fuer [`kist`]. Konfession und Bundesland sind die Store-Werte, wie Python sie mit
