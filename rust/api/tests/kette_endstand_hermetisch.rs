@@ -2348,7 +2348,13 @@ async fn ergebnis_und_fragen(d: &Dienst) -> (Value, Vec<String>, Value) {
     assert_eq!(status, 200, "GET /ergebnis: {e}");
     let (status, f) = sende(d, "GET", "/fall/kette/fragen", None).await;
     assert_eq!(status, 200, "GET /fragen: {f}");
-    let ids = f["fragen"].as_array().unwrap().iter().map(|q| q["feld_id"].as_str().unwrap().to_owned()).collect();
+    let ids: Vec<String> = f["fragen"].as_array().unwrap().iter().map(|q| q["feld_id"].as_str().unwrap().to_owned()).collect();
+    // Jede Frage steht einmal da. Bei einem vorlaeufigen Textfeld ohne Vorjahr (`kette_vv_objekt_textfeld_...`) stellt der Fluss das Feld
+    // selbst; die Sperre `vv_objekt_unbestaetigt` haengt es nur an, wenn es noch fehlt (`!queue.contains(k)` in `fragen.rs`).
+    let mut einmal: Vec<&String> = ids.iter().collect();
+    einmal.sort();
+    einmal.dedup();
+    assert_eq!(einmal.len(), ids.len(), "/fragen liefert ein Feld doppelt: {ids:?}");
     (e, ids, f["ring_gesperrt"].clone())
 }
 
@@ -2466,6 +2472,29 @@ async fn kette_vv_objekt_kein_vuv_bestaetigt_sperrt_nicht() {
     let e = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung"]).await;
     assert_eq!(e["grund"], "bestaetigt", "keine Vermietung bestaetigt: keine Sperre: {e}");
     assert!(e["zahl_cent"].is_i64(), "keine Vermietung bestaetigt: die Zahl steht da: {e}");
+}
+
+/// Die Sperre `vv_objekt_unbestaetigt` steht HINTER den aelteren Sperren von `gesamt_guard` (Kommentar in `sperre/gesamt.rs`: "als LETZTE
+/// Sperre, damit kein bisheriger Grund hinter diesem verschwindet"). Ein vorlaeufiges Vorschlagsfeld neben einem Fall, den eine aeltere
+/// Sperre haelt, aendert den Grund nicht. Zwei Faelle, die auf verschiedenen Plaetzen der Kette sitzen: `einkunftsart_nicht_ring_faehig`
+/// (hinter `kinderbetreuung`) und `dhf_tatbestand_offen` (die letzte aeltere Sperre, `dhf_vpf_grund`). Je Fall die Kontrolle im selben Test:
+/// ohne das vorlaeufige Feld liefert derselbe Fall dieselbe aeltere Sperre; ohne den aelteren Fall liefert das vorlaeufige Feld seine eigene.
+#[tokio::test]
+async fn kette_vv_objekt_vorschlag_verdraengt_keine_aeltere_sperre() {
+    let eigene = ergebnis_vorlaeufig("gesamt", &vermietung_ein_objekt(), &["vv_wohneinheit_bezeichnung"]).await;
+    assert_eq!(eigene["grund"], "vv_objekt_unbestaetigt", "Kontrolle: das Vorschlagsfeld allein sperrt mit dem neuen Grund: {eigene}");
+    let faelle: [(&str, Paare, &str); 2] = [
+        ("kein_sonstige nein", vec![("kein_sonstige", json!(false))], "einkunftsart_nicht_ring_faehig"),
+        ("Unterkunftskosten der doppelten Haushaltsfuehrung ohne Tatbestand", vec![("dhf_unterkunftskosten_monat", json!(50_000))], "dhf_tatbestand_offen"),
+    ];
+    for (name, aenderung, grund) in faelle {
+        let paare = mit(vermietung_ein_objekt(), aenderung);
+        let aelter = ergebnis("gesamt", &paare).await;
+        assert_eq!(aelter["grund"], grund, "Kontrolle {name}: ohne das vorlaeufige Feld sperrt die aeltere Sperre: {aelter}");
+        let beide = ergebnis_vorlaeufig("gesamt", &paare, &["vv_wohneinheit_bezeichnung"]).await;
+        assert_eq!(beide["grund"], grund, "{name}: mit dem vorlaeufigen Feld bleibt die aeltere Sperre: {beide}");
+        assert!(beide["zahl_cent"].is_null(), "{name}: gesperrt, keine Zahl: {beide}");
+    }
 }
 
 /// Ein vorlaeufiger Betrag der Vermietung (Kegel-/Ring-Feld) behaelt seinen alten Grund: die neue Sperre nimmt die sechs Felder von
