@@ -115,3 +115,28 @@ fn instanzen() {
     }
     assert_eq!(python.matches("<Kind>").count(), 2, "zwei Kind-Container");
 }
+
+/// Empfaengerland und Jahr des Falls erreichen das XML: `einreichungs_xml` reicht beides an den Writer durch, statt dessen Vorgabe
+/// (`BY`, 2025) zu lassen. Alle eingefrorenen Faelle sind BY und 2025; dort faellt ein Weglassen der beiden Felder nicht auf (gefunden
+/// vom `cargo-mutants`-Lauf 2026-10-24: `delete field vz` und `delete field empfaenger_land` blieben gruen). Der Fall `arbeitnehmer` mit
+/// Jahr 2024 und Land `HE`. Ohne Schema meldet der Writer die fehlende `E10-<jahr>.xsd` und nennt das Jahr: so faellt das
+/// Weglassen von `vz` auch ohne Schema auf, das von `empfaenger_land` erst mit Schema (steht erst im XML-Kopf).
+#[test]
+fn empfaenger_land_und_jahr_des_falls_erreichen_das_xml() {
+    let mut datei = store::lade(&fixture("arbeitnehmer.json")).unwrap();
+    datei.veranlagungszeitraum = store::Veranlagungsjahr(2024);
+    let st = store::Store::aus_datei(datei);
+    let ergebnis = einreichungs_xml(&st, index(), params(), "HE", Some("74931".to_owned()));
+    if !schemas_da(st.veranlagungszeitraum()) {
+        assert!(
+            matches!(&ergebnis, Err(EinreichFehler::XmlNichtBaubar(f)) if f.0.contains("E10-2024.xsd nicht gefunden")),
+            "{ergebnis:?}"
+        );
+        return;
+    }
+    let e = ergebnis.unwrap_or_else(|f| panic!("{f}"));
+    assert_eq!(e.vz, domain::Vz::Vz2024);
+    assert!(e.xml.contains("<Ziel>HE</Ziel>"), "das Empfaengerland HE fehlt im Kopf");
+    assert!(!e.xml.contains("<Ziel>BY</Ziel>"), "die Vorgabe BY steht noch im Kopf");
+    assert!(e.xml.contains("e10/v2024\" version=\"2024\""), "das Jahr 2024 fehlt im Namensraum der Nutzdaten");
+}
