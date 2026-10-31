@@ -27,7 +27,7 @@
 //! Gesetzeswortlaut; dort stuetzt nur das Python-Orakel.
 //!
 //! AUSNAHME (Plan Nr. 116, Julius d-67, 2026-10-24): die Zeilen zu `p35a_mitveranlagung` (die drei Faelle "Einzelveranlagt, Antwort ..."
-//! und die Gruppen "ehepaar" und "einzel_antwort") stammen NICHT vom Python-Orakel, das die Summe halbierte, sondern von Hand aus § 35a Abs. 5 S. 4 `EStG` und
+//! und die Gruppen "ehepaar" und "`einzel_antwort`") stammen NICHT vom Python-Orakel, das die Summe halbierte, sondern von Hand aus § 35a Abs. 5 S. 4 `EStG` und
 //! BMF-Schreiben vom 2016-11-09 Rz. 53 mit Beispiel 9 (`sources/bmf/bmf_p35a_2016-11-09.txt:809-831`): ein zusammenveranlagtes Ehepaar
 //! teilt nichts, zwei Alleinstehende (Einzelveranlagung, Antwort ja) teilen die Deckel 510 / 4.000 / 1.200 zur Haelfte.
 //!
